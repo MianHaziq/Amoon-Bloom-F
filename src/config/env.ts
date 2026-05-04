@@ -1,8 +1,15 @@
 import { z } from "zod";
 
+/**
+ * Validated public environment variables. Server-only variables should live in
+ * a separate `server.env.ts` and never be imported from client components.
+ */
 const clientEnvSchema = z.object({
-  NEXT_PUBLIC_API_URL: z.string().url().default("http://localhost:5000"),
-  NEXT_PUBLIC_APP_NAME: z.string().default("Amoonis Boutique"),
+  NEXT_PUBLIC_API_URL: z
+    .string()
+    .url()
+    .default("http://localhost:5000/api/v1"),
+  NEXT_PUBLIC_APP_NAME: z.string().default("Amoon Bloom"),
   NEXT_PUBLIC_APP_ENV: z
     .enum(["development", "staging", "production"])
     .default("development"),
@@ -15,12 +22,11 @@ const parsed = clientEnvSchema.safeParse({
 });
 
 if (!parsed.success) {
-  console.error(
-    "Invalid client env vars:",
-    z.treeifyError(parsed.error)
+  console.warn(
+    "[env] Invalid public env, falling back to defaults:",
+    parsed.error.flatten().fieldErrors
   );
-  throw new Error("Invalid client environment configuration");
 }
 
-export const env = parsed.data;
+export const env = parsed.success ? parsed.data : clientEnvSchema.parse({});
 export type ClientEnv = typeof env;

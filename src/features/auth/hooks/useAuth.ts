@@ -13,20 +13,24 @@ import { storage } from "@/lib/storage";
 import { authApi } from "../api/auth.api";
 import type { AuthCredentials, RegisterPayload } from "../types";
 
+/**
+ * Auth hook — bridges API calls, redux state, and persistent token storage.
+ * UI components should never touch the slice or storage directly.
+ */
 export function useAuth() {
   const dispatch = useAppDispatch();
   const { user, status, error } = useAppSelector((s) => s.auth);
 
-  const login = useCallback(
+  const signin = useCallback(
     async (credentials: AuthCredentials) => {
       dispatch(authPending());
       try {
-        const session = await authApi.login(credentials);
+        const session = await authApi.signin(credentials);
         storage.set(STORAGE_KEYS.authToken, session.token);
         dispatch(authFulfilled(session));
         return session;
       } catch (e) {
-        const message = e instanceof Error ? e.message : "Login failed";
+        const message = e instanceof Error ? e.message : "Sign in failed";
         dispatch(authRejected(message));
         throw e;
       }
@@ -34,11 +38,11 @@ export function useAuth() {
     [dispatch]
   );
 
-  const register = useCallback(
+  const signup = useCallback(
     async (payload: RegisterPayload) => {
       dispatch(authPending());
       try {
-        const session = await authApi.register(payload);
+        const session = await authApi.signup(payload);
         storage.set(STORAGE_KEYS.authToken, session.token);
         dispatch(authFulfilled(session));
         return session;
@@ -51,13 +55,9 @@ export function useAuth() {
     [dispatch]
   );
 
-  const logout = useCallback(async () => {
-    try {
-      await authApi.logout();
-    } finally {
-      storage.remove(STORAGE_KEYS.authToken);
-      dispatch(logoutAction());
-    }
+  const signOut = useCallback(() => {
+    storage.remove(STORAGE_KEYS.authToken);
+    dispatch(logoutAction());
   }, [dispatch]);
 
   return {
@@ -65,8 +65,8 @@ export function useAuth() {
     status,
     error,
     isAuthenticated: status === "authenticated" && Boolean(user),
-    login,
-    register,
-    logout,
+    signin,
+    signup,
+    signOut,
   };
 }

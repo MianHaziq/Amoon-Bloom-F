@@ -1,26 +1,204 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* =====================================================================
+   Amoon Bloom — Design Tokens
+   --------------------------------------------------------------------
+   Premium gifting/florist aesthetic. Romantic palette anchored by a
+   deep rose ("bloom"), softened by blush, cream, and warm neutrals
+   ("ink"). Display serif + clean humanist sans for the hierarchy.
+   ===================================================================== */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* --- Brand: Bloom (deep rose) --- */
+  --color-bloom-50: #fdf2f6;
+  --color-bloom-100: #fce7ee;
+  --color-bloom-200: #fbcfdd;
+  --color-bloom-300: #f8a8c1;
+  --color-bloom-400: #f173a0;
+  --color-bloom-500: #e94c84;
+  --color-bloom-600: #d4316d;
+  --color-bloom-700: #b32257;
+  --color-bloom-800: #911e49;
+  --color-bloom-900: #7a1c40;
+
+  /* --- Blush (soft surface accents) --- */
+  --color-blush-50: #fefaf8;
+  --color-blush-100: #fcf1eb;
+  --color-blush-200: #f8ddd1;
+  --color-blush-300: #f1bba6;
+  --color-blush-400: #e8957a;
+
+  /* --- Cream (page surfaces) --- */
+  --color-cream-50: #fdfbf6;
+  --color-cream-100: #f9f3e6;
+  --color-cream-200: #f1e7cf;
+
+  /* --- Ink (warm neutrals for text) --- */
+  --color-ink-50: #f7f6f3;
+  --color-ink-100: #ebe9e3;
+  --color-ink-200: #d6d2c8;
+  --color-ink-300: #b6b1a7;
+  --color-ink-400: #8a847a;
+  --color-ink-500: #6b655a;
+  --color-ink-600: #534e44;
+  --color-ink-700: #3b362f;
+  --color-ink-800: #25211c;
+  --color-ink-900: #131110;
+
+  /* --- Accent: Gold (premium tags / dividers) --- */
+  --color-gold-400: #d6b870;
+  --color-gold-500: #c9a35b;
+  --color-gold-600: #ad8945;
+
+  /* --- Semantic --- */
+  --color-success: #2f8f5e;
+  --color-warning: #d97706;
+  --color-danger: #b3261e;
+
+  /* --- Surface aliases (semantic naming for components) --- */
+  --color-surface: #ffffff;
+  --color-surface-muted: var(--color-cream-50);
+  --color-surface-sunken: var(--color-cream-100);
+  --color-border: var(--color-ink-100);
+  --color-border-strong: var(--color-ink-200);
+  --color-foreground: var(--color-ink-900);
+  --color-foreground-muted: var(--color-ink-500);
+
+  /* --- Typography --- */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-fraunces), "Cormorant Garamond", "Playfair Display",
+    Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* --- Radius (large, gentle) --- */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+
+  /* --- Shadows (soft, warm) --- */
+  --shadow-soft: 0 1px 2px rgba(28, 24, 20, 0.04),
+    0 8px 24px -8px rgba(28, 24, 20, 0.08);
+  --shadow-lift: 0 2px 4px rgba(28, 24, 20, 0.04),
+    0 24px 40px -16px rgba(28, 24, 20, 0.16);
+  --shadow-bloom: 0 18px 36px -12px rgba(212, 49, 109, 0.28);
+
+  /* --- Animation --- */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* =====================================================================
+   Base layer
+   ===================================================================== */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* Selection */
+::selection {
+  background: var(--color-bloom-200);
+  color: var(--color-bloom-900);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: none;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* =====================================================================
+   Animations
+   ===================================================================== */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 400ms var(--ease-out-soft) both;
+}
+.animate-fade-in-up {
+  animation: fade-in-up 600ms var(--ease-out-soft) both;
+}
+.animate-scale-in {
+  animation: scale-in 250ms var(--ease-out-soft) both;
+}
+.animate-marquee {
+  animation: marquee 32s linear infinite;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-ink-100) 0%,
+    var(--color-ink-50) 40%,
+    var(--color-ink-100) 80%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s linear infinite;
 }

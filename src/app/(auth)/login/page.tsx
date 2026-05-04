@@ -1,20 +1,37 @@
-import { Container } from "@/components/ui";
+import Link from "next/link";
+import { LoginForm } from "@/features/auth/components/LoginForm";
+import { AuthSocialButtons } from "@/features/auth/components/AuthSocialButtons";
+import { ROUTES } from "@/constants/routes";
+
+export const metadata = { title: "Sign in" };
 
 export default function LoginPage() {
   return (
-    <Container className="flex flex-1 items-center justify-center py-24">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-950">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-          Sign in
-        </h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Login form scaffolding lives in{" "}
-          <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs dark:bg-zinc-800">
-            features/auth
-          </code>
-          .
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-col gap-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
+          Welcome back
         </p>
-      </div>
-    </Container>
+        <h1 className="font-display text-4xl font-medium leading-tight text-ink-900 md:text-5xl">
+          Sign in to your boutique.
+        </h1>
+        <p className="text-ink-500">
+          Track orders, save favourites, and reorder in one tap.
+        </p>
+      </header>
+
+      <AuthSocialButtons />
+      <LoginForm />
+
+      <p className="text-center text-sm text-ink-600">
+        New to Amoon Bloom?{" "}
+        <Link
+          href={ROUTES.register}
+          className="font-semibold text-bloom-700 hover:underline"
+        >
+          Create an account
+        </Link>
+      </p>
+    </div>
   );
 }

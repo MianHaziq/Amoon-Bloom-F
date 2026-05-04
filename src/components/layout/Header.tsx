@@ -1,64 +1,124 @@
 "use client";
 
 import Link from "next/link";
-import { useAppSelector } from "@/store";
-import { Container } from "@/components/ui";
+import { useEffect, useState } from "react";
+import { Container, IconButton } from "@/components/ui";
+import {
+  SearchIcon,
+  BagIcon,
+  HeartIcon,
+  UserIcon,
+  MenuIcon,
+} from "@/components/icons";
+import { AnnouncementBar } from "./AnnouncementBar";
+import { MegaMenu } from "./MegaMenu";
+import { MobileNav } from "./MobileNav";
 import { ROUTES } from "@/constants/routes";
 import { siteConfig } from "@/config/site";
-
-const navItems = [
-  { href: ROUTES.shop, label: "Shop" },
-  { href: "/collections", label: "Collections" },
-  { href: "/about", label: "About" },
-] as const;
+import { useAppDispatch, useAppSelector } from "@/store";
+import {
+  toggleCartDrawer,
+  toggleMobileNav,
+} from "@/store/slices/ui.slice";
+import { cn } from "@/lib/cn";
 
 export function Header() {
+  const dispatch = useAppDispatch();
   const itemCount = useAppSelector((s) =>
     s.cart.items.reduce((sum, i) => sum + i.quantity, 0)
   );
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/80 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-950/80">
-      <Container className="flex h-16 items-center justify-between">
-        <Link
-          href={ROUTES.home}
-          className="text-lg font-semibold tracking-tight text-zinc-950 dark:text-zinc-50"
-        >
-          {siteConfig.name}
-        </Link>
-
-        <nav className="hidden items-center gap-8 md:flex">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sm text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-4">
-          <Link
-            href={ROUTES.login}
-            className="hidden text-sm text-zinc-600 hover:text-zinc-950 sm:inline dark:text-zinc-400 dark:hover:text-zinc-50"
+    <>
+      <header
+        className={cn(
+          "sticky top-0 z-40 transition-all duration-300 ease-out-soft",
+          scrolled
+            ? "border-b border-ink-100 bg-cream-50/95 backdrop-blur-md"
+            : "bg-cream-50"
+        )}
+      >
+        <AnnouncementBar />
+        <Container className="flex h-16 items-center justify-between gap-6 lg:h-20">
+          {/* Mobile menu trigger */}
+          <IconButton
+            label="Open menu"
+            variant="ghost"
+            className="lg:hidden"
+            onClick={() => dispatch(toggleMobileNav(true))}
           >
-            Sign in
+            <MenuIcon size={22} />
+          </IconButton>
+
+          {/* Logo */}
+          <Link
+            href={ROUTES.home}
+            className="flex items-center gap-2"
+            aria-label={`${siteConfig.name} — home`}
+          >
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-bloom-600 font-display text-sm font-medium text-white">
+              A
+            </span>
+            <span className="font-display text-2xl font-medium tracking-tight text-ink-900">
+              {siteConfig.name.split(" ")[0]}{" "}
+              <span className="text-bloom-600">
+                {siteConfig.name.split(" ")[1]}
+              </span>
+            </span>
           </Link>
-          <Link
-            href={ROUTES.cart}
-            className="relative inline-flex h-10 items-center gap-2 rounded-full bg-zinc-100 px-4 text-sm font-medium text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700"
-          >
-            Cart
-            {itemCount > 0 && (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-zinc-950 px-1.5 text-xs font-semibold text-zinc-50 dark:bg-zinc-50 dark:text-zinc-950">
+
+          {/* Desktop nav */}
+          <MegaMenu className="hidden lg:flex" />
+
+          {/* Actions */}
+          <div className="flex items-center gap-1">
+            <IconButton label="Search" variant="ghost">
+              <SearchIcon size={20} />
+            </IconButton>
+            <IconButton
+              label="Account"
+              variant="ghost"
+              className="hidden sm:inline-flex"
+            >
+              <Link
+                href={ROUTES.login}
+                aria-label="Sign in"
+                className="flex h-full w-full items-center justify-center"
+              >
+                <UserIcon size={20} />
+              </Link>
+            </IconButton>
+            <IconButton
+              label="Wishlist"
+              variant="ghost"
+              className="hidden sm:inline-flex"
+            >
+              <HeartIcon size={20} />
+            </IconButton>
+            <button
+              type="button"
+              onClick={() => dispatch(toggleCartDrawer(true))}
+              className="relative inline-flex h-10 items-center gap-2 rounded-full bg-ink-900 pl-3 pr-4 text-sm font-medium text-white transition-colors hover:bg-ink-800"
+              aria-label={`Open cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+            >
+              <BagIcon size={18} />
+              <span className="hidden sm:inline">Cart</span>
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white">
                 {itemCount}
               </span>
-            )}
-          </Link>
-        </div>
-      </Container>
-    </header>
+            </button>
+          </div>
+        </Container>
+      </header>
+      <MobileNav />
+    </>
   );
 }

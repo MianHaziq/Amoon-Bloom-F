@@ -1,31 +1,63 @@
-import { forwardRef, type ButtonHTMLAttributes } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "outline";
-type Size = "sm" | "md" | "lg";
+type Variant = "primary" | "secondary" | "outline" | "ghost" | "subtle" | "danger";
+type Size = "sm" | "md" | "lg" | "xl" | "icon";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
   isLoading?: boolean;
+  leadingIcon?: ReactNode;
+  trailingIcon?: ReactNode;
+  fullWidth?: boolean;
 }
 
 const variantStyles: Record<Variant, string> = {
   primary:
-    "bg-zinc-950 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200",
+    "bg-bloom-600 text-white hover:bg-bloom-700 active:bg-bloom-800 shadow-(--shadow-bloom) hover:shadow-(--shadow-lift)",
   secondary:
-    "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700",
-  ghost:
-    "bg-transparent text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800",
+    "bg-ink-900 text-white hover:bg-ink-800 active:bg-ink-700",
   outline:
-    "border border-zinc-200 bg-transparent text-zinc-900 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800",
+    "border border-ink-200 bg-transparent text-ink-900 hover:bg-cream-100 hover:border-ink-300",
+  ghost:
+    "bg-transparent text-ink-900 hover:bg-cream-100",
+  subtle:
+    "bg-cream-100 text-ink-900 hover:bg-cream-200",
+  danger:
+    "bg-(--color-danger) text-white hover:opacity-90",
 };
 
 const sizeStyles: Record<Size, string> = {
-  sm: "h-9 px-3 text-sm",
-  md: "h-11 px-5 text-sm",
-  lg: "h-12 px-6 text-base",
+  sm: "h-9 px-4 text-sm gap-1.5",
+  md: "h-11 px-5 text-sm gap-2",
+  lg: "h-12 px-6 text-base gap-2",
+  xl: "h-14 px-8 text-base gap-2.5",
+  icon: "h-10 w-10",
 };
+
+const Spinner = () => (
+  <svg
+    className="h-4 w-4 animate-spin"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+    />
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
+    />
+  </svg>
+);
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(
@@ -33,9 +65,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "primary",
       size = "md",
       isLoading,
+      leadingIcon,
+      trailingIcon,
+      fullWidth,
       disabled,
       className,
       children,
+      type = "button",
       ...props
     },
     ref
@@ -43,16 +79,31 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        type={type}
         disabled={disabled || isLoading}
+        aria-busy={isLoading || undefined}
         className={cn(
-          "inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus-visible:ring-zinc-50",
+          "group relative inline-flex items-center justify-center rounded-full font-medium tracking-tight transition-all duration-200 ease-out-soft",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50",
+          "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
           variantStyles[variant],
           sizeStyles[size],
+          fullWidth && "w-full",
           className
         )}
         {...props}
       >
-        {isLoading ? "Loading…" : children}
+        {isLoading ? (
+          <Spinner />
+        ) : (
+          leadingIcon && <span className="shrink-0">{leadingIcon}</span>
+        )}
+        <span>{children}</span>
+        {!isLoading && trailingIcon && (
+          <span className="shrink-0 transition-transform group-hover:translate-x-0.5">
+            {trailingIcon}
+          </span>
+        )}
       </button>
     );
   }
