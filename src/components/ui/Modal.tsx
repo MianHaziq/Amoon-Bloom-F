@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useState,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -42,6 +43,11 @@ export function Modal({
     [onClose]
   );
 
+  // Mount-gate the portal so SSR (null) and the first client render (null)
+  // agree, avoiding the body-portal hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!open) return;
     document.addEventListener("keydown", handleKey);
@@ -52,7 +58,7 @@ export function Modal({
     };
   }, [open, handleKey]);
 
-  if (!open || typeof document === "undefined") return null;
+  if (!mounted || !open) return null;
 
   return createPortal(
     <div

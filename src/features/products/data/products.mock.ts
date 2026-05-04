@@ -59,7 +59,7 @@ export const products: Product[] = [
     price: { amount: 245, currency: CURRENCY },
     images: [
       {
-        url: "https://images.unsplash.com/photo-1525310072745-f49212b8ac6d?auto=format&fit=crop&w=1200&q=80",
+        url: "https://images.unsplash.com/photo-1530092285049-1c42085fd395?auto=format&fit=crop&w=1200&q=80&sat=-10",
         alt: "Wildflower English garden bouquet",
       },
     ],

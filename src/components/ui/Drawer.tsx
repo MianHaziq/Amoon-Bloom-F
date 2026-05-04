@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 
@@ -27,6 +27,12 @@ export function Drawer({
   className,
   width = "max-w-md",
 }: DrawerProps) {
+  // Defer portal to a post-mount tick so the server render (null) and the
+  // first client render (also null) match — only the second client pass
+  // creates the portal and inserts nodes into <body>.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!open) return;
     const handle = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -38,7 +44,7 @@ export function Drawer({
     };
   }, [open, onClose]);
 
-  if (typeof document === "undefined") return null;
+  if (!mounted) return null;
 
   return createPortal(
     <div

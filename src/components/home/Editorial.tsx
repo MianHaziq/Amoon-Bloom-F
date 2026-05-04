@@ -9,7 +9,7 @@ export function Editorial() {
       <Container className="grid gap-12 py-20 md:grid-cols-2 md:items-center md:py-28 lg:py-36">
         <div className="relative aspect-[4/5] overflow-hidden rounded-3xl">
           <Image
-            src="https://images.unsplash.com/photo-1525310072745-f49212b8ac6d?auto=format&fit=crop&w=1200&q=85"
+            src="https://images.unsplash.com/photo-1487530811176-3780de880c2d?auto=format&fit=crop&w=1200&q=85"
             alt="Florist composing an arrangement"
             fill
             sizes="(min-width: 768px) 50vw, 100vw"
