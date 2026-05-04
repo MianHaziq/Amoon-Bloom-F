@@ -16,6 +16,7 @@ import {
 } from "@/components/icons";
 import { ProductGallery } from "@/features/products/components/ProductGallery";
 import { AddToCartPanel } from "@/features/products/components/AddToCartPanel";
+import { StickyAddToCart } from "@/features/products/components/StickyAddToCart";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import {
   getProductBySlug,
@@ -200,6 +201,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </Section>
       )}
+
+      <StickyAddToCart product={product} />
     </>
   );
 }

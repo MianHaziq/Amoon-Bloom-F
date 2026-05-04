@@ -13,6 +13,7 @@ import {
 import { AnnouncementBar } from "./AnnouncementBar";
 import { MegaMenu } from "./MegaMenu";
 import { MobileNav } from "./MobileNav";
+import { LocaleToggle } from "./LocaleToggle";
 import { ROUTES } from "@/constants/routes";
 import { siteConfig } from "@/config/site";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -79,7 +80,8 @@ export function Header() {
           <MegaMenu className="hidden lg:flex" />
 
           {/* Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            <LocaleToggle className="hidden md:inline-flex" />
             <IconButton label="Search" variant="ghost">
               <SearchIcon size={20} />
             </IconButton>

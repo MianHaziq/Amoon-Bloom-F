@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export type Theme = "light" | "dark" | "system";
+export type Locale = "en" | "ar";
 
 export interface Toast {
   id: string;
@@ -11,6 +12,7 @@ export interface Toast {
 
 export interface UiState {
   theme: Theme;
+  locale: Locale;
   isMobileNavOpen: boolean;
   isCartDrawerOpen: boolean;
   toasts: Toast[];
@@ -18,6 +20,7 @@ export interface UiState {
 
 const initialState: UiState = {
   theme: "system",
+  locale: "en",
   isMobileNavOpen: false,
   isCartDrawerOpen: false,
   toasts: [],
@@ -29,6 +32,9 @@ const uiSlice = createSlice({
   reducers: {
     setTheme(state, action: PayloadAction<Theme>) {
       state.theme = action.payload;
+    },
+    setLocale(state, action: PayloadAction<Locale>) {
+      state.locale = action.payload;
     },
     toggleMobileNav(state, action: PayloadAction<boolean | undefined>) {
       state.isMobileNavOpen = action.payload ?? !state.isMobileNavOpen;
@@ -52,6 +58,7 @@ const uiSlice = createSlice({
 
 export const {
   setTheme,
+  setLocale,
   toggleMobileNav,
   toggleCartDrawer,
   pushToast,
