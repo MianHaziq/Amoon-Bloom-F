@@ -124,7 +124,7 @@ function MegaMenuPanel({ group }: { group: CategoryGroup }) {
               href={group.highlight.href}
               className="group relative block overflow-hidden rounded-2xl bg-blush-50"
             >
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div className="relative aspect-4/3 overflow-hidden">
                 <Image
                   src={group.highlight.image.url}
                   alt={group.highlight.image.alt}

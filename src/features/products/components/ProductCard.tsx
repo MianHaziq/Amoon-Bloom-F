@@ -62,7 +62,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
         className="relative block overflow-hidden rounded-2xl bg-blush-50"
         aria-label={product.title}
       >
-        <div className="relative aspect-[4/5] w-full">
+        <div className="relative aspect-4/5 w-full">
           {primary && (
             <Image
               src={primary.url}

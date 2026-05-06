@@ -131,6 +131,20 @@ export const InstagramIcon = ({ size, ...rest }: IconProps) => (
   </svg>
 );
 
+export const TikTokIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="M14 4v9.5a3.5 3.5 0 1 1-3.5-3.5" />
+    <path d="M14 4c0 2.5 2 4.5 4.5 4.5" />
+  </svg>
+);
+
+export const WhatsAppIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="M21 12a9 9 0 0 1-13.7 7.7L3 21l1.4-4.2A9 9 0 1 1 21 12Z" />
+    <path d="M9 9.5c0-.5.4-1 1-1h.6c.3 0 .6.2.7.5l.5 1.4-1 .8a5.5 5.5 0 0 0 2.5 2.5l.8-1 1.4.5c.3.1.5.4.5.7v.6c0 .6-.5 1-1 1A6.5 6.5 0 0 1 9 9.5Z" />
+  </svg>
+);
+
 export const PlusIcon = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <path d="M12 5v14M5 12h14" />

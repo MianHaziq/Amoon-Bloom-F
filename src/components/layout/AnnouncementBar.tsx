@@ -2,9 +2,9 @@ import { Container } from "@/components/ui";
 import { TruckIcon, SparkleIcon, PinIcon } from "@/components/icons";
 
 const items = [
-  { icon: TruckIcon, label: "Same-day delivery in Dubai · before 6 PM" },
-  { icon: SparkleIcon, label: "Hand-arranged each morning by our florists" },
-  { icon: PinIcon, label: "Boutique in Downtown Dubai · open daily 8–22" },
+  { icon: TruckIcon, label: "Same-day delivery in Dubai · order before 6 PM" },
+  { icon: SparkleIcon, label: "Hand-packed in our Dubai boutique" },
+  { icon: PinIcon, label: "Boutique branches across the UAE" },
 ];
 
 export function AnnouncementBar() {

@@ -13,9 +13,9 @@ interface CategoryCardProps {
 }
 
 const sizeMap = {
-  sm: "aspect-[4/5]",
-  md: "aspect-[3/4]",
-  lg: "aspect-[4/5]",
+  sm: "aspect-4/5",
+  md: "aspect-3/4",
+  lg: "aspect-4/5",
 } as const;
 
 export function CategoryCard({

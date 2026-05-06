@@ -7,12 +7,15 @@ export const ROUTES = {
   checkout: "/checkout",
   orderSuccess: "/order/success",
   orderError: "/order/error",
+  orderStatus: "/order/status",
   account: "/account",
   orders: "/account/orders",
   login: "/login",
   register: "/register",
   about: "/about",
   contact: "/contact",
+  branches: "/branches",
+  privacy: "/privacy",
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];

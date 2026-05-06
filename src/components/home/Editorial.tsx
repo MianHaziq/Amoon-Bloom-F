@@ -7,10 +7,10 @@ export function Editorial() {
   return (
     <section className="bg-ink-900 text-cream-50">
       <Container className="grid gap-12 py-20 md:grid-cols-2 md:items-center md:py-28 lg:py-36">
-        <div className="relative aspect-[4/5] overflow-hidden rounded-3xl">
+        <div className="relative aspect-4/5 overflow-hidden rounded-3xl">
           <Image
-            src="https://images.unsplash.com/photo-1487530811176-3780de880c2d?auto=format&fit=crop&w=1200&q=85"
-            alt="Florist composing an arrangement"
+            src="https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&w=1200&q=85"
+            alt="Hand-composed Amoonis Boutique gift box"
             fill
             sizes="(min-width: 768px) 50vw, 100vw"
             className="object-cover"
@@ -22,25 +22,29 @@ export function Editorial() {
             The Boutique
           </Badge>
           <h2 className="font-display text-4xl font-medium leading-tight md:text-5xl lg:text-6xl">
-            Slow flowers,
+            Boxed with care,
             <br />
-            <span className="italic text-bloom-300">considered always.</span>
+            <span className="italic text-bloom-300">every time.</span>
           </h2>
           <p className="max-w-md text-lg text-cream-100/80">
-            We work with a small set of growers in the UAE, France, and
-            Ecuador — choosing seasonal blooms over imported standards. Every
-            arrangement is composed in our Downtown Dubai studio the morning of
-            delivery.
+            From a single rose to our most generous graduation deluxe — every
+            Amoonis Boutique box is hand-packed in Dubai, finished with a
+            hand-tied ribbon and a printed card. Same-day delivery across the
+            UAE.
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
             <Link href="/about" className="contents">
               <Button size="lg" trailingIcon={<ArrowRight size={16} />}>
-                Visit the boutique
+                Our story
               </Button>
             </Link>
-            <Link href="/journal" className="contents">
-              <Button size="lg" variant="outline" className="border-white/20 text-cream-50 hover:bg-white/10">
-                Read the journal
+            <Link href="/branches" className="contents">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/20 text-cream-50 hover:bg-white/10"
+              >
+                Visit a branch
               </Button>
             </Link>
           </div>

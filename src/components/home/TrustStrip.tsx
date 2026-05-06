@@ -14,18 +14,18 @@ const items = [
   },
   {
     icon: SparkleIcon,
-    title: "Hand-arranged daily",
-    description: "Every order styled by our florists.",
+    title: "Hand-composed daily",
+    description: "Every box packed by our team.",
   },
   {
     icon: HeartIcon,
-    title: "Gift-ready, always",
-    description: "Complimentary wrap and message card.",
+    title: "Free message card",
+    description: "Personalised, hand-written.",
   },
   {
     icon: ShieldIcon,
-    title: "Freshness guarantee",
-    description: "7-day bloom promise on all flowers.",
+    title: "Secure checkout",
+    description: "Visa, Mastercard, Apple Pay.",
   },
 ];
 

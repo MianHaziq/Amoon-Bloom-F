@@ -4,28 +4,28 @@ import { Container, Section, Button } from "@/components/ui";
 import { ArrowRight } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 
-export const metadata = { title: "Our story" };
+export const metadata = { title: "About us" };
 
 const principles = [
   {
-    title: "Slow, by design.",
-    body: "We work with a small set of growers and refresh our edit weekly — never holding standard imports.",
+    title: "Composed, not assembled.",
+    body: "Every Amoonis Boutique box is hand-packed in our Dubai studio the morning of delivery — no pre-made gift sets, no shortcuts.",
   },
   {
-    title: "Composed, not assembled.",
-    body: "Each arrangement is hand-tied in our boutique the morning of delivery. No pre-made bouquets.",
+    title: "A box for the moment.",
+    body: "From graduations to Eid, newborns to anniversaries — we curate each box for the occasion, not the lowest common denominator.",
   },
   {
     title: "Quietly thoughtful.",
-    body: "Recycled wraps, a hand-tied silk ribbon, a message card you'll want to keep.",
+    body: "A printed message card, a hand-tied ribbon, recycled wraps. The details are always free, and always considered.",
   },
 ];
 
 const milestones = [
-  { year: "2019", title: "Boutique opens in Downtown Dubai" },
-  { year: "2021", title: "Same-day delivery introduced" },
-  { year: "2023", title: "Patisserie & cakes launch" },
-  { year: "2026", title: "Corporate gifting becomes a dedicated studio" },
+  { year: "2020", title: "Amoonis Boutique opens in Dubai" },
+  { year: "2022", title: "Newborn & graduation editions launch" },
+  { year: "2024", title: "Same-day UAE-wide delivery" },
+  { year: "2026", title: "VIBE by Amoon — self-care line" },
 ];
 
 export default function AboutPage() {
@@ -35,17 +35,18 @@ export default function AboutPage() {
         <Container className="grid gap-12 md:grid-cols-2 md:items-center md:gap-16">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
-              Our story
+              About us
             </p>
             <h1 className="mt-3 font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink-900 md:text-6xl lg:text-7xl">
-              Quiet flowers,
+              Hand-packed,
               <br />
-              <span className="italic text-bloom-700">considered always.</span>
+              <span className="italic text-bloom-700">always considered.</span>
             </h1>
             <p className="mt-5 max-w-md text-lg text-ink-600">
-              Amoon Bloom began with a single boutique on a quiet Downtown
-              street — built around the belief that flowers should be composed
-              for the moment, not mass-produced.
+              Amoonis Boutique began as a small atelier in Dubai composing gift
+              boxes for the moments that matter — graduations, Eid, newborns,
+              and the quiet days in between. Today the boutique ships across
+              the UAE, but every box is still composed by hand.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href={ROUTES.shop} className="contents">
@@ -53,17 +54,17 @@ export default function AboutPage() {
                   Shop the boutique
                 </Button>
               </Link>
-              <Link href="/contact" className="contents">
+              <Link href={ROUTES.branches} className="contents">
                 <Button size="lg" variant="outline">
-                  Visit us
+                  Visit a branch
                 </Button>
               </Link>
             </div>
           </div>
-          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl">
+          <div className="relative aspect-4/5 overflow-hidden rounded-3xl">
             <Image
-              src="https://images.unsplash.com/photo-1487530811176-3780de880c2d?auto=format&fit=crop&w=1200&q=85"
-              alt="Florist composing an arrangement"
+              src="https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&w=1200&q=85"
+              alt="Hand-composed Amoonis Boutique gift box"
               fill
               priority
               sizes="(min-width: 768px) 50vw, 100vw"
@@ -88,10 +89,10 @@ export default function AboutPage() {
 
       <Section spacing="lg" tone="cream">
         <div className="grid gap-12 md:grid-cols-[1fr_1.2fr] md:items-center">
-          <div className="relative aspect-[3/4] overflow-hidden rounded-3xl">
+          <div className="relative aspect-3/4 overflow-hidden rounded-3xl">
             <Image
-              src="https://images.unsplash.com/photo-1502977249166-824b3a8a4d6d?auto=format&fit=crop&w=900&q=85"
-              alt="Boutique interior"
+              src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=900&q=85"
+              alt="Inside the Amoonis Boutique studio"
               fill
               sizes="(min-width: 768px) 40vw, 100vw"
               className="object-cover"
