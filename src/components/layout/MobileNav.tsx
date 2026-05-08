@@ -5,13 +5,14 @@ import { useEffect } from "react";
 import { Drawer } from "@/components/ui";
 import { ChevronRight } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
-import { categoryGroups } from "@/features/categories/data/categories.mock";
+import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { toggleMobileNav } from "@/store/slices/ui.slice";
 
 export function MobileNav() {
   const dispatch = useAppDispatch();
   const open = useAppSelector((s) => s.ui.isMobileNavOpen);
+  const { groups: categoryGroups } = useCategories();
 
   // Close drawer on navigation
   useEffect(() => {

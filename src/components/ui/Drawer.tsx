@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
+import { useIsHydrated } from "@/hooks/useIsHydrated";
 
 type Side = "left" | "right";
 
@@ -30,8 +31,7 @@ export function Drawer({
   // Defer portal to a post-mount tick so the server render (null) and the
   // first client render (also null) match — only the second client pass
   // creates the portal and inserts nodes into <body>.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useIsHydrated();
 
   useEffect(() => {
     if (!open) return;

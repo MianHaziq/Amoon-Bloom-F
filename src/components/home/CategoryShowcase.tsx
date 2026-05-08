@@ -1,12 +1,17 @@
+import Link from "next/link";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { ArrowRight } from "@/components/icons";
 import { CategoryCard } from "@/features/categories/components/CategoryCard";
-import { categories } from "@/features/categories/data/categories.mock";
-import Link from "next/link";
+import { categoriesApi } from "@/features/categories/api/categories.api";
+import { toUiCategories } from "@/features/categories/adapters";
 import { ROUTES } from "@/constants/routes";
 
-export function CategoryShowcase() {
-  const featured = categories.filter((c) => c.featured).slice(0, 3);
+export async function CategoryShowcase() {
+  const apiCategories = await categoriesApi.list().catch(() => []);
+  const featured = toUiCategories(apiCategories).slice(0, 3);
+
+  if (featured.length === 0) return null;
+
   return (
     <Section spacing="lg" tone="cream">
       <SectionHeader

@@ -2,11 +2,24 @@ import Link from "next/link";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { ArrowRight } from "@/components/icons";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
-import { products } from "@/features/products/data/products.mock";
+import { productsApi } from "@/features/products/api/products.api";
+import { toUiProducts } from "@/features/products/adapters";
 import { ROUTES } from "@/constants/routes";
 
-export function FeaturedProducts() {
-  const featured = products.slice(0, 4);
+/**
+ * Server component — fetches the most recent products from the API and
+ * surfaces 4 of them. Falls back silently to an empty grid if the backend
+ * is unreachable, so a single failure on this section won't break the
+ * homepage.
+ */
+export async function FeaturedProducts() {
+  const page = await productsApi
+    .list({ page: 1, limit: 4 })
+    .catch(() => ({ data: [], meta: {} }));
+  const featured = toUiProducts(page.data);
+
+  if (featured.length === 0) return null;
+
   return (
     <Section spacing="lg">
       <SectionHeader

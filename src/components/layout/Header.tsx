@@ -20,17 +20,12 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { toggleCartDrawer, toggleMobileNav } from "@/store/slices/ui.slice";
 import { cn } from "@/lib/cn";
 
-const utilityNav = [
-  { href: ROUTES.branches, label: "Branches" },
-  { href: ROUTES.about, label: "About us" },
-  { href: ROUTES.privacy, label: "Privacy policy" },
-] as const;
-
 export function Header() {
   const dispatch = useAppDispatch();
   const itemCount = useAppSelector((s) =>
     s.cart.items.reduce((sum, i) => sum + i.quantity, 0)
   );
+  const user = useAppSelector((s) => s.auth.user);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -96,23 +91,23 @@ export function Header() {
             </label>
           </form>
 
-          {/* Utility nav (desktop) */}
+          {/* Account link (desktop) */}
           <nav className="hidden items-center gap-5 lg:flex">
-            {utilityNav.map((item) => (
+            {user ? (
               <Link
-                key={item.href}
-                href={item.href}
+                href={ROUTES.account}
                 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700 transition-colors hover:text-ink-900"
               >
-                {item.label}
+                {user.firstName ? `Hi, ${user.firstName}` : "My account"}
               </Link>
-            ))}
-            <Link
-              href={ROUTES.login}
-              className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700 transition-colors hover:text-ink-900"
-            >
-              Login
-            </Link>
+            ) : (
+              <Link
+                href={ROUTES.login}
+                className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700 transition-colors hover:text-ink-900"
+              >
+                Login
+              </Link>
+            )}
           </nav>
 
           {/* Actions */}
@@ -131,8 +126,8 @@ export function Header() {
               className="hidden lg:hidden"
             >
               <Link
-                href={ROUTES.login}
-                aria-label="Sign in"
+                href={user ? ROUTES.account : ROUTES.login}
+                aria-label={user ? "My account" : "Sign in"}
                 className="flex h-full w-full items-center justify-center"
               >
                 <UserIcon size={20} />

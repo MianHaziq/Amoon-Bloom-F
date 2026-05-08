@@ -1,5 +1,12 @@
 import type { Money, Image } from "@/types";
 
+/**
+ * Storefront-facing product type. Used by PLP, PDP, cart, and product cards.
+ * Backend-aligned shapes for the admin panel and raw API responses live in
+ * `./api-types.ts` (`ApiProduct`, `ApiProductCreateInput`, etc.). Phase 3 will
+ * migrate storefront consumers off mocks and onto adapted API data.
+ */
+
 export interface ProductOptionGroup {
   id: string;
   title: string;

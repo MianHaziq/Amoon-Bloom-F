@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ChevronDown, ArrowRight } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/cn";
-import { categoryGroups } from "@/features/categories/data/categories.mock";
+import { useCategories } from "@/features/categories/hooks/useCategories";
 import type { CategoryGroup } from "@/features/categories/types";
 
 interface MegaMenuProps {
@@ -15,13 +15,14 @@ interface MegaMenuProps {
 
 export function MegaMenu({ className }: MegaMenuProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const { groups } = useCategories();
 
   return (
     <nav
       className={cn("relative flex items-center gap-1", className)}
       onMouseLeave={() => setActiveId(null)}
     >
-      {categoryGroups.map((group) => (
+      {groups.map((group) => (
         <MegaMenuTrigger
           key={group.id}
           group={group}

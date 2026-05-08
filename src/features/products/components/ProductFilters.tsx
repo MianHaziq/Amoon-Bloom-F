@@ -3,7 +3,7 @@
 import { useId } from "react";
 import { cn } from "@/lib/cn";
 import type { ProductFilter } from "../types";
-import { categories } from "@/features/categories/data/categories.mock";
+import type { Category } from "@/features/categories/types";
 
 const SORTS: { value: NonNullable<ProductFilter["sort"]>; label: string }[] = [
   { value: "featured", label: "Featured" },
@@ -16,6 +16,7 @@ interface ProductFiltersProps {
   filter: ProductFilter;
   onChange: (next: ProductFilter) => void;
   resultCount: number;
+  categories: Category[];
   className?: string;
 }
 
@@ -23,6 +24,7 @@ export function ProductFilters({
   filter,
   onChange,
   resultCount,
+  categories,
   className,
 }: ProductFiltersProps) {
   const sortId = useId();

@@ -1,13 +1,9 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
+import { useIsHydrated } from "@/hooks/useIsHydrated";
 
 interface ModalProps {
   open: boolean;
@@ -45,8 +41,7 @@ export function Modal({
 
   // Mount-gate the portal so SSR (null) and the first client render (null)
   // agree, avoiding the body-portal hydration mismatch.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useIsHydrated();
 
   useEffect(() => {
     if (!open) return;

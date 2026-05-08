@@ -1,24 +1,23 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { StoreProvider } from "@/store/providers/StoreProvider";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { QueryProvider } from "@/store/providers/QueryProvider";
 import { ToastViewport } from "@/components/ui/Toast";
-import { CartDrawer } from "@/features/cart/components/CartDrawer";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+/**
+ * Single typeface for the entire product. Plus Jakarta Sans gives us a clean,
+ * modern, SaaS-grade voice from 13px UI text up to large editorial display
+ * weights without any face-mixing. We expose two CSS variables — one for body,
+ * one for display — but they resolve to the same family with different
+ * weights / tracking applied at the component level via Tailwind utilities.
+ */
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
   display: "swap",
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  display: "swap",
-  axes: ["opsz", "SOFT"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -58,23 +57,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${jakarta.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream-50 text-ink-900 font-sans">
         <StoreProvider>
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white"
-          >
-            Skip to content
-          </a>
-          <Header />
-          <main id="main" className="flex flex-1 flex-col">
+          <QueryProvider>
             {children}
-          </main>
-          <Footer />
-          <CartDrawer />
-          <ToastViewport />
+            <ToastViewport />
+          </QueryProvider>
         </StoreProvider>
       </body>
     </html>
