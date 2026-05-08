@@ -21,7 +21,9 @@ export default function LoginPage() {
         </p>
       </header>
 
-      <AuthSocialButtons />
+      <Suspense fallback={null}>
+        <AuthSocialButtons />
+      </Suspense>
       <Suspense fallback={null}>
         <LoginForm />
       </Suspense>

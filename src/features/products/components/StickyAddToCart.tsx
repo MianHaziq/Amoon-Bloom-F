@@ -9,6 +9,7 @@ import { useAppDispatch } from "@/store";
 import { pushToast, toggleCartDrawer } from "@/store/slices/ui.slice";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
 import type { Product } from "../types";
 
 interface StickyAddToCartProps {
@@ -23,6 +24,7 @@ interface StickyAddToCartProps {
 export function StickyAddToCart({ product }: StickyAddToCartProps) {
   const dispatch = useAppDispatch();
   const { add } = useCart();
+  const { currency, locale } = useCurrency();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -77,7 +79,7 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
             {product.title}
           </p>
           <p className="text-sm font-semibold tabular-nums text-bloom-700">
-            {formatCurrency(product.price.amount, product.price.currency)}
+            {formatCurrency(product.price.amount, currency, locale)}
           </p>
         </div>
         <Button

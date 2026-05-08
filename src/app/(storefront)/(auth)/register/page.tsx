@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { RegisterForm } from "@/features/auth/components/RegisterForm";
 import { AuthSocialButtons } from "@/features/auth/components/AuthSocialButtons";
@@ -20,7 +21,9 @@ export default function RegisterPage() {
         </p>
       </header>
 
-      <AuthSocialButtons />
+      <Suspense fallback={null}>
+        <AuthSocialButtons />
+      </Suspense>
       <RegisterForm />
 
       <p className="text-center text-sm text-ink-600">

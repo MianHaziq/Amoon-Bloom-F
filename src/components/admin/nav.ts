@@ -74,6 +74,12 @@ export const adminNav: AdminNavGroup[] = [
         icon: ImageIcon,
         permission: "BANNERS",
       },
+      {
+        label: "Collaborations",
+        href: "/admin/collaborations",
+        icon: ImageIcon,
+        permission: "BANNERS",
+      },
     ],
   },
   {

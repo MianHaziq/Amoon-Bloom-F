@@ -7,6 +7,7 @@ import { useAppSelector } from "@/store";
 import { formatCurrency } from "@/lib/format";
 import { siteConfig } from "@/config/site";
 import { ROUTES } from "@/constants/routes";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
 
 interface CartSummaryProps {
   variant?: "page" | "checkout";
@@ -14,11 +15,11 @@ interface CartSummaryProps {
 
 export function CartSummary({ variant = "page" }: CartSummaryProps) {
   const items = useAppSelector((s) => s.cart.items);
+  const { currency, locale } = useCurrency();
   const subtotal = items.reduce(
     (sum, i) => sum + i.unitPrice * i.quantity,
     0
   );
-  const currency = items[0]?.currency ?? siteConfig.shipping.currency;
   const freeOver = siteConfig.shipping.freeOver;
   const shipping = subtotal >= freeOver || subtotal === 0 ? 0 : 25;
   const total = subtotal + shipping;
@@ -36,7 +37,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
       {remaining > 0 && (
         <div className="flex flex-col gap-2 rounded-2xl bg-blush-50 p-4 text-sm text-ink-700">
           <div className="flex items-center justify-between">
-            <span>Spend {formatCurrency(remaining, currency)} more for free delivery</span>
+            <span>Spend {formatCurrency(remaining, currency, locale)} more for free delivery</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-blush-200">
             <div
@@ -51,13 +52,13 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
         <div className="flex justify-between">
           <dt className="text-ink-600">Subtotal</dt>
           <dd className="font-medium tabular-nums text-ink-900">
-            {formatCurrency(subtotal, currency)}
+            {formatCurrency(subtotal, currency, locale)}
           </dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-ink-600">Delivery</dt>
           <dd className="font-medium tabular-nums text-ink-900">
-            {shipping === 0 ? "Free" : formatCurrency(shipping, currency)}
+            {shipping === 0 ? "Free" : formatCurrency(shipping, currency, locale)}
           </dd>
         </div>
       </dl>
@@ -67,7 +68,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
       <div className="flex items-baseline justify-between">
         <span className="font-display text-lg text-ink-900">Total</span>
         <span className="font-display text-2xl font-medium tabular-nums text-ink-900">
-          {formatCurrency(total, currency)}
+          {formatCurrency(total, currency, locale)}
         </span>
       </div>
 

@@ -7,6 +7,7 @@ import { TrashIcon } from "@/components/icons";
 import { QuantitySelector } from "@/features/products/components/QuantitySelector";
 import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useAppDispatch } from "@/store";
 import {
   removeItem,
@@ -27,6 +28,7 @@ export function CartLineItem({
   onNavigate,
 }: CartLineItemProps) {
   const dispatch = useAppDispatch();
+  const { currency, locale } = useCurrency();
 
   return (
     <article
@@ -65,11 +67,11 @@ export function CartLineItem({
             {item.title}
           </Link>
           <p className="text-sm font-semibold tabular-nums text-ink-900">
-            {formatCurrency(item.unitPrice * item.quantity, item.currency)}
+            {formatCurrency(item.unitPrice * item.quantity, currency, locale)}
           </p>
         </div>
         <p className="mt-1 text-xs text-ink-500">
-          {formatCurrency(item.unitPrice, item.currency)} each
+          {formatCurrency(item.unitPrice, currency, locale)} each
         </p>
         <div className="mt-auto flex items-center justify-between pt-3">
           <QuantitySelector

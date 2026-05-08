@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Divider } from "@/components/ui";
+import { useOAuthSignIn } from "../hooks/useOAuthSignIn";
 
 const GoogleMark = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
@@ -30,22 +31,32 @@ const AppleMark = () => (
 );
 
 export function AuthSocialButtons() {
+  const { signInWithGoogle, signInWithApple, pending } = useOAuthSignIn();
+
   return (
     <div className="flex flex-col gap-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <Button
+          type="button"
           variant="outline"
           size="lg"
           fullWidth
           leadingIcon={<GoogleMark />}
+          onClick={signInWithGoogle}
+          isLoading={pending === "google"}
+          disabled={pending !== null}
         >
           Google
         </Button>
         <Button
+          type="button"
           variant="outline"
           size="lg"
           fullWidth
           leadingIcon={<AppleMark />}
+          onClick={signInWithApple}
+          isLoading={pending === "apple"}
+          disabled={pending !== null}
         >
           Apple
         </Button>

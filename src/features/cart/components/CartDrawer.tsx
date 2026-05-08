@@ -6,7 +6,7 @@ import { ArrowRight, BagIcon } from "@/components/icons";
 import { CartLineItem } from "./CartLineItem";
 import { formatCurrency, pluralize } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
-import { siteConfig } from "@/config/site";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { toggleCartDrawer } from "@/store/slices/ui.slice";
 
@@ -20,7 +20,7 @@ export function CartDrawer() {
     (s, i) => s + i.unitPrice * i.quantity,
     0
   );
-  const currency = items[0]?.currency ?? siteConfig.shipping.currency;
+  const { currency, locale } = useCurrency();
 
   return (
     <Drawer
@@ -52,7 +52,7 @@ export function CartDrawer() {
             <div className="flex items-baseline justify-between">
               <span className="text-sm text-ink-600">Subtotal</span>
               <span className="font-display text-xl font-medium tabular-nums text-ink-900">
-                {formatCurrency(subtotal, currency)}
+                {formatCurrency(subtotal, currency, locale)}
               </span>
             </div>
             <p className="mt-1 text-xs text-ink-500">

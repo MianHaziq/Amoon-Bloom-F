@@ -7,6 +7,7 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { Container } from "@/components/ui";
 import {
   DocumentIcon,
+  HeartIcon,
   LogoutIcon,
   PinIcon,
   UserIcon,
@@ -18,6 +19,7 @@ const NAV = [
   { href: "/account", label: "Profile", icon: UserIcon, exact: true },
   { href: "/account/orders", label: "Orders", icon: DocumentIcon },
   { href: "/account/addresses", label: "Addresses", icon: PinIcon },
+  { href: "/account/wishlist", label: "Wishlist", icon: HeartIcon },
 ];
 
 export function AccountLayout({

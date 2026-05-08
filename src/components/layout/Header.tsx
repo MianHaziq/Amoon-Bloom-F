@@ -14,6 +14,7 @@ import { AnnouncementBar } from "./AnnouncementBar";
 import { MegaMenu } from "./MegaMenu";
 import { MobileNav } from "./MobileNav";
 import { LocaleToggle } from "./LocaleToggle";
+import { DeliverToPill } from "@/features/location/components/DeliverToPill";
 import { ROUTES } from "@/constants/routes";
 import { siteConfig } from "@/config/site";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -25,6 +26,7 @@ export function Header() {
   const itemCount = useAppSelector((s) =>
     s.cart.items.reduce((sum, i) => sum + i.quantity, 0)
   );
+  const wishlistCount = useAppSelector((s) => s.wishlist.items.length);
   const user = useAppSelector((s) => s.auth.user);
   const [scrolled, setScrolled] = useState(false);
 
@@ -112,6 +114,7 @@ export function Header() {
 
           {/* Actions */}
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            <DeliverToPill className="hidden lg:inline-flex" />
             <LocaleToggle className="hidden md:inline-flex" />
             <IconButton
               label="Search"
@@ -133,13 +136,18 @@ export function Header() {
                 <UserIcon size={20} />
               </Link>
             </IconButton>
-            <IconButton
-              label="Wishlist"
-              variant="ghost"
-              className="hidden sm:inline-flex"
+            <Link
+              href={ROUTES.wishlist}
+              aria-label={`Wishlist, ${wishlistCount} item${wishlistCount === 1 ? "" : "s"}`}
+              className="relative hidden h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all hover:bg-cream-100 sm:inline-flex"
             >
               <HeartIcon size={20} />
-            </IconButton>
+              {wishlistCount > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white">
+                  {wishlistCount}
+                </span>
+              ) : null}
+            </Link>
             <button
               type="button"
               onClick={() => dispatch(toggleCartDrawer(true))}

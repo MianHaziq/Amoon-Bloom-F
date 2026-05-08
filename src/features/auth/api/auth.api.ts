@@ -39,7 +39,7 @@ export const authApi = {
 
   async apple(
     identityToken: string,
-    profile?: Pick<User, "name" | "firstName" | "lastName" | "email">
+    profile?: Partial<Pick<User, "name" | "firstName" | "lastName" | "email">>
   ): Promise<AuthSession> {
     const { data } = await http.post<ApiResponse<AuthSession>>("/auth/apple", {
       identityToken,

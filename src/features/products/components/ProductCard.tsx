@@ -2,14 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Badge, IconButton } from "@/components/ui";
-import { HeartIcon, BagIcon, StarIcon } from "@/components/icons";
+import { Badge } from "@/components/ui";
+import { BagIcon, StarIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useAppDispatch } from "@/store";
 import { addItem } from "@/store/slices/cart.slice";
 import { pushToast } from "@/store/slices/ui.slice";
+import { WishlistToggle } from "@/features/wishlist/components/WishlistToggle";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
 import type { Product } from "../types";
 
 interface ProductCardProps {
@@ -30,6 +32,7 @@ const badgeMap: Record<
 
 export function ProductCard({ product, className, priority }: ProductCardProps) {
   const dispatch = useAppDispatch();
+  const { currency, locale } = useCurrency();
   const primary = product.images[0];
   const secondary = product.images[1];
   const hasDiscount =
@@ -96,18 +99,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
 
         {/* Wishlist (top-right) */}
         <div className="absolute right-3 top-3">
-          <IconButton
-            label="Save to wishlist"
-            variant="subtle"
-            size="sm"
-            className="bg-white/90 backdrop-blur-sm hover:bg-white"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            <HeartIcon size={16} />
-          </IconButton>
+          <WishlistToggle product={product} stopPropagation />
         </div>
 
         {/* Quick add (bottom, on hover) */}
@@ -137,13 +129,14 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
         <div className="mt-1 flex items-center justify-between">
           <div className="flex items-baseline gap-2">
             <span className="text-base font-semibold text-ink-900">
-              {formatCurrency(product.price.amount, product.price.currency)}
+              {formatCurrency(product.price.amount, currency, locale)}
             </span>
             {hasDiscount && product.compareAtPrice && (
               <span className="text-xs text-ink-400 line-through">
                 {formatCurrency(
                   product.compareAtPrice.amount,
-                  product.compareAtPrice.currency
+                  currency,
+                  locale
                 )}
               </span>
             )}

@@ -12,11 +12,11 @@ import { ProductGallery } from "@/features/products/components/ProductGallery";
 import { AddToCartPanel } from "@/features/products/components/AddToCartPanel";
 import { StickyAddToCart } from "@/features/products/components/StickyAddToCart";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
+import { ProductPrice } from "@/features/products/components/ProductPrice";
 import { productsApi } from "@/features/products/api/products.api";
 import { toUiProduct, toUiProducts } from "@/features/products/adapters";
 import { ApiError } from "@/services/http";
 import { ROUTES } from "@/constants/routes";
-import { formatCurrency } from "@/lib/format";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -49,7 +49,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
   const product = toUiProduct(api);
 
-  // Related products: pick others in the same category, up to 4.
   let related: ReturnType<typeof toUiProducts> = [];
   if (api.categoryId) {
     try {
@@ -61,10 +60,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
       related = [];
     }
   }
-
-  const hasDiscount =
-    product.compareAtPrice &&
-    product.compareAtPrice.amount > product.price.amount;
 
   return (
     <>
@@ -113,19 +108,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               )}
             </div>
 
-            <div className="flex items-baseline gap-3">
-              <span className="font-display text-3xl font-medium text-ink-900">
-                {formatCurrency(product.price.amount, product.price.currency)}
-              </span>
-              {hasDiscount && product.compareAtPrice && (
-                <span className="text-base text-ink-400 line-through">
-                  {formatCurrency(
-                    product.compareAtPrice.amount,
-                    product.compareAtPrice.currency
-                  )}
-                </span>
-              )}
-            </div>
+            <ProductPrice product={product} size="lg" />
 
             {product.description ? (
               <p className="text-base leading-relaxed text-ink-700">

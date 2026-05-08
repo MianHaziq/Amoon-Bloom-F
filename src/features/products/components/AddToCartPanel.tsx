@@ -6,8 +6,10 @@ import { BagIcon, HeartIcon } from "@/components/icons";
 import { QuantitySelector } from "./QuantitySelector";
 import { OptionPicker } from "./OptionPicker";
 import { useCart } from "@/features/cart/hooks/useCart";
-import { useAppDispatch } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store";
 import { pushToast, toggleCartDrawer } from "@/store/slices/ui.slice";
+import { toggleWishlistItem } from "@/store/slices/wishlist.slice";
+import { cn } from "@/lib/cn";
 import type { Product } from "../types";
 
 interface AddToCartPanelProps {
@@ -17,6 +19,9 @@ interface AddToCartPanelProps {
 export function AddToCartPanel({ product }: AddToCartPanelProps) {
   const dispatch = useAppDispatch();
   const { add } = useCart();
+  const wishlisted = useAppSelector((s) =>
+    s.wishlist.items.some((i) => i.productId === product.id)
+  );
   const [qty, setQty] = useState(1);
   const [selected, setSelected] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -77,10 +82,21 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
           fullWidth
           size="xl"
           variant="outline"
-          leadingIcon={<HeartIcon size={18} />}
+          leadingIcon={<HeartIcon size={18} className={cn(wishlisted && "fill-current")} />}
           className="sm:flex-1"
+          aria-pressed={wishlisted}
+          onClick={() => {
+            dispatch(toggleWishlistItem({ product }));
+            dispatch(
+              pushToast({
+                title: wishlisted ? "Removed from wishlist" : "Saved to wishlist",
+                description: product.title,
+                variant: wishlisted ? "default" : "success",
+              })
+            );
+          }}
         >
-          Save
+          {wishlisted ? "Saved" : "Save"}
         </Button>
       </div>
     </div>

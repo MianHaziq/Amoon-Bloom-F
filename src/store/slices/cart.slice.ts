@@ -63,10 +63,14 @@ const cartSlice = createSlice({
     clearCart(state) {
       state.items = [];
     },
+    /** Replace the whole cart in one shot — used to hydrate from localStorage. */
+    setItems(state, action: PayloadAction<CartItem[]>) {
+      state.items = action.payload;
+    },
   },
 });
 
-export const { addItem, updateQuantity, removeItem, clearCart } =
+export const { addItem, updateQuantity, removeItem, clearCart, setItems } =
   cartSlice.actions;
 
 export default cartSlice.reducer;

@@ -9,6 +9,7 @@ import {
   updateQuantity,
 } from "@/store/slices/cart.slice";
 import { siteConfig } from "@/config/site";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
 import type { Product } from "@/features/products/types";
 
 /**
@@ -19,6 +20,7 @@ import type { Product } from "@/features/products/types";
 export function useCart() {
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.cart.items);
+  const { currency, locale } = useCurrency();
 
   const totals = useMemo(() => {
     const subtotal = items.reduce(
@@ -26,7 +28,6 @@ export function useCart() {
       0
     );
     const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-    const currency = items[0]?.currency ?? siteConfig.shipping.currency;
     const free = subtotal === 0 || subtotal >= siteConfig.shipping.freeOver;
     const shipping = free ? 0 : 25;
     return {
@@ -35,9 +36,10 @@ export function useCart() {
       total: subtotal + shipping,
       itemCount,
       currency,
+      locale,
       qualifiesForFreeShipping: free && subtotal > 0,
     };
-  }, [items]);
+  }, [items, currency, locale]);
 
   return {
     items,

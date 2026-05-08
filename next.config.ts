@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["clsx", "tailwind-merge"],
   },
+  async redirects() {
+    return [
+      { source: "/signup", destination: "/register", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;
