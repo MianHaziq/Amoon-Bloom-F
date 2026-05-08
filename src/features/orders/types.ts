@@ -58,6 +58,18 @@ export interface ApiOrderItem {
   price: number;
 }
 
+export interface ApiOrderListUser {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+/**
+ * The full payload returned for `GET /orders/:id` and on order create/update.
+ * List endpoints return a lighter row (no `items`/`shippingAddress`) — see
+ * `ApiOrderListRow` below.
+ */
 export interface ApiOrder {
   id: string;
   userId: string;
@@ -72,6 +84,24 @@ export interface ApiOrder {
   createdAt: string;
   updatedAt: string;
   items: ApiOrderItem[];
+}
+
+/**
+ * Lighter row returned by list endpoints (`GET /orders`, `GET /orders/history`,
+ * `GET /orders/admin/history`). Backend rolls items up into `itemCount` and
+ * omits the shipping address. Optional `user` is present on admin endpoints.
+ */
+export interface ApiOrderListRow {
+  id: string;
+  userId: string;
+  user?: ApiOrderListUser;
+  orderMessage: string | null;
+  totalAmount: number;
+  status: OrderStatus;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
+  items?: ApiOrderItem[];
 }
 
 export interface ApiOrderStatusLite {

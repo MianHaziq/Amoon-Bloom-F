@@ -12,6 +12,8 @@ import { toggleMobileNav } from "@/store/slices/ui.slice";
 export function MobileNav() {
   const dispatch = useAppDispatch();
   const open = useAppSelector((s) => s.ui.isMobileNavOpen);
+  const user = useAppSelector((s) => s.auth.user);
+  const isStaff = user?.role === "ADMIN" || user?.role === "MANAGER";
   const { groups: categoryGroups } = useCategories();
 
   // Close drawer on navigation
@@ -56,6 +58,15 @@ export function MobileNav() {
         ))}
 
         <div className="mt-2 flex flex-col gap-1 border-t border-ink-100 pt-4">
+          {isStaff ? (
+            <Link
+              onClick={close}
+              href={ROUTES.admin}
+              className="rounded-xl bg-ink-900 px-3 py-2.5 text-sm font-semibold text-white hover:bg-ink-800"
+            >
+              Admin panel
+            </Link>
+          ) : null}
           {[
             { href: ROUTES.shop, label: "Shop everything" },
             { href: "/about", label: "Our story" },

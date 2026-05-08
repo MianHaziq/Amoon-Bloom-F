@@ -61,7 +61,7 @@ export function AdminDashboard() {
   });
 
   const summary = revenueQuery.data?.summary;
-  const currency = "USD"; // TODO: read from settings
+  const currency = revenueQuery.data?.currency ?? "USD";
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-8">
@@ -82,7 +82,7 @@ export function AdminDashboard() {
               ? "—"
               : revenueQuery.isPending
               ? null
-              : formatCurrency(summary?.totalRevenue ?? 0, currency)
+              : formatCurrency(summary?.revenue ?? 0, currency)
           }
           loading={canSeeRevenue && revenueQuery.isPending}
         />
@@ -93,7 +93,7 @@ export function AdminDashboard() {
               ? "—"
               : revenueQuery.isPending
               ? null
-              : String(summary?.totalOrders ?? 0)
+              : String(summary?.activeOrderCount ?? 0)
           }
           loading={canSeeRevenue && revenueQuery.isPending}
         />
@@ -104,7 +104,7 @@ export function AdminDashboard() {
               ? "—"
               : revenueQuery.isPending
               ? null
-              : formatCurrency(summary?.avgOrderValue ?? 0, currency)
+              : formatCurrency(summary?.averageOrderValue ?? 0, currency)
           }
           loading={canSeeRevenue && revenueQuery.isPending}
         />
@@ -151,7 +151,7 @@ export function AdminDashboard() {
             </div>
           ) : recentOrdersQuery.isError ? (
             <ErrorBlock error={recentOrdersQuery.error} />
-          ) : recentOrdersQuery.data?.data.length === 0 ? (
+          ) : (recentOrdersQuery.data?.data ?? []).length === 0 ? (
             <p className="py-6 text-center text-sm text-ink-500">No orders yet.</p>
           ) : (
             <div className="overflow-hidden rounded-xl border border-ink-100">
@@ -165,22 +165,29 @@ export function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentOrdersQuery.data?.data.map((order) => (
-                    <tr key={order.id} className="border-t border-ink-100">
-                      <td className="px-4 py-3 font-mono text-xs text-ink-700">
-                        {order.id.slice(0, 8)}
-                      </td>
-                      <td className="px-4 py-3 text-ink-700">
-                        {order.shippingAddress?.fullName ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge tone="ink">{order.status}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right text-ink-900">
-                        {formatCurrency(order.totalAmount, currency)}
-                      </td>
-                    </tr>
-                  ))}
+                  {(recentOrdersQuery.data?.data ?? []).map((order) => {
+                    const customerName = order.user
+                      ? [order.user.firstName, order.user.lastName]
+                          .filter(Boolean)
+                          .join(" ") || order.user.email
+                      : "—";
+                    return (
+                      <tr key={order.id} className="border-t border-ink-100">
+                        <td className="px-4 py-3 font-mono text-xs text-ink-700">
+                          {order.id.slice(0, 8)}
+                        </td>
+                        <td className="px-4 py-3 text-ink-700">
+                          {customerName}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge tone="ink">{order.status}</Badge>
+                        </td>
+                        <td className="px-4 py-3 text-right text-ink-900">
+                          {formatCurrency(order.totalAmount, currency)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

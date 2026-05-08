@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "@/features/analytics/api/analytics.api";
 import { queryKeys } from "@/services/queryKeys";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Skeleton } from "@/components/ui/Loader";
+import { ApiError } from "@/services/http";
 import { formatCurrency } from "@/lib/format";
 
 const PRESETS = [
@@ -35,8 +36,28 @@ export function AnalyticsAdminPage() {
   });
 
   const summary = revenueQuery.data?.summary;
-  const series = dailyQuery.data ?? [];
-  const max = Math.max(1, ...series.map((d) => d.totalSales));
+  const currency = revenueQuery.data?.currency ?? "USD";
+
+  const series = useMemo(
+    () => (Array.isArray(dailyQuery.data?.points) ? dailyQuery.data!.points : []),
+    [dailyQuery.data]
+  );
+  const max = useMemo(
+    () => Math.max(1, ...series.map((d) => Number(d.netRevenue) || 0)),
+    [series]
+  );
+
+  const categories = useMemo(
+    () =>
+      Array.isArray(byCategoryQuery.data?.categories)
+        ? byCategoryQuery.data!.categories
+        : [],
+    [byCategoryQuery.data]
+  );
+  const totalCategoryRevenue = useMemo(
+    () => categories.reduce((s, r) => s + (Number(r.revenue) || 0), 0),
+    [categories]
+  );
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -64,20 +85,26 @@ export function AnalyticsAdminPage() {
         }
       />
 
+      {revenueQuery.isError ? (
+        <ErrorBanner error={revenueQuery.error} />
+      ) : null}
+
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <Kpi
           label="Revenue"
-          value={summary ? formatCurrency(summary.totalRevenue) : null}
+          value={summary ? formatCurrency(summary.revenue, currency) : null}
           loading={revenueQuery.isPending}
         />
         <Kpi
           label="Orders"
-          value={summary ? String(summary.totalOrders) : null}
+          value={summary ? String(summary.activeOrderCount) : null}
           loading={revenueQuery.isPending}
         />
         <Kpi
           label="Avg. order value"
-          value={summary ? formatCurrency(summary.avgOrderValue) : null}
+          value={
+            summary ? formatCurrency(summary.averageOrderValue, currency) : null
+          }
           loading={revenueQuery.isPending}
         />
       </section>
@@ -86,20 +113,26 @@ export function AnalyticsAdminPage() {
         <h3 className="mb-4 font-display text-lg text-ink-900">Sales by day</h3>
         {dailyQuery.isPending ? (
           <Skeleton className="h-48 w-full" />
+        ) : dailyQuery.isError ? (
+          <ErrorBanner error={dailyQuery.error} />
         ) : series.length === 0 ? (
           <p className="py-10 text-center text-sm text-ink-500">
             No data for this range.
           </p>
         ) : (
           <div className="flex h-48 items-end gap-1">
-            {series.map((d) => (
-              <div
-                key={d.date}
-                className="group relative flex-1 rounded-t-md bg-bloom-200 transition-colors hover:bg-bloom-400"
-                style={{ height: `${(d.totalSales / max) * 100}%` }}
-                title={`${d.date}: ${formatCurrency(d.totalSales)} (${d.orderCount} orders)`}
-              />
-            ))}
+            {series.map((d) => {
+              const label = d.date ?? d.month ?? "";
+              const value = Number(d.netRevenue) || 0;
+              return (
+                <div
+                  key={label}
+                  className="group relative flex-1 rounded-t-md bg-bloom-200 transition-colors hover:bg-bloom-400"
+                  style={{ height: `${(value / max) * 100}%` }}
+                  title={`${label}: ${formatCurrency(value, currency)} (${d.netOrderCount} orders)`}
+                />
+              );
+            })}
           </div>
         )}
       </section>
@@ -108,21 +141,25 @@ export function AnalyticsAdminPage() {
         <h3 className="mb-4 font-display text-lg text-ink-900">Revenue by category</h3>
         {byCategoryQuery.isPending ? (
           <Skeleton className="h-32 w-full" />
-        ) : !byCategoryQuery.data || byCategoryQuery.data.length === 0 ? (
+        ) : byCategoryQuery.isError ? (
+          <ErrorBanner error={byCategoryQuery.error} />
+        ) : categories.length === 0 ? (
           <p className="py-6 text-center text-sm text-ink-500">No category sales yet.</p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {byCategoryQuery.data.map((row) => {
-              const total = byCategoryQuery.data!.reduce((s, r) => s + r.revenue, 0);
-              const pct = total === 0 ? 0 : (row.revenue / total) * 100;
+            {categories.map((row) => {
+              const pct =
+                totalCategoryRevenue === 0
+                  ? 0
+                  : (row.revenue / totalCategoryRevenue) * 100;
               return (
-                <li key={row.categoryId}>
+                <li key={row.categoryId ?? row.categoryTitle}>
                   <div className="mb-1 flex items-center justify-between text-sm">
                     <span className="font-medium text-ink-900">
                       {row.categoryTitle}
                     </span>
                     <span className="text-ink-700">
-                      {formatCurrency(row.revenue)}
+                      {formatCurrency(row.revenue, currency)}
                       <span className="ml-2 text-xs text-ink-400">
                         {row.orderCount} orders
                       </span>
@@ -163,6 +200,16 @@ function Kpi({ label, value, loading }: KpiProps) {
           <p className="font-display text-3xl text-ink-900">{value}</p>
         )}
       </div>
+    </div>
+  );
+}
+
+function ErrorBanner({ error }: { error: unknown }) {
+  const message =
+    error instanceof ApiError ? error.message : "Could not load this section.";
+  return (
+    <div className="mb-4 rounded-lg border border-bloom-200 bg-bloom-50 px-4 py-3 text-sm text-bloom-700">
+      {message}
     </div>
   );
 }

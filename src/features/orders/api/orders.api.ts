@@ -5,6 +5,7 @@ import type {
   ApiCheckoutInput,
   ApiOrder,
   ApiOrderHistoryParams,
+  ApiOrderListRow,
   ApiOrderStatusLite,
   OrderStatus,
 } from "../types";
@@ -21,8 +22,8 @@ export const ordersApi = {
 
   async myHistory(
     params: ApiOrderHistoryParams = {}
-  ): Promise<PaginatedResponse<ApiOrder>> {
-    const { data } = await http.get<PaginatedResponse<ApiOrder>>(
+  ): Promise<PaginatedResponse<ApiOrderListRow>> {
+    const { data } = await http.get<PaginatedResponse<ApiOrderListRow>>(
       "/orders/history",
       { params }
     );
@@ -44,17 +45,20 @@ export const ordersApi = {
   // --- Admin / Manager (ORDERS permission) ---
   async listAdmin(
     params: ApiOrderHistoryParams = {}
-  ): Promise<PaginatedResponse<ApiOrder>> {
-    const { data } = await http.get<PaginatedResponse<ApiOrder>>("/orders", {
-      params,
-    });
+  ): Promise<PaginatedResponse<ApiOrderListRow>> {
+    const { data } = await http.get<PaginatedResponse<ApiOrderListRow>>(
+      "/orders",
+      {
+        params,
+      }
+    );
     return data;
   },
 
   async adminHistory(
     params: ApiAdminOrderHistoryParams = {}
-  ): Promise<PaginatedResponse<ApiOrder>> {
-    const { data } = await http.get<PaginatedResponse<ApiOrder>>(
+  ): Promise<PaginatedResponse<ApiOrderListRow>> {
+    const { data } = await http.get<PaginatedResponse<ApiOrderListRow>>(
       "/orders/admin/history",
       { params }
     );

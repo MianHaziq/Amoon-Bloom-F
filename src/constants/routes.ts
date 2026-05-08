@@ -18,6 +18,7 @@ export const ROUTES = {
   contact: "/contact",
   branches: "/branches",
   privacy: "/privacy",
+  admin: "/admin",
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];

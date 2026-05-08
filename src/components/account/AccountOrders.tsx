@@ -65,7 +65,12 @@ export function AccountOrders() {
   return (
     <div className="flex flex-col gap-3">
       {orders.map((order) => {
-        const itemCount = order.items.reduce((s, i) => s + i.quantity, 0);
+        const itemCount =
+          typeof order.itemCount === "number"
+            ? order.itemCount
+            : Array.isArray(order.items)
+            ? order.items.reduce((s, i) => s + (i?.quantity ?? 0), 0)
+            : 0;
         return (
           <Link
             key={order.id}

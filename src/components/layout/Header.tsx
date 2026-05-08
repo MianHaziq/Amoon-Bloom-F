@@ -28,6 +28,7 @@ export function Header() {
   );
   const wishlistCount = useAppSelector((s) => s.wishlist.items.length);
   const user = useAppSelector((s) => s.auth.user);
+  const isStaff = user?.role === "ADMIN" || user?.role === "MANAGER";
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -94,7 +95,7 @@ export function Header() {
           </form>
 
           {/* Account link (desktop) */}
-          <nav className="hidden items-center gap-5 lg:flex">
+          <nav className="hidden items-center gap-4 lg:flex">
             {user ? (
               <Link
                 href={ROUTES.account}
@@ -110,6 +111,14 @@ export function Header() {
                 Login
               </Link>
             )}
+            {isStaff ? (
+              <Link
+                href={ROUTES.admin}
+                className="inline-flex h-8 items-center rounded-full bg-ink-900 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-ink-800"
+              >
+                Admin panel
+              </Link>
+            ) : null}
           </nav>
 
           {/* Actions */}

@@ -22,36 +22,98 @@ export interface AnalyticsRangeParams {
 export interface ApiAnalyticsPreset {
   key: string;
   label: string;
-  defaultBucket: string;
+  bucket?: string;
+}
+
+export interface ApiAnalyticsRange {
+  isAllTime: boolean;
+  from: string | null;
+  toExclusive: string | null;
 }
 
 export interface ApiAnalyticsRevenueSummary {
-  totalRevenue: number;
-  totalOrders: number;
-  avgOrderValue: number;
+  activeOrderCount: number;
+  revenue: number;
+  averageOrderValue: number;
+  cancelledOrderCount: number;
+  cancelledRevenue: number;
+  distinctCustomers: number;
 }
 
 export interface ApiAnalyticsRevenuePoint {
   bucket: string;
-  revenue: number;
   orderCount: number;
+  revenue: number;
+  cancelledOrderCount: number;
+  cancelledRevenue: number;
+}
+
+export interface ApiAnalyticsStatusBreakdownEntry {
+  status: OrderStatus;
+  orderCount: number;
+  revenue: number;
 }
 
 export interface ApiAnalyticsRevenue {
+  preset: string | null;
+  presetLabel: string;
+  currency: string;
+  range: ApiAnalyticsRange;
+  bucket: string;
   summary: ApiAnalyticsRevenueSummary;
   series: ApiAnalyticsRevenuePoint[];
-  byStatus: Partial<Record<OrderStatus, number>>;
+  byStatus: ApiAnalyticsStatusBreakdownEntry[];
+}
+
+export interface ApiAnalyticsCategoryEntry {
+  rank: number;
+  categoryId: string | null;
+  categoryTitle: string;
+  orderCount: number;
+  revenue: number;
+  unitsSold: number;
+  lineItemCount: number;
+  revenueSharePercent: number;
 }
 
 export interface ApiAnalyticsCategoryRevenue {
-  categoryId: string;
-  categoryTitle: string;
-  revenue: number;
-  orderCount: number;
+  preset: string | null;
+  presetLabel: string;
+  currency: string;
+  range: ApiAnalyticsRange;
+  note: string;
+  totalNetLineRevenue: number;
+  categories: ApiAnalyticsCategoryEntry[];
+}
+
+export interface ApiAnalyticsDailyPoint {
+  date?: string;
+  month?: string;
+  periodStart?: string;
+  netOrderCount: number;
+  netRevenue: number;
+  cancelledOrderCount: number;
+  cancelledRevenue: number;
+}
+
+export interface ApiAnalyticsDailySalesSummary {
+  periodCount: number;
+  netOrderCount: number;
+  netRevenue: number;
+  averageNetRevenuePerPeriod: number;
+  cancelledOrderCount: number;
+  cancelledRevenue: number;
+  bestDay: ApiAnalyticsDailyPoint | null;
+  bestMonth: ApiAnalyticsDailyPoint | null;
 }
 
 export interface ApiAnalyticsDailySales {
-  date: string;
-  totalSales: number;
-  orderCount: number;
+  preset: string | null;
+  presetLabel: string;
+  currency: string;
+  range: ApiAnalyticsRange;
+  granularity: "day" | "month";
+  note: string;
+  summary: ApiAnalyticsDailySalesSummary;
+  points: ApiAnalyticsDailyPoint[];
 }

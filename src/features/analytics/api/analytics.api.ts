@@ -26,8 +26,8 @@ export const analyticsApi = {
 
   async revenueByCategory(
     params: AnalyticsRangeParams = {}
-  ): Promise<ApiAnalyticsCategoryRevenue[]> {
-    const { data } = await http.get<ApiResponse<ApiAnalyticsCategoryRevenue[]>>(
+  ): Promise<ApiAnalyticsCategoryRevenue> {
+    const { data } = await http.get<ApiResponse<ApiAnalyticsCategoryRevenue>>(
       "/admin/analytics/revenue/by-category",
       { params }
     );
@@ -36,8 +36,8 @@ export const analyticsApi = {
 
   async salesByDay(
     params: AnalyticsRangeParams = {}
-  ): Promise<ApiAnalyticsDailySales[]> {
-    const { data } = await http.get<ApiResponse<ApiAnalyticsDailySales[]>>(
+  ): Promise<ApiAnalyticsDailySales> {
+    const { data } = await http.get<ApiResponse<ApiAnalyticsDailySales>>(
       "/admin/analytics/sales/by-day",
       { params }
     );

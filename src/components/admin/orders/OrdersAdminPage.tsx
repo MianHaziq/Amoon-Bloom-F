@@ -15,9 +15,25 @@ import {
   ORDER_STATUS_LABEL,
   ORDER_STATUS_TONE,
 } from "./orderStatus";
-import type { ApiOrder, OrderStatus } from "@/features/orders/types";
+import type { ApiOrderListRow, OrderStatus } from "@/features/orders/types";
 
 const PAGE_SIZE = 20;
+
+function customerLabel(o: ApiOrderListRow): string {
+  if (o.user) {
+    const name = [o.user.firstName, o.user.lastName].filter(Boolean).join(" ");
+    return name || o.user.email || "—";
+  }
+  return "—";
+}
+
+function lineItemCount(o: ApiOrderListRow): number {
+  if (typeof o.itemCount === "number") return o.itemCount;
+  if (Array.isArray(o.items)) {
+    return o.items.reduce((sum, i) => sum + (i?.quantity ?? 0), 0);
+  }
+  return 0;
+}
 
 export function OrdersAdminPage() {
   const [page, setPage] = useState(1);
@@ -35,7 +51,7 @@ export function OrdersAdminPage() {
     queryFn: () => ordersApi.listAdmin(params),
   });
 
-  const columns: Column<ApiOrder>[] = [
+  const columns: Column<ApiOrderListRow>[] = [
     {
       key: "id",
       header: "Order",
@@ -48,11 +64,9 @@ export function OrdersAdminPage() {
       header: "Customer",
       cell: (o) => (
         <div>
-          <p className="text-ink-900">{o.shippingAddress?.fullName ?? "—"}</p>
-          {o.shippingAddress?.city ? (
-            <p className="text-xs text-ink-500">
-              {o.shippingAddress.city}, {o.shippingAddress.country}
-            </p>
+          <p className="text-ink-900">{customerLabel(o)}</p>
+          {o.user?.email ? (
+            <p className="text-xs text-ink-500">{o.user.email}</p>
           ) : null}
         </div>
       ),
@@ -60,11 +74,7 @@ export function OrdersAdminPage() {
     {
       key: "items",
       header: "Items",
-      cell: (o) => (
-        <span className="text-ink-700">
-          {o.items.reduce((sum, i) => sum + i.quantity, 0)}
-        </span>
-      ),
+      cell: (o) => <span className="text-ink-700">{lineItemCount(o)}</span>,
     },
     {
       key: "status",
