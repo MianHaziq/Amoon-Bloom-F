@@ -1,19 +1,36 @@
+/**
+ * Contact types — match the backend `UserContact` model + `getAllUserContacts`
+ * response in Amoonis-Boutique-B. The admin list (`GET /contact/admin/issues`)
+ * returns each contact with an embedded `user` (the submitter's profile).
+ *
+ * NOTE: the backend currently exposes ONLY list (admin) + submit (auth user).
+ * There are no stats / detail / status-change / note / delete endpoints, so the
+ * admin UI is read-only. See the gap report for the endpoints that would
+ * restore full triage functionality.
+ */
+
 export type ContactSubject = "general" | "support" | "sales" | "other";
 
 export type ContactStatus = "NEW" | "READ" | "REPLIED" | "ARCHIVED";
 
-export interface ApiContactMessage {
+export interface ApiContactUser {
   id: string;
-  firstName: string;
-  lastName: string | null;
+  fullName: string;
   email: string;
   phone: string | null;
-  subject: ContactSubject | string;
+  avatar: string | null;
+  role: string;
+}
+
+export interface ApiContactMessage {
+  id: string;
+  userId: string;
+  subject: string;
   message: string;
   status: ContactStatus;
-  adminNote: string | null;
   createdAt: string;
   updatedAt: string;
+  user: ApiContactUser | null;
 }
 
 export interface ApiContactSubmitInput {
@@ -30,12 +47,4 @@ export interface ApiContactListParams {
   limit?: number;
   search?: string;
   status?: ContactStatus;
-}
-
-export interface ApiContactStats {
-  total: number;
-  NEW: number;
-  READ: number;
-  REPLIED: number;
-  ARCHIVED: number;
 }

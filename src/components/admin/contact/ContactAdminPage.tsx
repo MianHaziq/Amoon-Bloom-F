@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { contactApi } from "@/features/contact/api/contact.api";
 import { queryKeys } from "@/services/queryKeys";
-import { Badge } from "@/components/ui";
+import { Badge, Drawer } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Pagination } from "@/components/admin/Pagination";
@@ -22,11 +21,11 @@ import type { ApiContactMessage, ContactStatus } from "@/features/contact/types"
 const PAGE_SIZE = 20;
 
 export function ContactAdminPage() {
-  const router = useRouter();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const debounced = useDebounce(search, 300);
   const [status, setStatus] = useState<ContactStatus | "ALL">("ALL");
+  const [selected, setSelected] = useState<ApiContactMessage | null>(null);
 
   const params = {
     page,
@@ -40,31 +39,21 @@ export function ContactAdminPage() {
     queryFn: () => contactApi.list(params),
   });
 
-  const statsQuery = useQuery({
-    queryKey: queryKeys.contact.stats(),
-    queryFn: () => contactApi.stats(),
-  });
-
   const columns: Column<ApiContactMessage>[] = [
     {
       key: "from",
       header: "From",
       cell: (m) => (
         <div>
-          <p className="font-medium text-ink-900">
-            {m.firstName}
-            {m.lastName ? ` ${m.lastName}` : ""}
-          </p>
-          <p className="text-xs text-ink-500">{m.email}</p>
+          <p className="font-medium text-ink-900">{m.user?.fullName ?? "—"}</p>
+          <p className="text-xs text-ink-500">{m.user?.email ?? "Unknown user"}</p>
         </div>
       ),
     },
     {
       key: "subject",
       header: "Subject",
-      cell: (m) => (
-        <span className="capitalize text-ink-700">{m.subject || "general"}</span>
-      ),
+      cell: (m) => <span className="text-ink-700">{m.subject || "—"}</span>,
     },
     {
       key: "preview",
@@ -93,40 +82,8 @@ export function ContactAdminPage() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Contact messages"
-        description="Customer enquiries from the website contact form."
+        description="Customer enquiries submitted from the app. Read-only — reply via the customer's email."
       />
-
-      {/* Stats */}
-      {statsQuery.data ? (
-        <div className="mb-5 grid gap-3 sm:grid-cols-4">
-          {(
-            [
-              { label: "All", value: statsQuery.data.total, status: "ALL" as const },
-              { label: "New", value: statsQuery.data.NEW, status: "NEW" as ContactStatus },
-              { label: "Replied", value: statsQuery.data.REPLIED, status: "REPLIED" as ContactStatus },
-              { label: "Archived", value: statsQuery.data.ARCHIVED, status: "ARCHIVED" as ContactStatus },
-            ]
-          ).map((s) => (
-            <button
-              key={s.label}
-              type="button"
-              onClick={() => {
-                setStatus(s.status);
-                setPage(1);
-              }}
-              className={
-                "rounded-xl border px-4 py-3 text-left transition-colors " +
-                (status === s.status
-                  ? "border-bloom-500 bg-bloom-50"
-                  : "border-ink-100 bg-white hover:border-ink-200")
-              }
-            >
-              <p className="text-xs uppercase tracking-wider text-ink-500">{s.label}</p>
-              <p className="mt-1 font-display text-xl text-ink-900">{s.value}</p>
-            </button>
-          ))}
-        </div>
-      ) : null}
 
       <DataTable
         columns={columns}
@@ -135,13 +92,13 @@ export function ContactAdminPage() {
         isLoading={query.isPending}
         isError={query.isError}
         error={query.error}
-        onRowClick={(m) => router.push(`/admin/contact/${m.id}`)}
+        onRowClick={(m) => setSelected(m)}
         toolbar={
           <div className="flex w-full items-center gap-2">
             <div className="flex flex-1 items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5 sm:max-w-sm">
               <SearchIcon size={16} className="text-ink-400" />
               <input
-                placeholder="Search by name, email, message"
+                placeholder="Search by name, email, subject, message"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -175,6 +132,52 @@ export function ContactAdminPage() {
           />
         }
       />
+
+      <Drawer
+        open={Boolean(selected)}
+        onClose={() => setSelected(null)}
+        title={selected?.subject || "Message"}
+        description={selected ? formatDate(selected.createdAt) : undefined}
+      >
+        {selected ? (
+          <div className="flex flex-col gap-5 px-6 py-5">
+            <div className="flex items-center gap-2">
+              <Badge tone={CONTACT_STATUS_TONE[selected.status]}>
+                {CONTACT_STATUS_LABEL[selected.status]}
+              </Badge>
+            </div>
+
+            <div className="rounded-xl border border-ink-100 bg-cream-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
+                From
+              </p>
+              <p className="mt-1 font-medium text-ink-900">
+                {selected.user?.fullName ?? "Unknown user"}
+              </p>
+              {selected.user?.email ? (
+                <a
+                  href={`mailto:${selected.user.email}`}
+                  className="text-sm text-bloom-700 hover:underline"
+                >
+                  {selected.user.email}
+                </a>
+              ) : null}
+              {selected.user?.phone ? (
+                <p className="mt-1 text-sm text-ink-600">{selected.user.phone}</p>
+              ) : null}
+            </div>
+
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-ink-500">
+                Message
+              </p>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-800">
+                {selected.message}
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </Drawer>
     </div>
   );
 }

@@ -62,8 +62,8 @@ export function PromoCodeForm({
   submitting,
 }: PromoCodeFormProps) {
   const productsQuery = useQuery({
-    queryKey: queryKeys.products.list({ limit: 200 }),
-    queryFn: () => productsApi.list({ limit: 200 }),
+    queryKey: queryKeys.products.list({ limit: 100 }),
+    queryFn: () => productsApi.list({ limit: 100 }),
   });
   const categoriesQuery = useQuery({
     queryKey: queryKeys.categories.list(),

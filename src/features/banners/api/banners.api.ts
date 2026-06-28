@@ -15,8 +15,8 @@ export const bannersApi = {
 
   async reorder(bannerIds: string[]): Promise<ApiBanner[]> {
     const { data } = await http.patch<ApiResponse<ApiBanner[]>>(
-      "/banners/reorder",
-      { bannerIds }
+      "/banners/order",
+      { order: bannerIds }
     );
     return data.data;
   },

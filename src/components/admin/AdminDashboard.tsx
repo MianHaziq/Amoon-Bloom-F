@@ -54,10 +54,12 @@ export function AdminDashboard() {
     enabled: canSeeUsers,
   });
 
-  const contactStatsQuery = useQuery({
-    queryKey: queryKeys.contact.stats(),
-    queryFn: () => contactApi.stats(),
-    enabled: canSeeContact,
+  // No contact stats endpoint exists — derive the "new messages" count from the
+  // list total. Only needed when the contact KPI is shown (non-admin viewers).
+  const contactNewQuery = useQuery({
+    queryKey: queryKeys.contact.list({ status: "NEW", limit: 1 }),
+    queryFn: () => contactApi.list({ status: "NEW", limit: 1 }),
+    enabled: canSeeContact && !canSeeUsers,
   });
 
   const summary = revenueQuery.data?.summary;
@@ -116,14 +118,14 @@ export function AdminDashboard() {
                 ? null
                 : String(userStatsQuery.data?.customers ?? 0)
               : canSeeContact
-              ? contactStatsQuery.isPending
+              ? contactNewQuery.isPending
                 ? null
-                : String(contactStatsQuery.data?.NEW ?? 0)
+                : String(contactNewQuery.data?.meta.pagination?.total ?? 0)
               : "—"
           }
           loading={
             (canSeeUsers && userStatsQuery.isPending) ||
-            (!canSeeUsers && canSeeContact && contactStatsQuery.isPending)
+            (!canSeeUsers && canSeeContact && contactNewQuery.isPending)
           }
         />
       </section>

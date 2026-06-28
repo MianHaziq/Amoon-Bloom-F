@@ -10,6 +10,8 @@ import {
   ChatIcon,
   SettingsIcon,
   ChartIcon,
+  GlobeIcon,
+  BellIcon,
 } from "@/components/icons";
 import type { ManagerPermission } from "@/features/users/types";
 import type { ComponentType, SVGProps } from "react";
@@ -43,7 +45,7 @@ export const adminNav: AdminNavGroup[] = [
         label: "Analytics",
         href: "/admin/analytics",
         icon: ChartIcon,
-        permissionAny: ["ORDERS", "SETTINGS"],
+        permission: "ANALYTICS",
       },
     ],
   },
@@ -74,12 +76,6 @@ export const adminNav: AdminNavGroup[] = [
         icon: ImageIcon,
         permission: "BANNERS",
       },
-      {
-        label: "Collaborations",
-        href: "/admin/collaborations",
-        icon: ImageIcon,
-        permission: "BANNERS",
-      },
     ],
   },
   {
@@ -103,6 +99,18 @@ export const adminNav: AdminNavGroup[] = [
     label: "Operations",
     items: [
       { label: "Users", href: "/admin/users", icon: UsersIcon },
+      {
+        label: "Regions",
+        href: "/admin/regions",
+        icon: GlobeIcon,
+        permission: "REGIONS",
+      },
+      {
+        label: "Notifications",
+        href: "/admin/notifications",
+        icon: BellIcon,
+        permissionAny: ["SETTINGS", "ORDERS"],
+      },
       {
         label: "Contact messages",
         href: "/admin/contact",

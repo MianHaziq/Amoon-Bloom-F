@@ -80,8 +80,6 @@ export const queryKeys = {
     all: ["contact"] as const,
     list: (params?: unknown) =>
       [...queryKeys.contact.all, "list", params ?? null] as const,
-    detail: (id: string) => [...queryKeys.contact.all, "detail", id] as const,
-    stats: () => [...queryKeys.contact.all, "stats"] as const,
   },
 
   settings: {
@@ -114,5 +112,14 @@ export const queryKeys = {
   notifications: {
     all: ["notifications"] as const,
     preferences: () => [...queryKeys.notifications.all, "preferences"] as const,
+  },
+
+  regions: {
+    all: ["regions"] as const,
+    list: () => [...queryKeys.regions.all, "list"] as const,
+  },
+
+  jobs: {
+    all: ["jobs"] as const,
   },
 } as const;

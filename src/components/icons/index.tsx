@@ -297,3 +297,18 @@ export const FilterIcon = ({ size, ...rest }: IconProps) => (
     <path d="M3 5h18l-7 9v6l-4-2v-4L3 5Z" />
   </svg>
 );
+
+export const GlobeIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18" />
+    <path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z" />
+  </svg>
+);
+
+export const BellIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z" />
+    <path d="M10 19a2 2 0 0 0 4 0" />
+  </svg>
+);
