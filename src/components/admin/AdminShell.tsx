@@ -121,9 +121,9 @@ export function AdminShell({ children, title }: AdminShellProps) {
         </div>
       ) : null}
 
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <AdminTopbar title={title} onOpenMobileNav={handleOpenMobileNav} />
-        <main className="flex-1 overflow-x-auto p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

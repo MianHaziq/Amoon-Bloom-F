@@ -156,8 +156,8 @@ export function AdminDashboard() {
           ) : (recentOrdersQuery.data?.data ?? []).length === 0 ? (
             <p className="py-6 text-center text-sm text-ink-500">No orders yet.</p>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-ink-100">
-              <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto rounded-xl border border-ink-100">
+              <table className="w-full min-w-120 text-left text-sm">
                 <thead className="bg-cream-100 text-xs uppercase tracking-wider text-ink-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">Order</th>

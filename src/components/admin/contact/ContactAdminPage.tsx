@@ -59,7 +59,7 @@ export function ContactAdminPage() {
       key: "preview",
       header: "Message",
       cell: (m) => (
-        <p className="line-clamp-1 max-w-md text-sm text-ink-500">{m.message}</p>
+        <p className="line-clamp-1 max-w-64 text-sm text-ink-500">{m.message}</p>
       ),
     },
     {
@@ -94,8 +94,8 @@ export function ContactAdminPage() {
         error={query.error}
         onRowClick={(m) => setSelected(m)}
         toolbar={
-          <div className="flex w-full items-center gap-2">
-            <div className="flex flex-1 items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5 sm:max-w-sm">
+          <div className="flex w-full flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5 sm:max-w-sm">
               <SearchIcon size={16} className="text-ink-400" />
               <input
                 placeholder="Search by name, email, subject, message"

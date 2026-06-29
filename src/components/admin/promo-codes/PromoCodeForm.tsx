@@ -177,7 +177,7 @@ export function PromoCodeForm({
               {...register("name")}
             />
             <Input label="Display name (AR)" dir="rtl" {...register("name_ar")} />
-            <div /> {/* spacer */}
+            <div className="hidden sm:block" /> {/* spacer */}
             <Textarea
               label="Description (EN)"
               rows={2}
@@ -196,7 +196,7 @@ export function PromoCodeForm({
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
           <h3 className="mb-4 font-display text-lg text-ink-900">Discount</h3>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="sm:col-span-1">
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
                 Type

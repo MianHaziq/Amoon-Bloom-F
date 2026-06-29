@@ -63,10 +63,10 @@ export function OrdersAdminPage() {
       key: "customer",
       header: "Customer",
       cell: (o) => (
-        <div>
-          <p className="text-ink-900">{customerLabel(o)}</p>
+        <div className="max-w-56">
+          <p className="truncate text-ink-900">{customerLabel(o)}</p>
           {o.user?.email ? (
-            <p className="text-xs text-ink-500">{o.user.email}</p>
+            <p className="truncate text-xs text-ink-500">{o.user.email}</p>
           ) : null}
         </div>
       ),

@@ -50,7 +50,7 @@ export function DataTable<T>({
       ) : null}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+        <table className="w-full min-w-160 text-left text-sm">
           <thead className="bg-cream-50 text-xs uppercase tracking-wider text-ink-500">
             <tr>
               {columns.map((col) => (

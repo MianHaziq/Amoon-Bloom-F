@@ -77,9 +77,9 @@ export function UsersAdminPage() {
               {(u.firstName?.[0] ?? "?") + (u.lastName?.[0] ?? "")}
             </span>
           )}
-          <div>
-            <p className="font-medium text-ink-900">{u.name}</p>
-            <p className="text-xs text-ink-500">{u.email}</p>
+          <div className="min-w-0 max-w-56">
+            <p className="truncate font-medium text-ink-900">{u.name}</p>
+            <p className="truncate text-xs text-ink-500">{u.email}</p>
           </div>
         </div>
       ),

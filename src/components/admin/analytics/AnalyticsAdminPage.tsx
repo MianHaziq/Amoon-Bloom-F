@@ -65,14 +65,14 @@ export function AnalyticsAdminPage() {
         title="Analytics"
         description="Revenue and orders across your store."
         actions={
-          <div className="inline-flex rounded-full border border-ink-200 bg-white p-1 text-xs">
+          <div className="flex max-w-full overflow-x-auto rounded-full border border-ink-200 bg-white p-1 text-xs">
             {PRESETS.map((p) => (
               <button
                 key={p.value}
                 type="button"
                 onClick={() => setPreset(p.value)}
                 className={
-                  "rounded-full px-3 py-1.5 transition-colors " +
+                  "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 transition-colors " +
                   (preset === p.value
                     ? "bg-ink-900 text-white"
                     : "text-ink-700 hover:bg-ink-50")
@@ -89,7 +89,7 @@ export function AnalyticsAdminPage() {
         <ErrorBanner error={revenueQuery.error} />
       ) : null}
 
-      <section className="mb-6 grid gap-4 sm:grid-cols-3">
+      <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Kpi
           label="Revenue"
           value={summary ? formatCurrency(summary.revenue, currency) : null}
@@ -120,19 +120,21 @@ export function AnalyticsAdminPage() {
             No data for this range.
           </p>
         ) : (
-          <div className="flex h-48 items-end gap-1">
-            {series.map((d) => {
-              const label = d.date ?? d.month ?? "";
-              const value = Number(d.netRevenue) || 0;
-              return (
-                <div
-                  key={label}
-                  className="group relative flex-1 rounded-t-md bg-bloom-200 transition-colors hover:bg-bloom-400"
-                  style={{ height: `${(value / max) * 100}%` }}
-                  title={`${label}: ${formatCurrency(value, currency)} (${d.netOrderCount} orders)`}
-                />
-              );
-            })}
+          <div className="overflow-x-auto">
+            <div className="flex h-48 min-w-full items-end gap-1">
+              {series.map((d) => {
+                const label = d.date ?? d.month ?? "";
+                const value = Number(d.netRevenue) || 0;
+                return (
+                  <div
+                    key={label}
+                    className="group relative min-w-1 flex-1 rounded-t-md bg-bloom-200 transition-colors hover:bg-bloom-400"
+                    style={{ height: `${(value / max) * 100}%` }}
+                    title={`${label}: ${formatCurrency(value, currency)} (${d.netOrderCount} orders)`}
+                  />
+                );
+              })}
+            </div>
           </div>
         )}
       </section>

@@ -194,7 +194,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         </Card>
 
         <Card title="Pricing & inventory">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Input
               label="Price"
               type="number"

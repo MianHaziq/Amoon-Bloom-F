@@ -20,7 +20,7 @@ export function Pagination({ meta, page, onChange, className }: PaginationProps)
   const hasNext = page < totalPages;
 
   return (
-    <div className={className ?? "flex w-full items-center justify-between gap-3"}>
+    <div className={className ?? "flex w-full flex-wrap items-center justify-between gap-3"}>
       <p className="text-xs text-ink-500">
         {total === 0 ? (
           "No results"
