@@ -6,6 +6,9 @@
 export const COUNTRIES = [
   {
     code: "UAE",
+    // `regionCode` is the backend region `code` (GET /regions) sent as the
+    // `X-Region` header / `?region=` param to scope catalog visibility.
+    regionCode: "UAE",
     name: "United Arab Emirates",
     nameAr: "الإمارات العربية المتحدة",
     flag: "🇦🇪",
@@ -16,6 +19,7 @@ export const COUNTRIES = [
   },
   {
     code: "SAUDI_ARABIA",
+    regionCode: "SA",
     name: "Saudi Arabia",
     nameAr: "المملكة العربية السعودية",
     flag: "🇸🇦",

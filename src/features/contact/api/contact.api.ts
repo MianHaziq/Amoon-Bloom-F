@@ -8,16 +8,12 @@ import type {
 
 export const contactApi = {
   /**
-   * Storefront contact submission.
-   *
-   * NOTE: the backend's authenticated endpoint is `POST /contact/issue` (reads
-   * the submitter's name/email/phone from their JWT profile and requires a
-   * phone on file; body is just `{ subject, message }`). This public marketing
-   * form predates that contract. Left unchanged pending a product decision on
-   * whether contact should be public or login-gated — see the gap report.
+   * Submit a contact / support issue. Authenticated: the backend reads the
+   * submitter's name/email/phone from their JWT profile, so the body is just
+   * `{ subject, message }`. Requires a phone on the user's profile (else 400).
    */
   async submit(payload: ApiContactSubmitInput): Promise<void> {
-    await http.post("/contact", payload);
+    await http.post("/contact/issue", payload);
   },
 
   // --- Admin / Manager (CONTACT) ---

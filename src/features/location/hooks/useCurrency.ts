@@ -2,20 +2,23 @@
 
 import { useAppSelector } from "@/store";
 import { getCountry } from "@/features/location/data";
+import { siteConfig } from "@/config/site";
 
 /**
- * Currency + locale derived from the user's selected delivery country.
- * Mobile spec §3.3 / §10.1: currency is locked by location — UAE→AED,
- * Saudi Arabia→SAR. The product's stored `currency` is ignored on the
- * storefront so the customer always sees prices in the currency that
- * matches where they're shopping from.
+ * Currency + locale for the storefront. The backend stores a single price per
+ * product in one currency and exposes no per-region pricing, so currency is a
+ * single store-wide value (siteConfig.currency) — NOT derived from the chosen
+ * delivery region. Region selection only scopes which products are visible.
+ *
+ * `countryCode`/`countryName` still reflect the delivery selection for any
+ * location-aware copy, but they no longer drive the displayed currency.
  */
 export function useCurrency() {
   const country = useAppSelector((s) => s.location.country);
   const def = getCountry(country);
   return {
-    currency: def.currency,
-    locale: def.locale,
+    currency: siteConfig.currency,
+    locale: siteConfig.locale,
     countryCode: def.code,
     countryName: def.name,
   };

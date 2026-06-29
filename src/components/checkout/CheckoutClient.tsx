@@ -144,8 +144,10 @@ export function CheckoutClient() {
 
   const subtotal = cart.subtotal;
   const discount = promoResult?.discountAmount ?? 0;
-  const shipping = subtotal === 0 || subtotal >= 250 ? 0 : 25;
-  const total = Math.max(0, subtotal - discount + shipping);
+  // Backend charges no shipping; order total = items − discount. Keep the
+  // displayed total identical to what the backend will record.
+  const shipping = 0;
+  const total = Math.max(0, subtotal - discount);
 
   const syncCart = async () => {
     if (cart.items.length === 0) throw new Error("Cart is empty");
@@ -682,7 +684,7 @@ function SummaryStep({
           </p>
           <p className="inline-flex items-center gap-2">
             <TruckIcon size={16} className="text-bloom-700" />
-            Free over {formatCurrency(250, currency, locale)}
+            Free delivery
           </p>
         </div>
       </div>

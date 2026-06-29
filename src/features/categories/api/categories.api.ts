@@ -8,13 +8,18 @@ import type {
 } from "../api-types";
 
 export const categoriesApi = {
-  async list(): Promise<ApiCategory[]> {
-    const { data } = await http.get<PaginatedResponse<ApiCategory>>("/categories");
+  async list(region?: string): Promise<ApiCategory[]> {
+    const { data } = await http.get<PaginatedResponse<ApiCategory>>("/categories", {
+      params: region ? { region } : undefined,
+    });
     return data.data;
   },
 
-  async getById(id: string): Promise<ApiCategoryDetail> {
-    const { data } = await http.get<ApiResponse<ApiCategoryDetail>>(`/categories/${id}`);
+  async getById(id: string, region?: string): Promise<ApiCategoryDetail> {
+    const { data } = await http.get<ApiResponse<ApiCategoryDetail>>(
+      `/categories/${id}`,
+      { params: region ? { region } : undefined }
+    );
     return data.data;
   },
 

@@ -17,6 +17,11 @@ import { productsApi } from "@/features/products/api/products.api";
 import { toUiProduct, toUiProducts } from "@/features/products/adapters";
 import { ApiError } from "@/services/http";
 import { ROUTES } from "@/constants/routes";
+import { getServerRegion } from "@/services/serverRegion";
+
+// Product visibility is region-scoped (a draft / out-of-region product 404s),
+// so render per-request based on the region cookie.
+export const dynamic = "force-dynamic";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -25,7 +30,8 @@ interface ProductPageProps {
 export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;
   try {
-    const api = await productsApi.getById(slug);
+    const region = await getServerRegion();
+    const api = await productsApi.getById(slug, region);
     return {
       title: api.title,
       description: api.subtitle ?? api.descriptions?.[0]?.description ?? api.title,
@@ -37,10 +43,11 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
+  const region = await getServerRegion();
 
   let api;
   try {
-    api = await productsApi.getById(slug);
+    api = await productsApi.getById(slug, region);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       notFound();
@@ -52,7 +59,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   let related: ReturnType<typeof toUiProducts> = [];
   if (api.categoryId) {
     try {
-      const page = await productsApi.listByCategory(api.categoryId, { limit: 8 });
+      const page = await productsApi.listByCategory(api.categoryId, {
+        limit: 8,
+        region,
+      });
       related = toUiProducts(
         page.data.filter((p) => p.id !== api.id).slice(0, 4)
       );

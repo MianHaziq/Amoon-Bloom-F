@@ -79,4 +79,10 @@ export type ApiProductUpdateInput = Partial<ApiProductCreateInput>;
 export interface ApiProductListParams {
   page?: number;
   limit?: number;
+  /**
+   * Region code (e.g. "UAE", "SA"). For SSR fetches it's sent as `?region=`;
+   * client requests usually rely on the `X-Region` header set by the http
+   * interceptor instead. Also doubles as the staff region filter.
+   */
+  region?: string;
 }

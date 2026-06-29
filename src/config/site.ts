@@ -13,6 +13,12 @@ export const siteConfig = {
     "Amoonis Boutique — curated gift boxes, hand-tied flowers, and same-day delivery in the UAE. Composed by hand for graduations, Eid, newborns, and every quiet celebration in between.",
   url: "https://amoonis-boutique.com",
   ogImage: "/images/og-image.png",
+  // Single store currency. The backend stores one price per product in one
+  // currency (it has no per-region pricing and no public currency endpoint),
+  // so the storefront displays this consistently regardless of delivery region.
+  // Region selection controls catalog *visibility*, not currency.
+  currency: "AED",
+  locale: "en-AE",
   contact: {
     email: "hello@amoonis-boutique.com",
     phone: "+971 4 000 0000",

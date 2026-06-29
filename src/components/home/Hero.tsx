@@ -1,4 +1,5 @@
 import { bannersApi } from "@/features/banners/api/banners.api";
+import { getServerRegion } from "@/services/serverRegion";
 import { HeroCarousel } from "./HeroCarousel";
 
 /**
@@ -25,7 +26,8 @@ const FALLBACK_SLIDES = [
 ];
 
 export async function Hero() {
-  const banners = await bannersApi.list().catch(() => []);
+  const region = await getServerRegion();
+  const banners = await bannersApi.list(region).catch(() => []);
   const slides =
     banners.length > 0
       ? [...banners]

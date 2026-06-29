@@ -5,9 +5,11 @@ import { CategoryCard } from "@/features/categories/components/CategoryCard";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { toUiCategories } from "@/features/categories/adapters";
 import { ROUTES } from "@/constants/routes";
+import { getServerRegion } from "@/services/serverRegion";
 
 export async function CategoryShowcase() {
-  const apiCategories = await categoriesApi.list().catch(() => []);
+  const region = await getServerRegion();
+  const apiCategories = await categoriesApi.list(region).catch(() => []);
   const featured = toUiCategories(apiCategories).slice(0, 3);
 
   if (featured.length === 0) return null;

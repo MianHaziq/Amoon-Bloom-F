@@ -10,17 +10,20 @@ import { toUiProducts } from "@/features/products/adapters";
 import { ApiError } from "@/services/http";
 import { ROUTES } from "@/constants/routes";
 import { pluralize } from "@/lib/format";
+import { getServerRegion } from "@/services/serverRegion";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export const revalidate = 60;
+// Region-scoped catalog → render per-request from the region cookie.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: CategoryPageProps) {
   const { slug } = await params;
   try {
-    const api = await categoriesApi.getById(slug);
+    const region = await getServerRegion();
+    const api = await categoriesApi.getById(slug, region);
     return {
       title: api.title,
       description: api.description ?? `${api.title} at Amoonis Boutique`,
@@ -32,10 +35,11 @@ export async function generateMetadata({ params }: CategoryPageProps) {
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
+  const region = await getServerRegion();
 
   let categoryApi;
   try {
-    categoryApi = await categoriesApi.getById(slug);
+    categoryApi = await categoriesApi.getById(slug, region);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       notFound();
@@ -44,7 +48,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   }
 
   const productPage = await productsApi
-    .listByCategory(slug, { limit: 60 })
+    .listByCategory(slug, { limit: 60, region })
     .catch(() => ({ data: [], meta: {} }));
 
   const category = toUiCategory(categoryApi);

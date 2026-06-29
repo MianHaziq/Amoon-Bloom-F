@@ -20,10 +20,9 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
     (sum, i) => sum + i.unitPrice * i.quantity,
     0
   );
-  const freeOver = siteConfig.shipping.freeOver;
-  const shipping = subtotal >= freeOver || subtotal === 0 ? 0 : 25;
-  const total = subtotal + shipping;
-  const remaining = Math.max(0, freeOver - subtotal);
+  // The backend does not charge shipping, so the total is simply the subtotal
+  // (promo discounts are applied by the backend at checkout).
+  const total = subtotal;
 
   return (
     <aside
@@ -34,20 +33,6 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
         Order summary
       </h2>
 
-      {remaining > 0 && (
-        <div className="flex flex-col gap-2 rounded-2xl bg-blush-50 p-4 text-sm text-ink-700">
-          <div className="flex items-center justify-between">
-            <span>Spend {formatCurrency(remaining, currency, locale)} more for free delivery</span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-blush-200">
-            <div
-              className="h-full rounded-full bg-bloom-500 transition-all"
-              style={{ width: `${Math.min(100, (subtotal / freeOver) * 100)}%` }}
-            />
-          </div>
-        </div>
-      )}
-
       <dl className="flex flex-col gap-2 text-sm">
         <div className="flex justify-between">
           <dt className="text-ink-600">Subtotal</dt>
@@ -57,9 +42,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
         </div>
         <div className="flex justify-between">
           <dt className="text-ink-600">Delivery</dt>
-          <dd className="font-medium tabular-nums text-ink-900">
-            {shipping === 0 ? "Free" : formatCurrency(shipping, currency, locale)}
-          </dd>
+          <dd className="font-medium tabular-nums text-ink-900">Free</dd>
         </div>
       </dl>
 

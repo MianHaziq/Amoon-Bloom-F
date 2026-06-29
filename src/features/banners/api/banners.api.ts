@@ -3,8 +3,10 @@ import type { ApiResponse, PaginatedResponse } from "@/types";
 import type { ApiBanner, ApiBannerCreateInput } from "../types";
 
 export const bannersApi = {
-  async list(): Promise<ApiBanner[]> {
-    const { data } = await http.get<PaginatedResponse<ApiBanner>>("/banners");
+  async list(region?: string): Promise<ApiBanner[]> {
+    const { data } = await http.get<PaginatedResponse<ApiBanner>>("/banners", {
+      params: region ? { region } : undefined,
+    });
     return data.data;
   },
 

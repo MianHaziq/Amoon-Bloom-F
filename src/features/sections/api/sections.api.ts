@@ -7,8 +7,10 @@ import type {
 } from "../types";
 
 export const sectionsApi = {
-  async list(): Promise<ApiSection[]> {
-    const { data } = await http.get<PaginatedResponse<ApiSection>>("/sections");
+  async list(region?: string): Promise<ApiSection[]> {
+    const { data } = await http.get<PaginatedResponse<ApiSection>>("/sections", {
+      params: region ? { region } : undefined,
+    });
     return data.data;
   },
 

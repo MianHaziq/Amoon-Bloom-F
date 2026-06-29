@@ -4,19 +4,21 @@ import { productsApi } from "@/features/products/api/products.api";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { toUiProducts } from "@/features/products/adapters";
 import { toUiCategories } from "@/features/categories/adapters";
+import { getServerRegion } from "@/services/serverRegion";
 
 export const metadata = { title: "Shop" };
 
-// Re-fetch at most once a minute. Admin edits surface quickly without
-// hammering the backend on every request.
-export const revalidate = 60;
+// Catalog visibility is region-scoped (reads the region cookie), so this
+// renders per-request rather than as a single shared static page.
+export const dynamic = "force-dynamic";
 
 export default async function ShopPage() {
+  const region = await getServerRegion();
   const [productPage, apiCategories] = await Promise.all([
     productsApi
-      .list({ page: 1, limit: 60 })
+      .list({ page: 1, limit: 60, region })
       .catch(() => ({ data: [], meta: {} })),
-    categoriesApi.list().catch(() => []),
+    categoriesApi.list(region).catch(() => []),
   ]);
 
   const products = toUiProducts(productPage.data);

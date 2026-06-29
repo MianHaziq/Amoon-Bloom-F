@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Container,
   Section,
@@ -17,26 +18,30 @@ import {
 } from "@/components/icons";
 import { siteConfig } from "@/config/site";
 import { contactApi } from "@/features/contact/api/contact.api";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
 
 export default function ContactPage() {
   const toast = useToast();
+  const { isAuthenticated } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  // Set when the backend reports the profile has no phone number on file.
+  const [needsPhone, setNeedsPhone] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
     setFormError(null);
+    setNeedsPhone(false);
     const form = e.target as HTMLFormElement;
     const data = new FormData(form);
     try {
+      // The backend reads name/email/phone from the authenticated profile;
+      // only subject + message are sent.
       await contactApi.submit({
-        firstName: String(data.get("firstName") ?? "").trim(),
-        lastName: String(data.get("lastName") ?? "").trim() || undefined,
-        email: String(data.get("email") ?? "").trim(),
-        subject: "general",
+        subject: String(data.get("subject") ?? "").trim(),
         message: String(data.get("message") ?? "").trim(),
       });
       form.reset();
@@ -47,6 +52,10 @@ export default function ContactPage() {
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Could not send your message.";
+      // The backend requires a phone on the profile before accepting a contact.
+      if (err instanceof ApiError && err.status === 400 && /phone/i.test(message)) {
+        setNeedsPhone(true);
+      }
       setFormError(message);
     } finally {
       setSubmitting(false);
@@ -77,55 +86,61 @@ export default function ContactPage() {
             <h2 className="font-display text-2xl font-medium text-ink-900">
               Send us a note
             </h2>
-            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="First name"
-                  name="firstName"
-                  required
-                  placeholder="Layla"
-                />
-                <Input
-                  label="Last name"
-                  name="lastName"
-                  placeholder="Al Mansouri"
-                />
+            {!isAuthenticated ? (
+              <div className="flex flex-col items-start gap-3 rounded-2xl bg-cream-50 p-5 text-sm text-ink-600">
+                <p>
+                  Please sign in to message our concierge — it lets us tie your
+                  note to your account and reply faster.
+                </p>
+                <Link href="/login?next=%2Fcontact" className="contents">
+                  <Button size="md" trailingIcon={<ArrowRight size={16} />}>
+                    Sign in to continue
+                  </Button>
+                </Link>
               </div>
-              <Input
-                type="email"
-                label="Email"
-                name="email"
-                required
-                placeholder="layla@example.com"
-              />
-              <Input
-                label="Subject"
-                name="subject"
-                placeholder="Bridal flowers · early Spring"
-              />
-              <Textarea
-                label="How can we help?"
-                name="message"
-                required
-                placeholder="Tell us about the moment, the recipient, the budget — we'll compose a few options."
-              />
-              {formError ? (
-                <div
-                  role="alert"
-                  className="rounded-lg border border-bloom-200 bg-bloom-50 px-3 py-2 text-sm text-bloom-700"
+            ) : (
+              <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                <Input
+                  label="Subject"
+                  name="subject"
+                  required
+                  placeholder="Bridal flowers · early Spring"
+                />
+                <Textarea
+                  label="How can we help?"
+                  name="message"
+                  required
+                  placeholder="Tell us about the moment, the recipient, the budget — we'll compose a few options."
+                />
+                {formError ? (
+                  <div
+                    role="alert"
+                    className="rounded-lg border border-bloom-200 bg-bloom-50 px-3 py-2 text-sm text-bloom-700"
+                  >
+                    {formError}
+                    {needsPhone ? (
+                      <>
+                        {" "}
+                        <Link
+                          href="/account"
+                          className="font-medium underline hover:text-bloom-900"
+                        >
+                          Add a phone number
+                        </Link>
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+                <Button
+                  size="lg"
+                  type="submit"
+                  isLoading={submitting}
+                  trailingIcon={<ArrowRight size={16} />}
                 >
-                  {formError}
-                </div>
-              ) : null}
-              <Button
-                size="lg"
-                type="submit"
-                isLoading={submitting}
-                trailingIcon={<ArrowRight size={16} />}
-              >
-                Send message
-              </Button>
-            </form>
+                  Send message
+                </Button>
+              </form>
+            )}
           </Card>
 
           <aside className="flex flex-col gap-4">

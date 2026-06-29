@@ -8,7 +8,6 @@ import {
   removeItem,
   updateQuantity,
 } from "@/store/slices/cart.slice";
-import { siteConfig } from "@/config/site";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import type { Product } from "@/features/products/types";
 
@@ -28,16 +27,17 @@ export function useCart() {
       0
     );
     const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-    const free = subtotal === 0 || subtotal >= siteConfig.shipping.freeOver;
-    const shipping = free ? 0 : 25;
+    // The backend charges no shipping (order totalAmount = items − discount),
+    // so the storefront must not invent a shipping fee — otherwise the total
+    // shown wouldn't match the order the backend records.
     return {
       subtotal,
-      shipping,
-      total: subtotal + shipping,
+      shipping: 0,
+      total: subtotal,
       itemCount,
       currency,
       locale,
-      qualifiesForFreeShipping: free && subtotal > 0,
+      qualifiesForFreeShipping: false,
     };
   }, [items, currency, locale]);
 

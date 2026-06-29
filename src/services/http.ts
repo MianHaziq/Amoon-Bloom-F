@@ -75,6 +75,17 @@ function createHttpClient(): AxiosInstance {
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Region scoping: the backend reads `X-Region` (a region code) to decide
+    // which catalog the storefront sees. Read it from the cookie on the client.
+    // (Server Components can't see this cookie here — they pass `?region=`
+    // explicitly via getServerRegion(); the header always wins if both present.)
+    if (typeof document !== "undefined" && config.headers) {
+      const match = document.cookie.match(/(?:^|;\s*)region=([^;]+)/);
+      const region = match ? decodeURIComponent(match[1]) : null;
+      if (region && !config.headers["X-Region"]) {
+        config.headers["X-Region"] = region;
+      }
+    }
     return config;
   });
 

@@ -30,8 +30,10 @@ export const productsApi = {
     return data;
   },
 
-  async getById(id: string): Promise<ApiProduct> {
-    const { data } = await http.get<ApiResponse<ApiProduct>>(`/products/${id}`);
+  async getById(id: string, region?: string): Promise<ApiProduct> {
+    const { data } = await http.get<ApiResponse<ApiProduct>>(`/products/${id}`, {
+      params: region ? { region } : undefined,
+    });
     return data.data;
   },
 

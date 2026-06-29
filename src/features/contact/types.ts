@@ -33,12 +33,13 @@ export interface ApiContactMessage {
   user: ApiContactUser | null;
 }
 
+/**
+ * Body for `POST /contact/issue`. The backend reads the submitter's
+ * name/email/phone from their JWT profile, so only the subject + message are
+ * sent. Requires the user to be authenticated and to have a phone on profile.
+ */
 export interface ApiContactSubmitInput {
-  firstName: string;
-  lastName?: string;
-  email: string;
-  phone?: string;
-  subject?: ContactSubject;
+  subject: string;
   message: string;
 }
 

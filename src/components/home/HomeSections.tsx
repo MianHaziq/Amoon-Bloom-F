@@ -5,6 +5,7 @@ import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { sectionsApi } from "@/features/sections/api/sections.api";
 import { toUiProducts } from "@/features/products/adapters";
 import { ROUTES } from "@/constants/routes";
+import { getServerRegion } from "@/services/serverRegion";
 
 const MAX_SECTIONS = 3;
 const PRODUCTS_PER_SECTION = 4;
@@ -17,7 +18,8 @@ const PRODUCTS_PER_SECTION = 4;
  * unreachable so the rest of the home page survives.
  */
 export async function HomeSections() {
-  const apiSections = await sectionsApi.list().catch(() => []);
+  const region = await getServerRegion();
+  const apiSections = await sectionsApi.list(region).catch(() => []);
   const eligible = [...apiSections]
     .filter((s) => s.products && s.products.length > 0)
     .sort((a, b) => a.sortOrder - b.sortOrder)

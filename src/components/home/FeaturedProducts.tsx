@@ -5,6 +5,7 @@ import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { productsApi } from "@/features/products/api/products.api";
 import { toUiProducts } from "@/features/products/adapters";
 import { ROUTES } from "@/constants/routes";
+import { getServerRegion } from "@/services/serverRegion";
 
 /**
  * Server component — fetches the most recent products from the API and
@@ -13,8 +14,9 @@ import { ROUTES } from "@/constants/routes";
  * homepage.
  */
 export async function FeaturedProducts() {
+  const region = await getServerRegion();
   const page = await productsApi
-    .list({ page: 1, limit: 4 })
+    .list({ page: 1, limit: 4, region })
     .catch(() => ({ data: [], meta: {} }));
   const featured = toUiProducts(page.data);
 

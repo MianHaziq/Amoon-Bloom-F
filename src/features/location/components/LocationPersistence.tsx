@@ -6,6 +6,7 @@ import { setLocationFromStorage } from "@/store/slices/location.slice";
 import type { LocationState } from "@/store/slices/location.slice";
 import { storage } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
+import { regionCodeForCountry, writeRegionCookie } from "@/features/location/region";
 
 /**
  * Hydrates the location slice from localStorage on mount and writes future
@@ -27,7 +28,10 @@ export function LocationPersistence() {
     if (stored && stored.hasChosen) {
       dispatch(setLocationFromStorage(stored));
     }
-  }, [dispatch]);
+    // Mirror the (possibly default) region into the cookie so SSR catalog
+    // fetches and the axios X-Region interceptor agree on the same region.
+    writeRegionCookie(regionCodeForCountry(store.getState().location.country));
+  }, [dispatch, store]);
 
   useEffect(() => {
     let lastSerialised: string | null = null;
@@ -39,6 +43,7 @@ export function LocationPersistence() {
       if (next === lastSerialised) return;
       lastSerialised = next;
       storage.set(STORAGE_KEYS.location, loc);
+      writeRegionCookie(regionCodeForCountry(loc.country));
     });
     return unsubscribe;
   }, [store]);
