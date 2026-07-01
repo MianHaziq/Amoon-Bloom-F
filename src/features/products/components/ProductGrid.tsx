@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { StaggerGroup, StaggerItem } from "@/components/motion/primitives";
 import { ProductCard } from "./ProductCard";
 import type { Product } from "../types";
 
@@ -24,20 +25,19 @@ export function ProductGrid({
   priorityCount = 0,
 }: ProductGridProps) {
   return (
-    <div
+    <StaggerGroup
       className={cn(
         "grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-6 sm:gap-y-12",
         columnMap[columns],
         className
       )}
+      stagger={0.06}
     >
       {products.map((product, i) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          priority={i < priorityCount}
-        />
+        <StaggerItem key={product.id}>
+          <ProductCard product={product} priority={i < priorityCount} />
+        </StaggerItem>
       ))}
-    </div>
+    </StaggerGroup>
   );
 }

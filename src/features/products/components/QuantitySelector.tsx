@@ -45,7 +45,7 @@ export function QuantitySelector({
         disabled={value <= min}
         aria-label={t("product.decreaseQty")}
         className={cn(
-          "inline-flex items-center justify-center rounded-s-full text-ink-700 transition-colors hover:text-bloom-700 disabled:cursor-not-allowed disabled:opacity-40",
+          "inline-flex items-center justify-center rounded-s-full text-ink-700 transition-[color,transform] duration-150 hover:text-bloom-700 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40",
           sizeClasses
         )}
       >
@@ -66,7 +66,7 @@ export function QuantitySelector({
         disabled={value >= max}
         aria-label={t("product.increaseQty")}
         className={cn(
-          "inline-flex items-center justify-center rounded-e-full text-ink-700 transition-colors hover:text-bloom-700 disabled:cursor-not-allowed disabled:opacity-40",
+          "inline-flex items-center justify-center rounded-e-full text-ink-700 transition-[color,transform] duration-150 hover:text-bloom-700 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40",
           sizeClasses
         )}
       >

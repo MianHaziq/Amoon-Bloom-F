@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { m, AnimatePresence } from "motion/react";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { ProductFilters } from "@/features/products/components/ProductFilters";
 import { Drawer, Button } from "@/components/ui";
 import { FilterIcon } from "@/components/icons";
+import { baseTransition } from "@/lib/motion";
 import type { Product, ProductFilter } from "@/features/products/types";
 import type { Category } from "@/features/categories/types";
 import { useT } from "@/i18n/useT";
@@ -117,28 +119,43 @@ export function ShopPLP({
           <p className="mb-6 hidden text-sm text-ink-500 lg:block">
             {tc(filtered.length, "units.resultOne", "units.resultOther")}
           </p>
-          {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 py-16 text-center sm:py-20">
-            <p className="font-display text-2xl text-ink-900">{t("shop.noMatches")}</p>
-            <p className="max-w-sm text-sm text-ink-500">
-              {q
-                ? `${t("shop.noMatchesSearch")} "${searchParams.get("q")}".`
-                : t("shop.noMatchesBody")}
-            </p>
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                size="md"
-                onClick={clearAll}
-                className="mt-2"
-              >
-                {t("shop.clearFilters")}
-              </Button>
-            )}
-          </div>
-        ) : (
-          <ProductGrid products={filtered} columns={3} priorityCount={3} />
-        )}
+          {/* Crossfade the result set on any filter/sort/search change. The key
+              change swaps the panel via AnimatePresence (mode="wait"); the fresh
+              ProductGrid remount replays its stagger as the new set enters. */}
+          <AnimatePresence mode="wait" initial={false}>
+            <m.div
+              key={`${filter.category ?? "all"}|${filter.sort ?? "featured"}|${filter.inStock ? 1 : 0}|${q}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={baseTransition}
+            >
+              {filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 py-16 text-center sm:py-20">
+                  <p className="font-display text-2xl text-ink-900">
+                    {t("shop.noMatches")}
+                  </p>
+                  <p className="max-w-sm text-sm text-ink-500">
+                    {q
+                      ? `${t("shop.noMatchesSearch")} "${searchParams.get("q")}".`
+                      : t("shop.noMatchesBody")}
+                  </p>
+                  {hasActiveFilters && (
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={clearAll}
+                      className="mt-2"
+                    >
+                      {t("shop.clearFilters")}
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <ProductGrid products={filtered} columns={3} priorityCount={3} />
+              )}
+            </m.div>
+          </AnimatePresence>
         </div>
       </div>
 

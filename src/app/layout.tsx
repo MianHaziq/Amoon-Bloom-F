@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import { StoreProvider } from "@/store/providers/StoreProvider";
 import { QueryProvider } from "@/store/providers/QueryProvider";
+import { MotionProvider } from "@/components/motion/MotionProvider";
 import { ToastViewport } from "@/components/ui/Toast";
 import { siteConfig } from "@/config/site";
 import { getServerLocale } from "@/i18n/server";
@@ -79,8 +80,10 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col bg-cream-50 text-ink-900 font-sans">
         <StoreProvider initialLocale={locale}>
           <QueryProvider>
-            {children}
-            <ToastViewport />
+            <MotionProvider>
+              {children}
+              <ToastViewport />
+            </MotionProvider>
           </QueryProvider>
         </StoreProvider>
       </body>

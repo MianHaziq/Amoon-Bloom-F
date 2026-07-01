@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AnimatePresence } from "motion/react";
 import { Container, Section, Button } from "@/components/ui";
 import { ArrowRight, BagIcon } from "@/components/icons";
 import { CartLineItem } from "@/features/cart/components/CartLineItem";
@@ -54,13 +55,15 @@ export default function CartPage() {
         ) : (
           <div className="grid gap-10 lg:grid-cols-[1fr_22rem]">
             <div className="flex flex-col gap-4">
-              {items.map((item) => (
-                <CartLineItem
-                  key={item.productId}
-                  item={item}
-                  variant="page"
-                />
-              ))}
+              <AnimatePresence initial={false}>
+                {items.map((item) => (
+                  <CartLineItem
+                    key={item.productId}
+                    item={item}
+                    variant="page"
+                  />
+                ))}
+              </AnimatePresence>
             </div>
             <CartSummary />
           </div>

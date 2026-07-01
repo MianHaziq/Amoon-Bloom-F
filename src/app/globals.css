@@ -250,3 +250,24 @@ body {
   background-size: 800px 100%;
   animation: shimmer 1.6s linear infinite;
 }
+
+/* =====================================================================
+   Reduced motion
+   --------------------------------------------------------------------
+   Framer Motion's <MotionConfig reducedMotion="user"> already neutralises
+   JS transform/position animations for users who opt out. This block covers
+   the CSS-driven animations (hero, ken-burns, shimmer, marquee, custom
+   `animate-*` utilities) and lingering transitions, so the whole app respects
+   the preference — an accessibility requirement.
+   ===================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

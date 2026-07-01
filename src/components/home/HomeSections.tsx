@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Section, SectionHeader, Button } from "@/components/ui";
+import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { sectionsApi } from "@/features/sections/api/sections.api";
@@ -42,22 +43,24 @@ export async function HomeSections() {
         if (products.length === 0) return null;
         return (
           <Section key={section.id} spacing="md">
-            <SectionHeader
-              eyebrow={t(locale, "home.curatedEdit")}
-              title={localized(section.title, section.title_ar, locale)}
-              action={
-                <Link href={ROUTES.shop} className="contents">
-                  <Button
-                    variant="ghost"
-                    trailingIcon={
-                      <ArrowRight size={16} className="rtl:-scale-x-100" />
-                    }
-                  >
-                    {t(locale, "home.viewAll")}
-                  </Button>
-                </Link>
-              }
-            />
+            <Reveal>
+              <SectionHeader
+                eyebrow={t(locale, "home.curatedEdit")}
+                title={localized(section.title, section.title_ar, locale)}
+                action={
+                  <Link href={ROUTES.shop} className="contents">
+                    <Button
+                      variant="ghost"
+                      trailingIcon={
+                        <ArrowRight size={16} className="rtl:-scale-x-100" />
+                      }
+                    >
+                      {t(locale, "home.viewAll")}
+                    </Button>
+                  </Link>
+                }
+              />
+            </Reveal>
             <div className="mt-10">
               <ProductGrid products={products} columns={4} />
             </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Section, SectionHeader, Button } from "@/components/ui";
+import { Reveal, StaggerGroup, StaggerItem } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
 import { CategoryCard } from "@/features/categories/components/CategoryCard";
 import { categoriesApi } from "@/features/categories/api/categories.api";
@@ -37,31 +38,34 @@ export async function CategoryShowcase() {
 
   return (
     <Section spacing="lg" tone="cream">
-      <SectionHeader
-        eyebrow={t(locale, "home.categoriesEyebrow")}
-        title={t(locale, "home.categoriesTitle")}
-        description={t(locale, "home.categoriesDesc")}
-        action={
-          <Link href={ROUTES.shop} className="contents">
-            <Button
-              variant="ghost"
-              trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
-            >
-              {t(locale, "home.browseAll")}
-            </Button>
-          </Link>
-        }
-      />
-      <div className="mt-10 grid gap-5 md:grid-cols-3 lg:gap-6">
+      <Reveal>
+        <SectionHeader
+          eyebrow={t(locale, "home.categoriesEyebrow")}
+          title={t(locale, "home.categoriesTitle")}
+          description={t(locale, "home.categoriesDesc")}
+          action={
+            <Link href={ROUTES.shop} className="contents">
+              <Button
+                variant="ghost"
+                trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
+              >
+                {t(locale, "home.browseAll")}
+              </Button>
+            </Link>
+          }
+        />
+      </Reveal>
+      <StaggerGroup className="mt-10 grid gap-5 md:grid-cols-3 lg:gap-6">
         {cards.map(({ cat, fallbackImage }, i) => (
-          <CategoryCard
-            key={cat.id}
-            category={cat}
-            fallbackImage={fallbackImage}
-            priority={i === 0}
-          />
+          <StaggerItem key={cat.id}>
+            <CategoryCard
+              category={cat}
+              fallbackImage={fallbackImage}
+              priority={i === 0}
+            />
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerGroup>
     </Section>
   );
 }
