@@ -65,7 +65,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     >
       <Link
         href={ROUTES.product(product.slug)}
-        className="relative block overflow-hidden rounded-2xl bg-blush-50"
+        className="relative block overflow-hidden rounded-2xl bg-blush-50 transition-transform duration-300 ease-out-soft will-change-transform group-hover:-translate-y-1"
         aria-label={product.title}
       >
         <div className="relative aspect-4/5 w-full">
@@ -111,7 +111,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
             type="button"
             onClick={handleAdd}
             disabled={!product.inStock}
-            className="pointer-events-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink-900/95 px-4 py-2.5 text-xs font-medium text-white shadow-(--shadow-soft) backdrop-blur-sm transition-colors hover:bg-ink-800 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+            className="pointer-events-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink-900/95 px-4 py-2.5 text-xs font-medium text-white shadow-(--shadow-soft) backdrop-blur-sm transition-[background-color,transform] duration-200 hover:bg-ink-800 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
           >
             <BagIcon size={16} />
             {product.inStock ? t("common.quickAdd") : t("common.soldOut")}

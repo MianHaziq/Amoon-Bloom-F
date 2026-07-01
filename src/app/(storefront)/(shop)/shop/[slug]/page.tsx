@@ -8,6 +8,7 @@ import {
   HeartIcon,
   SparkleIcon,
 } from "@/components/icons";
+import { Reveal, StaggerGroup, StaggerItem } from "@/components/motion/primitives";
 import { ProductGallery } from "@/features/products/components/ProductGallery";
 import { AddToCartPanel } from "@/features/products/components/AddToCartPanel";
 import { StickyAddToCart } from "@/features/products/components/StickyAddToCart";
@@ -109,8 +110,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           <ProductGallery images={product.images} title={product.title} />
 
-          <div className="flex flex-col gap-6">
-            <div>
+          <StaggerGroup className="flex flex-col gap-6" trigger="mount" stagger={0.08}>
+            <StaggerItem>
               {product.category ? (
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
                   {product.category}
@@ -122,21 +123,32 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {product.subtitle && (
                 <p className="mt-2 text-base text-ink-500">{product.subtitle}</p>
               )}
-            </div>
+            </StaggerItem>
 
-            <ProductPrice product={product} size="lg" />
+            <StaggerItem>
+              <ProductPrice product={product} size="lg" />
+            </StaggerItem>
 
             {product.description ? (
-              <p className="text-base leading-relaxed text-ink-700">
-                {product.description}
-              </p>
+              <StaggerItem>
+                <p className="text-base leading-relaxed text-ink-700">
+                  {product.description}
+                </p>
+              </StaggerItem>
             ) : null}
 
-            <Divider />
+            <StaggerItem>
+              <Divider />
+            </StaggerItem>
 
-            <AddToCartPanel product={product} />
+            <StaggerItem>
+              <AddToCartPanel product={product} />
+            </StaggerItem>
 
-            <ul className="grid grid-cols-1 gap-3 rounded-2xl bg-white p-5 sm:grid-cols-2">
+            <StaggerItem
+              as="ul"
+              className="grid grid-cols-1 gap-3 rounded-2xl bg-white p-5 sm:grid-cols-2"
+            >
               <PerkRow
                 icon={<TruckIcon size={16} />}
                 title={t(locale, "product.sameDay")}
@@ -157,8 +169,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 title={t(locale, "product.freshness")}
                 description={t(locale, "product.freshnessHint")}
               />
-            </ul>
-          </div>
+            </StaggerItem>
+          </StaggerGroup>
         </div>
       </Section>
 
@@ -184,9 +196,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
       {related.length > 0 && (
         <Section spacing="md" tone="cream">
-          <h2 className="font-display text-3xl font-medium text-ink-900">
-            {t(locale, "product.relatedTitle")}
-          </h2>
+          <Reveal>
+            <h2 className="font-display text-3xl font-medium text-ink-900">
+              {t(locale, "product.relatedTitle")}
+            </h2>
+          </Reveal>
           <div className="mt-10">
             <ProductGrid products={related} columns={4} />
           </div>

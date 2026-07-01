@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Section, SectionHeader, Button } from "@/components/ui";
+import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { productsApi } from "@/features/products/api/products.api";
@@ -29,21 +30,23 @@ export async function FeaturedProducts() {
 
   return (
     <Section spacing="lg">
-      <SectionHeader
-        eyebrow={t(locale, "home.featuredEyebrow")}
-        title={t(locale, "home.featuredTitle")}
-        description={t(locale, "home.featuredDesc")}
-        action={
-          <Link href={ROUTES.shop} className="contents">
-            <Button
-              variant="ghost"
-              trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
-            >
-              {t(locale, "home.viewEdit")}
-            </Button>
-          </Link>
-        }
-      />
+      <Reveal>
+        <SectionHeader
+          eyebrow={t(locale, "home.featuredEyebrow")}
+          title={t(locale, "home.featuredTitle")}
+          description={t(locale, "home.featuredDesc")}
+          action={
+            <Link href={ROUTES.shop} className="contents">
+              <Button
+                variant="ghost"
+                trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
+              >
+                {t(locale, "home.viewEdit")}
+              </Button>
+            </Link>
+          }
+        />
+      </Reveal>
       <div className="mt-12">
         <ProductGrid products={featured} columns={4} />
       </div>

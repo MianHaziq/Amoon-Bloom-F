@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { m, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui";
-import { BagIcon, HeartIcon } from "@/components/icons";
+import { BagIcon, HeartIcon, CheckIcon } from "@/components/icons";
+import { microTransition } from "@/lib/motion";
 import { QuantitySelector } from "./QuantitySelector";
 import { OptionPicker } from "./OptionPicker";
 import { useCart } from "@/features/cart/hooks/useCart";
@@ -25,11 +27,19 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
     s.wishlist.items.some((i) => i.productId === product.id)
   );
   const [qty, setQty] = useState(1);
+  const [justAdded, setJustAdded] = useState(false);
+  const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selected, setSelected] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       (product.options ?? []).map((o) => [o.id, o.options[0] ?? ""])
     )
   );
+
+  useEffect(() => {
+    return () => {
+      if (addedTimer.current) clearTimeout(addedTimer.current);
+    };
+  }, []);
 
   const handleAdd = () => {
     if (!product.inStock) return;
@@ -42,6 +52,10 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
       })
     );
     dispatch(toggleCartDrawer(true));
+    // Brief inline acknowledgement on the button itself.
+    setJustAdded(true);
+    if (addedTimer.current) clearTimeout(addedTimer.current);
+    addedTimer.current = setTimeout(() => setJustAdded(false), 1600);
   };
 
   return (
@@ -72,16 +86,45 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Button
-          fullWidth
-          size="xl"
-          onClick={handleAdd}
-          disabled={!product.inStock}
-          leadingIcon={<BagIcon size={18} />}
-          className="sm:flex-[2]"
-        >
-          {product.inStock ? t("common.addToCart") : t("common.soldOut")}
-        </Button>
+        <m.div className="sm:flex-2" whileTap={{ scale: 0.98 }}>
+          <Button
+            fullWidth
+            size="xl"
+            onClick={handleAdd}
+            disabled={!product.inStock}
+            leadingIcon={
+              product.inStock && justAdded ? (
+                <m.span
+                  key="check"
+                  initial={{ scale: 0, rotate: -20 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={microTransition}
+                >
+                  <CheckIcon size={18} />
+                </m.span>
+              ) : (
+                <BagIcon size={18} />
+              )
+            }
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <m.span
+                key={justAdded ? "added" : "add"}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={microTransition}
+                className="inline-block"
+              >
+                {!product.inStock
+                  ? t("common.soldOut")
+                  : justAdded
+                  ? t("common.addedToCart")
+                  : t("common.addToCart")}
+              </m.span>
+            </AnimatePresence>
+          </Button>
+        </m.div>
         <Button
           fullWidth
           size="xl"

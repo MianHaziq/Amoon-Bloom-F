@@ -3,9 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { m } from "motion/react";
 import { Container, Button } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Loader";
 import { CheckCircleIcon, ArrowRight, TruckIcon } from "@/components/icons";
+import { staggerContainer, staggerItem } from "@/lib/motion";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { queryKeys } from "@/services/queryKeys";
 import { formatCurrency, intlLocale } from "@/lib/format";
@@ -38,21 +40,45 @@ export function OrderReceipt({ orderId }: { orderId?: string }) {
 
   return (
     <Container className="max-w-3xl py-12 sm:py-16">
-      {/* Confirmation header */}
-      <div className="flex flex-col items-center text-center">
-        <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+      {/* Confirmation header — staggered reveal with a spring pop on the mark. */}
+      <m.div
+        className="flex flex-col items-center text-center"
+        variants={staggerContainer(0.1, 0.05)}
+        initial="hidden"
+        animate="show"
+      >
+        <m.span
+          variants={{
+            hidden: { scale: 0, opacity: 0 },
+            show: {
+              scale: 1,
+              opacity: 1,
+              transition: { type: "spring", stiffness: 240, damping: 16 },
+            },
+          }}
+          className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"
+        >
           <CheckCircleIcon size={28} />
-        </span>
-        <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
+        </m.span>
+        <m.p
+          variants={staggerItem}
+          className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700"
+        >
           {t("order.confirmed")}
-        </p>
-        <h1 className="mt-2 font-display text-4xl font-medium leading-tight text-ink-900 sm:text-5xl">
+        </m.p>
+        <m.h1
+          variants={staggerItem}
+          className="mt-2 font-display text-4xl font-medium leading-tight text-ink-900 sm:text-5xl"
+        >
           {t("order.thankYou")}
-        </h1>
-        <p className="mt-3 max-w-md text-sm text-ink-500 sm:text-base">
+        </m.h1>
+        <m.p
+          variants={staggerItem}
+          className="mt-3 max-w-md text-sm text-ink-500 sm:text-base"
+        >
           {t("order.thankYouBody")}
-        </p>
-      </div>
+        </m.p>
+      </m.div>
 
       {query.isPending && orderId ? (
         <ReceiptSkeleton />

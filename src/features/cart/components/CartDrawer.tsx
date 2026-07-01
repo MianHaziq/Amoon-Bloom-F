@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { m, AnimatePresence } from "motion/react";
 import { Button, Drawer, Divider } from "@/components/ui";
 import { ArrowRight, BagIcon } from "@/components/icons";
 import { CartLineItem } from "./CartLineItem";
+import { microTransition } from "@/lib/motion";
 import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
@@ -41,21 +43,29 @@ export function CartDrawer() {
       ) : (
         <div className="flex h-full flex-col">
           <div className="flex flex-1 flex-col gap-5 px-6 py-5">
-            {items.map((item) => (
-              <CartLineItem
-                key={item.productId}
-                item={item}
-                onNavigate={close}
-              />
-            ))}
+            <AnimatePresence initial={false}>
+              {items.map((item) => (
+                <CartLineItem
+                  key={item.productId}
+                  item={item}
+                  onNavigate={close}
+                />
+              ))}
+            </AnimatePresence>
           </div>
 
           <footer className="border-t border-ink-100 bg-cream-50 px-6 py-5">
             <div className="flex items-baseline justify-between">
               <span className="text-sm text-ink-600">{t("common.subtotal")}</span>
-              <span className="font-display text-xl font-medium tabular-nums text-ink-900">
+              <m.span
+                key={subtotal}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={microTransition}
+                className="font-display text-xl font-medium tabular-nums text-ink-900"
+              >
                 {formatCurrency(subtotal, currency, locale)}
-              </span>
+              </m.span>
             </div>
             <p className="mt-1 text-xs text-ink-500">
               {t("cart.deliveryNote")}

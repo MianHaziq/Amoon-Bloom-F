@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { m } from "motion/react";
 import { IconButton } from "@/components/ui";
 import { TrashIcon } from "@/components/icons";
+import { listItem, microTransition } from "@/lib/motion";
 import { QuantitySelector } from "@/features/products/components/QuantitySelector";
 import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
@@ -33,7 +35,11 @@ export function CartLineItem({
   const { t } = useT();
 
   return (
-    <article
+    <m.article
+      variants={listItem}
+      initial="hidden"
+      animate="show"
+      exit="exit"
       className={cn(
         "flex gap-4",
         variant === "page" &&
@@ -68,9 +74,15 @@ export function CartLineItem({
           >
             {item.title}
           </Link>
-          <p className="shrink-0 text-sm font-semibold tabular-nums text-ink-900">
+          <m.p
+            key={item.unitPrice * item.quantity}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={microTransition}
+            className="shrink-0 text-sm font-semibold tabular-nums text-ink-900"
+          >
             {formatCurrency(item.unitPrice * item.quantity, currency, locale)}
-          </p>
+          </m.p>
         </div>
         <p className="mt-1 text-xs text-ink-500">
           {formatCurrency(item.unitPrice, currency, locale)} {t("cart.each")}
@@ -94,6 +106,6 @@ export function CartLineItem({
           </IconButton>
         </div>
       </div>
-    </article>
+    </m.article>
   );
 }

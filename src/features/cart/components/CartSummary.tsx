@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { m } from "motion/react";
 import { Button, Divider } from "@/components/ui";
 import { ArrowRight, ShieldIcon, TruckIcon } from "@/components/icons";
 import { useAppSelector } from "@/store";
+import { microTransition } from "@/lib/motion";
 import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
@@ -37,9 +39,15 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
       <dl className="flex flex-col gap-2 text-sm">
         <div className="flex justify-between">
           <dt className="text-ink-600">{t("common.subtotal")}</dt>
-          <dd className="font-medium tabular-nums text-ink-900">
+          <m.dd
+            key={subtotal}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={microTransition}
+            className="font-medium tabular-nums text-ink-900"
+          >
             {formatCurrency(subtotal, currency, locale)}
-          </dd>
+          </m.dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-ink-600">{t("common.delivery")}</dt>
@@ -51,9 +59,15 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
 
       <div className="flex items-baseline justify-between">
         <span className="font-display text-lg text-ink-900">{t("common.total")}</span>
-        <span className="font-display text-2xl font-medium tabular-nums text-ink-900">
+        <m.span
+          key={total}
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={microTransition}
+          className="font-display text-2xl font-medium tabular-nums text-ink-900"
+        >
           {formatCurrency(total, currency, locale)}
-        </span>
+        </m.span>
       </div>
 
       {variant === "page" && (

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { m, AnimatePresence } from "motion/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +35,7 @@ import { ROUTES } from "@/constants/routes";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
 import { formatCurrency } from "@/lib/format";
+import { baseTransition } from "@/lib/motion";
 import { useAppSelector } from "@/store";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n";
@@ -306,46 +308,60 @@ export function CheckoutClient() {
       <Section spacing="md">
         <div className="grid gap-10 lg:grid-cols-[1fr_22rem]">
           <div className="flex flex-col gap-6">
-            {step === "address" && (
-              <AddressStep
-                addresses={addressesQuery.data}
-                isLoading={addressesQuery.isPending}
-                selectedAddressId={selectedAddressId}
-                onSelect={setExplicitSelection}
-                regNewAddr={regNewAddr}
-                newAddrErrors={newAddrErrors}
-                submitError={submitError}
-                onContinue={goToPayment}
-              />
-            )}
+            {/* Each step swaps via AnimatePresence (mode="wait"): the outgoing
+                step fades/rises out, the incoming one fades/rises in. Keyed by
+                `step`; vertical-only motion keeps it RTL-safe. */}
+            <AnimatePresence mode="wait" initial={false}>
+              <m.div
+                key={step}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={baseTransition}
+                className="flex flex-col gap-6"
+              >
+                {step === "address" && (
+                  <AddressStep
+                    addresses={addressesQuery.data}
+                    isLoading={addressesQuery.isPending}
+                    selectedAddressId={selectedAddressId}
+                    onSelect={setExplicitSelection}
+                    regNewAddr={regNewAddr}
+                    newAddrErrors={newAddrErrors}
+                    submitError={submitError}
+                    onContinue={goToPayment}
+                  />
+                )}
 
-            {step === "payment" && (
-              <PaymentStep
-                orderMessage={orderMessage}
-                onOrderMessageChange={setOrderMessage}
-                onBack={goToAddress}
-                onContinue={goToSummary}
-                submitError={submitError}
-              />
-            )}
+                {step === "payment" && (
+                  <PaymentStep
+                    orderMessage={orderMessage}
+                    onOrderMessageChange={setOrderMessage}
+                    onBack={goToAddress}
+                    onContinue={goToSummary}
+                    submitError={submitError}
+                  />
+                )}
 
-            {step === "summary" && (
-              <SummaryStep
-                cartItems={cart.items}
-                orderMessage={orderMessage}
-                selectedAddress={selectedAddress}
-                inlineAddressValues={
-                  selectedAddressId === "new" ? getNewAddrValues() : null
-                }
-                onBack={() => setStep("payment")}
-                onPlaceOrder={placeOrder}
-                isPlacing={placeOrderMutation.isPending}
-                submitError={submitError}
-                total={total}
-              />
-            )}
+                {step === "summary" && (
+                  <SummaryStep
+                    cartItems={cart.items}
+                    orderMessage={orderMessage}
+                    selectedAddress={selectedAddress}
+                    inlineAddressValues={
+                      selectedAddressId === "new" ? getNewAddrValues() : null
+                    }
+                    onBack={() => setStep("payment")}
+                    onPlaceOrder={placeOrder}
+                    isPlacing={placeOrderMutation.isPending}
+                    submitError={submitError}
+                    total={total}
+                  />
+                )}
 
-            {step === "confirmation" && <ConfirmationStep />}
+                {step === "confirmation" && <ConfirmationStep />}
+              </m.div>
+            </AnimatePresence>
           </div>
 
           <CheckoutSummary
@@ -745,9 +761,14 @@ function ConfirmationStep() {
       padding="lg"
       className="flex flex-col items-center gap-3 text-center"
     >
-      <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-bloom-50 text-bloom-700">
+      <m.span
+        initial={{ scale: 0, rotate: -30 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 18 }}
+        className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-bloom-50 text-bloom-700"
+      >
         <CheckIcon size={24} />
-      </span>
+      </m.span>
       <h2 className="font-display text-2xl text-ink-900">{t("order.confirmed")}</h2>
       <p className="text-sm text-ink-500">
         {t("checkout.redirecting")}
