@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { m, AnimatePresence } from "motion/react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { dismissToast, type Toast as ToastModel } from "@/store/slices/ui.slice";
 import { cn } from "@/lib/cn";
+import { baseTransition, microTransition } from "@/lib/motion";
 import { useT } from "@/i18n/useT";
 
 const variantStyles: Record<ToastModel["variant"], string> = {
@@ -30,10 +32,13 @@ function ToastItem({ toast }: { toast: ToastModel }) {
   }, [dispatch, toast.id]);
 
   return (
-    <div
+    <m.div
       role="status"
+      initial={{ opacity: 0, y: 16, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1, transition: baseTransition }}
+      exit={{ opacity: 0, y: 8, scale: 0.98, transition: microTransition }}
       className={cn(
-        "pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border bg-white px-4 py-3 shadow-(--shadow-lift) animate-fade-in-up",
+        "pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border bg-white px-4 py-3 shadow-(--shadow-lift)",
         variantStyles[toast.variant]
       )}
     >
@@ -67,7 +72,7 @@ function ToastItem({ toast }: { toast: ToastModel }) {
           <path d="M6 6 18 18M18 6 6 18" />
         </svg>
       </button>
-    </div>
+    </m.div>
   );
 }
 
@@ -80,9 +85,11 @@ export function ToastViewport() {
       aria-atomic="true"
       className="pointer-events-none fixed bottom-4 inset-s-4 inset-e-4 z-200 flex flex-col gap-3 sm:bottom-6 sm:inset-s-auto sm:inset-e-6"
     >
-      {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} />
-      ))}
+      <AnimatePresence initial={false}>
+        {toasts.map((toast) => (
+          <ToastItem key={toast.id} toast={toast} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
