@@ -6,6 +6,8 @@ import { sectionsApi } from "@/features/sections/api/sections.api";
 import { toUiProducts } from "@/features/products/adapters";
 import { ROUTES } from "@/constants/routes";
 import { getServerRegion } from "@/services/serverRegion";
+import { getServerLocale } from "@/i18n/server";
+import { localized, t } from "@/i18n";
 
 const MAX_SECTIONS = 3;
 const PRODUCTS_PER_SECTION = 4;
@@ -18,7 +20,10 @@ const PRODUCTS_PER_SECTION = 4;
  * unreachable so the rest of the home page survives.
  */
 export async function HomeSections() {
-  const region = await getServerRegion();
+  const [region, locale] = await Promise.all([
+    getServerRegion(),
+    getServerLocale(),
+  ]);
   const apiSections = await sectionsApi.list(region).catch(() => []);
   const eligible = [...apiSections]
     .filter((s) => s.products && s.products.length > 0)
@@ -30,7 +35,7 @@ export async function HomeSections() {
   return (
     <>
       {eligible.map((section) => {
-        const products = toUiProducts(section.products).slice(
+        const products = toUiProducts(section.products, { locale }).slice(
           0,
           PRODUCTS_PER_SECTION
         );
@@ -38,15 +43,17 @@ export async function HomeSections() {
         return (
           <Section key={section.id} spacing="md">
             <SectionHeader
-              eyebrow="Curated edit"
-              title={section.title}
+              eyebrow={t(locale, "home.curatedEdit")}
+              title={localized(section.title, section.title_ar, locale)}
               action={
                 <Link href={ROUTES.shop} className="contents">
                   <Button
                     variant="ghost"
-                    trailingIcon={<ArrowRight size={16} />}
+                    trailingIcon={
+                      <ArrowRight size={16} className="rtl:-scale-x-100" />
+                    }
                   >
-                    View all
+                    {t(locale, "home.viewAll")}
                   </Button>
                 </Link>
               }

@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setLocation } from "@/store/slices/location.slice";
 import { COUNTRIES, type CountryCode, getCountry } from "@/features/location/data";
+import { useT } from "@/i18n/useT";
 
 interface LocationSheetProps {
   open: boolean;
@@ -20,6 +21,7 @@ interface LocationSheetProps {
  */
 export function LocationSheet({ open, onClose }: LocationSheetProps) {
   const dispatch = useAppDispatch();
+  const { t } = useT();
   const current = useAppSelector((s) => s.location);
   const [country, setSelectedCountry] = useState<CountryCode>(current.country);
   const [city, setSelectedCity] = useState<string>(current.city);
@@ -37,14 +39,14 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Where are we delivering?"
-      description="We'll show you prices and same-day cutoff for this city."
+      title={t("location.title")}
+      description={t("location.body")}
       size="sm"
     >
       <div className="flex flex-col gap-6">
         <fieldset className="flex flex-col gap-2">
           <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
-            Country
+            {t("location.country")}
           </legend>
           <div className="grid grid-cols-2 gap-2">
             {COUNTRIES.map((c) => (
@@ -56,7 +58,7 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
                   setSelectedCity(c.defaultCity);
                 }}
                 className={cn(
-                  "flex flex-col items-start gap-1 rounded-2xl border p-4 text-left transition-colors",
+                  "flex flex-col items-start gap-1 rounded-2xl border p-4 text-start transition-colors",
                   country === c.code
                     ? "border-bloom-500 bg-bloom-50"
                     : "border-ink-200 hover:border-ink-300"
@@ -73,7 +75,7 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
 
         <fieldset className="flex flex-col gap-2">
           <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
-            City
+            {t("location.city")}
           </legend>
           <ul className="flex flex-col gap-1">
             {def.cities.map((c) => (
@@ -82,7 +84,7 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
                   type="button"
                   onClick={() => setSelectedCity(c)}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors",
+                    "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-start transition-colors",
                     city === c
                       ? "border-bloom-500 bg-bloom-50 text-bloom-700"
                       : "border-ink-200 hover:border-ink-300"
@@ -102,10 +104,10 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
 
         <div className="flex justify-end gap-2 pt-1">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="button" onClick={handleSave}>
-            Save
+            {t("common.save")}
           </Button>
         </div>
       </div>

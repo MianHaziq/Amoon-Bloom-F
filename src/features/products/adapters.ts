@@ -11,6 +11,8 @@ import type {
   ApiProductDescriptionBlock,
   ApiProductOptionGroup,
 } from "./api-types";
+import { localized } from "@/i18n";
+import type { Locale } from "@/store/slices/ui.slice";
 
 const FALLBACK_CURRENCY = "AED";
 const FALLBACK_IMAGE = {
@@ -18,45 +20,64 @@ const FALLBACK_IMAGE = {
   alt: "",
 };
 
-const adaptDescription = (d: ApiProductDescriptionBlock): ProductDescriptionBlock => ({
+const adaptDescription = (
+  d: ApiProductDescriptionBlock,
+  locale: Locale
+): ProductDescriptionBlock => ({
   id: d.id,
-  title: d.title ?? undefined,
-  description: d.description,
+  title: localized(d.title ?? "", d.title_ar, locale) || undefined,
+  description: localized(d.description, d.description_ar, locale),
 });
 
-const adaptOption = (o: ApiProductOptionGroup): ProductOptionGroup => ({
+const adaptOption = (
+  o: ApiProductOptionGroup,
+  locale: Locale
+): ProductOptionGroup => ({
   id: o.id,
-  title: o.title,
-  options: o.options ?? [],
+  title: localized(o.title, o.title_ar, locale),
+  options:
+    locale === "ar" && o.options_ar?.length ? o.options_ar : o.options ?? [],
 });
 
 export interface ToUiProductOptions {
   /** Currency code from `/settings/public` or `/settings`. Defaults to AED. */
   currency?: string;
+  /** Active locale — picks Arabic content fields when "ar". */
+  locale?: Locale;
 }
 
 export function toUiProduct(api: ApiProduct, opts: ToUiProductOptions = {}): Product {
   const currency = opts.currency ?? FALLBACK_CURRENCY;
+  const locale = opts.locale ?? "en";
+  const title = localized(api.title, api.title_ar, locale);
+  const subtitle = localized(api.subtitle ?? "", api.subtitle_ar, locale) || undefined;
   const isOnSale =
     api.discountedPrice != null && api.discountedPrice < api.price;
   const sellAmount = isOnSale ? (api.discountedPrice as number) : api.price;
 
   // Pull a description from the first description block, falling back to
   // subtitle. Storefront PDPs render the full descriptions[] array as well.
-  const firstDescription = api.descriptions?.[0]?.description;
-  const description = firstDescription || api.subtitle || "";
+  const firstBlock = api.descriptions?.[0];
+  const firstDescription = firstBlock
+    ? localized(firstBlock.description, firstBlock.description_ar, locale)
+    : "";
+  const description = firstDescription || subtitle || "";
 
   // Storefront uses category title for display + slug for URL; backend has
-  // only id + (joined) title. Slugify the title so live URLs stay readable.
-  const categoryTitle = api.category?.title ?? "";
+  // only id + (joined) title. Localize so the category eyebrow renders Arabic.
+  const categoryTitle = localized(
+    api.category?.title ?? "",
+    api.category?.title_ar,
+    locale
+  );
   const categorySlug = api.categoryId ?? "";
 
   const images = (api.images ?? []).map((url, i) => ({
     url,
-    alt: i === 0 ? api.title : "",
+    alt: i === 0 ? title : "",
   }));
   if (images.length === 0 && api.image) {
-    images.push({ url: api.image, alt: api.title });
+    images.push({ url: api.image, alt: title });
   }
   if (images.length === 0) {
     images.push(FALLBACK_IMAGE);
@@ -65,17 +86,17 @@ export function toUiProduct(api: ApiProduct, opts: ToUiProductOptions = {}): Pro
   return {
     id: api.id,
     slug: api.id,
-    title: api.title,
-    subtitle: api.subtitle ?? undefined,
+    title,
+    subtitle,
     description,
-    descriptions: api.descriptions?.map(adaptDescription),
+    descriptions: api.descriptions?.map((d) => adaptDescription(d, locale)),
     price: { amount: sellAmount, currency },
     compareAtPrice: isOnSale ? { amount: api.price, currency } : undefined,
     images,
     category: categoryTitle,
     categorySlug,
     inStock: api.quantity > 0,
-    options: api.productOptions?.map(adaptOption),
+    options: api.productOptions?.map((o) => adaptOption(o, locale)),
   };
 }
 

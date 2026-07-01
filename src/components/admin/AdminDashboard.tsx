@@ -157,13 +157,13 @@ export function AdminDashboard() {
             <p className="py-6 text-center text-sm text-ink-500">No orders yet.</p>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-ink-100">
-              <table className="w-full min-w-120 text-left text-sm">
+              <table className="w-full min-w-120 text-start text-sm">
                 <thead className="bg-cream-100 text-xs uppercase tracking-wider text-ink-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">Order</th>
                     <th className="px-4 py-3 font-medium">Customer</th>
                     <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 text-right font-medium">Total</th>
+                    <th className="px-4 py-3 text-end font-medium">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -184,7 +184,7 @@ export function AdminDashboard() {
                         <td className="px-4 py-3">
                           <Badge tone="ink">{order.status}</Badge>
                         </td>
-                        <td className="px-4 py-3 text-right text-ink-900">
+                        <td className="px-4 py-3 text-end text-ink-900">
                           {formatCurrency(order.totalAmount, currency)}
                         </td>
                       </tr>

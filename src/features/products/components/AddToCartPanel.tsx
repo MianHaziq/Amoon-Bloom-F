@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { pushToast, toggleCartDrawer } from "@/store/slices/ui.slice";
 import { toggleWishlistItem } from "@/store/slices/wishlist.slice";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
 import type { Product } from "../types";
 
 interface AddToCartPanelProps {
@@ -19,6 +20,7 @@ interface AddToCartPanelProps {
 export function AddToCartPanel({ product }: AddToCartPanelProps) {
   const dispatch = useAppDispatch();
   const { add } = useCart();
+  const { t } = useT();
   const wishlisted = useAppSelector((s) =>
     s.wishlist.items.some((i) => i.productId === product.id)
   );
@@ -34,7 +36,7 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
     add(product, qty);
     dispatch(
       pushToast({
-        title: "Added to cart",
+        title: t("common.addedToCart"),
         description: `${qty} × ${product.title}`,
         variant: "success",
       })
@@ -63,7 +65,9 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
       <div className="flex items-center gap-4">
         <QuantitySelector value={qty} onChange={setQty} />
         <span className="text-sm text-ink-500">
-          {product.inStock ? "In stock · ready to dispatch" : "Currently sold out"}
+          {product.inStock
+            ? t("product.inStockReady")
+            : t("product.currentlySoldOut")}
         </span>
       </div>
 
@@ -76,7 +80,7 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
           leadingIcon={<BagIcon size={18} />}
           className="sm:flex-[2]"
         >
-          {product.inStock ? "Add to cart" : "Sold out"}
+          {product.inStock ? t("common.addToCart") : t("common.soldOut")}
         </Button>
         <Button
           fullWidth
@@ -89,14 +93,16 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
             dispatch(toggleWishlistItem({ product }));
             dispatch(
               pushToast({
-                title: wishlisted ? "Removed from wishlist" : "Saved to wishlist",
+                title: wishlisted
+                  ? t("wishlist.removed")
+                  : t("wishlist.saved"),
                 description: product.title,
                 variant: wishlisted ? "default" : "success",
               })
             );
           }}
         >
-          {wishlisted ? "Saved" : "Save"}
+          {wishlisted ? t("common.saved") : t("common.save")}
         </Button>
       </div>
     </div>

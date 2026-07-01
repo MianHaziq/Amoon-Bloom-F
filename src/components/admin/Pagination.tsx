@@ -39,7 +39,7 @@ export function Pagination({ meta, page, onChange, className }: PaginationProps)
           size="sm"
           disabled={!hasPrev}
           onClick={() => onChange(page - 1)}
-          leadingIcon={<ChevronRight size={14} className="rotate-180" />}
+          leadingIcon={<ChevronRight size={14} className="rotate-180 rtl:-scale-x-100" />}
         >
           Prev
         </Button>
@@ -51,7 +51,7 @@ export function Pagination({ meta, page, onChange, className }: PaginationProps)
           size="sm"
           disabled={!hasNext}
           onClick={() => onChange(page + 1)}
-          trailingIcon={<ChevronRight size={14} />}
+          trailingIcon={<ChevronRight size={14} className="rtl:-scale-x-100" />}
         >
           Next
         </Button>

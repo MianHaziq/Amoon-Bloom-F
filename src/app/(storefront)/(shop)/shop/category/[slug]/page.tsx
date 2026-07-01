@@ -9,8 +9,9 @@ import { toUiCategory } from "@/features/categories/adapters";
 import { toUiProducts } from "@/features/products/adapters";
 import { ApiError } from "@/services/http";
 import { ROUTES } from "@/constants/routes";
-import { pluralize } from "@/lib/format";
 import { getServerRegion } from "@/services/serverRegion";
+import { getServerLocale } from "@/i18n/server";
+import { t, tCount } from "@/i18n";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
@@ -35,7 +36,10 @@ export async function generateMetadata({ params }: CategoryPageProps) {
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
-  const region = await getServerRegion();
+  const [region, locale] = await Promise.all([
+    getServerRegion(),
+    getServerLocale(),
+  ]);
 
   let categoryApi;
   try {
@@ -51,8 +55,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     .listByCategory(slug, { limit: 60, region })
     .catch(() => ({ data: [], meta: {} }));
 
-  const category = toUiCategory(categoryApi);
-  const items = toUiProducts(productPage.data);
+  const category = toUiCategory(categoryApi, locale);
+  const items = toUiProducts(productPage.data, { locale });
 
   return (
     <>
@@ -63,13 +67,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             className="flex items-center gap-1 text-xs text-ink-500"
           >
             <Link href={ROUTES.home} className="hover:text-ink-900">
-              Home
+              {t(locale, "common.home")}
             </Link>
-            <ChevronRight size={12} />
+            <ChevronRight size={12} className="rtl:-scale-x-100" />
             <Link href={ROUTES.shop} className="hover:text-ink-900">
-              Shop
+              {t(locale, "common.shop")}
             </Link>
-            <ChevronRight size={12} />
+            <ChevronRight size={12} className="rtl:-scale-x-100" />
             <span className="text-ink-900">{category.title}</span>
           </nav>
           <h1 className="mt-6 font-display text-4xl font-medium leading-tight text-ink-900 md:text-5xl lg:text-6xl">
@@ -79,7 +83,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <p className="mt-3 max-w-2xl text-ink-500">{category.description}</p>
           )}
           <p className="mt-4 text-xs text-ink-400">
-            {pluralize(items.length, "piece")} in this edit
+            {tCount(locale, items.length, "units.pieceOne", "units.pieceOther")}
           </p>
         </Container>
       </section>
@@ -88,13 +92,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 py-20 text-center">
             <p className="font-display text-2xl text-ink-900">
-              No pieces in this category yet.
+              {t(locale, "shop.emptyCategoryTitle")}
             </p>
             <Link
               href={ROUTES.shop}
               className="rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-white"
             >
-              Browse the boutique
+              {t(locale, "common.browseBoutique")}
             </Link>
           </div>
         ) : (

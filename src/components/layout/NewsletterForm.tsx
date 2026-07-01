@@ -5,9 +5,11 @@ import { Button, Input } from "@/components/ui";
 import { ArrowRight } from "@/components/icons";
 import { useAppDispatch } from "@/store";
 import { pushToast } from "@/store/slices/ui.slice";
+import { useT } from "@/i18n/useT";
 
 export function NewsletterForm() {
   const dispatch = useAppDispatch();
+  const { t } = useT();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -20,8 +22,8 @@ export function NewsletterForm() {
     setEmail("");
     dispatch(
       pushToast({
-        title: "Welcome to the letter",
-        description: "Your first edit lands next Sunday.",
+        title: t("newsletter.welcomeTitle"),
+        description: t("newsletter.welcomeBody"),
         variant: "success",
       })
     );
@@ -31,13 +33,13 @@ export function NewsletterForm() {
     <form
       className="flex flex-col gap-3 sm:flex-row"
       onSubmit={handleSubmit}
-      aria-label="Newsletter sign up"
+      aria-label={t("newsletter.ariaSignup")}
     >
       <Input
         type="email"
         required
         placeholder="you@example.com"
-        aria-label="Email address"
+        aria-label={t("newsletter.ariaEmail")}
         className="text-base!"
         containerClassName="flex-1"
         value={email}
@@ -47,9 +49,9 @@ export function NewsletterForm() {
         type="submit"
         size="lg"
         isLoading={submitting}
-        trailingIcon={<ArrowRight size={16} />}
+        trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
       >
-        Subscribe
+        {t("newsletter.subscribe")}
       </Button>
     </form>
   );

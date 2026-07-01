@@ -9,10 +9,11 @@ import { ordersApi } from "@/features/orders/api/orders.api";
 import { ROUTES } from "@/constants/routes";
 import { ApiError } from "@/services/http";
 import {
-  ORDER_STATUS_LABEL,
+  ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
 } from "@/components/admin/orders/orderStatus";
 import { formatCurrency } from "@/lib/format";
+import { useT } from "@/i18n/useT";
 
 const PROGRESS = [
   "PENDING",
@@ -23,6 +24,7 @@ const PROGRESS = [
 ] as const;
 
 export default function OrderStatusPage() {
+  const { t } = useT();
   const [orderId, setOrderId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +32,7 @@ export default function OrderStatusPage() {
     mutationFn: (id: string) => ordersApi.getStatus(id),
     onError: (err) => {
       setError(
-        err instanceof ApiError ? err.message : "Could not find that order."
+        err instanceof ApiError ? err.message : t("order.notFound")
       );
     },
     onSuccess: () => setError(null),
@@ -52,14 +54,13 @@ export default function OrderStatusPage() {
       <section className="bg-cream-50 pt-16 pb-10 lg:pt-24">
         <Container>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
-            Track your order
+            {t("order.statusEyebrow")}
           </p>
           <h1 className="mt-3 font-display text-5xl font-medium leading-tight text-ink-900 md:text-6xl">
-            Order status.
+            {t("order.statusTitle")}
           </h1>
           <p className="mt-3 max-w-2xl text-lg text-ink-500">
-            Enter the order number from your confirmation email to see where
-            your gift is.
+            {t("order.statusSubtitle")}
           </p>
         </Container>
       </section>
@@ -71,8 +72,8 @@ export default function OrderStatusPage() {
             className="flex flex-col gap-4 sm:flex-row sm:items-end"
           >
             <Input
-              label="Order number"
-              placeholder="Enter your order ID"
+              label={t("order.orderNumber")}
+              placeholder={t("order.orderIdPlaceholder")}
               required
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
@@ -82,9 +83,9 @@ export default function OrderStatusPage() {
               type="submit"
               size="lg"
               isLoading={lookup.isPending}
-              trailingIcon={<ArrowRight size={16} />}
+              trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
             >
-              Check status
+              {t("order.checkStatus")}
             </Button>
           </form>
 
@@ -106,7 +107,7 @@ export default function OrderStatusPage() {
                   </span>
                   <div>
                     <p className="font-mono text-xs uppercase tracking-wider text-ink-500">
-                      Order {result.id.slice(0, 8)}
+                      {t("order.orderLabel")} {result.id.slice(0, 8)}
                     </p>
                     <p className="font-display text-lg font-medium text-ink-900">
                       {formatCurrency(result.totalAmount)}
@@ -114,7 +115,7 @@ export default function OrderStatusPage() {
                   </div>
                 </div>
                 <Badge tone={ORDER_STATUS_TONE[result.status]}>
-                  {ORDER_STATUS_LABEL[result.status]}
+                  {t(ORDER_STATUS_LABEL_KEY[result.status])}
                 </Badge>
               </div>
 
@@ -136,7 +137,7 @@ export default function OrderStatusPage() {
                             (reached ? "text-bloom-700" : "text-ink-400")
                           }
                         >
-                          {ORDER_STATUS_LABEL[s]}
+                          {t(ORDER_STATUS_LABEL_KEY[s])}
                         </span>
                       </div>
                     );
@@ -144,7 +145,7 @@ export default function OrderStatusPage() {
                 </div>
               ) : (
                 <p className="text-sm text-bloom-700">
-                  This order was cancelled.
+                  {t("order.cancelledNote")}
                 </p>
               )}
             </div>
@@ -152,12 +153,12 @@ export default function OrderStatusPage() {
         </Card>
 
         <p className="mt-6 text-center text-sm text-ink-500">
-          Can&rsquo;t find your order?{" "}
+          {t("order.cantFind")}{" "}
           <Link
             href={ROUTES.contact}
             className="font-semibold text-bloom-700 hover:underline"
           >
-            Message our concierge
+            {t("order.messageConcierge")}
           </Link>
           .
         </p>

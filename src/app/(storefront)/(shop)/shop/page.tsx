@@ -5,6 +5,8 @@ import { categoriesApi } from "@/features/categories/api/categories.api";
 import { toUiProducts } from "@/features/products/adapters";
 import { toUiCategories } from "@/features/categories/adapters";
 import { getServerRegion } from "@/services/serverRegion";
+import { getServerLocale } from "@/i18n/server";
+import { t } from "@/i18n";
 
 export const metadata = { title: "Shop" };
 
@@ -13,7 +15,10 @@ export const metadata = { title: "Shop" };
 export const dynamic = "force-dynamic";
 
 export default async function ShopPage() {
-  const region = await getServerRegion();
+  const [region, locale] = await Promise.all([
+    getServerRegion(),
+    getServerLocale(),
+  ]);
   const [productPage, apiCategories] = await Promise.all([
     productsApi
       .list({ page: 1, limit: 60, region })
@@ -21,22 +26,21 @@ export default async function ShopPage() {
     categoriesApi.list(region).catch(() => []),
   ]);
 
-  const products = toUiProducts(productPage.data);
-  const categories = toUiCategories(apiCategories);
+  const products = toUiProducts(productPage.data, { locale });
+  const categories = toUiCategories(apiCategories, locale);
 
   return (
     <>
       <section className="border-b border-ink-100 bg-cream-50 pt-12 pb-10 lg:pt-16 lg:pb-12">
         <Container>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
-            Shop the boutique
+            {t(locale, "shop.title")}
           </p>
           <h1 className="mt-3 font-display text-4xl font-medium leading-tight text-ink-900 md:text-5xl">
-            Hand-arranged for every quiet celebration.
+            {t(locale, "shop.heading")}
           </h1>
           <p className="mt-3 max-w-2xl text-ink-500">
-            Composed in our Downtown Dubai studio. Same-day delivery on orders
-            placed before 6 PM.
+            {t(locale, "shop.heroSubtitle")}
           </p>
         </Container>
       </section>

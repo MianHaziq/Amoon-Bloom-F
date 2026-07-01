@@ -4,6 +4,7 @@ import { useCallback, useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
+import { useT } from "@/i18n/useT";
 
 interface ModalProps {
   open: boolean;
@@ -42,6 +43,7 @@ export function Modal({
   // Mount-gate the portal so SSR (null) and the first client render (null)
   // agree, avoiding the body-portal hydration mismatch.
   const mounted = useIsHydrated();
+  const { t } = useT();
 
   useEffect(() => {
     if (!open) return;
@@ -62,7 +64,7 @@ export function Modal({
       className="fixed inset-0 z-100 flex items-end justify-center sm:items-center"
     >
       <button
-        aria-label="Close modal"
+        aria-label={t("common.close")}
         type="button"
         onClick={closeOnBackdropClick ? onClose : undefined}
         className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm animate-fade-in"

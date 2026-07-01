@@ -1,21 +1,22 @@
 import { Suspense } from "react";
 import { ResetPasswordForm } from "@/features/auth/components/ResetPasswordForm";
+import { getServerT } from "@/i18n/server";
 
 export const metadata = { title: "Reset password" };
 
-export default function ResetPasswordPage() {
+export default async function ResetPasswordPage() {
+  const { t } = await getServerT();
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
-          New password
+          {t("auth.newPasswordEyebrow")}
         </p>
         <h1 className="font-display text-4xl font-medium leading-tight text-ink-900 md:text-5xl">
-          Set a new password
+          {t("auth.setNewTitle")}
         </h1>
         <p className="text-ink-500">
-          Pick a strong one — at least 8 characters with a mix of letters and
-          numbers.
+          {t("auth.resetSubtitle")}
         </p>
       </header>
       <Suspense fallback={null}>

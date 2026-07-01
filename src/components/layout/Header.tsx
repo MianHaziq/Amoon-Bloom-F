@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Container, IconButton } from "@/components/ui";
 import {
@@ -20,9 +21,19 @@ import { siteConfig } from "@/config/site";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { toggleCartDrawer, toggleMobileNav } from "@/store/slices/ui.slice";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
 
 export function Header() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const { t, tc } = useT();
+  const [query, setQuery] = useState("");
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const term = query.trim();
+    router.push(term ? `${ROUTES.shop}?q=${encodeURIComponent(term)}` : ROUTES.shop);
+  };
   const itemCount = useAppSelector((s) =>
     s.cart.items.reduce((sum, i) => sum + i.quantity, 0)
   );
@@ -54,7 +65,7 @@ export function Header() {
         <Container className="flex h-16 items-center gap-4 lg:h-20">
           {/* Mobile menu trigger */}
           <IconButton
-            label="Open menu"
+            label={t("nav.openMenu")}
             variant="ghost"
             className="lg:hidden"
             onClick={() => dispatch(toggleMobileNav(true))}
@@ -81,15 +92,17 @@ export function Header() {
           <form
             role="search"
             className="hidden flex-1 md:block"
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={submitSearch}
           >
             <label className="group flex h-11 items-center gap-3 rounded-full border border-ink-200 bg-white px-4 transition-all focus-within:border-bloom-400 focus-within:ring-4 focus-within:ring-bloom-100">
               <SearchIcon size={18} className="text-ink-400" />
               <input
                 type="search"
-                placeholder="Search gift boxes, flowers, occasions…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("nav.searchPlaceholder")}
                 className="h-full flex-1 bg-transparent text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
-                aria-label="Search the boutique"
+                aria-label={t("common.search")}
               />
             </label>
           </form>
@@ -101,14 +114,14 @@ export function Header() {
                 href={ROUTES.account}
                 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700 transition-colors hover:text-ink-900"
               >
-                {user.firstName ? `Hi, ${user.firstName}` : "My account"}
+                {user.firstName ? t("nav.greeting", { name: user.firstName }) : t("nav.myAccount")}
               </Link>
             ) : (
               <Link
                 href={ROUTES.login}
                 className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700 transition-colors hover:text-ink-900"
               >
-                Login
+                {t("nav.login")}
               </Link>
             )}
             {isStaff ? (
@@ -116,7 +129,7 @@ export function Header() {
                 href={ROUTES.admin}
                 className="inline-flex h-8 items-center rounded-full bg-ink-900 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-ink-800"
               >
-                Admin panel
+                {t("nav.adminPanel")}
               </Link>
             ) : null}
           </nav>
@@ -126,20 +139,21 @@ export function Header() {
             <DeliverToPill className="hidden lg:inline-flex" />
             <LocaleToggle className="hidden md:inline-flex" />
             <IconButton
-              label="Search"
+              label={t("common.search")}
               variant="ghost"
               className="md:hidden"
+              onClick={() => router.push(ROUTES.shop)}
             >
               <SearchIcon size={20} />
             </IconButton>
             <IconButton
-              label="Account"
+              label={t("nav.account")}
               variant="ghost"
               className="hidden lg:hidden"
             >
               <Link
                 href={user ? ROUTES.account : ROUTES.login}
-                aria-label={user ? "My account" : "Sign in"}
+                aria-label={user ? t("nav.myAccount") : t("common.signIn")}
                 className="flex h-full w-full items-center justify-center"
               >
                 <UserIcon size={20} />
@@ -147,12 +161,12 @@ export function Header() {
             </IconButton>
             <Link
               href={ROUTES.wishlist}
-              aria-label={`Wishlist, ${wishlistCount} item${wishlistCount === 1 ? "" : "s"}`}
+              aria-label={`${t("nav.wishlist")}, ${tc(wishlistCount, "units.itemOne", "units.itemOther")}`}
               className="relative hidden h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all hover:bg-cream-100 sm:inline-flex"
             >
               <HeartIcon size={20} />
               {wishlistCount > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white">
+                <span className="absolute -inset-e-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white">
                   {wishlistCount}
                 </span>
               ) : null}
@@ -160,11 +174,11 @@ export function Header() {
             <button
               type="button"
               onClick={() => dispatch(toggleCartDrawer(true))}
-              className="relative inline-flex h-10 items-center gap-2 rounded-full bg-ink-900 pl-3 pr-4 text-sm font-medium text-white transition-colors hover:bg-ink-800"
-              aria-label={`Open cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+              className="relative inline-flex h-10 items-center gap-2 rounded-full bg-ink-900 ps-3 pe-4 text-sm font-medium text-white transition-colors hover:bg-ink-800"
+              aria-label={`${t("nav.cart")}, ${tc(itemCount, "units.itemOne", "units.itemOther")}`}
             >
               <BagIcon size={18} />
-              <span className="hidden sm:inline">Cart</span>
+              <span className="hidden sm:inline">{t("nav.cart")}</span>
               <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white">
                 {itemCount}
               </span>

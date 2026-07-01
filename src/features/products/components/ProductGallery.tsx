@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
 import type { Image as ImageType } from "@/types";
 
 interface ProductGalleryProps {
@@ -12,6 +13,7 @@ interface ProductGalleryProps {
 
 export function ProductGallery({ images, title }: ProductGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const { t } = useT();
   const active = images[activeIndex] ?? images[0];
 
   if (!active) {
@@ -47,7 +49,10 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
                   ? "ring-2 ring-bloom-500"
                   : "ring-1 ring-ink-100 hover:ring-ink-300"
               )}
-              aria-label={`View image ${i + 1} of ${images.length}`}
+              aria-label={t("product.viewImage", {
+                n: i + 1,
+                total: images.length,
+              })}
             >
               <Image
                 src={img.url}

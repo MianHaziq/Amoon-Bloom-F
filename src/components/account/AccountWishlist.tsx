@@ -10,12 +10,14 @@ import { addItem } from "@/store/slices/cart.slice";
 import { pushToast } from "@/store/slices/ui.slice";
 import { formatCurrency } from "@/lib/format";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { useT } from "@/i18n/useT";
 import { ROUTES } from "@/constants/routes";
 
 export function AccountWishlist() {
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.wishlist.items);
   const { currency, locale } = useCurrency();
+  const { t } = useT();
 
   if (items.length === 0) {
     return (
@@ -25,15 +27,14 @@ export function AccountWishlist() {
         </div>
         <div>
           <h2 className="font-display text-xl text-ink-900">
-            Your wishlist is empty
+            {t("wishlist.emptyTitle")}
           </h2>
           <p className="mt-1 text-sm text-ink-500">
-            Save the pieces you love — they live in this device until you check
-            out.
+            {t("wishlist.emptyBody")}
           </p>
         </div>
         <Link href={ROUTES.shop} className="contents">
-          <Button>Browse the boutique</Button>
+          <Button>{t("common.browseBoutique")}</Button>
         </Link>
       </div>
     );
@@ -102,14 +103,14 @@ export function AccountWishlist() {
                   );
                   dispatch(
                     pushToast({
-                      title: "Added to cart",
+                      title: t("common.addedToCart"),
                       description: item.title,
                       variant: "success",
                     })
                   );
                 }}
               >
-                Add to cart
+                {t("common.addToCart")}
               </Button>
               <Button
                 size="sm"
@@ -117,7 +118,7 @@ export function AccountWishlist() {
                 leadingIcon={<TrashIcon size={14} />}
                 onClick={() => dispatch(removeWishlistItem(item.productId))}
               >
-                Remove
+                {t("common.remove")}
               </Button>
             </div>
           </div>

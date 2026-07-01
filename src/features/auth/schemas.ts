@@ -1,13 +1,25 @@
 import { z } from "zod";
+import type { MessageKey } from "@/i18n";
 
-export const loginSchema = z.object({
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
+type TFn = (key: MessageKey, vars?: Record<string, string | number>) => string;
 
-export const registerSchema = loginSchema.extend({
-  name: z.string().min(2, "Name is required"),
-});
+/**
+ * Schema factories so validation messages localize. Build inside a component
+ * with `useMemo(() => makeLoginSchema(t), [t])` — the message text then follows
+ * the active locale (Arabic/English).
+ */
+export function makeLoginSchema(t: TFn) {
+  return z.object({
+    email: z.string().email(t("validation.email")),
+    password: z.string().min(8, t("validation.passwordMin8")),
+  });
+}
 
-export type LoginInput = z.infer<typeof loginSchema>;
-export type RegisterInput = z.infer<typeof registerSchema>;
+export function makeRegisterSchema(t: TFn) {
+  return makeLoginSchema(t).extend({
+    name: z.string().min(2, t("validation.nameRequired")),
+  });
+}
+
+export type LoginInput = z.infer<ReturnType<typeof makeLoginSchema>>;
+export type RegisterInput = z.infer<ReturnType<typeof makeRegisterSchema>>;

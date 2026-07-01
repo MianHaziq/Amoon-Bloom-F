@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useAppSelector } from "@/store";
 import { LogoutIcon, MenuIcon, UserIcon } from "@/components/icons";
+import { LocaleToggle } from "@/components/layout/LocaleToggle";
+import { useT } from "@/i18n/useT";
 
 interface AdminTopbarProps {
   title?: string;
@@ -15,6 +17,7 @@ interface AdminTopbarProps {
 export function AdminTopbar({ title, onOpenMobileNav }: AdminTopbarProps) {
   const { signOut } = useAuth();
   const router = useRouter();
+  const { t } = useT();
   const user = useAppSelector((s) => s.auth.user);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -50,29 +53,32 @@ export function AdminTopbar({ title, onOpenMobileNav }: AdminTopbarProps) {
         <MenuIcon size={20} />
       </button>
 
-      <h1 className="font-display text-xl text-ink-900">{title ?? "Admin"}</h1>
+      <h1 className="font-display text-xl text-ink-900">
+        {title ?? t("admin.admin")}
+      </h1>
 
-      <div className="ml-auto flex items-center gap-2" ref={menuRef}>
+      <div className="ms-auto flex items-center gap-2" ref={menuRef}>
+        <LocaleToggle className="hidden sm:inline-flex" />
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-full border border-ink-100 bg-white px-2 py-1 pr-3 text-sm transition-colors hover:bg-ink-50"
+          className="flex items-center gap-2 rounded-full border border-ink-100 bg-white px-2 py-1 pe-3 text-sm transition-colors hover:bg-ink-50"
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-bloom-100 text-[11px] font-semibold text-bloom-700">
             {initials}
           </span>
-          <span className="hidden text-left sm:block">
+          <span className="hidden text-start sm:block">
             <span className="block text-xs font-medium leading-tight text-ink-900">
-              {user?.firstName || user?.name || "Admin"}
+              {user?.firstName || user?.name || t("admin.admin")}
             </span>
             <span className="block text-[10px] uppercase tracking-wider text-ink-400">
-              {user?.role ?? "Admin"}
+              {user?.role ?? t("admin.admin")}
             </span>
           </span>
         </button>
 
         {open ? (
-          <div className="absolute right-4 top-14 w-56 overflow-hidden rounded-xl border border-ink-100 bg-white shadow-(--shadow-lift) sm:right-6">
+          <div className="absolute inset-e-4 top-14 w-56 overflow-hidden rounded-xl border border-ink-100 bg-white shadow-(--shadow-lift) sm:inset-e-6">
             <div className="border-b border-ink-100 px-4 py-3">
               <p className="text-sm font-medium text-ink-900">
                 {user?.firstName} {user?.lastName}
@@ -85,15 +91,15 @@ export function AdminTopbar({ title, onOpenMobileNav }: AdminTopbarProps) {
               className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink-700 transition-colors hover:bg-ink-50"
             >
               <UserIcon size={16} />
-              <span>My profile</span>
+              <span>{t("admin.myProfile")}</span>
             </Link>
             <button
               type="button"
               onClick={handleLogout}
-              className="flex w-full items-center gap-2 border-t border-ink-100 px-4 py-2.5 text-left text-sm text-bloom-700 transition-colors hover:bg-bloom-50"
+              className="flex w-full items-center gap-2 border-t border-ink-100 px-4 py-2.5 text-start text-sm text-bloom-700 transition-colors hover:bg-bloom-50"
             >
               <LogoutIcon size={16} />
-              <span>Sign out</span>
+              <span>{t("admin.signOut")}</span>
             </button>
           </div>
         ) : null}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAppSelector } from "@/store";
 import { ChevronDown, PinIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
 import { LocationSheet } from "./LocationSheet";
 
 interface DeliverToPillProps {
@@ -19,6 +20,7 @@ interface DeliverToPillProps {
 export function DeliverToPill({ className, compact = false }: DeliverToPillProps) {
   const [open, setOpen] = useState(false);
   const city = useAppSelector((s) => s.location.city);
+  const { t } = useT();
 
   return (
     <>
@@ -31,7 +33,7 @@ export function DeliverToPill({ className, compact = false }: DeliverToPillProps
         )}
       >
         <PinIcon size={14} className="text-bloom-700" />
-        {compact ? null : <span className="text-ink-500">Deliver to</span>}
+        {compact ? null : <span className="text-ink-500">{t("nav.deliverTo")}</span>}
         <span className="text-ink-900">{city}</span>
         <ChevronDown size={12} className="text-ink-400" />
       </button>

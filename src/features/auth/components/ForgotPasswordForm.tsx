@@ -9,17 +9,24 @@ import { Button, Input } from "@/components/ui";
 import { ArrowRight, CheckCircleIcon, MailIcon } from "@/components/icons";
 import { authApi } from "../api/auth.api";
 import { ApiError } from "@/services/http";
+import { useT } from "@/i18n/useT";
+import { useMemo } from "react";
 
-const schema = z.object({
-  email: z.string().email("Enter a valid email"),
-});
-
-type Values = z.infer<typeof schema>;
+type Values = { email: string };
 
 export function ForgotPasswordForm() {
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(t("validation.email")),
+      }),
+    [t]
+  );
 
   const {
     register,
@@ -38,7 +45,7 @@ export function ForgotPasswordForm() {
       setDone(true);
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Could not send reset email";
+        err instanceof ApiError ? err.message : t("auth.sendError");
       setFormError(message);
     } finally {
       setSubmitting(false);
@@ -49,16 +56,15 @@ export function ForgotPasswordForm() {
     return (
       <div className="flex flex-col items-start gap-3">
         <CheckCircleIcon size={24} className="text-(--color-success)" />
-        <h2 className="font-display text-2xl text-ink-900">Check your email</h2>
+        <h2 className="font-display text-2xl text-ink-900">{t("auth.checkEmailTitle")}</h2>
         <p className="text-sm text-ink-500">
-          If an account exists for that email, we&apos;ve sent a password
-          reset link. The link expires in 30 minutes.
+          {t("auth.checkEmailBody")}
         </p>
         <Link
           href="/login"
           className="mt-2 text-sm font-medium text-bloom-700 hover:underline"
         >
-          Back to sign in
+          {t("auth.backToSignIn")}
         </Link>
       </div>
     );
@@ -67,7 +73,7 @@ export function ForgotPasswordForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       <Input
-        label="Email"
+        label={t("auth.email")}
         type="email"
         autoComplete="email"
         leadingIcon={<MailIcon size={16} />}
@@ -87,14 +93,14 @@ export function ForgotPasswordForm() {
         type="submit"
         size="lg"
         isLoading={submitting}
-        trailingIcon={<ArrowRight size={16} />}
+        trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
       >
-        Send reset link
+        {t("auth.sendResetLink")}
       </Button>
       <p className="text-center text-sm text-ink-500">
-        Remembered it?{" "}
+        {t("auth.rememberedIt")}{" "}
         <Link href="/login" className="font-medium text-bloom-700 hover:underline">
-          Sign in
+          {t("auth.signIn")}
         </Link>
       </p>
     </form>

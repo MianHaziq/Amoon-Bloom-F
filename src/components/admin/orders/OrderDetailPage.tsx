@@ -123,7 +123,7 @@ export function OrderDetailPage({ id }: { id: string }) {
                   <dt>
                     Discount{" "}
                     {order.appliedPromoCode ? (
-                      <span className="ml-1 text-xs text-ink-400">
+                      <span className="ms-1 text-xs text-ink-400">
                         ({order.appliedPromoCode})
                       </span>
                     ) : null}

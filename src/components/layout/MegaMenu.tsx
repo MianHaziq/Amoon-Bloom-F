@@ -7,6 +7,7 @@ import { ChevronDown, ArrowRight } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/cn";
 import { useCategories } from "@/features/categories/hooks/useCategories";
+import { useT } from "@/i18n/useT";
 import type { CategoryGroup } from "@/features/categories/types";
 
 interface MegaMenuProps {
@@ -16,6 +17,7 @@ interface MegaMenuProps {
 export function MegaMenu({ className }: MegaMenuProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const { groups } = useCategories();
+  const { t } = useT();
 
   return (
     <nav
@@ -34,13 +36,13 @@ export function MegaMenu({ className }: MegaMenuProps) {
         href="/about"
         className="rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-ink-900"
       >
-        Our story
+        {t("nav.ourStory")}
       </Link>
       <Link
         href="/contact"
         className="rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-ink-900"
       >
-        Contact
+        {t("nav.contact")}
       </Link>
     </nav>
   );
@@ -55,6 +57,7 @@ function MegaMenuTrigger({
   isActive: boolean;
   onActivate: () => void;
 }) {
+  const { t } = useT();
   return (
     <div onMouseEnter={onActivate} className="relative">
       <button
@@ -65,7 +68,7 @@ function MegaMenuTrigger({
         )}
         aria-expanded={isActive}
       >
-        {group.label}
+        {group.id === "shop" ? t("common.shop") : group.label}
         <ChevronDown
           size={14}
           className={cn("transition-transform", isActive && "rotate-180")}
@@ -78,78 +81,69 @@ function MegaMenuTrigger({
 }
 
 function MegaMenuPanel({ group }: { group: CategoryGroup }) {
+  const { t, tc } = useT();
   return (
+    // Left-anchored to the trigger (the "Shop" item sits near the left of the
+    // nav) and width-capped to the viewport, so the panel never clips off
+    // either edge on any desktop width.
     <div
-      className="absolute left-1/2 top-full z-50 w-screen max-w-[64rem] -translate-x-1/2 pt-3 animate-fade-in-up"
+      className="absolute inset-s-0 top-full z-50 w-[min(38rem,calc(100vw-3rem))] pt-3 animate-fade-in-up"
       role="region"
       aria-label={`${group.label} menu`}
     >
-      <div className="overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-(--shadow-lift)">
-        <div className="grid gap-8 p-8 lg:grid-cols-[1fr_1.1fr]">
-          {/* Left: category list */}
-          <div className="grid grid-cols-2 gap-3">
-            {group.categories.map((cat) => (
+      <div className="rounded-3xl border border-ink-100 bg-white p-4 shadow-(--shadow-lift)">
+        <div className="grid grid-cols-2 gap-1.5">
+          {group.categories.map((cat) => {
+            const realImage = cat.image.url.startsWith("http")
+              ? cat.image.url
+              : null;
+            return (
               <Link
                 key={cat.id}
                 href={ROUTES.category(cat.slug)}
-                className="group flex items-center gap-4 rounded-2xl p-3 transition-colors hover:bg-cream-50"
+                className="group flex items-center gap-3 rounded-2xl p-2.5 transition-colors hover:bg-cream-50"
               >
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-cream-100">
-                  <Image
-                    src={cat.image.url}
-                    alt={cat.image.alt}
-                    fill
-                    sizes="56px"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-display text-base font-medium text-ink-900">
-                    {cat.title}
-                  </p>
-                  {cat.tagline && (
-                    <p className="mt-0.5 text-xs text-ink-500">{cat.tagline}</p>
+                <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-cream-100">
+                  {realImage ? (
+                    <Image
+                      src={realImage}
+                      alt={cat.title}
+                      fill
+                      sizes="44px"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center bg-linear-to-br from-bloom-400 to-bloom-700 font-display text-lg text-white">
+                      {cat.title.charAt(0)}
+                    </span>
                   )}
                 </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-display text-sm font-medium text-ink-900">
+                    {cat.title}
+                  </p>
+                  {cat.productCount ? (
+                    <p className="mt-0.5 text-xs text-ink-400">
+                      {tc(cat.productCount, "units.pieceOne", "units.pieceOther")}
+                    </p>
+                  ) : null}
+                </div>
                 <ArrowRight
-                  size={16}
-                  className="ml-auto text-ink-300 transition-all group-hover:translate-x-1 group-hover:text-bloom-600"
+                  size={15}
+                  className="shrink-0 text-ink-300 transition-all ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 group-hover:text-bloom-600 rtl:-scale-x-100"
                 />
               </Link>
-            ))}
-          </div>
-
-          {/* Right: featured highlight */}
-          {group.highlight && (
-            <Link
-              href={group.highlight.href}
-              className="group relative block overflow-hidden rounded-2xl bg-blush-50"
-            >
-              <div className="relative aspect-4/3 overflow-hidden">
-                <Image
-                  src={group.highlight.image.url}
-                  alt={group.highlight.image.alt}
-                  fill
-                  sizes="(min-width: 1024px) 35vw, 100vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-ink-900/55 to-transparent" />
-              </div>
-              <div className="absolute inset-0 flex flex-col justify-end gap-2 p-6 text-white">
-                <p className="font-display text-2xl font-medium">
-                  {group.highlight.title}
-                </p>
-                <p className="max-w-xs text-sm text-white/85">
-                  {group.highlight.description}
-                </p>
-                <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold">
-                  {group.highlight.cta}
-                  <ArrowRight size={16} />
-                </span>
-              </div>
-            </Link>
-          )}
+            );
+          })}
         </div>
+
+        <Link
+          href={ROUTES.shop}
+          className="mt-2 flex items-center justify-between rounded-2xl bg-cream-50 px-4 py-3 text-sm font-medium text-ink-900 transition-colors hover:bg-cream-100"
+        >
+          {t("nav.shopEverything")}
+          <ArrowRight size={16} className="text-bloom-600 rtl:-scale-x-100" />
+        </Link>
       </div>
     </div>
   );

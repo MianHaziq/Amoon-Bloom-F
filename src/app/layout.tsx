@@ -4,6 +4,8 @@ import { StoreProvider } from "@/store/providers/StoreProvider";
 import { QueryProvider } from "@/store/providers/QueryProvider";
 import { ToastViewport } from "@/components/ui/Toast";
 import { siteConfig } from "@/config/site";
+import { getServerLocale } from "@/i18n/server";
+import { dirFor } from "@/i18n";
 import "./globals.css";
 
 /**
@@ -64,16 +66,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getServerLocale();
   return (
     <html
-      lang="en"
+      lang={locale}
+      dir={dirFor(locale)}
       className={`${jakarta.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream-50 text-ink-900 font-sans">
-        <StoreProvider>
+        <StoreProvider initialLocale={locale}>
           <QueryProvider>
             {children}
             <ToastViewport />

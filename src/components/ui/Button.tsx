@@ -100,7 +100,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         <span>{children}</span>
         {!isLoading && trailingIcon && (
-          <span className="shrink-0 transition-transform group-hover:translate-x-0.5">
+          <span className="shrink-0 transition-transform ltr:group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5">
             {trailingIcon}
           </span>
         )}

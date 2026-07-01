@@ -4,14 +4,16 @@ import Link from "next/link";
 import { Button, Drawer, Divider } from "@/components/ui";
 import { ArrowRight, BagIcon } from "@/components/icons";
 import { CartLineItem } from "./CartLineItem";
-import { formatCurrency, pluralize } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { toggleCartDrawer } from "@/store/slices/ui.slice";
+import { useT } from "@/i18n/useT";
 
 export function CartDrawer() {
   const dispatch = useAppDispatch();
+  const { t, tc } = useT();
   const open = useAppSelector((s) => s.ui.isCartDrawerOpen);
   const items = useAppSelector((s) => s.cart.items);
   const close = () => dispatch(toggleCartDrawer(false));
@@ -26,11 +28,11 @@ export function CartDrawer() {
     <Drawer
       open={open}
       onClose={close}
-      title="Your cart"
+      title={t("cart.title")}
       description={
         items.length > 0
-          ? pluralize(itemCount, "item")
-          : "Composed for the moment."
+          ? tc(itemCount, "units.itemOne", "units.itemOther")
+          : t("cart.momentTagline")
       }
       width="max-w-md"
     >
@@ -50,13 +52,13 @@ export function CartDrawer() {
 
           <footer className="border-t border-ink-100 bg-cream-50 px-6 py-5">
             <div className="flex items-baseline justify-between">
-              <span className="text-sm text-ink-600">Subtotal</span>
+              <span className="text-sm text-ink-600">{t("common.subtotal")}</span>
               <span className="font-display text-xl font-medium tabular-nums text-ink-900">
                 {formatCurrency(subtotal, currency, locale)}
               </span>
             </div>
             <p className="mt-1 text-xs text-ink-500">
-              Delivery & taxes calculated at checkout.
+              {t("cart.deliveryNote")}
             </p>
             <div className="mt-4 flex flex-col gap-2">
               <Link
@@ -67,14 +69,14 @@ export function CartDrawer() {
                 <Button
                   fullWidth
                   size="lg"
-                  trailingIcon={<ArrowRight size={16} />}
+                  trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
                 >
-                  Checkout
+                  {t("checkout.title")}
                 </Button>
               </Link>
               <Link href={ROUTES.cart} onClick={close} className="contents">
                 <Button fullWidth size="lg" variant="outline">
-                  View full cart
+                  {t("common.viewFullCart")}
                 </Button>
               </Link>
             </div>
@@ -86,21 +88,22 @@ export function CartDrawer() {
 }
 
 function EmptyCart({ onContinue }: { onContinue: () => void }) {
+  const { t } = useT();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-5 px-6 py-12 text-center">
       <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-blush-100 text-bloom-700">
         <BagIcon size={28} />
       </span>
       <div>
-        <h3 className="font-display text-xl text-ink-900">Your cart is quiet</h3>
+        <h3 className="font-display text-xl text-ink-900">{t("cart.empty")}</h3>
         <p className="mt-2 max-w-xs text-sm text-ink-500">
-          Add a bouquet, a cake, or a hand-poured candle to get started.
+          {t("cart.emptyBody")}
         </p>
       </div>
       <Divider />
       <Link href={ROUTES.shop} onClick={onContinue} className="contents">
-        <Button size="lg" trailingIcon={<ArrowRight size={16} />}>
-          Browse the boutique
+        <Button size="lg" trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}>
+          {t("common.browseBoutique")}
         </Button>
       </Link>
     </div>

@@ -16,65 +16,65 @@ import {
 import { siteConfig } from "@/config/site";
 import { ROUTES } from "@/constants/routes";
 import { NewsletterForm } from "./NewsletterForm";
+import { getServerT } from "@/i18n/server";
 
-const footerNav = [
-  { href: ROUTES.shop, label: "Menu" },
-  { href: ROUTES.orderStatus, label: "Order status" },
-  { href: ROUTES.about, label: "About us" },
-  { href: ROUTES.privacy, label: "Privacy policy" },
-  { href: ROUTES.branches, label: "Branches" },
-];
+export async function Footer() {
+  const { t } = await getServerT();
 
-const sections = [
-  {
-    title: "Shop",
-    links: [
-      { href: ROUTES.shop, label: "All gift boxes" },
-      { href: ROUTES.category("graduation-boxes"), label: "Graduation boxes" },
-      { href: ROUTES.category("eid-box"), label: "EID BOX" },
-      { href: ROUTES.category("flowers"), label: "Flowers" },
-      { href: ROUTES.category("newborn-gifts"), label: "Newborn gifts" },
-    ],
-  },
-  {
-    title: "Care & Beauty",
-    links: [
-      { href: ROUTES.category("makeup-and-care-gifts"), label: "Makeup & care" },
-      {
-        href: ROUTES.category("gifts-of-pampering-and-relaxation"),
-        label: "Pampering & relaxation",
-      },
-      { href: ROUTES.category("distributions"), label: "Distributions" },
-    ],
-  },
-  {
-    title: "Service",
-    links: [
-      { href: ROUTES.contact, label: "Customer care" },
-      { href: ROUTES.branches, label: "Visit a branch" },
-      { href: ROUTES.orderStatus, label: "Order status" },
-      { href: "/faq", label: "FAQ" },
-    ],
-  },
-];
+  const footerNav = [
+    { href: ROUTES.shop, label: t("footer.menu") },
+    { href: ROUTES.orderStatus, label: t("footer.orderStatus") },
+    { href: ROUTES.about, label: t("footer.aboutUs") },
+    { href: ROUTES.privacy, label: t("footer.privacyPolicy") },
+    { href: ROUTES.branches, label: t("footer.branches") },
+  ];
 
-export function Footer() {
+  const sections = [
+    {
+      title: t("footer.shop"),
+      links: [
+        { href: ROUTES.shop, label: t("footer.allGiftBoxes") },
+        { href: ROUTES.category("graduation-boxes"), label: t("footer.graduationBoxes") },
+        { href: ROUTES.category("eid-box"), label: t("footer.eidBox") },
+        { href: ROUTES.category("flowers"), label: t("footer.flowers") },
+        { href: ROUTES.category("newborn-gifts"), label: t("footer.newbornGifts") },
+      ],
+    },
+    {
+      title: t("footer.careBeauty"),
+      links: [
+        { href: ROUTES.category("makeup-and-care-gifts"), label: t("footer.makeupCare") },
+        {
+          href: ROUTES.category("gifts-of-pampering-and-relaxation"),
+          label: t("footer.pampering"),
+        },
+        { href: ROUTES.category("distributions"), label: t("footer.distributions") },
+      ],
+    },
+    {
+      title: t("footer.service"),
+      links: [
+        { href: ROUTES.contact, label: t("footer.care") },
+        { href: ROUTES.branches, label: t("footer.visitBranch") },
+        { href: ROUTES.orderStatus, label: t("footer.orderStatus") },
+        { href: "/faq", label: t("footer.faq") },
+      ],
+    },
+  ];
+
   return (
     <footer className="bg-ink-900 text-cream-100">
       {/* Newsletter strip */}
       <Container className="grid gap-10 border-b border-white/10 py-16 lg:grid-cols-[1fr_1fr] lg:items-center lg:py-20">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-300">
-            Stay in the boutique
+            {t("footer.newsletterEyebrow")}
           </p>
           <h2 className="mt-3 font-display text-3xl font-medium leading-tight md:text-4xl">
-            New box drops,
-            <br />
-            in your inbox.
+            {t("footer.newsletterHeadline")}
           </h2>
           <p className="mt-3 max-w-md text-sm text-cream-100/70">
-            Be first to see seasonal boxes, member-only edits, and behind the
-            scenes from the Amoonis Boutique studio.
+            {t("footer.newsletterBody")}
           </p>
         </div>
         <NewsletterForm />
@@ -93,7 +93,7 @@ export function Footer() {
             </span>
           </Link>
           <p className="mt-4 max-w-sm text-sm text-cream-100/70">
-            {siteConfig.description}
+            {t("footer.brandDesc")}
           </p>
           <div className="mt-6 flex flex-col gap-3 text-sm text-cream-100/80">
             <a
@@ -194,10 +194,10 @@ export function Footer() {
       <div className="border-t border-white/10 bg-ink-900">
         <Container className="flex flex-col items-center justify-between gap-2 py-5 text-[0.7rem] uppercase tracking-[0.18em] text-cream-100/50 md:flex-row">
           <span>
-            © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+            © {new Date().getFullYear()} {siteConfig.name}. {t("footer.rights")}
           </span>
           <span className="text-cream-100/40">
-            Powered by{" "}
+            {t("footer.poweredBy")}{" "}
             <span className="text-cream-100/70">{siteConfig.poweredBy}</span>
           </span>
         </Container>

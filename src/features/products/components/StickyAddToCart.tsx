@@ -10,6 +10,7 @@ import { pushToast, toggleCartDrawer } from "@/store/slices/ui.slice";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { useT } from "@/i18n/useT";
 import type { Product } from "../types";
 
 interface StickyAddToCartProps {
@@ -25,6 +26,7 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
   const dispatch = useAppDispatch();
   const { add } = useCart();
   const { currency, locale } = useCurrency();
+  const { t } = useT();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
     add(product, 1);
     dispatch(
       pushToast({
-        title: "Added to cart",
+        title: t("common.addedToCart"),
         description: product.title,
         variant: "success",
       })
@@ -92,7 +94,7 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
           disabled={!product.inStock}
           leadingIcon={<BagIcon size={16} />}
         >
-          {product.inStock ? "Add" : "Sold out"}
+          {product.inStock ? t("common.add") : t("common.soldOut")}
         </Button>
       </div>
       </div>

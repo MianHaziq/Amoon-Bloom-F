@@ -29,7 +29,7 @@ export function PageHeader({ title, description, crumbs, actions }: PageHeaderPr
                 ) : (
                   <span className="text-ink-500">{c.label}</span>
                 )}
-                {i < crumbs.length - 1 ? <ChevronRight size={12} /> : null}
+                {i < crumbs.length - 1 ? <ChevronRight size={12} className="rtl:-scale-x-100" /> : null}
               </span>
             ))}
           </nav>

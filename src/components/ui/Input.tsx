@@ -52,7 +52,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         )}
       >
         {leadingIcon && (
-          <span className="pl-4 text-ink-400">{leadingIcon}</span>
+          <span className="ps-4 text-ink-400">{leadingIcon}</span>
         )}
         <input
           ref={ref}
@@ -61,14 +61,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-describedby={describedBy}
           className={cn(
             "flex-1 bg-transparent px-4 py-3 text-base text-ink-900 placeholder:text-ink-400 focus:outline-none",
-            leadingIcon && "pl-2",
-            trailingIcon && "pr-2",
+            leadingIcon && "ps-2",
+            trailingIcon && "pe-2",
             className
           )}
           {...props}
         />
         {trailingIcon && (
-          <span className="pr-4 text-ink-400">{trailingIcon}</span>
+          <span className="pe-4 text-ink-400">{trailingIcon}</span>
         )}
       </div>
       {error ? (

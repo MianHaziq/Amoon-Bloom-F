@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Loader";
 import { Pagination } from "@/components/admin/Pagination";
 import { ChevronRight } from "@/components/icons";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, intlLocale } from "@/lib/format";
+import { useT } from "@/i18n/useT";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
 import {
-  ORDER_STATUS_LABEL,
+  ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
 } from "@/components/admin/orders/orderStatus";
 
@@ -19,6 +21,8 @@ const PAGE_SIZE = 10;
 
 export function AccountOrders() {
   const [page, setPage] = useState(1);
+  const { t, tc, locale } = useT();
+  const { currency, locale: curLocale } = useCurrency();
 
   const query = useQuery({
     queryKey: queryKeys.orders.myHistory({ page, limit: PAGE_SIZE }),
@@ -38,7 +42,7 @@ export function AccountOrders() {
   if (query.isError) {
     return (
       <div className="rounded-xl border border-bloom-200 bg-bloom-50 p-6 text-bloom-700">
-        Could not load your orders.
+        {t("account.ordersLoadError")}
       </div>
     );
   }
@@ -48,15 +52,15 @@ export function AccountOrders() {
   if (orders.length === 0) {
     return (
       <div className="rounded-2xl border border-ink-100 bg-white p-12 text-center">
-        <p className="font-display text-2xl text-ink-700">No orders yet</p>
+        <p className="font-display text-2xl text-ink-700">{t("account.ordersEmptyTitle")}</p>
         <p className="mt-2 text-sm text-ink-500">
-          When you place an order, it will appear here.
+          {t("account.ordersEmptyBody")}
         </p>
         <Link
           href="/shop"
           className="mt-4 inline-flex h-10 items-center rounded-full bg-bloom-600 px-5 text-sm font-medium text-white shadow-(--shadow-bloom) hover:bg-bloom-700"
         >
-          Start shopping
+          {t("account.startShopping")}
         </Link>
       </div>
     );
@@ -80,21 +84,21 @@ export function AccountOrders() {
             <div className="flex flex-1 flex-wrap items-center gap-3 sm:gap-5">
               <div className="min-w-0 flex-1">
                 <p className="font-mono text-xs text-ink-500">
-                  Order {order.id.slice(0, 8)}
+                  {t("order.orderLabel")} #{order.orderNumber ?? order.id.slice(0, 8)}
                 </p>
                 <p className="mt-0.5 text-sm text-ink-700">
-                  {itemCount} {itemCount === 1 ? "item" : "items"} ·{" "}
-                  {formatDate(order.createdAt)}
+                  {tc(itemCount, "units.itemOne", "units.itemOther")} ·{" "}
+                  {formatDate(order.createdAt, intlLocale(locale))}
                 </p>
               </div>
               <Badge tone={ORDER_STATUS_TONE[order.status]}>
-                {ORDER_STATUS_LABEL[order.status]}
+                {t(ORDER_STATUS_LABEL_KEY[order.status])}
               </Badge>
-              <p className="min-w-[6rem] text-right font-medium text-ink-900">
-                {formatCurrency(order.totalAmount)}
+              <p className="min-w-[6rem] text-end font-medium text-ink-900">
+                {formatCurrency(order.totalAmount, currency, curLocale)}
               </p>
             </div>
-            <ChevronRight size={16} className="shrink-0 text-ink-400" />
+            <ChevronRight size={16} className="shrink-0 text-ink-400 rtl:-scale-x-100" />
           </Link>
         );
       })}

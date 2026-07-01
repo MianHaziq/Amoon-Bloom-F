@@ -55,7 +55,7 @@ export function CategoryCard({
       ) : (
         // No image anywhere — branded gradient so the card still looks composed.
         <div className="absolute inset-0 bg-linear-to-br from-bloom-500 via-bloom-700 to-ink-800">
-          <span className="absolute -right-6 -top-8 select-none font-display text-[10rem] leading-none text-white/10">
+          <span className="absolute -inset-e-6 -top-8 select-none font-display text-[10rem] leading-none text-white/10">
             {category.title.charAt(0)}
           </span>
         </div>
@@ -68,11 +68,11 @@ export function CategoryCard({
           </p>
         )}
         <div className="mt-2 flex items-end justify-between gap-3">
-          <h3 className="font-display text-3xl font-medium leading-tight md:text-4xl">
+          <h3 className="line-clamp-2 min-w-0 font-display text-2xl font-medium leading-tight md:text-3xl">
             {category.title}
           </h3>
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm transition-all group-hover:bg-white group-hover:text-ink-900">
-            <ArrowRight size={18} />
+            <ArrowRight size={18} className="rtl:-scale-x-100" />
           </span>
         </div>
       </div>

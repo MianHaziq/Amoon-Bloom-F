@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { ProductFilters } from "@/features/products/components/ProductFilters";
 import { Drawer, Button } from "@/components/ui";
 import { FilterIcon } from "@/components/icons";
 import type { Product, ProductFilter } from "@/features/products/types";
 import type { Category } from "@/features/categories/types";
-import { pluralize } from "@/lib/format";
+import { useT } from "@/i18n/useT";
 
 interface ShopPLPProps {
   products: Product[];
@@ -26,17 +27,34 @@ export function ShopPLP({
     category: lockedCategorySlug,
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const { t, tc } = useT();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const q = (searchParams.get("q") ?? "").trim().toLowerCase();
 
   const hasActiveFilters =
     (!lockedCategorySlug && Boolean(filter.category)) ||
     Boolean(filter.inStock) ||
+    Boolean(q) ||
     (filter.sort ? filter.sort !== "featured" : false);
+
+  const clearAll = () => {
+    setFilter({ sort: "featured", category: lockedCategorySlug });
+    router.push(lockedCategorySlug ? window.location.pathname : "/shop");
+  };
 
   const setFilterSafe = (next: ProductFilter) =>
     setFilter({ ...next, category: lockedCategorySlug ?? next.category });
 
   const filtered = useMemo(() => {
     let list = [...products];
+    if (q) {
+      list = list.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          (p.category ?? "").toLowerCase().includes(q)
+      );
+    }
     if (filter.category) {
       list = list.filter((p) => p.categorySlug === filter.category);
     }
@@ -58,7 +76,7 @@ export function ShopPLP({
         break;
     }
     return list;
-  }, [products, filter]);
+  }, [products, filter, q]);
 
   return (
     <>
@@ -66,7 +84,7 @@ export function ShopPLP({
       {!lockedCategorySlug && (
         <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
           <p className="text-sm text-ink-500">
-            {pluralize(filtered.length, "result")}
+            {tc(filtered.length, "units.resultOne", "units.resultOther")}
           </p>
           <button
             type="button"
@@ -74,7 +92,7 @@ export function ShopPLP({
             className="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-cream-50"
           >
             <FilterIcon size={16} />
-            Filter &amp; sort
+            {t("shop.filterSort")}
             {hasActiveFilters && (
               <span className="h-1.5 w-1.5 rounded-full bg-bloom-600" />
             )}
@@ -97,17 +115,26 @@ export function ShopPLP({
 
         <div>
           <p className="mb-6 hidden text-sm text-ink-500 lg:block">
-            {pluralize(filtered.length, "result")}
+            {tc(filtered.length, "units.resultOne", "units.resultOther")}
           </p>
           {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 py-20 text-center">
-            <p className="font-display text-2xl text-ink-900">
-              Nothing here just yet.
-            </p>
+          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 py-16 text-center sm:py-20">
+            <p className="font-display text-2xl text-ink-900">{t("shop.noMatches")}</p>
             <p className="max-w-sm text-sm text-ink-500">
-              Try widening your filters — our florists rotate the collection
-              weekly.
+              {q
+                ? `${t("shop.noMatchesSearch")} "${searchParams.get("q")}".`
+                : t("shop.noMatchesBody")}
             </p>
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={clearAll}
+                className="mt-2"
+              >
+                {t("shop.clearFilters")}
+              </Button>
+            )}
           </div>
         ) : (
           <ProductGrid products={filtered} columns={3} priorityCount={3} />
@@ -121,7 +148,7 @@ export function ShopPLP({
           open={filtersOpen}
           onClose={() => setFiltersOpen(false)}
           side="left"
-          title="Filter & sort"
+          title={t("shop.filterSort")}
         >
           <div className="flex flex-col gap-6">
             <ProductFilters
@@ -131,7 +158,7 @@ export function ShopPLP({
               categories={categories}
             />
             <Button fullWidth size="lg" onClick={() => setFiltersOpen(false)}>
-              Show {pluralize(filtered.length, "result")}
+              {`${t("shop.showResults")} ${tc(filtered.length, "units.resultOne", "units.resultOther")}`}
             </Button>
           </div>
         </Drawer>

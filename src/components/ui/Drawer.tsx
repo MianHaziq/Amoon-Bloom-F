@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
+import { useT } from "@/i18n/useT";
 
 type Side = "left" | "right";
 
@@ -32,6 +33,7 @@ export function Drawer({
   // first client render (also null) match — only the second client pass
   // creates the portal and inserts nodes into <body>.
   const mounted = useIsHydrated();
+  const { t } = useT();
 
   useEffect(() => {
     if (!open) return;
@@ -55,7 +57,7 @@ export function Drawer({
       )}
     >
       <button
-        aria-label="Close panel"
+        aria-label={t("common.close")}
         type="button"
         onClick={onClose}
         className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm"
@@ -66,13 +68,17 @@ export function Drawer({
         className={cn(
           "absolute top-0 flex h-full w-full flex-col bg-white shadow-(--shadow-lift)",
           width,
-          side === "right" ? "right-0" : "left-0",
+          // Logical inset so `side` tracks the reading direction: "right" = the
+          // inline-end edge (right in LTR, left in RTL); "left" = inline-start.
+          side === "right" ? "inset-e-0" : "inset-s-0",
           "transition-transform duration-400 ease-out-soft",
+          // Closed state slides the panel off toward its own edge; the rtl:
+          // variant inverts the physical translate so it hides correctly in RTL.
           open
             ? "translate-x-0"
             : side === "right"
-            ? "translate-x-full"
-            : "-translate-x-full",
+            ? "translate-x-full rtl:-translate-x-full"
+            : "-translate-x-full rtl:translate-x-full",
           className
         )}
       >
@@ -91,7 +97,7 @@ export function Drawer({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t("common.close")}
               className="-m-2 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 hover:bg-cream-100 hover:text-ink-900"
             >
               <svg

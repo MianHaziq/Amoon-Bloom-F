@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { toggleWishlistItem } from "@/store/slices/wishlist.slice";
 import { pushToast } from "@/store/slices/ui.slice";
+import { useT } from "@/i18n/useT";
 import type { Product } from "@/features/products/types";
 
 interface WishlistToggleProps {
@@ -25,6 +26,7 @@ export function WishlistToggle({
   stopPropagation = false,
 }: WishlistToggleProps) {
   const dispatch = useAppDispatch();
+  const { t } = useT();
   const inWishlist = useAppSelector((s) =>
     s.wishlist.items.some((i) => i.productId === product.id)
   );
@@ -36,7 +38,11 @@ export function WishlistToggle({
 
   return (
     <IconButton
-      label={inWishlist ? "Remove from wishlist" : "Save to wishlist"}
+      label={
+        inWishlist
+          ? t("product.removeFromWishlist")
+          : t("product.saveToWishlist")
+      }
       variant="subtle"
       size={size}
       className={cn(
@@ -52,7 +58,7 @@ export function WishlistToggle({
         dispatch(toggleWishlistItem({ product }));
         dispatch(
           pushToast({
-            title: inWishlist ? "Removed from wishlist" : "Saved to wishlist",
+            title: inWishlist ? t("wishlist.removed") : t("wishlist.saved"),
             description: product.title,
             variant: inWishlist ? "default" : "success",
           })

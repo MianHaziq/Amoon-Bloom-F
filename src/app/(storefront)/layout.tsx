@@ -6,10 +6,13 @@ import { CartPersistence } from "@/features/cart/components/CartPersistence";
 import { WishlistPersistence } from "@/features/wishlist/components/WishlistPersistence";
 import { LocationPersistence } from "@/features/location/components/LocationPersistence";
 import { AuthHydrator } from "@/features/auth/components/AuthHydrator";
+import { getServerLocale } from "@/i18n/server";
+import { t } from "@/i18n";
 
-export default function StorefrontLayout({
+export default async function StorefrontLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
+  const locale = await getServerLocale();
   return (
     <>
       <AuthHydrator />
@@ -18,9 +21,9 @@ export default function StorefrontLayout({
       <LocationPersistence />
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:inset-s-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white"
       >
-        Skip to content
+        {t(locale, "a11y.skipToContent")}
       </a>
       <Header />
       <main id="main" className="flex flex-1 flex-col">

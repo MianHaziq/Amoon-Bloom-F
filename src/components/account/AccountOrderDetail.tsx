@@ -7,9 +7,11 @@ import { queryKeys } from "@/services/queryKeys";
 import { Badge } from "@/components/ui";
 import { Spinner } from "@/components/ui/Loader";
 import { ChevronRight } from "@/components/icons";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, intlLocale } from "@/lib/format";
+import { useT } from "@/i18n/useT";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
 import {
-  ORDER_STATUS_LABEL,
+  ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
 } from "@/components/admin/orders/orderStatus";
 
@@ -22,6 +24,8 @@ const PROGRESS_ORDER = [
 ] as const;
 
 export function AccountOrderDetail({ id }: { id: string }) {
+  const { t, locale } = useT();
+  const { currency, locale: curLocale } = useCurrency();
   const query = useQuery({
     queryKey: queryKeys.orders.detail(id),
     queryFn: () => ordersApi.getById(id),
@@ -38,9 +42,9 @@ export function AccountOrderDetail({ id }: { id: string }) {
   if (query.isError || !query.data) {
     return (
       <div className="rounded-xl border border-bloom-200 bg-bloom-50 p-6 text-bloom-700">
-        Could not load this order.{" "}
+        {t("account.orderLoadError")}{" "}
         <Link href="/account/orders" className="underline">
-          Back to orders
+          {t("account.backToOrders")}
         </Link>
       </div>
     );
@@ -58,22 +62,22 @@ export function AccountOrderDetail({ id }: { id: string }) {
           href="/account/orders"
           className="inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-900"
         >
-          <ChevronRight size={14} className="rotate-180" />
-          All orders
+          <ChevronRight size={14} className="rotate-180 rtl:-scale-x-100" />
+          {t("account.allOrders")}
         </Link>
       </div>
 
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="font-mono text-xs text-ink-500">
-            Order {order.id.slice(0, 8)}
+            {t("order.orderLabel")} #{order.orderNumber ?? order.id.slice(0, 8)}
           </p>
           <h2 className="font-display text-2xl text-ink-900">
-            Placed {formatDate(order.createdAt)}
+            {t("account.placedOn")} {formatDate(order.createdAt, intlLocale(locale))}
           </h2>
         </div>
         <Badge tone={ORDER_STATUS_TONE[order.status]}>
-          {ORDER_STATUS_LABEL[order.status]}
+          {t(ORDER_STATUS_LABEL_KEY[order.status])}
         </Badge>
       </header>
 
@@ -96,7 +100,7 @@ export function AccountOrderDetail({ id }: { id: string }) {
                       (reached ? "text-bloom-700" : "text-ink-400")
                     }
                   >
-                    {ORDER_STATUS_LABEL[s]}
+                    {t(ORDER_STATUS_LABEL_KEY[s])}
                   </span>
                 </div>
               );
@@ -106,7 +110,7 @@ export function AccountOrderDetail({ id }: { id: string }) {
       ) : null}
 
       <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-        <h3 className="mb-4 font-display text-lg text-ink-900">Items</h3>
+        <h3 className="mb-4 font-display text-lg text-ink-900">{t("account.items")}</h3>
         <ul className="divide-y divide-ink-100">
           {order.items.map((item) => (
             <li key={item.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
@@ -123,10 +127,10 @@ export function AccountOrderDetail({ id }: { id: string }) {
               <div className="flex flex-1 items-start justify-between gap-3">
                 <div>
                   <p className="font-medium text-ink-900">
-                    {item.product?.title ?? "Removed product"}
+                    {item.product?.title ?? t("account.removedProduct")}
                   </p>
                   <p className="text-xs text-ink-500">
-                    {formatCurrency(item.price)} × {item.quantity}
+                    {formatCurrency(item.price, currency, curLocale)} × {item.quantity}
                   </p>
                   {item.perProductMessage ? (
                     <p className="mt-1 text-xs italic text-ink-500">
@@ -135,7 +139,7 @@ export function AccountOrderDetail({ id }: { id: string }) {
                   ) : null}
                 </div>
                 <p className="font-medium text-ink-900">
-                  {formatCurrency(item.price * item.quantity)}
+                  {formatCurrency(item.price * item.quantity, currency, curLocale)}
                 </p>
               </div>
             </li>
@@ -143,32 +147,56 @@ export function AccountOrderDetail({ id }: { id: string }) {
         </ul>
         <dl className="mt-4 space-y-1 border-t border-ink-100 pt-4 text-sm">
           <div className="flex justify-between text-ink-500">
-            <dt>Subtotal</dt>
-            <dd>{formatCurrency(itemsTotal)}</dd>
+            <dt>{t("common.subtotal")}</dt>
+            <dd>{formatCurrency(itemsTotal, currency, curLocale)}</dd>
           </div>
           {order.discountAmount && order.discountAmount > 0 ? (
             <div className="flex justify-between text-ink-500">
               <dt>
-                Discount{" "}
+                {t("common.discount")}{" "}
                 {order.appliedPromoCode ? (
                   <span className="text-xs text-ink-400">
                     ({order.appliedPromoCode})
                   </span>
                 ) : null}
               </dt>
-              <dd>−{formatCurrency(order.discountAmount)}</dd>
+              <dd>−{formatCurrency(order.discountAmount, currency, curLocale)}</dd>
             </div>
           ) : null}
           <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">
-            <dt>Total</dt>
-            <dd>{formatCurrency(order.totalAmount)}</dd>
+            <dt>{t("common.total")}</dt>
+            <dd>{formatCurrency(order.totalAmount, currency, curLocale)}</dd>
           </div>
         </dl>
       </section>
 
+      <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+        <h3 className="mb-2 font-display text-lg text-ink-900">{t("checkout.payment")}</h3>
+        <p className="text-sm text-ink-700">
+          {order.paymentMethod === "COD" ? t("checkout.cod") : order.paymentMethod}
+          {" · "}
+          <span
+            className={
+              order.paymentStatus === "PAID"
+                ? "font-medium text-emerald-700"
+                : "font-medium text-bloom-700"
+            }
+          >
+            {order.paymentStatus === "PAID" ? t("order.paid") : t("order.unpaid")}
+          </span>
+        </p>
+        {order.paymentMethod === "COD" && order.paymentStatus !== "PAID" ? (
+          <p className="mt-1 text-sm text-ink-500">
+            {t("order.codReady", {
+              amount: formatCurrency(order.totalAmount, currency, curLocale),
+            })}
+          </p>
+        ) : null}
+      </section>
+
       {order.shippingAddress ? (
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-3 font-display text-lg text-ink-900">Shipping</h3>
+          <h3 className="mb-3 font-display text-lg text-ink-900">{t("account.deliveryAddress")}</h3>
           <div className="text-sm text-ink-700">
             <p className="font-medium text-ink-900">
               {order.shippingAddress.fullName}

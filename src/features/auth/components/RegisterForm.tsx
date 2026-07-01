@@ -1,29 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input } from "@/components/ui";
 import { ArrowRight, MailIcon, UserIcon } from "@/components/icons";
-import { registerSchema, type RegisterInput } from "../schemas";
+import { makeRegisterSchema, type RegisterInput } from "../schemas";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { ApiError } from "@/services/http";
+import { useT } from "@/i18n/useT";
 
 export function RegisterForm() {
   const { signup } = useAuth();
+  const { t } = useT();
   const toast = useToast();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const schema = useMemo(() => makeRegisterSchema(t), [t]);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(schema),
     defaultValues: { name: "", email: "", password: "" },
   });
 
@@ -42,9 +45,9 @@ export function RegisterForm() {
         name: trimmed,
       });
       toast.success({
-        title: "Welcome to Amoon Bloom",
+        title: t("auth.welcomeToStore"),
         description: session.user.firstName
-          ? `Signed in as ${session.user.firstName}.`
+          ? t("auth.signedInAs", { name: session.user.firstName })
           : undefined,
       });
       router.replace(ROUTES.home);
@@ -54,7 +57,7 @@ export function RegisterForm() {
           ? err.message
           : err instanceof Error
           ? err.message
-          : "Sign up failed";
+          : t("auth.signupError");
       setFormError(message);
     } finally {
       setSubmitting(false);
@@ -64,15 +67,15 @@ export function RegisterForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       <Input
-        label="Full name"
+        label={t("auth.fullName")}
         autoComplete="name"
-        placeholder="Layla Al Mansouri"
+        placeholder={t("auth.fullNamePlaceholder")}
         leadingIcon={<UserIcon size={16} />}
         error={errors.name?.message}
         {...register("name")}
       />
       <Input
-        label="Email"
+        label={t("auth.email")}
         type="email"
         autoComplete="email"
         placeholder="layla@example.com"
@@ -81,11 +84,11 @@ export function RegisterForm() {
         {...register("email")}
       />
       <Input
-        label="Password"
+        label={t("auth.password")}
         type="password"
         autoComplete="new-password"
-        placeholder="At least 8 characters"
-        hint="Use a mix of letters, numbers, and symbols."
+        placeholder={t("auth.passwordPlaceholder")}
+        hint={t("auth.passwordHint")}
         error={errors.password?.message}
         {...register("password")}
       />
@@ -103,20 +106,12 @@ export function RegisterForm() {
         type="submit"
         size="lg"
         isLoading={submitting}
-        trailingIcon={<ArrowRight size={16} />}
+        trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
       >
-        Create account
+        {t("auth.createAccount")}
       </Button>
       <p className="text-center text-xs text-ink-500">
-        By creating an account you agree to our{" "}
-        <a href="/terms" className="font-medium text-ink-900 hover:underline">
-          Terms
-        </a>{" "}
-        and{" "}
-        <a href="/privacy" className="font-medium text-ink-900 hover:underline">
-          Privacy
-        </a>
-        .
+        {t("auth.terms")}
       </p>
     </form>
   );

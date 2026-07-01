@@ -210,7 +210,7 @@ export function UserForm({
                         key={p.key}
                         onClick={() => togglePerm(p.key)}
                         className={
-                          "flex flex-col items-start rounded-xl border p-3 text-left transition-colors " +
+                          "flex flex-col items-start rounded-xl border p-3 text-start transition-colors " +
                           (checked
                             ? "border-bloom-500 bg-bloom-50"
                             : "border-ink-200 bg-white hover:border-ink-300")
@@ -280,7 +280,7 @@ function RoleCard({ value, currentValue, onChange, title, description }: RoleCar
       type="button"
       onClick={() => onChange(value)}
       className={
-        "rounded-xl border p-4 text-left transition-colors " +
+        "rounded-xl border p-4 text-start transition-colors " +
         (active
           ? "border-bloom-500 bg-bloom-50"
           : "border-ink-200 bg-white hover:border-ink-300")

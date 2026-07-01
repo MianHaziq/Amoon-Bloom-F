@@ -13,6 +13,8 @@ export type OrderStatus =
 
 export type PaymentMethod = "COD";
 
+export type PaymentStatus = "UNPAID" | "PAID" | "FAILED";
+
 export interface OrderShippingAddress {
   fullName: string;
   phone: string;
@@ -72,12 +74,15 @@ export interface ApiOrderListUser {
  */
 export interface ApiOrder {
   id: string;
+  /** Human-friendly sequential order number (e.g. 1004). */
+  orderNumber: number | null;
   userId: string;
   orderMessage: string | null;
   totalAmount: number;
   discountAmount: number | null;
   appliedPromoCode: string | null;
   paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
   status: OrderStatus;
   shippingAddress: OrderShippingAddress | null;
   inventoryDeducted: boolean;
@@ -93,6 +98,7 @@ export interface ApiOrder {
  */
 export interface ApiOrderListRow {
   id: string;
+  orderNumber: number | null;
   userId: string;
   user?: ApiOrderListUser;
   orderMessage: string | null;

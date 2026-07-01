@@ -4,12 +4,17 @@ import { useId } from "react";
 import { cn } from "@/lib/cn";
 import type { ProductFilter } from "../types";
 import type { Category } from "@/features/categories/types";
+import { useT } from "@/i18n/useT";
+import type { MessageKey } from "@/i18n";
 
-const SORTS: { value: NonNullable<ProductFilter["sort"]>; label: string }[] = [
-  { value: "featured", label: "Featured" },
-  { value: "newest", label: "New arrivals" },
-  { value: "price-asc", label: "Price · low to high" },
-  { value: "price-desc", label: "Price · high to low" },
+const SORTS: {
+  value: NonNullable<ProductFilter["sort"]>;
+  labelKey: MessageKey;
+}[] = [
+  { value: "featured", labelKey: "shop.sortFeatured" },
+  { value: "newest", labelKey: "shop.sortNewest" },
+  { value: "price-asc", labelKey: "shop.sortPriceAsc" },
+  { value: "price-desc", labelKey: "shop.sortPriceDesc" },
 ];
 
 interface ProductFiltersProps {
@@ -28,6 +33,7 @@ export function ProductFilters({
   className,
 }: ProductFiltersProps) {
   const sortId = useId();
+  const { t } = useT();
 
   return (
     <div
@@ -38,21 +44,21 @@ export function ProductFilters({
     >
       <div className="flex flex-col gap-2">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
-          Browse
+          {t("shop.browse")}
         </p>
         <div className="flex flex-col gap-1.5">
           <button
             type="button"
             onClick={() => onChange({ ...filter, category: undefined })}
             className={cn(
-              "rounded-xl px-3 py-2 text-left text-sm transition-colors",
+              "rounded-xl px-3 py-2 text-start text-sm transition-colors",
               !filter.category
                 ? "bg-cream-100 font-semibold text-ink-900"
                 : "text-ink-600 hover:bg-cream-50 hover:text-ink-900"
             )}
           >
-            Everything
-            <span className="ml-2 text-ink-400">{resultCount}</span>
+            {t("shop.everything")}
+            <span className="ms-2 text-ink-400">{resultCount}</span>
           </button>
           {categories.map((cat) => {
             const active = filter.category === cat.slug;
@@ -67,7 +73,7 @@ export function ProductFilters({
                   })
                 }
                 className={cn(
-                  "rounded-xl px-3 py-2 text-left text-sm transition-colors",
+                  "rounded-xl px-3 py-2 text-start text-sm transition-colors",
                   active
                     ? "bg-cream-100 font-semibold text-ink-900"
                     : "text-ink-600 hover:bg-cream-50 hover:text-ink-900"
@@ -75,7 +81,7 @@ export function ProductFilters({
               >
                 {cat.title}
                 {cat.productCount && (
-                  <span className="ml-2 text-ink-400">{cat.productCount}</span>
+                  <span className="ms-2 text-ink-400">{cat.productCount}</span>
                 )}
               </button>
             );
@@ -88,7 +94,7 @@ export function ProductFilters({
           htmlFor={sortId}
           className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700"
         >
-          Sort
+          {t("shop.sort")}
         </label>
         <select
           id={sortId}
@@ -103,7 +109,7 @@ export function ProductFilters({
         >
           {SORTS.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {opt.label}
+              {t(opt.labelKey)}
             </option>
           ))}
         </select>
@@ -118,7 +124,7 @@ export function ProductFilters({
           }
           className="h-4 w-4 rounded border-ink-300 text-bloom-600 focus:ring-bloom-300"
         />
-        In stock only
+        {t("shop.inStockOnly")}
       </label>
     </div>
   );

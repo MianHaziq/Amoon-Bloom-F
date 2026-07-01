@@ -1,32 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input } from "@/components/ui";
 import { ArrowRight, MailIcon } from "@/components/icons";
-import { loginSchema, type LoginInput } from "../schemas";
+import { makeLoginSchema, type LoginInput } from "../schemas";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { ApiError } from "@/services/http";
+import { useT } from "@/i18n/useT";
 
 export function LoginForm() {
   const { signin } = useAuth();
+  const { t } = useT();
   const toast = useToast();
   const router = useRouter();
   const search = useSearchParams();
   const next = search.get("next");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const schema = useMemo(() => makeLoginSchema(t), [t]);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
 
@@ -50,9 +53,9 @@ export function LoginForm() {
       }
 
       toast.success({
-        title: "Welcome back",
+        title: t("auth.welcomeBack"),
         description: session.user.firstName
-          ? `Signed in as ${session.user.firstName}.`
+          ? t("auth.signedInAs", { name: session.user.firstName })
           : undefined,
       });
       router.replace(destination);
@@ -62,7 +65,7 @@ export function LoginForm() {
           ? err.message
           : err instanceof Error && err.message !== "Sign in failed"
           ? err.message
-          : "Could not sign in. Please check your details and try again.";
+          : t("auth.signInError");
       setFormError(message);
     } finally {
       setSubmitting(false);
@@ -72,7 +75,7 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       <Input
-        label="Email"
+        label={t("auth.email")}
         type="email"
         autoComplete="email"
         placeholder="layla@example.com"
@@ -81,7 +84,7 @@ export function LoginForm() {
         {...register("email")}
       />
       <Input
-        label="Password"
+        label={t("auth.password")}
         type="password"
         autoComplete="current-password"
         placeholder="••••••••"
@@ -104,22 +107,22 @@ export function LoginForm() {
             type="checkbox"
             className="h-4 w-4 rounded border-ink-300 accent-ink-900"
           />
-          Remember me
+          {t("auth.rememberMe")}
         </label>
         <Link
           href="/forgot-password"
           className="font-medium text-bloom-700 hover:underline"
         >
-          Forgot password
+          {t("auth.forgotPassword")}
         </Link>
       </div>
       <Button
         type="submit"
         size="lg"
         isLoading={submitting}
-        trailingIcon={<ArrowRight size={16} />}
+        trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
       >
-        Sign in
+        {t("auth.signIn")}
       </Button>
     </form>
   );

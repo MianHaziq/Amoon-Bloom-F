@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { dismissToast, type Toast as ToastModel } from "@/store/slices/ui.slice";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
 
 const variantStyles: Record<ToastModel["variant"], string> = {
   default: "bg-white border-ink-200 text-ink-900",
@@ -21,6 +22,7 @@ const ICONS: Record<ToastModel["variant"], string> = {
 
 function ToastItem({ toast }: { toast: ToastModel }) {
   const dispatch = useAppDispatch();
+  const { t } = useT();
 
   useEffect(() => {
     const timer = setTimeout(() => dispatch(dismissToast(toast.id)), 5000);
@@ -50,8 +52,8 @@ function ToastItem({ toast }: { toast: ToastModel }) {
       <button
         type="button"
         onClick={() => dispatch(dismissToast(toast.id))}
-        className="-mt-1 -mr-1 rounded-full p-1 text-current/60 hover:bg-current/10"
-        aria-label="Dismiss notification"
+        className="-mt-1 -me-1 rounded-full p-1 text-current/60 hover:bg-current/10"
+        aria-label={t("common.dismiss")}
       >
         <svg
           width="14"
@@ -76,7 +78,7 @@ export function ToastViewport() {
     <div
       aria-live="polite"
       aria-atomic="true"
-      className="pointer-events-none fixed bottom-6 right-6 z-200 flex flex-col gap-3"
+      className="pointer-events-none fixed bottom-6 inset-e-6 z-200 flex flex-col gap-3"
     >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} />

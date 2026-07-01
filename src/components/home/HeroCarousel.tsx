@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { ROUTES } from "@/constants/routes";
 import { ArrowRight } from "@/components/icons";
+import { useT } from "@/i18n/useT";
 
 const SLIDE_MS = 6500;
 const FADE_MS = 1100;
@@ -17,6 +18,7 @@ interface HeroCarouselProps {
 }
 
 export function HeroCarousel({ slides }: HeroCarouselProps) {
+  const { t } = useT();
   const total = slides.length;
   const hasMultiple = total > 1;
 
@@ -104,7 +106,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
   return (
     <section
       aria-roledescription="carousel"
-      aria-label="Featured collections"
+      aria-label={t("hero.carouselLabel")}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -177,9 +179,9 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
           <button
             type="button"
             onClick={prev}
-            aria-label="Previous slide"
+            aria-label={t("hero.prevSlide")}
             className={cn(
-              "absolute left-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-white/15 p-3 text-white backdrop-blur-md transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-white hover:text-ink-900 hover:shadow-(--shadow-lift) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:flex lg:left-6",
+              "absolute inset-s-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-white/15 p-3 text-white backdrop-blur-md transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-white hover:text-ink-900 hover:shadow-(--shadow-lift) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:flex lg:inset-s-6",
               paused ? "opacity-100" : "opacity-0"
             )}
           >
@@ -188,9 +190,9 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
           <button
             type="button"
             onClick={next}
-            aria-label="Next slide"
+            aria-label={t("hero.nextSlide")}
             className={cn(
-              "absolute right-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-white/15 p-3 text-white backdrop-blur-md transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-white hover:text-ink-900 hover:shadow-(--shadow-lift) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:flex lg:right-6",
+              "absolute inset-e-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-white/15 p-3 text-white backdrop-blur-md transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-white hover:text-ink-900 hover:shadow-(--shadow-lift) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:flex lg:inset-e-6",
               paused ? "opacity-100" : "opacity-0"
             )}
           >
@@ -208,20 +210,20 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
             className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/85 sm:text-xs"
             style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "120ms" }}
           >
-            Same-day delivery across the UAE
+            {t("hero.eyebrow")}
           </p>
           <h1
             className="mt-3 font-display text-4xl font-medium leading-[1.05] text-white sm:text-5xl lg:text-6xl"
             style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "240ms" }}
           >
-            Flowers &amp; gifts, <span className="italic">composed by hand.</span>
+            {t("hero.title1")}{" "}
+            <span className="italic">{t("hero.titleAccent")}</span>
           </h1>
           <p
             className="mt-4 max-w-md text-sm leading-relaxed text-white/80 sm:text-base"
             style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "380ms" }}
           >
-            Hand-tied bouquets and curated gift boxes for birthdays, newborns,
-            weddings — and every quiet moment in between.
+            {t("hero.subtitle")}
           </p>
           <div
             className="mt-7 flex flex-wrap items-center gap-3"
@@ -231,14 +233,14 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
               href={ROUTES.shop}
               className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 text-sm font-semibold text-ink-900 shadow-(--shadow-lift) transition-transform hover:-translate-y-0.5 hover:bg-cream-50"
             >
-              Shop the collection
-              <ArrowRight size={16} />
+              {t("hero.ctaPrimary")}
+              <ArrowRight size={16} className="rtl:-scale-x-100" />
             </Link>
             <Link
               href={ROUTES.shop}
               className="inline-flex h-12 items-center rounded-full border border-white/40 px-6 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
             >
-              Explore gifts
+              {t("hero.ctaSecondary")}
             </Link>
           </div>
         </div>
@@ -253,7 +255,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
                     key={s.id}
                     type="button"
                     onClick={() => goTo(i)}
-                    aria-label={`Go to slide ${i + 1}`}
+                    aria-label={t("hero.goToSlide", { n: i + 1 })}
                     aria-current={isActive ? "true" : undefined}
                     className={cn(
                       "relative h-1 overflow-hidden rounded-full transition-[width,background-color] duration-500 ease-out",
@@ -269,7 +271,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
                         onAnimationEnd={() =>
                           setActive((a) => (a + 1) % total)
                         }
-                        className="absolute inset-y-0 left-0 w-full origin-left bg-white will-change-transform"
+                        className="absolute inset-y-0 inset-s-0 w-full origin-left bg-white will-change-transform"
                         style={{
                           animation: `hero-progress ${SLIDE_MS}ms linear forwards`,
                           animationPlayState: paused ? "paused" : "running",

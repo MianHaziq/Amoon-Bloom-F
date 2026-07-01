@@ -2,6 +2,7 @@
 
 import { MinusIcon, PlusIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
 
 interface QuantitySelectorProps {
   value: number;
@@ -20,6 +21,7 @@ export function QuantitySelector({
   size = "md",
   className,
 }: QuantitySelectorProps) {
+  const { t } = useT();
   const dec = () => onChange(Math.max(min, value - 1));
   const inc = () => onChange(Math.min(max, value + 1));
 
@@ -35,15 +37,15 @@ export function QuantitySelector({
         className
       )}
       role="group"
-      aria-label="Quantity"
+      aria-label={t("product.quantity")}
     >
       <button
         type="button"
         onClick={dec}
         disabled={value <= min}
-        aria-label="Decrease quantity"
+        aria-label={t("product.decreaseQty")}
         className={cn(
-          "inline-flex items-center justify-center rounded-l-full text-ink-700 transition-colors hover:text-bloom-700 disabled:cursor-not-allowed disabled:opacity-40",
+          "inline-flex items-center justify-center rounded-s-full text-ink-700 transition-colors hover:text-bloom-700 disabled:cursor-not-allowed disabled:opacity-40",
           sizeClasses
         )}
       >
@@ -62,9 +64,9 @@ export function QuantitySelector({
         type="button"
         onClick={inc}
         disabled={value >= max}
-        aria-label="Increase quantity"
+        aria-label={t("product.increaseQty")}
         className={cn(
-          "inline-flex items-center justify-center rounded-r-full text-ink-700 transition-colors hover:text-bloom-700 disabled:cursor-not-allowed disabled:opacity-40",
+          "inline-flex items-center justify-center rounded-e-full text-ink-700 transition-colors hover:text-bloom-700 disabled:cursor-not-allowed disabled:opacity-40",
           sizeClasses
         )}
       >

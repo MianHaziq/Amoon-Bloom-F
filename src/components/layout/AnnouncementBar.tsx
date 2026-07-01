@@ -1,13 +1,17 @@
+"use client";
+
 import { Container } from "@/components/ui";
 import { TruckIcon, SparkleIcon, PinIcon } from "@/components/icons";
-
-const items = [
-  { icon: TruckIcon, label: "Same-day delivery in Dubai · order before 6 PM" },
-  { icon: SparkleIcon, label: "Hand-packed in our Dubai boutique" },
-  { icon: PinIcon, label: "Boutique branches across the UAE" },
-];
+import { useT } from "@/i18n/useT";
 
 export function AnnouncementBar() {
+  const { t } = useT();
+  const items = [
+    { icon: TruckIcon, label: t("announcement.sameDay") },
+    { icon: SparkleIcon, label: t("announcement.handPacked") },
+    { icon: PinIcon, label: t("announcement.branches") },
+  ];
+
   return (
     <div className="hidden bg-ink-900 text-cream-100 lg:block">
       <Container className="flex h-9 items-center justify-between text-xs">

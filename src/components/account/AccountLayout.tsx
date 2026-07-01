@@ -13,13 +13,20 @@ import {
   UserIcon,
 } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
+import type { MessageKey } from "@/i18n";
 import type { ReactNode } from "react";
 
-const NAV = [
-  { href: "/account", label: "Profile", icon: UserIcon, exact: true },
-  { href: "/account/orders", label: "Orders", icon: DocumentIcon },
-  { href: "/account/addresses", label: "Addresses", icon: PinIcon },
-  { href: "/account/wishlist", label: "Wishlist", icon: HeartIcon },
+const NAV: {
+  href: string;
+  labelKey: MessageKey;
+  icon: typeof UserIcon;
+  exact?: boolean;
+}[] = [
+  { href: "/account", labelKey: "account.profile", icon: UserIcon, exact: true },
+  { href: "/account/orders", labelKey: "account.orders", icon: DocumentIcon },
+  { href: "/account/addresses", labelKey: "account.addresses", icon: PinIcon },
+  { href: "/account/wishlist", labelKey: "account.wishlist", icon: HeartIcon },
 ];
 
 export function AccountLayout({
@@ -35,6 +42,7 @@ export function AccountLayout({
   const router = useRouter();
   const { signOut } = useAuth();
   const user = useAppSelector((s) => s.auth.user);
+  const { t } = useT();
 
   const handleLogout = () => {
     signOut();
@@ -45,10 +53,13 @@ export function AccountLayout({
     <Container className="py-10 sm:py-14">
       <div className="mb-8 flex flex-col gap-1">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
-          My account
+          {t("account.title")}
         </p>
         <h1 className="font-display text-3xl text-ink-900 sm:text-4xl">
-          {title ?? `Hello, ${user?.firstName ?? "there"}`}
+          {title ??
+            t("account.greeting", {
+              name: user?.firstName ?? t("account.greetingThere"),
+            })}
         </h1>
         {description ? <p className="mt-1 text-ink-500">{description}</p> : null}
       </div>
@@ -72,7 +83,7 @@ export function AccountLayout({
                 )}
               >
                 <Icon size={16} />
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             );
           })}
@@ -82,7 +93,7 @@ export function AccountLayout({
             className="mt-2 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-bloom-700 transition-colors hover:bg-bloom-50"
           >
             <LogoutIcon size={16} />
-            Sign out
+            {t("account.signOut")}
           </button>
         </aside>
         <section className="min-w-0">{children}</section>

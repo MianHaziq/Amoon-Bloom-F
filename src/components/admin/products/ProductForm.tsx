@@ -381,7 +381,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                       { shouldDirty: true }
                     )
                   }
-                  className="absolute right-1 top-1 rounded-full bg-white/90 p-1 text-ink-700 shadow-sm hover:bg-white"
+                  className="absolute inset-e-1 top-1 rounded-full bg-white/90 p-1 text-ink-700 shadow-sm hover:bg-white"
                 >
                   <TrashIcon size={14} />
                 </button>

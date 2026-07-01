@@ -13,8 +13,8 @@ interface ProductGridProps {
 // stepping up on larger screens per the requested max column count.
 const columnMap = {
   2: "sm:grid-cols-2",
-  3: "lg:grid-cols-3",
-  4: "lg:grid-cols-3 xl:grid-cols-4",
+  3: "sm:grid-cols-2 md:grid-cols-3",
+  4: "sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4",
 } as const;
 
 export function ProductGrid({

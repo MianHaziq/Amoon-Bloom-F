@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,26 +11,25 @@ import { Button, Input, Modal } from "@/components/ui";
 import { Spinner } from "@/components/ui/Loader";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import type {
   ApiAddress,
   ApiAddressCreateInput,
 } from "@/features/addresses/types";
 
-const schema = z.object({
-  label: z.string().optional(),
-  fullName: z.string().min(1, "Required"),
-  phone: z.string().min(4, "Required"),
-  streetAddress: z.string().min(1, "Required"),
-  apartment: z.string().optional(),
-  city: z.string().min(1, "Required"),
-  state: z.string().optional(),
-  postalCode: z.string().optional(),
-  country: z.string().min(2, "Required"),
-  isDefault: z.boolean().optional(),
-});
-
-type FormValues = z.infer<typeof schema>;
+type FormValues = {
+  label?: string;
+  fullName: string;
+  phone: string;
+  streetAddress: string;
+  apartment?: string;
+  city: string;
+  state?: string;
+  postalCode?: string;
+  country: string;
+  isDefault?: boolean;
+};
 
 const emptyDefaults: FormValues = {
   label: "",
@@ -48,6 +47,7 @@ const emptyDefaults: FormValues = {
 export function AddressBook() {
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { t } = useT();
   const [editing, setEditing] = useState<ApiAddress | null>(null);
   const [creating, setCreating] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<ApiAddress | null>(null);
@@ -60,11 +60,11 @@ export function AddressBook() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => addressesApi.remove(id),
     onSuccess: () => {
-      toast.success({ title: "Address removed" });
+      toast.success({ title: t("address.removed") });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.addresses.all });
     },
-    onError: (err) => toast.fromError("Could not remove address", err),
+    onError: (err) => toast.fromError(t("address.removeError"), err),
   });
 
   if (query.isPending) {
@@ -78,7 +78,7 @@ export function AddressBook() {
   if (query.isError) {
     return (
       <div className="rounded-xl border border-bloom-200 bg-bloom-50 p-6 text-bloom-700">
-        Could not load your addresses.
+        {t("address.loadError")}
       </div>
     );
   }
@@ -93,15 +93,15 @@ export function AddressBook() {
           size="sm"
           onClick={() => setCreating(true)}
         >
-          Add address
+          {t("address.addAddress")}
         </Button>
       </div>
 
       {addresses.length === 0 ? (
         <div className="rounded-2xl border border-ink-100 bg-white p-10 text-center">
-          <p className="font-display text-xl text-ink-700">No saved addresses</p>
+          <p className="font-display text-xl text-ink-700">{t("address.emptyTitle")}</p>
           <p className="mt-1 text-sm text-ink-500">
-            Save addresses to check out faster.
+            {t("address.emptyBody")}
           </p>
         </div>
       ) : (
@@ -118,7 +118,7 @@ export function AddressBook() {
                   </p>
                   {a.isDefault ? (
                     <span className="mt-1 inline-block rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-bloom-700">
-                      Default
+                      {t("common.default")}
                     </span>
                   ) : null}
                 </div>
@@ -127,7 +127,7 @@ export function AddressBook() {
                     type="button"
                     onClick={() => setEditing(a)}
                     className="rounded-md p-1.5 text-ink-500 hover:bg-ink-50 hover:text-ink-900"
-                    aria-label="Edit"
+                    aria-label={t("common.edit")}
                   >
                     <PencilIcon size={14} />
                   </button>
@@ -135,7 +135,7 @@ export function AddressBook() {
                     type="button"
                     onClick={() => setPendingDelete(a)}
                     className="rounded-md p-1.5 text-bloom-700 hover:bg-bloom-50"
-                    aria-label="Delete"
+                    aria-label={t("common.delete")}
                   >
                     <TrashIcon size={14} />
                   </button>
@@ -160,8 +160,8 @@ export function AddressBook() {
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title="Remove address?"
-        confirmLabel="Remove"
+        title={t("address.removeTitle")}
+        confirmLabel={t("common.remove")}
         destructive
         loading={deleteMutation.isPending}
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}
@@ -171,13 +171,13 @@ export function AddressBook() {
       <AddressFormModal
         open={creating}
         onClose={() => setCreating(false)}
-        title="New address"
+        title={t("address.newAddress")}
       />
       <AddressFormModal
         open={Boolean(editing)}
         initial={editing ?? undefined}
         onClose={() => setEditing(null)}
-        title="Edit address"
+        title={t("address.editAddress")}
       />
     </div>
   );
@@ -193,6 +193,24 @@ interface AddressFormModalProps {
 function AddressFormModal({ open, onClose, initial, title }: AddressFormModalProps) {
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { t } = useT();
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        label: z.string().optional(),
+        fullName: z.string().min(1, t("validation.required")),
+        phone: z.string().min(4, t("validation.required")),
+        streetAddress: z.string().min(1, t("validation.required")),
+        apartment: z.string().optional(),
+        city: z.string().min(1, t("validation.required")),
+        state: z.string().optional(),
+        postalCode: z.string().optional(),
+        country: z.string().min(2, t("validation.required")),
+        isDefault: z.boolean().optional(),
+      }),
+    [t]
+  );
 
   const {
     register,
@@ -251,12 +269,12 @@ function AddressFormModal({ open, onClose, initial, title }: AddressFormModalPro
       return addressesApi.create(payload);
     },
     onSuccess: () => {
-      toast.success({ title: initial ? "Address updated" : "Address saved" });
+      toast.success({ title: initial ? t("address.updated") : t("address.saved") });
       queryClient.invalidateQueries({ queryKey: queryKeys.addresses.all });
       reset(emptyDefaults);
       onClose();
     },
-    onError: (err) => toast.fromError("Could not save address", err),
+    onError: (err) => toast.fromError(t("address.saveError"), err),
   });
 
   return (
@@ -267,34 +285,34 @@ function AddressFormModal({ open, onClose, initial, title }: AddressFormModalPro
         noValidate
       >
         <Input
-          label="Label"
-          placeholder="Home, Office…"
+          label={t("address.label")}
+          placeholder={t("address.labelPlaceholder")}
           containerClassName="sm:col-span-2"
           {...register("label")}
         />
         <Input
-          label="Full name"
+          label={t("checkout.fullName")}
           error={errors.fullName?.message}
           {...register("fullName")}
         />
         <Input
-          label="Phone"
+          label={t("checkout.phone")}
           type="tel"
           error={errors.phone?.message}
           {...register("phone")}
         />
         <Input
-          label="Street address"
+          label={t("checkout.streetAddress")}
           error={errors.streetAddress?.message}
           containerClassName="sm:col-span-2"
           {...register("streetAddress")}
         />
-        <Input label="Apartment / suite" {...register("apartment")} />
-        <Input label="City" error={errors.city?.message} {...register("city")} />
-        <Input label="State / region" {...register("state")} />
-        <Input label="Postal code" {...register("postalCode")} />
+        <Input label={t("checkout.apartment")} {...register("apartment")} />
+        <Input label={t("checkout.city")} error={errors.city?.message} {...register("city")} />
+        <Input label={t("address.stateRegion")} {...register("state")} />
+        <Input label={t("address.postalCode")} {...register("postalCode")} />
         <Input
-          label="Country"
+          label={t("checkout.country")}
           error={errors.country?.message}
           containerClassName="sm:col-span-2"
           {...register("country")}
@@ -306,15 +324,15 @@ function AddressFormModal({ open, onClose, initial, title }: AddressFormModalPro
             className="h-4 w-4 accent-bloom-600"
             {...register("isDefault")}
           />
-          <span className="text-sm text-ink-900">Use as default</span>
+          <span className="text-sm text-ink-900">{t("address.useAsDefault")}</span>
         </label>
 
         <div className="sm:col-span-2 flex justify-end gap-2">
           <Button variant="outline" type="button" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="submit" isLoading={mutation.isPending}>
-            {initial ? "Save changes" : "Save address"}
+            {initial ? t("account.saveChanges") : t("address.saveAddress")}
           </Button>
         </div>
       </form>

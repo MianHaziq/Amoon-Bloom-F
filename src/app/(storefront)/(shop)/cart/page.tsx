@@ -7,24 +7,26 @@ import { CartLineItem } from "@/features/cart/components/CartLineItem";
 import { CartSummary } from "@/features/cart/components/CartSummary";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { ROUTES } from "@/constants/routes";
+import { useT } from "@/i18n/useT";
 
 export default function CartPage() {
   const { items, itemCount } = useCart();
+  const { t, tc } = useT();
 
   return (
     <>
       <section className="border-b border-ink-100 bg-cream-50 pt-12 pb-8 lg:pt-16">
         <Container>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
-            Your selection
+            {t("cart.eyebrow")}
           </p>
           <h1 className="mt-3 font-display text-4xl font-medium leading-tight text-ink-900 md:text-5xl">
-            Cart
+            {t("cart.heading")}
           </h1>
           <p className="mt-2 text-ink-500">
             {itemCount > 0
-              ? `${itemCount} item${itemCount === 1 ? "" : "s"} composed for you.`
-              : "Add a piece to begin."}
+              ? `${tc(itemCount, "units.itemOne", "units.itemOther")} ${t("cart.composedFor")}`
+              : t("cart.beginPrompt")}
           </p>
         </Container>
       </section>
@@ -37,16 +39,15 @@ export default function CartPage() {
             </span>
             <div>
               <h2 className="font-display text-2xl text-ink-900">
-                Your cart is quiet
+                {t("cart.empty")}
               </h2>
               <p className="mt-2 max-w-md text-sm text-ink-500">
-                Begin with a hand-tied bouquet, a celebration cake, or one of
-                our hand-poured candles.
+                {t("cart.emptyBody")}
               </p>
             </div>
             <Link href={ROUTES.shop} className="contents">
-              <Button size="lg" trailingIcon={<ArrowRight size={16} />}>
-                Browse the boutique
+              <Button size="lg" trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}>
+                {t("common.browseBoutique")}
               </Button>
             </Link>
           </div>

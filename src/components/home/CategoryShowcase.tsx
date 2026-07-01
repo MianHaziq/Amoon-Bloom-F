@@ -7,11 +7,16 @@ import { productsApi } from "@/features/products/api/products.api";
 import { toUiCategories } from "@/features/categories/adapters";
 import { ROUTES } from "@/constants/routes";
 import { getServerRegion } from "@/services/serverRegion";
+import { getServerLocale } from "@/i18n/server";
+import { t } from "@/i18n";
 
 export async function CategoryShowcase() {
-  const region = await getServerRegion();
+  const [region, locale] = await Promise.all([
+    getServerRegion(),
+    getServerLocale(),
+  ]);
   const apiCategories = await categoriesApi.list(region).catch(() => []);
-  const featured = toUiCategories(apiCategories).slice(0, 3);
+  const featured = toUiCategories(apiCategories, locale).slice(0, 3);
 
   if (featured.length === 0) return null;
 
@@ -33,18 +38,16 @@ export async function CategoryShowcase() {
   return (
     <Section spacing="lg" tone="cream">
       <SectionHeader
-        eyebrow="Browse the boutique"
-        title={
-          <>
-            For every quiet
-            <br className="hidden md:block" /> celebration.
-          </>
-        }
-        description="From a single peony to a corporate installation, every category is composed by our team in Downtown Dubai."
+        eyebrow={t(locale, "home.categoriesEyebrow")}
+        title={t(locale, "home.categoriesTitle")}
+        description={t(locale, "home.categoriesDesc")}
         action={
           <Link href={ROUTES.shop} className="contents">
-            <Button variant="ghost" trailingIcon={<ArrowRight size={16} />}>
-              Browse all
+            <Button
+              variant="ghost"
+              trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
+            >
+              {t(locale, "home.browseAll")}
             </Button>
           </Link>
         }

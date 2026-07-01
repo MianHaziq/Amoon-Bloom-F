@@ -12,6 +12,8 @@ import { addItem } from "@/store/slices/cart.slice";
 import { pushToast } from "@/store/slices/ui.slice";
 import { WishlistToggle } from "@/features/wishlist/components/WishlistToggle";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { useT } from "@/i18n/useT";
+import type { MessageKey } from "@/i18n";
 import type { Product } from "../types";
 
 interface ProductCardProps {
@@ -22,17 +24,18 @@ interface ProductCardProps {
 
 const badgeMap: Record<
   NonNullable<Product["badge"]>,
-  { tone: "bloom" | "gold" | "ink" | "blush"; label: string }
+  { tone: "bloom" | "gold" | "ink" | "blush"; key: MessageKey }
 > = {
-  new: { tone: "blush", label: "New in" },
-  bestseller: { tone: "gold", label: "Bestseller" },
-  limited: { tone: "ink", label: "Limited" },
-  sale: { tone: "bloom", label: "Sale" },
+  new: { tone: "blush", key: "product.badgeNew" },
+  bestseller: { tone: "gold", key: "product.badgeBestseller" },
+  limited: { tone: "ink", key: "product.badgeLimited" },
+  sale: { tone: "bloom", key: "product.badgeSale" },
 };
 
 export function ProductCard({ product, className, priority }: ProductCardProps) {
   const dispatch = useAppDispatch();
   const { currency, locale } = useCurrency();
+  const { t } = useT();
   const primary = product.images[0];
   const secondary = product.images[1];
   const hasDiscount =
@@ -46,7 +49,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     dispatch(addItem({ product }));
     dispatch(
       pushToast({
-        title: "Added to cart",
+        title: t("common.addedToCart"),
         description: product.title,
         variant: "success",
       })
@@ -87,18 +90,18 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
           )}
         </div>
 
-        {/* Badges (top-left) */}
-        <div className="absolute left-3 top-3 flex flex-col gap-2">
+        {/* Badges (top-start) */}
+        <div className="absolute start-3 top-3 flex flex-col gap-2">
           {product.badge && (
             <Badge tone={badgeMap[product.badge].tone}>
-              {badgeMap[product.badge].label}
+              {t(badgeMap[product.badge].key)}
             </Badge>
           )}
-          {!product.inStock && <Badge tone="neutral">Sold out</Badge>}
+          {!product.inStock && <Badge tone="neutral">{t("common.soldOut")}</Badge>}
         </div>
 
-        {/* Wishlist (top-right) */}
-        <div className="absolute right-3 top-3">
+        {/* Wishlist (top-end) */}
+        <div className="absolute end-3 top-3">
           <WishlistToggle product={product} stopPropagation />
         </div>
 
@@ -111,7 +114,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
             className="pointer-events-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink-900/95 px-4 py-2.5 text-xs font-medium text-white shadow-(--shadow-soft) backdrop-blur-sm transition-colors hover:bg-ink-800 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
           >
             <BagIcon size={16} />
-            {product.inStock ? "Quick add" : "Sold out"}
+            {product.inStock ? t("common.quickAdd") : t("common.soldOut")}
           </button>
         </div>
       </Link>
@@ -119,7 +122,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
       <div className="flex flex-col gap-1">
         <Link
           href={ROUTES.product(product.slug)}
-          className="line-clamp-2 font-display text-sm font-medium leading-snug text-ink-900 transition-colors hover:text-bloom-700 sm:text-lg"
+          className="line-clamp-2 text-sm font-medium leading-snug tracking-tight text-ink-900 transition-colors hover:text-bloom-700 sm:text-base"
         >
           {product.title}
         </Link>

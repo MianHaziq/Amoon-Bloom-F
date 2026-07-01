@@ -6,6 +6,8 @@ import { useMemo } from "react";
 import { useAppSelector } from "@/store";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
+import type { MessageKey } from "@/i18n";
 import { adminNav, filterNavForUser } from "./nav";
 
 interface AdminSidebarProps {
@@ -13,9 +15,32 @@ interface AdminSidebarProps {
   onNavigate?: () => void;
 }
 
+// Map the nav's English labels to dictionary keys so the admin chrome localizes.
+const LABEL_KEY: Record<string, MessageKey> = {
+  Dashboard: "admin.dashboard",
+  Analytics: "admin.analytics",
+  Products: "admin.products",
+  Categories: "admin.categories",
+  Sections: "admin.sections",
+  Banners: "admin.banners",
+  Collaborations: "admin.collaborations",
+  Orders: "admin.orders",
+  "Promo codes": "admin.promoCodes",
+  Users: "admin.users",
+  Regions: "admin.regions",
+  Notifications: "admin.notifications",
+  "Contact messages": "admin.contact",
+  Settings: "admin.settings",
+  Catalog: "admin.catalog",
+  Commerce: "admin.commerce",
+  Operations: "admin.operations",
+};
+
 export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
   const pathname = usePathname();
   const user = useAppSelector((s) => s.auth.user);
+  const { t } = useT();
+  const label = (en: string) => (LABEL_KEY[en] ? t(LABEL_KEY[en]) : en);
 
   const groups = useMemo(
     () => filterNavForUser(adminNav, user?.role, user?.managerPermissions),
@@ -25,7 +50,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-full w-64 shrink-0 flex-col border-r border-ink-100 bg-cream-50",
+        "flex h-full w-64 shrink-0 flex-col border-e border-ink-100 bg-cream-50",
         className
       )}
       aria-label="Admin navigation"
@@ -35,7 +60,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
           {siteConfig.name}
         </span>
         <span className="rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-bloom-700">
-          Admin
+          {t("admin.admin")}
         </span>
       </div>
 
@@ -44,7 +69,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
           <div key={gi} className="mb-5 last:mb-0">
             {group.label ? (
               <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">
-                {group.label}
+                {label(group.label)}
               </p>
             ) : null}
             <ul className="flex flex-col gap-0.5">
@@ -66,7 +91,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
                       )}
                     >
                       <Icon size={18} />
-                      <span>{item.label}</span>
+                      <span>{label(item.label)}</span>
                     </Link>
                   </li>
                 );
@@ -81,7 +106,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
           href="/"
           className="text-ink-500 transition-colors hover:text-ink-900"
         >
-          ← Back to storefront
+          {t("admin.backToStore")}
         </Link>
       </div>
     </aside>

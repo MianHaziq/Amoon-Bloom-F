@@ -50,7 +50,7 @@ export function DataTable<T>({
       ) : null}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-160 text-left text-sm">
+        <table className="w-full min-w-160 text-start text-sm">
           <thead className="bg-cream-50 text-xs uppercase tracking-wider text-ink-500">
             <tr>
               {columns.map((col) => (
@@ -58,7 +58,7 @@ export function DataTable<T>({
                   key={col.key}
                   className={cn(
                     "px-4 py-3 font-medium",
-                    col.align === "right" && "text-right",
+                    col.align === "right" && "text-end",
                     col.align === "center" && "text-center",
                     col.className
                   )}
@@ -116,7 +116,7 @@ export function DataTable<T>({
                         key={col.key}
                         className={cn(
                           "px-4 py-3",
-                          col.align === "right" && "text-right",
+                          col.align === "right" && "text-end",
                           col.align === "center" && "text-center",
                           col.className
                         )}

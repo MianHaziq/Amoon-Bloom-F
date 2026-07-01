@@ -6,6 +6,8 @@ import { productsApi } from "@/features/products/api/products.api";
 import { toUiProducts } from "@/features/products/adapters";
 import { ROUTES } from "@/constants/routes";
 import { getServerRegion } from "@/services/serverRegion";
+import { getServerLocale } from "@/i18n/server";
+import { t } from "@/i18n";
 
 /**
  * Server component — fetches the most recent products from the API and
@@ -14,24 +16,30 @@ import { getServerRegion } from "@/services/serverRegion";
  * homepage.
  */
 export async function FeaturedProducts() {
-  const region = await getServerRegion();
+  const [region, locale] = await Promise.all([
+    getServerRegion(),
+    getServerLocale(),
+  ]);
   const page = await productsApi
     .list({ page: 1, limit: 4, region })
     .catch(() => ({ data: [], meta: {} }));
-  const featured = toUiProducts(page.data);
+  const featured = toUiProducts(page.data, { locale });
 
   if (featured.length === 0) return null;
 
   return (
     <Section spacing="lg">
       <SectionHeader
-        eyebrow="Florist's edit"
-        title="The week's quiet favourites."
-        description="Hand-picked by our boutique team — composed for any room, any occasion."
+        eyebrow={t(locale, "home.featuredEyebrow")}
+        title={t(locale, "home.featuredTitle")}
+        description={t(locale, "home.featuredDesc")}
         action={
           <Link href={ROUTES.shop} className="contents">
-            <Button variant="ghost" trailingIcon={<ArrowRight size={16} />}>
-              View edit
+            <Button
+              variant="ghost"
+              trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
+            >
+              {t(locale, "home.viewEdit")}
             </Button>
           </Link>
         }

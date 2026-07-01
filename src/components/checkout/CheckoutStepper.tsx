@@ -2,17 +2,11 @@
 
 import { CheckIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
 
 export type CheckoutStep = "address" | "payment" | "summary" | "confirmation";
 
 const STEP_ORDER: CheckoutStep[] = ["address", "payment", "summary", "confirmation"];
-
-const STEP_LABEL: Record<CheckoutStep, string> = {
-  address: "Address",
-  payment: "Payment",
-  summary: "Review",
-  confirmation: "Confirmed",
-};
 
 interface CheckoutStepperProps {
   current: CheckoutStep;
@@ -26,7 +20,15 @@ interface CheckoutStepperProps {
  * buttons so we don't accidentally let people jump past validation.
  */
 export function CheckoutStepper({ current, className }: CheckoutStepperProps) {
+  const { t } = useT();
   const currentIdx = STEP_ORDER.indexOf(current);
+
+  const STEP_LABEL: Record<CheckoutStep, string> = {
+    address: t("checkout.address"),
+    payment: t("checkout.payment"),
+    summary: t("checkout.review"),
+    confirmation: t("checkout.confirmed"),
+  };
 
   return (
     <nav
@@ -68,7 +70,7 @@ export function CheckoutStepper({ current, className }: CheckoutStepperProps) {
               {idx < STEP_ORDER.length - 1 ? (
                 <span
                   className={cn(
-                    "ml-1 h-px flex-1 transition-colors",
+                    "ms-1 h-px flex-1 transition-colors",
                     idx < currentIdx ? "bg-bloom-600" : "bg-ink-100"
                   )}
                 />

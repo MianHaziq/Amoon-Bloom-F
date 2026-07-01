@@ -18,6 +18,8 @@ import { toUiProduct, toUiProducts } from "@/features/products/adapters";
 import { ApiError } from "@/services/http";
 import { ROUTES } from "@/constants/routes";
 import { getServerRegion } from "@/services/serverRegion";
+import { getServerLocale } from "@/i18n/server";
+import { t } from "@/i18n";
 
 // Product visibility is region-scoped (a draft / out-of-region product 404s),
 // so render per-request based on the region cookie.
@@ -43,7 +45,10 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const region = await getServerRegion();
+  const [region, locale] = await Promise.all([
+    getServerRegion(),
+    getServerLocale(),
+  ]);
 
   let api;
   try {
@@ -54,7 +59,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     }
     throw err;
   }
-  const product = toUiProduct(api);
+  const product = toUiProduct(api, { locale });
 
   let related: ReturnType<typeof toUiProducts> = [];
   if (api.categoryId) {
@@ -64,7 +69,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
         region,
       });
       related = toUiProducts(
-        page.data.filter((p) => p.id !== api.id).slice(0, 4)
+        page.data.filter((p) => p.id !== api.id).slice(0, 4),
+        { locale }
       );
     } catch {
       related = [];
@@ -80,18 +86,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
             className="flex items-center gap-1 text-xs text-ink-500"
           >
             <Link href={ROUTES.home} className="hover:text-ink-900">
-              Home
+              {t(locale, "common.home")}
             </Link>
-            <ChevronRight size={12} />
+            <ChevronRight size={12} className="rtl:-scale-x-100" />
             {product.categorySlug ? (
               <>
                 <Link
                   href={ROUTES.category(product.categorySlug)}
                   className="hover:text-ink-900"
                 >
-                  {product.category || "Shop"}
+                  {product.category || t(locale, "common.shop")}
                 </Link>
-                <ChevronRight size={12} />
+                <ChevronRight size={12} className="rtl:-scale-x-100" />
               </>
             ) : null}
             <span className="text-ink-900">{product.title}</span>
@@ -133,23 +139,23 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <ul className="grid grid-cols-1 gap-3 rounded-2xl bg-white p-5 sm:grid-cols-2">
               <PerkRow
                 icon={<TruckIcon size={16} />}
-                title="Same-day delivery"
-                description="Order before 6 PM"
+                title={t(locale, "product.sameDay")}
+                description={t(locale, "product.sameDayHint")}
               />
               <PerkRow
                 icon={<SparkleIcon size={16} />}
-                title="Hand-arranged"
-                description="Composed for you"
+                title={t(locale, "product.handArranged")}
+                description={t(locale, "product.handArrangedHint")}
               />
               <PerkRow
                 icon={<HeartIcon size={16} />}
-                title="Free message card"
-                description="Personalised at checkout"
+                title={t(locale, "product.messageCard")}
+                description={t(locale, "product.messageCardHint")}
               />
               <PerkRow
                 icon={<ShieldIcon size={16} />}
-                title="7-day promise"
-                description="Freshness guaranteed"
+                title={t(locale, "product.freshness")}
+                description={t(locale, "product.freshnessHint")}
               />
             </ul>
           </div>
@@ -179,7 +185,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       {related.length > 0 && (
         <Section spacing="md" tone="cream">
           <h2 className="font-display text-3xl font-medium text-ink-900">
-            You might also love
+            {t(locale, "product.relatedTitle")}
           </h2>
           <div className="mt-10">
             <ProductGrid products={related} columns={4} />

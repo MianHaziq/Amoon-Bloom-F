@@ -162,7 +162,7 @@ export function AnalyticsAdminPage() {
                     </span>
                     <span className="text-ink-700">
                       {formatCurrency(row.revenue, currency)}
-                      <span className="ml-2 text-xs text-ink-400">
+                      <span className="ms-2 text-xs text-ink-400">
                         {row.orderCount} orders
                       </span>
                     </span>

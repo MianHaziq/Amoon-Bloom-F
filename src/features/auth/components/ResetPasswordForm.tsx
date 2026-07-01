@@ -10,27 +10,34 @@ import { Button, Input } from "@/components/ui";
 import { ArrowRight, CheckCircleIcon } from "@/components/icons";
 import { authApi } from "../api/auth.api";
 import { ApiError } from "@/services/http";
+import { useT } from "@/i18n/useT";
+import { useMemo } from "react";
 
-const schema = z
-  .object({
-    newPassword: z.string().min(8, "At least 8 characters"),
-    confirm: z.string(),
-  })
-  .refine((v) => v.newPassword === v.confirm, {
-    message: "Passwords do not match",
-    path: ["confirm"],
-  });
-
-type Values = z.infer<typeof schema>;
+type Values = { newPassword: string; confirm: string };
 
 export function ResetPasswordForm() {
+  const { t } = useT();
   const router = useRouter();
   const search = useSearchParams();
   const token = search.get("token") ?? "";
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [formError, setFormError] = useState<string | null>(
-    token ? null : "Missing or invalid reset token. Please request a new email."
+    token ? null : t("auth.linkExpired")
+  );
+
+  const schema = useMemo(
+    () =>
+      z
+        .object({
+          newPassword: z.string().min(8, t("validation.min8")),
+          confirm: z.string(),
+        })
+        .refine((v) => v.newPassword === v.confirm, {
+          message: t("validation.passwordsMatch"),
+          path: ["confirm"],
+        }),
+    [t]
   );
 
   const {
@@ -51,7 +58,7 @@ export function ResetPasswordForm() {
       setTimeout(() => router.replace("/login"), 1500);
     } catch (err) {
       setFormError(
-        err instanceof ApiError ? err.message : "Could not reset password"
+        err instanceof ApiError ? err.message : t("auth.resetError")
       );
     } finally {
       setSubmitting(false);
@@ -62,9 +69,9 @@ export function ResetPasswordForm() {
     return (
       <div className="flex flex-col items-start gap-3">
         <CheckCircleIcon size={24} className="text-(--color-success)" />
-        <h2 className="font-display text-2xl text-ink-900">Password reset</h2>
+        <h2 className="font-display text-2xl text-ink-900">{t("auth.resetSuccessTitle")}</h2>
         <p className="text-sm text-ink-500">
-          You can now sign in with your new password.
+          {t("auth.resetSuccessBody")}
         </p>
       </div>
     );
@@ -73,16 +80,16 @@ export function ResetPasswordForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       <Input
-        label="New password"
+        label={t("account.newPassword")}
         type="password"
         autoComplete="new-password"
-        placeholder="At least 8 characters"
+        placeholder={t("auth.passwordPlaceholder")}
         error={errors.newPassword?.message}
         disabled={!token}
         {...register("newPassword")}
       />
       <Input
-        label="Confirm new password"
+        label={t("account.confirmNewPassword")}
         type="password"
         autoComplete="new-password"
         error={errors.confirm?.message}
@@ -102,13 +109,13 @@ export function ResetPasswordForm() {
         size="lg"
         isLoading={submitting}
         disabled={!token}
-        trailingIcon={<ArrowRight size={16} />}
+        trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
       >
-        Reset password
+        {t("auth.resetPassword")}
       </Button>
       <p className="text-center text-sm text-ink-500">
         <Link href="/login" className="font-medium text-bloom-700 hover:underline">
-          Back to sign in
+          {t("auth.backToSignIn")}
         </Link>
       </p>
     </form>

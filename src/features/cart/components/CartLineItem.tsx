@@ -15,6 +15,7 @@ import {
   type CartItem,
 } from "@/store/slices/cart.slice";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
 
 interface CartLineItemProps {
   item: CartItem;
@@ -29,6 +30,7 @@ export function CartLineItem({
 }: CartLineItemProps) {
   const dispatch = useAppDispatch();
   const { currency, locale } = useCurrency();
+  const { t } = useT();
 
   return (
     <article
@@ -71,7 +73,7 @@ export function CartLineItem({
           </p>
         </div>
         <p className="mt-1 text-xs text-ink-500">
-          {formatCurrency(item.unitPrice, currency, locale)} each
+          {formatCurrency(item.unitPrice, currency, locale)} {t("cart.each")}
         </p>
         <div className="mt-auto flex items-center justify-between pt-3">
           <QuantitySelector
@@ -82,7 +84,7 @@ export function CartLineItem({
             }
           />
           <IconButton
-            label="Remove"
+            label={t("common.remove")}
             variant="ghost"
             size="sm"
             onClick={() => dispatch(removeItem(item.productId))}

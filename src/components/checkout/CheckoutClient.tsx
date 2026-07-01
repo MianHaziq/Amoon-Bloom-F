@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -35,6 +35,8 @@ import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
 import { formatCurrency } from "@/lib/format";
 import { useAppSelector } from "@/store";
+import { useT } from "@/i18n/useT";
+import type { MessageKey } from "@/i18n";
 import {
   CheckoutStepper,
   type CheckoutStep,
@@ -42,18 +44,24 @@ import {
 import type { ApiAddress } from "@/features/addresses/types";
 import type { ApiPromoValidationResult } from "@/features/promo-codes/types";
 
-const newAddressSchema = z.object({
-  fullName: z.string().min(1, "Required"),
-  phone: z.string().min(4, "Required"),
-  streetAddress: z.string().min(1, "Required"),
-  apartment: z.string().optional(),
-  city: z.string().min(1, "Required"),
-  state: z.string().optional(),
-  postalCode: z.string().optional(),
-  country: z.string().min(2, "Required"),
-});
+type TranslateFn = (
+  key: MessageKey,
+  vars?: Record<string, string | number>
+) => string;
 
-type NewAddressValues = z.infer<typeof newAddressSchema>;
+const makeNewAddressSchema = (t: TranslateFn) =>
+  z.object({
+    fullName: z.string().min(1, t("validation.required")),
+    phone: z.string().min(4, t("validation.required")),
+    streetAddress: z.string().min(1, t("validation.required")),
+    apartment: z.string().optional(),
+    city: z.string().min(1, t("validation.required")),
+    state: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().min(2, t("validation.required")),
+  });
+
+type NewAddressValues = z.infer<ReturnType<typeof makeNewAddressSchema>>;
 
 export function CheckoutClient() {
   const router = useRouter();
@@ -62,6 +70,9 @@ export function CheckoutClient() {
   const cart = useCart();
   const user = useAppSelector((s) => s.auth.user);
   const { currency, locale, countryName } = useCurrency();
+  const { t, tc } = useT();
+
+  const newAddressSchema = useMemo(() => makeNewAddressSchema(t), [t]);
 
   const [step, setStep] = useState<CheckoutStep>("address");
   const [explicitSelection, setExplicitSelection] = useState<
@@ -126,18 +137,20 @@ export function CheckoutClient() {
         setPromoResult(result);
         setPromoError(null);
         toast.success({
-          title: "Promo applied",
-          description: `−${formatCurrency(result.discountAmount, currency, locale)}`,
+          title: t("checkout.promoApplied"),
+          description: t("checkout.promoAppliedAmount", {
+            amount: formatCurrency(result.discountAmount, currency, locale),
+          }),
         });
       } else {
         setPromoResult(null);
-        setPromoError(result.reason ?? "Code is not valid for this cart.");
+        setPromoError(result.reason ?? t("checkout.promoInvalid"));
       }
     },
     onError: (err) => {
       setPromoResult(null);
       setPromoError(
-        err instanceof ApiError ? err.message : "Could not validate code."
+        err instanceof ApiError ? err.message : t("checkout.promoError")
       );
     },
   });
@@ -150,7 +163,7 @@ export function CheckoutClient() {
   const total = Math.max(0, subtotal - discount);
 
   const syncCart = async () => {
-    if (cart.items.length === 0) throw new Error("Cart is empty");
+    if (cart.items.length === 0) throw new Error(t("checkout.cartEmptyError"));
     await cartApi.clear();
     for (const item of cart.items) {
       await cartApi.add({
@@ -170,12 +183,12 @@ export function CheckoutClient() {
 
       if (selectedAddressId === "new") {
         const ok = await triggerNewAddr();
-        if (!ok) throw new Error("Please complete the delivery address.");
+        if (!ok) throw new Error(t("checkout.completeAddress"));
         inlineAddress = getNewAddrValues();
       } else if (selectedAddressId) {
         resolvedAddressId = selectedAddressId;
       } else {
-        throw new Error("Please choose a delivery address.");
+        throw new Error(t("checkout.chooseAddress"));
       }
 
       await syncCart();
@@ -200,14 +213,12 @@ export function CheckoutClient() {
     },
     onSuccess: (order) => {
       cart.clear();
+      // Seed the cache so the confirmation/receipt page paints instantly from
+      // the order we just received instead of refetching (or showing nothing).
+      queryClient.setQueryData(queryKeys.orders.detail(order.id), order);
       queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
-      // Briefly show step 4 (Confirmed) before navigating, so the stepper
-      // animates through the final state instead of unmounting mid-step.
-      setStep("confirmation");
-      setTimeout(() => {
-        router.push(`${ROUTES.orderSuccess}?id=${order.id}`);
-      }, 600);
+      router.push(`${ROUTES.orderSuccess}?id=${order.id}`);
     },
     onError: (err) => {
       const message =
@@ -215,9 +226,9 @@ export function CheckoutClient() {
           ? err.message
           : err instanceof Error
           ? err.message
-          : "Could not place your order";
+          : t("checkout.orderFailed");
       setSubmitError(message);
-      toast.error({ title: "Checkout failed", description: message });
+      toast.error({ title: t("checkout.checkoutFailed"), description: message });
     },
   });
 
@@ -228,11 +239,11 @@ export function CheckoutClient() {
     if (selectedAddressId === "new") {
       const ok = await triggerNewAddr();
       if (!ok) {
-        setSubmitError("Please complete the delivery address.");
+        setSubmitError(t("checkout.completeAddress"));
         return;
       }
     } else if (!selectedAddressId) {
-      setSubmitError("Please choose a delivery address.");
+      setSubmitError(t("checkout.chooseAddress"));
       return;
     }
     setStep("payment");
@@ -251,16 +262,16 @@ export function CheckoutClient() {
     return (
       <Container className="flex min-h-[60vh] flex-col items-center justify-center py-24 text-center">
         <h1 className="font-display text-4xl text-ink-900">
-          Your cart is empty.
+          {t("checkout.emptyTitle")}
         </h1>
         <p className="mt-2 text-ink-500">
-          Add a few favourites and come back.
+          {t("checkout.emptyBody")}
         </p>
         <Link
           href={ROUTES.shop}
           className="mt-6 inline-flex h-12 items-center rounded-full bg-bloom-600 px-6 text-base font-medium text-white shadow-(--shadow-bloom) hover:bg-bloom-700"
         >
-          Browse the boutique
+          {t("common.browseBoutique")}
         </Link>
       </Container>
     );
@@ -275,16 +286,16 @@ export function CheckoutClient() {
             aria-label="Breadcrumb"
           >
             <Link href={ROUTES.cart} className="hover:text-ink-900">
-              Cart
+              {t("nav.cart")}
             </Link>
-            <ChevronRight size={12} />
-            <span className="text-ink-900">Checkout</span>
+            <ChevronRight size={12} className="rtl:-scale-x-100" />
+            <span className="text-ink-900">{t("checkout.title")}</span>
           </nav>
           <h1 className="mt-4 font-display text-4xl font-medium leading-tight text-ink-900 md:text-5xl">
-            Checkout
+            {t("checkout.title")}
           </h1>
           <p className="mt-2 text-ink-500">
-            Composing {cart.itemCount} item{cart.itemCount === 1 ? "" : "s"} for delivery to {countryName}.
+            {`${t("checkout.composed1")} ${tc(cart.itemCount, "units.itemOne", "units.itemOther")} ${t("checkout.composed2", { country: countryName })}`}
           </p>
           <div className="mt-6">
             <CheckoutStepper current={step} />
@@ -389,12 +400,15 @@ function AddressStep({
   submitError,
   onContinue,
 }: AddressStepProps) {
+  const { t } = useT();
   return (
     <Card variant="flat" padding="lg" className="flex flex-col gap-5">
       <header>
-        <h2 className="font-display text-2xl text-ink-900">Delivery</h2>
+        <h2 className="font-display text-2xl text-ink-900">
+          {t("checkout.deliveryHeading")}
+        </h2>
         <p className="mt-1 text-sm text-ink-500">
-          Choose a saved address or add a new one.
+          {t("checkout.deliverySubtitle")}
         </p>
       </header>
 
@@ -416,7 +430,7 @@ function AddressStep({
             type="button"
             onClick={() => onSelect("new")}
             className={
-              "flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors " +
+              "flex items-start gap-3 rounded-2xl border p-4 text-start transition-colors " +
               (selectedAddressId === "new"
                 ? "border-bloom-500 bg-bloom-50"
                 : "border-ink-200 hover:border-ink-300")
@@ -433,9 +447,11 @@ function AddressStep({
               {selectedAddressId === "new" ? <CheckIcon size={10} /> : null}
             </span>
             <span>
-              <span className="block font-medium text-ink-900">New address</span>
+              <span className="block font-medium text-ink-900">
+                {t("address.newAddress")}
+              </span>
               <span className="block text-xs text-ink-500">
-                Use a one-time delivery address.
+                {t("address.newAddressHint")}
               </span>
             </span>
           </button>
@@ -445,32 +461,32 @@ function AddressStep({
       {selectedAddressId === "new" ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
-            label="Full name"
+            label={t("checkout.fullName")}
             error={newAddrErrors.fullName?.message}
             {...regNewAddr("fullName")}
           />
           <Input
-            label="Phone"
+            label={t("checkout.phone")}
             type="tel"
             error={newAddrErrors.phone?.message}
             {...regNewAddr("phone")}
           />
           <Input
-            label="Street address"
+            label={t("checkout.streetAddress")}
             error={newAddrErrors.streetAddress?.message}
             containerClassName="sm:col-span-2"
             {...regNewAddr("streetAddress")}
           />
-          <Input label="Apartment / Floor" {...regNewAddr("apartment")} />
+          <Input label={t("checkout.apartment")} {...regNewAddr("apartment")} />
           <Input
-            label="City"
+            label={t("checkout.city")}
             error={newAddrErrors.city?.message}
             {...regNewAddr("city")}
           />
-          <Input label="State / region" {...regNewAddr("state")} />
-          <Input label="Postal code" {...regNewAddr("postalCode")} />
+          <Input label={t("address.stateRegion")} {...regNewAddr("state")} />
+          <Input label={t("address.postalCode")} {...regNewAddr("postalCode")} />
           <Input
-            label="Country"
+            label={t("checkout.country")}
             error={newAddrErrors.country?.message}
             containerClassName="sm:col-span-2"
             {...regNewAddr("country")}
@@ -489,7 +505,7 @@ function AddressStep({
 
       <div className="flex justify-end pt-2">
         <Button type="button" size="lg" onClick={onContinue}>
-          Continue to payment
+          {t("checkout.continueToPayment")}
         </Button>
       </div>
     </Card>
@@ -513,13 +529,14 @@ function PaymentStep({
   onContinue,
   submitError,
 }: PaymentStepProps) {
+  const { t } = useT();
   return (
     <>
       <Card variant="flat" padding="lg" className="flex flex-col gap-5">
         <header>
-          <h2 className="font-display text-2xl text-ink-900">Payment</h2>
+          <h2 className="font-display text-2xl text-ink-900">{t("checkout.payment")}</h2>
           <p className="mt-1 text-sm text-ink-500">
-            Pay our courier when your order arrives.
+            {t("checkout.codHint")}
           </p>
         </header>
         <div className="flex items-start gap-3 rounded-2xl border border-ink-900 bg-cream-50 p-4">
@@ -531,9 +548,9 @@ function PaymentStep({
             readOnly
           />
           <div>
-            <p className="font-medium text-ink-900">Cash on Delivery</p>
+            <p className="font-medium text-ink-900">{t("checkout.cod")}</p>
             <p className="text-sm text-ink-500">
-              Available across the GCC. Card and Apple Pay coming soon.
+              {t("checkout.codAvailability")}
             </p>
           </div>
         </div>
@@ -541,14 +558,16 @@ function PaymentStep({
 
       <Card variant="flat" padding="lg" className="flex flex-col gap-3">
         <header>
-          <h2 className="font-display text-2xl text-ink-900">Order note</h2>
+          <h2 className="font-display text-2xl text-ink-900">
+            {t("checkout.orderNote")}
+          </h2>
           <p className="mt-1 text-sm text-ink-500">
-            Optional message — gift card, delivery instructions, etc.
+            {t("checkout.orderNoteHint")}
           </p>
         </header>
         <Textarea
           rows={3}
-          placeholder="Leave at reception, surprise delivery, gift card message…"
+          placeholder={t("checkout.orderNotePlaceholder")}
           value={orderMessage}
           onChange={(e) => onOrderMessageChange(e.target.value)}
         />
@@ -565,10 +584,10 @@ function PaymentStep({
 
       <div className="flex justify-between">
         <Button type="button" variant="outline" size="lg" onClick={onBack}>
-          Back
+          {t("common.back")}
         </Button>
         <Button type="button" size="lg" onClick={onContinue}>
-          Review order
+          {t("checkout.reviewOrder")}
         </Button>
       </div>
     </>
@@ -601,6 +620,7 @@ function SummaryStep({
   total,
 }: SummaryStepProps) {
   const { currency, locale } = useCurrency();
+  const { t } = useT();
   const addressLine = selectedAddress
     ? `${selectedAddress.fullName} · ${selectedAddress.streetAddress}${
         selectedAddress.apartment ? `, ${selectedAddress.apartment}` : ""
@@ -616,29 +636,31 @@ function SummaryStep({
   return (
     <Card variant="flat" padding="lg" className="flex flex-col gap-5">
       <header>
-        <h2 className="font-display text-2xl text-ink-900">Review your order</h2>
+        <h2 className="font-display text-2xl text-ink-900">
+          {t("checkout.reviewHeading")}
+        </h2>
         <p className="mt-1 text-sm text-ink-500">
-          One last look before we send it to the boutique team.
+          {t("checkout.reviewSubtitle")}
         </p>
       </header>
 
       <dl className="grid gap-3 text-sm">
         <div>
           <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
-            Delivering to
+            {t("checkout.deliveringTo")}
           </dt>
           <dd className="mt-1 text-ink-900">{addressLine}</dd>
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
-            Payment
+            {t("checkout.payment")}
           </dt>
-          <dd className="mt-1 text-ink-900">Cash on Delivery</dd>
+          <dd className="mt-1 text-ink-900">{t("checkout.cod")}</dd>
         </div>
         {orderMessage.trim() ? (
           <div>
             <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
-              Note
+              {t("checkout.note")}
             </dt>
             <dd className="mt-1 italic text-ink-700">
               &ldquo;{orderMessage.trim()}&rdquo;
@@ -680,18 +702,18 @@ function SummaryStep({
         <div className="flex flex-col gap-1 text-sm text-ink-600 sm:flex-row sm:gap-4">
           <p className="inline-flex items-center gap-2">
             <ShieldIcon size={16} className="text-bloom-700" />
-            Secure checkout
+            {t("checkout.secureCheckout")}
           </p>
           <p className="inline-flex items-center gap-2">
             <TruckIcon size={16} className="text-bloom-700" />
-            Free delivery
+            {t("cart.freeDelivery")}
           </p>
         </div>
       </div>
 
       <div className="flex justify-between">
         <Button type="button" variant="outline" size="lg" onClick={onBack}>
-          Back
+          {t("common.back")}
         </Button>
         <Button
           type="button"
@@ -699,7 +721,7 @@ function SummaryStep({
           onClick={onPlaceOrder}
           isLoading={isPlacing}
         >
-          Place order · {formatCurrency(total, currency, locale)}
+          {t("checkout.placeOrder")} · {formatCurrency(total, currency, locale)}
         </Button>
       </div>
     </Card>
@@ -709,6 +731,7 @@ function SummaryStep({
 // ---- Step 4: Confirmation (transient) --------------------------------------
 
 function ConfirmationStep() {
+  const { t } = useT();
   return (
     <Card
       variant="flat"
@@ -718,9 +741,9 @@ function ConfirmationStep() {
       <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-bloom-50 text-bloom-700">
         <CheckIcon size={24} />
       </span>
-      <h2 className="font-display text-2xl text-ink-900">Order confirmed</h2>
+      <h2 className="font-display text-2xl text-ink-900">{t("order.confirmed")}</h2>
       <p className="text-sm text-ink-500">
-        Sending you to the confirmation page…
+        {t("checkout.redirecting")}
       </p>
       <Spinner />
     </Card>
@@ -738,12 +761,13 @@ function AddressOption({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const { t } = useT();
   return (
     <button
       type="button"
       onClick={onSelect}
       className={
-        "flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors " +
+        "flex items-start gap-3 rounded-2xl border p-4 text-start transition-colors " +
         (selected
           ? "border-bloom-500 bg-bloom-50"
           : "border-ink-200 hover:border-ink-300")
@@ -766,7 +790,7 @@ function AddressOption({
           </span>
           {address.isDefault ? (
             <span className="rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-bloom-700">
-              Default
+              {t("common.default")}
             </span>
           ) : null}
         </span>
@@ -810,11 +834,12 @@ function CheckoutSummary({
 }: CheckoutSummaryProps) {
   const cart = useCart();
   const { currency, locale } = useCurrency();
+  const { t } = useT();
 
   return (
     <aside className="flex flex-col gap-4">
       <Card variant="elevated" padding="lg" className="flex flex-col gap-4">
-        <h3 className="font-display text-xl text-ink-900">Order summary</h3>
+        <h3 className="font-display text-xl text-ink-900">{t("cart.orderSummary")}</h3>
         <ul className="divide-y divide-ink-100">
           {cart.items.map((item) => (
             <li
@@ -834,7 +859,7 @@ function CheckoutSummary({
               <div className="flex flex-1 items-center justify-between gap-2 text-sm">
                 <div>
                   <p className="font-medium text-ink-900">{item.title}</p>
-                  <p className="text-xs text-ink-500">Qty {item.quantity}</p>
+                  <p className="text-xs text-ink-500">{t("common.qty")} {item.quantity}</p>
                 </div>
                 <p className="font-medium">
                   {formatCurrency(
@@ -850,32 +875,32 @@ function CheckoutSummary({
 
         <div className="flex flex-col gap-2 text-sm">
           <div className="flex justify-between text-ink-500">
-            <span>Subtotal</span>
+            <span>{t("common.subtotal")}</span>
             <span>{formatCurrency(subtotal, currency, locale)}</span>
           </div>
           {discount > 0 ? (
             <div className="flex justify-between text-ink-500">
-              <span>Discount</span>
+              <span>{t("common.discount")}</span>
               <span>−{formatCurrency(discount, currency, locale)}</span>
             </div>
           ) : null}
           <div className="flex justify-between text-ink-500">
-            <span>Shipping</span>
+            <span>{t("common.delivery")}</span>
             <span>
               {shipping === 0
-                ? "Free"
+                ? t("common.free")
                 : formatCurrency(shipping, currency, locale)}
             </span>
           </div>
           <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">
-            <span>Total</span>
+            <span>{t("common.total")}</span>
             <span>{formatCurrency(total, currency, locale)}</span>
           </div>
         </div>
       </Card>
 
       <Card variant="flat" padding="md" className="flex flex-col gap-3">
-        <h3 className="font-display text-lg text-ink-900">Promo code</h3>
+        <h3 className="font-display text-lg text-ink-900">{t("checkout.promoCode")}</h3>
         {promoResult?.isValid ? (
           <div className="flex items-center justify-between rounded-xl border border-bloom-200 bg-bloom-50 px-3 py-2 text-sm text-bloom-700">
             <div>
@@ -884,8 +909,10 @@ function CheckoutSummary({
               </p>
               <p className="text-xs">
                 {promoResult.discountAmount && discount > 0
-                  ? `−${formatCurrency(discount, currency, locale)} applied`
-                  : "Applied"}
+                  ? t("checkout.promoAppliedAmount", {
+                      amount: formatCurrency(discount, currency, locale),
+                    })
+                  : t("checkout.applied")}
               </p>
             </div>
             <button
@@ -893,13 +920,13 @@ function CheckoutSummary({
               onClick={onClear}
               className="text-xs underline"
             >
-              Remove
+              {t("common.remove")}
             </button>
           </div>
         ) : (
           <div className="flex gap-2">
             <input
-              placeholder="Enter code"
+              placeholder={t("checkout.enterCode")}
               value={promoCode}
               onChange={(e) => setPromoCode(e.target.value)}
               className="flex-1 rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm uppercase placeholder:normal-case placeholder:text-ink-400 focus:border-bloom-500 focus:outline-none"
@@ -911,7 +938,7 @@ function CheckoutSummary({
               onClick={onApply}
               isLoading={applying}
             >
-              Apply
+              {t("common.apply")}
             </Button>
           </div>
         )}

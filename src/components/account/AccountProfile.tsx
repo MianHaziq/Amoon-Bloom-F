@@ -15,35 +15,55 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useRouter } from "next/navigation";
 import { storage } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
+import { useT } from "@/i18n/useT";
+import { useMemo } from "react";
 
-const profileSchema = z.object({
-  firstName: z.string().min(1, "Required"),
-  lastName: z.string().min(1, "Required"),
-  email: z.string().email("Enter a valid email"),
-  phone: z.string().optional(),
-});
-
-const passwordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Required"),
-    newPassword: z.string().min(8, "At least 8 characters"),
-    confirm: z.string(),
-  })
-  .refine((v) => v.newPassword === v.confirm, {
-    path: ["confirm"],
-    message: "Passwords do not match",
-  });
-
-type ProfileValues = z.infer<typeof profileSchema>;
-type PasswordValues = z.infer<typeof passwordSchema>;
+type ProfileValues = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+};
+type PasswordValues = {
+  currentPassword: string;
+  newPassword: string;
+  confirm: string;
+};
 
 export function AccountProfile() {
   const user = useAppSelector((s) => s.auth.user);
   const dispatch = useAppDispatch();
   const router = useRouter();
   const toast = useToast();
+  const { t } = useT();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
+
+  const profileSchema = useMemo(
+    () =>
+      z.object({
+        firstName: z.string().min(1, t("validation.required")),
+        lastName: z.string().min(1, t("validation.required")),
+        email: z.string().email(t("validation.email")),
+        phone: z.string().optional(),
+      }),
+    [t]
+  );
+
+  const passwordSchema = useMemo(
+    () =>
+      z
+        .object({
+          currentPassword: z.string().min(1, t("validation.required")),
+          newPassword: z.string().min(8, t("validation.min8")),
+          confirm: z.string(),
+        })
+        .refine((v) => v.newPassword === v.confirm, {
+          path: ["confirm"],
+          message: t("validation.passwordsMatch"),
+        }),
+    [t]
+  );
 
   // Profile form
   const {
@@ -89,9 +109,9 @@ export function AccountProfile() {
           name: `${updated.firstName ?? ""} ${updated.lastName ?? ""}`.trim(),
         })
       );
-      toast.success({ title: "Profile updated" });
+      toast.success({ title: t("account.profileUpdated") });
     },
-    onError: (err) => toast.fromError("Could not update profile", err),
+    onError: (err) => toast.fromError(t("account.profileUpdateError"), err),
   });
 
   // Password form
@@ -111,10 +131,10 @@ export function AccountProfile() {
       return authApi.changePassword(user.id, values.currentPassword, values.newPassword);
     },
     onSuccess: () => {
-      toast.success({ title: "Password changed" });
+      toast.success({ title: t("account.passwordChanged") });
       resetPwd({ currentPassword: "", newPassword: "", confirm: "" });
     },
-    onError: (err) => toast.fromError("Could not change password", err),
+    onError: (err) => toast.fromError(t("account.passwordChangeError"), err),
   });
 
   // Delete account
@@ -124,42 +144,42 @@ export function AccountProfile() {
       return authApi.deleteAccount(user.id, deletePassword || undefined);
     },
     onSuccess: () => {
-      toast.success({ title: "Account deleted" });
+      toast.success({ title: t("account.accountDeleted") });
       storage.remove(STORAGE_KEYS.authToken);
       dispatch(logout());
       router.replace("/");
     },
-    onError: (err) => toast.fromError("Could not delete account", err),
+    onError: (err) => toast.fromError(t("account.accountDeleteError"), err),
   });
 
   return (
     <div className="flex flex-col gap-8">
       <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-        <h2 className="mb-4 font-display text-xl text-ink-900">Profile details</h2>
+        <h2 className="mb-4 font-display text-xl text-ink-900">{t("account.profileDetails")}</h2>
         <form
           onSubmit={submitProfile((v) => profileMutation.mutate(v))}
           className="grid gap-4 sm:grid-cols-2"
           noValidate
         >
           <Input
-            label="First name"
+            label={t("account.firstName")}
             error={profileErrors.firstName?.message}
             {...regProfile("firstName")}
           />
           <Input
-            label="Last name"
+            label={t("account.lastName")}
             error={profileErrors.lastName?.message}
             {...regProfile("lastName")}
           />
           <Input
-            label="Email"
+            label={t("auth.email")}
             type="email"
             error={profileErrors.email?.message}
             containerClassName="sm:col-span-2"
             {...regProfile("email")}
           />
           <Input
-            label="Phone"
+            label={t("checkout.phone")}
             type="tel"
             placeholder="+971 50 000 0000"
             containerClassName="sm:col-span-2"
@@ -171,7 +191,7 @@ export function AccountProfile() {
               isLoading={profileMutation.isPending}
               disabled={!profileDirty}
             >
-              Save changes
+              {t("account.saveChanges")}
             </Button>
           </div>
         </form>
@@ -179,14 +199,14 @@ export function AccountProfile() {
 
       {user?.hasPassword !== false ? (
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h2 className="mb-4 font-display text-xl text-ink-900">Change password</h2>
+          <h2 className="mb-4 font-display text-xl text-ink-900">{t("account.changePassword")}</h2>
           <form
             onSubmit={submitPwd((v) => passwordMutation.mutate(v))}
             className="grid gap-4 sm:grid-cols-2"
             noValidate
           >
             <Input
-              label="Current password"
+              label={t("account.currentPassword")}
               type="password"
               autoComplete="current-password"
               error={pwdErrors.currentPassword?.message}
@@ -194,14 +214,14 @@ export function AccountProfile() {
               {...regPwd("currentPassword")}
             />
             <Input
-              label="New password"
+              label={t("account.newPassword")}
               type="password"
               autoComplete="new-password"
               error={pwdErrors.newPassword?.message}
               {...regPwd("newPassword")}
             />
             <Input
-              label="Confirm new password"
+              label={t("account.confirmNewPassword")}
               type="password"
               autoComplete="new-password"
               error={pwdErrors.confirm?.message}
@@ -209,7 +229,7 @@ export function AccountProfile() {
             />
             <div className="sm:col-span-2 flex justify-end">
               <Button type="submit" isLoading={passwordMutation.isPending}>
-                Update password
+                {t("account.updatePassword")}
               </Button>
             </div>
           </form>
@@ -217,25 +237,24 @@ export function AccountProfile() {
       ) : null}
 
       <section className="rounded-2xl border border-bloom-200 bg-bloom-50 p-5 sm:p-6">
-        <h2 className="mb-1 font-display text-xl text-bloom-900">Delete account</h2>
+        <h2 className="mb-1 font-display text-xl text-bloom-900">{t("account.deleteAccount")}</h2>
         <p className="mb-3 text-sm text-bloom-700">
-          This action is permanent. Your orders are kept for accounting, but
-          your profile is removed.
+          {t("account.deleteAccountBody")}
         </p>
         <Button variant="danger" onClick={() => setConfirmDelete(true)}>
-          Delete my account
+          {t("account.deleteMyAccount")}
         </Button>
       </section>
 
       <ConfirmDialog
         open={confirmDelete}
-        title="Delete your account?"
+        title={t("account.deleteConfirmTitle")}
         description={
           user?.hasPassword
-            ? "Confirm with your password below. This cannot be undone."
+            ? t("account.deleteConfirmBody")
             : "This cannot be undone."
         }
-        confirmLabel="Delete account"
+        confirmLabel={t("account.deleteAccount")}
         destructive
         loading={deleteMutation.isPending}
         onConfirm={() => deleteMutation.mutate()}
@@ -244,7 +263,7 @@ export function AccountProfile() {
 
       {user?.hasPassword ? (
         <Input
-          label="Confirm password"
+          label={t("auth.confirmPassword")}
           type="password"
           value={deletePassword}
           onChange={(e) => setDeletePassword(e.target.value)}

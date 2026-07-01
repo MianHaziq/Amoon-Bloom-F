@@ -3,8 +3,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { siteConfig } from "@/config/site";
 import { ROUTES } from "@/constants/routes";
+import { getServerT } from "@/i18n/server";
 
-export default function AuthLayout({ children }: { children: ReactNode }) {
+export default async function AuthLayout({ children }: { children: ReactNode }) {
+  const { t } = await getServerT();
   return (
     <div className="grid min-h-[calc(100vh-5rem)] grid-cols-1 lg:grid-cols-2">
       {/* Form column */}
@@ -32,7 +34,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             <span className="text-bloom-300">Bloom</span>
           </Link>
           <p className="max-w-sm font-display text-3xl font-medium leading-snug">
-            {"“Composed flowers, considered always — for the moments that matter.”"}
+            {`“${t("auth.authQuote")}”`}
           </p>
           <p className="text-xs uppercase tracking-[0.18em] text-white/70">
             {siteConfig.tagline}

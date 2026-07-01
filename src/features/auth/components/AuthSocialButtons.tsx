@@ -2,6 +2,7 @@
 
 import { Button, Divider } from "@/components/ui";
 import { useOAuthSignIn } from "../hooks/useOAuthSignIn";
+import { useT } from "@/i18n/useT";
 
 const GoogleMark = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
@@ -32,6 +33,7 @@ const AppleMark = () => (
 
 export function AuthSocialButtons() {
   const { signInWithGoogle, signInWithApple, pending } = useOAuthSignIn();
+  const { t } = useT();
 
   return (
     <div className="flex flex-col gap-3">
@@ -61,7 +63,7 @@ export function AuthSocialButtons() {
           Apple
         </Button>
       </div>
-      <Divider label="or with email" />
+      <Divider label={t("auth.orWithEmail")} />
     </div>
   );
 }

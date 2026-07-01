@@ -1,50 +1,70 @@
 import { Container, Section, Card } from "@/components/ui";
 import { PinIcon, PhoneIcon, MailIcon } from "@/components/icons";
 import { siteConfig } from "@/config/site";
+import { getServerLocale } from "@/i18n/server";
+import { localized } from "@/i18n";
+import type { Locale } from "@/store/slices/ui.slice";
 
 export const metadata = { title: "Branches" };
 
-const branches = [
+const getBranches = (locale: Locale) => [
   {
     id: "downtown",
-    name: "Downtown Dubai",
-    address: "Boulevard 1, Downtown Dubai",
+    name: localized("Downtown Dubai", "وسط مدينة دبي", locale),
+    address: localized("Boulevard 1, Downtown Dubai", "بوليفارد 1، وسط مدينة دبي", locale),
     phone: siteConfig.contact.phone,
-    hours: "Daily · 10:00 — 22:00",
-    note: "Flagship — full edit, gift wrapping, walk-ins welcome.",
+    hours: localized("Daily · 10:00 — 22:00", "يوميًا · 10:00 — 22:00", locale),
+    note: localized(
+      "Flagship — full edit, gift wrapping, walk-ins welcome.",
+      "الفرع الرئيسي — التشكيلة الكاملة، وتغليف الهدايا، والزيارات دون موعد مرحّب بها.",
+      locale
+    ),
   },
   {
     id: "marina",
-    name: "Dubai Marina",
-    address: "Marina Walk, Dubai Marina",
+    name: localized("Dubai Marina", "مرسى دبي", locale),
+    address: localized("Marina Walk, Dubai Marina", "ممشى المرسى، مرسى دبي", locale),
     phone: siteConfig.contact.phone,
-    hours: "Daily · 10:00 — 23:00",
-    note: "Boxed gifting, flowers & same-day pickup.",
+    hours: localized("Daily · 10:00 — 23:00", "يوميًا · 10:00 — 23:00", locale),
+    note: localized(
+      "Boxed gifting, flowers & same-day pickup.",
+      "هدايا معلَّبة وزهور واستلام في اليوم نفسه.",
+      locale
+    ),
   },
   {
     id: "abu-dhabi",
-    name: "Abu Dhabi",
-    address: "Al Wahda, Abu Dhabi",
+    name: localized("Abu Dhabi", "أبوظبي", locale),
+    address: localized("Al Wahda, Abu Dhabi", "الوحدة، أبوظبي", locale),
     phone: siteConfig.contact.phone,
-    hours: "Daily · 10:00 — 22:00",
-    note: "Full catalogue · personalisation in-store.",
+    hours: localized("Daily · 10:00 — 22:00", "يوميًا · 10:00 — 22:00", locale),
+    note: localized(
+      "Full catalogue · personalisation in-store.",
+      "التشكيلة الكاملة · تخصيص داخل المتجر.",
+      locale
+    ),
   },
 ];
 
-export default function BranchesPage() {
+export default async function BranchesPage() {
+  const locale = await getServerLocale();
+  const branches = getBranches(locale);
   return (
     <>
       <section className="bg-cream-50 pt-16 pb-10 lg:pt-24">
         <Container>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
-            Visit us
+            {localized("Visit us", "زورونا", locale)}
           </p>
           <h1 className="mt-3 font-display text-5xl font-medium leading-tight text-ink-900 md:text-6xl">
-            Branches across the UAE.
+            {localized("Branches across the UAE.", "فروعنا في أنحاء الإمارات.", locale)}
           </h1>
           <p className="mt-3 max-w-2xl text-lg text-ink-500">
-            Composed boxes, flower bars, and the full Amoonis Boutique edit —
-            visit us in person.
+            {localized(
+              "Composed boxes, flower bars, and the full Amoonis Boutique edit — visit us in person.",
+              "علب مؤلَّفة بعناية، وأركان للزهور، وتشكيلة أموونيس بوتيك الكاملة — زورونا في المتجر.",
+              locale
+            )}
           </p>
         </Container>
       </section>

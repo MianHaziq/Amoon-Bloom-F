@@ -89,7 +89,7 @@ export function ProductsAdminPage() {
       header: "Price",
       align: "right",
       cell: (p) => (
-        <div className="text-right">
+        <div className="text-end">
           <p className="font-medium text-ink-900">
             {formatCurrency(
               p.discountedPrice != null && p.discountedPrice < p.price
