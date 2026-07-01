@@ -2,7 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { m } from "motion/react";
 import { useAppSelector } from "@/store";
+import { staggerContainer, subtleRise, fadeInUp } from "@/lib/motion";
 import { analyticsApi } from "@/features/analytics/api/analytics.api";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { usersApi } from "@/features/users/api/users.api";
@@ -76,7 +78,12 @@ export function AdminDashboard() {
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <m.section
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        variants={staggerContainer(0.06)}
+        initial="hidden"
+        animate="show"
+      >
         <KpiCard
           label="Revenue (30d)"
           value={
@@ -128,10 +135,15 @@ export function AdminDashboard() {
             (!canSeeUsers && canSeeContact && contactNewQuery.isPending)
           }
         />
-      </section>
+      </m.section>
 
       {canSeeOrders ? (
-        <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+        <m.section
+          className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="show"
+        >
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <h3 className="font-display text-lg text-ink-900">Latest orders</h3>
@@ -194,7 +206,7 @@ export function AdminDashboard() {
               </table>
             </div>
           )}
-        </section>
+        </m.section>
       ) : null}
     </div>
   );
@@ -208,7 +220,10 @@ interface KpiCardProps {
 
 function KpiCard({ label, value, loading }: KpiCardProps) {
   return (
-    <div className="rounded-2xl border border-ink-100 bg-white p-5">
+    <m.div
+      variants={subtleRise}
+      className="rounded-2xl border border-ink-100 bg-white p-5"
+    >
       <p className="text-xs font-medium uppercase tracking-wider text-ink-400">
         {label}
       </p>
@@ -219,7 +234,7 @@ function KpiCard({ label, value, loading }: KpiCardProps) {
           <p className="font-display text-3xl text-ink-900">{value}</p>
         )}
       </div>
-    </div>
+    </m.div>
   );
 }
 

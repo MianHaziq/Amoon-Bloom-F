@@ -4,8 +4,7 @@ A cohesive, performant animation layer built on **[`motion`](https://motion.dev)
 successor to `framer-motion`; imported from `motion/react`). Subtle and
 purposeful — never decorative.
 
-> **Status:** Phase 1 (customer-facing storefront) complete. Phase 2 (admin
-> panel) intentionally **not** started — pending review.
+> **Status:** Phase 1 (storefront) and Phase 2 (admin panel) complete.
 
 ---
 
@@ -16,7 +15,8 @@ purposeful — never decorative.
 | [`src/lib/motion.ts`](../src/lib/motion.ts) | **Single source of truth** — easing, durations, transition presets, and all reusable variants. Import from here; never hardcode timing in a component. |
 | [`src/components/motion/MotionProvider.tsx`](../src/components/motion/MotionProvider.tsx) | App-wide `LazyMotion` + `MotionConfig`. Mounted once in the root layout. |
 | [`src/components/motion/primitives.tsx`](../src/components/motion/primitives.tsx) | `Reveal`, `StaggerGroup`, `StaggerItem`, `HoverCard` — client wrappers that let **server components** animate their children. |
-| [`src/app/(storefront)/template.tsx`](../src/app/(storefront)/template.tsx) | Route-transition wrapper (enter fade + slide, RTL-aware). |
+| [`src/app/(storefront)/template.tsx`](../src/app/(storefront)/template.tsx) | Storefront route transition (enter fade + slide, RTL-aware). |
+| [`src/app/admin/template.tsx`](../src/app/admin/template.tsx) | Admin route transition (plain quick fade — lighter). |
 | [`src/app/globals.css`](../src/app/globals.css) | `prefers-reduced-motion` CSS fallback (bottom of file). |
 
 ---
@@ -114,16 +114,31 @@ the **OrderReceipt** success header use a spring "pop" + staggered text reveal.
 
 ---
 
-## Deliberate non-changes (Phase 1)
+## Phase 2 — Admin panel (lighter touch)
 
-- **Shared `Drawer` / `Modal` shells** keep their existing CSS transitions
-  (transform + opacity, now also covered by the reduced-motion media query).
-  They're used by the admin panel too, so rewriting them belongs to Phase 2.
+Reuses the same presets, tuned down for dense/utilitarian screens.
+
+- **Shared overlays upgraded to `AnimatePresence` (enter *and* exit)** — this
+  also benefits the storefront cart/filter drawers and toasts:
+  - **`Modal`** → `overlayBackdrop` + `dialogPanel` (fade/scale in & out). Powers `ConfirmDialog`.
+  - **`Drawer`** → `overlayBackdrop` + `drawerPanel(side, dir)` — RTL-safe slide, animates closed.
+  - **`Toast`** → rise + fade in, fade out on dismiss.
+- **`DataTable`** — real rows cascade in once via `staggerContainer(0.03)` +
+  `subtleRise` (keyed by row count so a page/filter change replays it). Skeleton,
+  error and empty states are untouched.
+- **`AdminDashboard`** — KPI cards stagger in (`subtleRise`); the "Latest orders"
+  panel reveals with `fadeInUp`.
+- **Admin route transition** — plain quick fade (no slide) via `admin/template.tsx`.
+
+`subtleRise` lives in `lib/motion.ts` — the admin-tuned variant (short travel,
+micro timing). Use it for any new admin card/row cascades.
+
+## Deliberate non-changes
+
 - **Hero carousel** keeps its bespoke WAAPI Ken-Burns/crossfade — it already
-  reveals and already honours `prefers-reduced-motion`.
+  reveals and honours `prefers-reduced-motion`.
 - **`Input`** keeps its CSS `focus-within` ring — a trivial focus state that
   shouldn't pull the component into the client bundle.
-
-## Phase 2 (not started)
-Admin tables, modals, drawers, dashboard widgets — lighter touch, responsiveness
-over flourish. Reuse the same presets. **Do not begin until Phase 1 is approved.**
+- **`layout` animations are avoided everywhere** — they require `domMax`; we ship
+  `domAnimation` for a smaller bundle. Presence-based fade/slide is used instead,
+  so on removal, siblings reflow after the exit rather than sliding.

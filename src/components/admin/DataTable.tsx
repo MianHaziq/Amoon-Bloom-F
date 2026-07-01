@@ -1,8 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { m } from "motion/react";
 import { cn } from "@/lib/cn";
 import { Skeleton } from "@/components/ui/Loader";
+import { staggerContainer, subtleRise } from "@/lib/motion";
 import { ApiError } from "@/services/http";
 
 export interface Column<T> {
@@ -69,9 +71,9 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody>
-            {isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
+          {isLoading ? (
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
                 <tr key={`s${i}`} className="border-t border-ink-100">
                   {columns.map((col) => (
                     <td key={col.key} className="px-4 py-4">
@@ -79,8 +81,10 @@ export function DataTable<T>({
                     </td>
                   ))}
                 </tr>
-              ))
-            ) : isError ? (
+              ))}
+            </tbody>
+          ) : isError ? (
+            <tbody>
               <tr>
                 <td colSpan={columns.length} className="px-4 py-10 text-center">
                   <p className="text-sm text-bloom-700">
@@ -90,7 +94,9 @@ export function DataTable<T>({
                   </p>
                 </td>
               </tr>
-            ) : !rows || rows.length === 0 ? (
+            </tbody>
+          ) : !rows || rows.length === 0 ? (
+            <tbody>
               <tr>
                 <td colSpan={columns.length} className="px-4 py-12 text-center">
                   <p className="font-display text-lg text-ink-700">{emptyTitle}</p>
@@ -99,12 +105,23 @@ export function DataTable<T>({
                   ) : null}
                 </td>
               </tr>
-            ) : (
-              rows.map((row) => {
+            </tbody>
+          ) : (
+            // Real rows cascade in once on mount — a quick, subtle stagger that
+            // reads as "loaded" without being showy. Keyed by row count so a
+            // page/filter change that swaps the set replays the cascade.
+            <m.tbody
+              key={rows.length}
+              variants={staggerContainer(0.03, 0)}
+              initial="hidden"
+              animate="show"
+            >
+              {rows.map((row) => {
                 const interactive = Boolean(onRowClick);
                 return (
-                  <tr
+                  <m.tr
                     key={rowKey(row)}
+                    variants={subtleRise}
                     onClick={interactive ? () => onRowClick?.(row) : undefined}
                     className={cn(
                       "border-t border-ink-100 transition-colors",
@@ -124,11 +141,11 @@ export function DataTable<T>({
                         {col.cell(row)}
                       </td>
                     ))}
-                  </tr>
+                  </m.tr>
                 );
-              })
-            )}
-          </tbody>
+              })}
+            </m.tbody>
+          )}
         </table>
       </div>
 

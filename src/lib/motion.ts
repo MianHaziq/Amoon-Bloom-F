@@ -209,6 +209,18 @@ export const popFeedback: Variants = {
   exit: { scale: 0, transition: microTransition },
 };
 
+/* --- Admin (Phase 2): lighter touch, responsiveness over flourish ---------- */
+
+/**
+ * Small, quick rise for admin surfaces (table rows, stat cards). Shorter travel
+ * and micro timing so dense data feels responsive, not showy. Pair with
+ * `staggerContainer(0.03)` for a fast cascade.
+ */
+export const subtleRise: Variants = {
+  hidden: { opacity: 0, y: 6 },
+  show: { opacity: 1, y: 0, transition: microTransition },
+};
+
 /* --- Standard whileInView props for scroll reveals ------------------------- */
 
 /** Spread onto a scroll-revealed <m.*>: reveals once when 20% enters view. */
