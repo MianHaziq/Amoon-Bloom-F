@@ -76,7 +76,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <ChevronRight size={12} className="rtl:-scale-x-100" />
             <span className="text-ink-900">{category.title}</span>
           </nav>
-          <h1 className="mt-6 font-display text-4xl font-medium leading-tight text-ink-900 md:text-5xl lg:text-6xl">
+          <h1 className="mt-6 font-display text-3xl font-medium leading-tight text-ink-900 sm:text-4xl md:text-5xl lg:text-6xl">
             {category.title}
           </h1>
           {category.description && (
@@ -90,7 +90,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
       <Section spacing="md" tone="default">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 py-20 text-center">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 px-6 py-16 text-center sm:py-20">
             <p className="font-display text-2xl text-ink-900">
               {t(locale, "shop.emptyCategoryTitle")}
             </p>

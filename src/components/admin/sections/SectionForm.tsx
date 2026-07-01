@@ -134,9 +134,9 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggle(productIds, p.id, "productIds")}
-                    className="accent-bloom-600"
+                    className="shrink-0 accent-bloom-600"
                   />
-                  {p.title}
+                  <span className="min-w-0 truncate">{p.title}</span>
                 </label>
               );
             })}
@@ -162,9 +162,9 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggle(categoryIds, c.id, "categoryIds")}
-                    className="accent-bloom-600"
+                    className="shrink-0 accent-bloom-600"
                   />
-                  {c.title}
+                  <span className="min-w-0 truncate">{c.title}</span>
                 </label>
               );
             })}

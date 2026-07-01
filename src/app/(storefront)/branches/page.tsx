@@ -56,7 +56,7 @@ export default async function BranchesPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
             {localized("Visit us", "زورونا", locale)}
           </p>
-          <h1 className="mt-3 font-display text-5xl font-medium leading-tight text-ink-900 md:text-6xl">
+          <h1 className="mt-3 font-display text-4xl font-medium leading-tight text-ink-900 sm:text-5xl md:text-6xl">
             {localized("Branches across the UAE.", "فروعنا في أنحاء الإمارات.", locale)}
           </h1>
           <p className="mt-3 max-w-2xl text-lg text-ink-500">
@@ -91,15 +91,15 @@ export default async function BranchesPage() {
                   href={`tel:${b.phone.replace(/\s/g, "")}`}
                   className="inline-flex items-center gap-2 text-ink-700 hover:text-bloom-700"
                 >
-                  <PhoneIcon size={14} />
+                  <PhoneIcon size={14} className="shrink-0" />
                   {b.phone}
                 </a>
                 <a
                   href={`mailto:${siteConfig.contact.email}`}
-                  className="inline-flex items-center gap-2 text-ink-700 hover:text-bloom-700"
+                  className="inline-flex items-start gap-2 text-ink-700 hover:text-bloom-700"
                 >
-                  <MailIcon size={14} />
-                  {siteConfig.contact.email}
+                  <MailIcon size={14} className="mt-0.5 shrink-0" />
+                  <span className="wrap-break-word">{siteConfig.contact.email}</span>
                 </a>
               </div>
             </Card>

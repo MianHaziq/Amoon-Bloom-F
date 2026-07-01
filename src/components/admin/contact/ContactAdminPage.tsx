@@ -59,7 +59,7 @@ export function ContactAdminPage() {
       key: "preview",
       header: "Message",
       cell: (m) => (
-        <p className="line-clamp-1 max-w-64 text-sm text-ink-500">{m.message}</p>
+        <p className="line-clamp-1 max-w-40 text-sm text-ink-500 sm:max-w-64">{m.message}</p>
       ),
     },
     {

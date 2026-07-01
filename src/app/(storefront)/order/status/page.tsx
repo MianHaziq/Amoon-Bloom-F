@@ -56,10 +56,10 @@ export default function OrderStatusPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
             {t("order.statusEyebrow")}
           </p>
-          <h1 className="mt-3 font-display text-5xl font-medium leading-tight text-ink-900 md:text-6xl">
+          <h1 className="mt-3 font-display text-4xl font-medium leading-tight text-ink-900 sm:text-5xl md:text-6xl">
             {t("order.statusTitle")}
           </h1>
-          <p className="mt-3 max-w-2xl text-lg text-ink-500">
+          <p className="mt-3 max-w-2xl text-base text-ink-500 sm:text-lg">
             {t("order.statusSubtitle")}
           </p>
         </Container>
@@ -101,12 +101,12 @@ export default function OrderStatusPage() {
           {result ? (
             <div className="flex flex-col gap-4 rounded-2xl bg-cream-50 p-5">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                     <CheckCircleIcon size={18} />
                   </span>
-                  <div>
-                    <p className="font-mono text-xs uppercase tracking-wider text-ink-500">
+                  <div className="min-w-0">
+                    <p className="truncate font-mono text-xs uppercase tracking-wider text-ink-500">
                       {t("order.orderLabel")} {result.id.slice(0, 8)}
                     </p>
                     <p className="font-display text-lg font-medium text-ink-900">
@@ -124,7 +124,7 @@ export default function OrderStatusPage() {
                   {PROGRESS.map((s, i) => {
                     const reached = i <= currentIdx;
                     return (
-                      <div key={s} className="flex flex-col items-center gap-1">
+                      <div key={s} className="flex min-w-0 flex-col items-center gap-1">
                         <div
                           className={
                             "h-1.5 w-full rounded-full " +
@@ -133,7 +133,7 @@ export default function OrderStatusPage() {
                         />
                         <span
                           className={
-                            "text-[10px] uppercase tracking-wider " +
+                            "hyphens-auto wrap-break-word text-center text-[9px] uppercase tracking-tight sm:text-[10px] sm:tracking-wider " +
                             (reached ? "text-bloom-700" : "text-ink-400")
                           }
                         >

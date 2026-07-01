@@ -71,8 +71,8 @@ export function Modal({
       />
       <div
         className={cn(
-          "relative w-full overflow-hidden bg-white shadow-(--shadow-lift) animate-scale-in",
-          "rounded-t-3xl sm:rounded-3xl sm:m-4",
+          "relative flex max-h-[90dvh] w-full flex-col overflow-hidden bg-white shadow-(--shadow-lift) animate-scale-in",
+          "rounded-t-3xl sm:m-4 sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl",
           sizeMap[size],
           className
         )}
@@ -80,7 +80,7 @@ export function Modal({
         {(title || description) && (
           <div className="border-b border-ink-100 px-6 py-5">
             {title && (
-              <h3 className="font-display text-2xl font-medium text-ink-900">
+              <h3 className="font-display text-xl font-medium text-ink-900 sm:text-2xl">
                 {title}
               </h3>
             )}
@@ -89,7 +89,7 @@ export function Modal({
             )}
           </div>
         )}
-        <div className="px-6 py-5">{children}</div>
+        <div className="overflow-y-auto px-6 py-5">{children}</div>
       </div>
     </div>,
     document.body

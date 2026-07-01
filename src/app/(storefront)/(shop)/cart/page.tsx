@@ -33,7 +33,7 @@ export default function CartPage() {
 
       <Section spacing="md">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-5 rounded-3xl border border-dashed border-ink-200 bg-cream-50 py-24 text-center">
+          <div className="flex flex-col items-center justify-center gap-5 rounded-3xl border border-dashed border-ink-200 bg-cream-50 px-6 py-16 text-center sm:py-24">
             <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-blush-100 text-bloom-700">
               <BagIcon size={28} />
             </span>

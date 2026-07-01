@@ -40,7 +40,7 @@ export async function TrustStrip() {
   const locale = await getServerLocale();
   return (
     <section className="border-y border-ink-100 bg-white">
-      <Container className="grid gap-6 py-10 md:grid-cols-2 md:py-12 lg:grid-cols-4">
+      <Container className="grid gap-6 py-10 sm:grid-cols-2 md:py-12 lg:grid-cols-4">
         {items.map(({ icon: Icon, titleKey, descriptionKey }) => (
           <div key={titleKey} className="flex items-start gap-4">
             <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush-100 text-bloom-700">

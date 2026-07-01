@@ -10,7 +10,7 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
   return (
     <div className="grid min-h-[calc(100vh-5rem)] grid-cols-1 lg:grid-cols-2">
       {/* Form column */}
-      <div className="flex items-center justify-center px-6 py-16 sm:px-10">
+      <div className="flex items-center justify-center px-5 py-10 sm:px-10 sm:py-16">
         <div className="w-full max-w-md">{children}</div>
       </div>
 

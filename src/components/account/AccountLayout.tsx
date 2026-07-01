@@ -51,7 +51,7 @@ export function AccountLayout({
 
   return (
     <Container className="py-10 sm:py-14">
-      <div className="mb-8 flex flex-col gap-1">
+      <div className="mb-6 flex flex-col gap-1 sm:mb-8">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
           {t("account.title")}
         </p>
@@ -64,8 +64,8 @@ export function AccountLayout({
         {description ? <p className="mt-1 text-ink-500">{description}</p> : null}
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
-        <aside className="flex flex-col gap-1">
+      <div className="grid gap-6 lg:grid-cols-[220px_1fr] lg:gap-8">
+        <aside className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 sm:pb-0 lg:flex-col">
           {NAV.map((item) => {
             const Icon = item.icon;
             const active = item.exact
@@ -76,7 +76,7 @@ export function AccountLayout({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   active
                     ? "bg-bloom-50 text-bloom-700"
                     : "text-ink-600 hover:bg-cream-100 hover:text-ink-900"
@@ -90,7 +90,7 @@ export function AccountLayout({
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-2 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-bloom-700 transition-colors hover:bg-bloom-50"
+            className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-bloom-700 transition-colors hover:bg-bloom-50 lg:mt-2"
           >
             <LogoutIcon size={16} />
             {t("account.signOut")}

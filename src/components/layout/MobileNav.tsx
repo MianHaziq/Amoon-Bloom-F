@@ -9,6 +9,8 @@ import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { toggleMobileNav } from "@/store/slices/ui.slice";
 import { useT } from "@/i18n/useT";
+import { LocaleToggle } from "./LocaleToggle";
+import { DeliverToPill } from "@/features/location/components/DeliverToPill";
 
 export function MobileNav() {
   const dispatch = useAppDispatch();
@@ -83,6 +85,23 @@ export function MobileNav() {
               {link.label}
             </Link>
           ))}
+        </div>
+
+        {/* Preferences — language + delivery region are otherwise header-only
+            (hidden on mobile), so surface them here for phone users. */}
+        <div className="mt-2 flex flex-col gap-3 border-t border-ink-100 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-ink-700">
+              {t("common.language")}
+            </span>
+            <LocaleToggle />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-ink-700">
+              {t("nav.deliverTo")}
+            </span>
+            <DeliverToPill compact />
+          </div>
         </div>
 
         <div className="mt-2 flex flex-col gap-2 rounded-2xl bg-cream-100 p-4">

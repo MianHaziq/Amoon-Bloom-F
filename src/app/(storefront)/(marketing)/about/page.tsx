@@ -55,7 +55,7 @@ export default async function AboutPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
               {localized("About us", "من نحن", locale)}
             </p>
-            <h1 className="mt-3 font-display text-5xl font-medium leading-[1.05] tracking-tight text-ink-900 md:text-6xl lg:text-7xl">
+            <h1 className="mt-3 font-display text-4xl font-medium leading-[1.05] tracking-tight text-ink-900 sm:text-5xl md:text-6xl lg:text-7xl">
               {localized("Hand-packed,", "مُغلَّفة يدويًا،", locale)}
               <br />
               <span className="italic text-bloom-700">
@@ -103,7 +103,7 @@ export default async function AboutPage() {
       </section>
 
       <Section spacing="lg" tone="default">
-        <div className="grid gap-10 md:grid-cols-3">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
           {principlesList.map((p) => (
             <div key={p.title}>
               <h3 className="font-display text-2xl font-medium text-ink-900">
@@ -134,7 +134,7 @@ export default async function AboutPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
               {localized("The boutique", "البوتيك", locale)}
             </p>
-            <h2 className="mt-3 font-display text-4xl font-medium leading-tight text-ink-900 md:text-5xl">
+            <h2 className="mt-3 font-display text-3xl font-medium leading-tight text-ink-900 sm:text-4xl md:text-5xl">
               {localized(
                 "A studio first, a shop second.",
                 "استوديو في المقام الأول، ومتجر في المقام الثاني.",
@@ -145,12 +145,12 @@ export default async function AboutPage() {
               {milestonesList.map((m) => (
                 <li
                   key={m.year}
-                  className="flex items-baseline justify-between gap-6 py-4"
+                  className="flex items-baseline justify-between gap-4 py-4 sm:gap-6"
                 >
-                  <span className="font-display text-3xl font-medium text-bloom-700">
+                  <span className="shrink-0 font-display text-2xl font-medium text-bloom-700 sm:text-3xl">
                     {m.year}
                   </span>
-                  <span className="text-end text-base text-ink-700">
+                  <span className="text-end text-sm text-ink-700 sm:text-base">
                     {m.title}
                   </span>
                 </li>

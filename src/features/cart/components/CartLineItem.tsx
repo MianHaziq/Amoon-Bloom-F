@@ -64,11 +64,11 @@ export function CartLineItem({
           <Link
             href={ROUTES.product(item.slug)}
             onClick={onNavigate}
-            className="font-display text-base font-medium leading-tight text-ink-900 hover:text-bloom-700"
+            className="min-w-0 font-display text-base font-medium leading-tight text-ink-900 hover:text-bloom-700"
           >
             {item.title}
           </Link>
-          <p className="text-sm font-semibold tabular-nums text-ink-900">
+          <p className="shrink-0 text-sm font-semibold tabular-nums text-ink-900">
             {formatCurrency(item.unitPrice * item.quantity, currency, locale)}
           </p>
         </div>

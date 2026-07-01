@@ -78,7 +78,7 @@ export function ToastViewport() {
     <div
       aria-live="polite"
       aria-atomic="true"
-      className="pointer-events-none fixed bottom-6 inset-e-6 z-200 flex flex-col gap-3"
+      className="pointer-events-none fixed bottom-4 inset-s-4 inset-e-4 z-200 flex flex-col gap-3 sm:bottom-6 sm:inset-s-auto sm:inset-e-6"
     >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} />

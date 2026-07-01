@@ -68,7 +68,7 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
             : "pointer-events-none translate-y-full opacity-0"
         )}
       >
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {primaryImage && (
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-blush-50">
             <Image

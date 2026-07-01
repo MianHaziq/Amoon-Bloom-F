@@ -675,13 +675,13 @@ function SummaryStep({
         {cartItems.map((item) => (
           <li
             key={item.productId}
-            className="flex items-center justify-between gap-2"
+            className="flex items-start justify-between gap-3"
           >
-            <span className="text-ink-700">
+            <span className="min-w-0 text-ink-700">
               {item.title}{" "}
               <span className="text-ink-400">× {item.quantity}</span>
             </span>
-            <span className="tabular-nums text-ink-900">
+            <span className="shrink-0 tabular-nums text-ink-900">
               {formatCurrency(item.unitPrice * item.quantity, currency, locale)}
             </span>
           </li>
@@ -711,8 +711,14 @@ function SummaryStep({
         </div>
       </div>
 
-      <div className="flex justify-between">
-        <Button type="button" variant="outline" size="lg" onClick={onBack}>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={onBack}
+          className="w-full sm:w-auto"
+        >
           {t("common.back")}
         </Button>
         <Button
@@ -720,6 +726,7 @@ function SummaryStep({
           size="xl"
           onClick={onPlaceOrder}
           isLoading={isPlacing}
+          className="w-full sm:w-auto"
         >
           {t("checkout.placeOrder")} · {formatCurrency(total, currency, locale)}
         </Button>
@@ -856,12 +863,12 @@ function CheckoutSummary({
               ) : (
                 <div className="h-14 w-14 rounded-lg bg-ink-100" />
               )}
-              <div className="flex flex-1 items-center justify-between gap-2 text-sm">
-                <div>
-                  <p className="font-medium text-ink-900">{item.title}</p>
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-2 text-sm">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-ink-900">{item.title}</p>
                   <p className="text-xs text-ink-500">{t("common.qty")} {item.quantity}</p>
                 </div>
-                <p className="font-medium">
+                <p className="shrink-0 font-medium tabular-nums">
                   {formatCurrency(
                     item.unitPrice * item.quantity,
                     currency,

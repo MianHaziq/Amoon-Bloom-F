@@ -66,7 +66,7 @@ export default async function PrivacyPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
             {localized("Legal", "الشؤون القانونية", locale)}
           </p>
-          <h1 className="mt-3 font-display text-5xl font-medium leading-tight text-ink-900 md:text-6xl">
+          <h1 className="mt-3 font-display text-4xl font-medium leading-tight text-ink-900 sm:text-5xl md:text-6xl">
             {localized("Privacy policy.", "سياسة الخصوصية.", locale)}
           </h1>
           <p className="mt-3 max-w-2xl text-lg text-ink-500">

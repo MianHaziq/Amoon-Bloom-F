@@ -111,9 +111,9 @@ export function AddressBook() {
               key={a.id}
               className="rounded-2xl border border-ink-100 bg-white p-4"
             >
-              <div className="mb-2 flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-ink-900">
+              <div className="mb-2 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-ink-900 wrap-break-word">
                     {a.label || a.fullName}
                   </p>
                   {a.isDefault ? (
@@ -122,28 +122,28 @@ export function AddressBook() {
                     </span>
                   ) : null}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
                     onClick={() => setEditing(a)}
-                    className="rounded-md p-1.5 text-ink-500 hover:bg-ink-50 hover:text-ink-900"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-500 hover:bg-ink-50 hover:text-ink-900"
                     aria-label={t("common.edit")}
                   >
-                    <PencilIcon size={14} />
+                    <PencilIcon size={16} />
                   </button>
                   <button
                     type="button"
                     onClick={() => setPendingDelete(a)}
-                    className="rounded-md p-1.5 text-bloom-700 hover:bg-bloom-50"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-md text-bloom-700 hover:bg-bloom-50"
                     aria-label={t("common.delete")}
                   >
-                    <TrashIcon size={14} />
+                    <TrashIcon size={16} />
                   </button>
                 </div>
               </div>
               <p className="text-sm text-ink-700">{a.fullName}</p>
               <p className="text-xs text-ink-500">{a.phone}</p>
-              <p className="mt-2 text-sm text-ink-700">
+              <p className="mt-2 text-sm text-ink-700 wrap-break-word">
                 {a.streetAddress}
                 {a.apartment ? `, ${a.apartment}` : ""}
               </p>

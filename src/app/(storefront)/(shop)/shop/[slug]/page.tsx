@@ -116,7 +116,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   {product.category}
                 </p>
               ) : null}
-              <h1 className="mt-2 font-display text-4xl font-medium leading-tight text-ink-900 md:text-5xl">
+              <h1 className="mt-2 font-display text-3xl font-medium leading-tight text-ink-900 sm:text-4xl md:text-5xl">
                 {product.title}
               </h1>
               {product.subtitle && (

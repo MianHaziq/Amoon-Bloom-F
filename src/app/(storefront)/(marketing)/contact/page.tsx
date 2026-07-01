@@ -71,7 +71,7 @@ export default function ContactPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
             {t("contact.eyebrow")}
           </p>
-          <h1 className="mt-3 font-display text-5xl font-medium leading-tight text-ink-900 md:text-6xl">
+          <h1 className="mt-3 font-display text-4xl font-medium leading-tight text-ink-900 sm:text-5xl md:text-6xl">
             {t("contact.title")}
           </h1>
           <p className="mt-3 max-w-2xl text-lg text-ink-500">
@@ -199,11 +199,11 @@ function ContactRow({
       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blush-100 text-bloom-700">
         {icon}
       </span>
-      <div>
+      <div className="min-w-0">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
           {title}
         </p>
-        <p className="mt-1 font-medium text-ink-900">{value}</p>
+        <p className="mt-1 font-medium text-ink-900 wrap-break-word">{value}</p>
       </div>
     </Wrapper>
   );

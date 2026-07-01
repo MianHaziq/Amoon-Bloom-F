@@ -8,7 +8,6 @@ import {
   SearchIcon,
   BagIcon,
   HeartIcon,
-  UserIcon,
   MenuIcon,
 } from "@/components/icons";
 import { AnnouncementBar } from "./AnnouncementBar";
@@ -79,10 +78,10 @@ export function Header() {
             className="flex shrink-0 items-center gap-2"
             aria-label={`${siteConfig.name} — home`}
           >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-bloom-500 font-display text-sm font-medium tracking-wide text-white shadow-(--shadow-soft)">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-bloom-500 font-display text-sm font-medium tracking-wide text-white shadow-(--shadow-soft)">
               A
             </span>
-            <span className="font-display text-xl font-medium leading-none tracking-tight text-ink-900 sm:text-2xl">
+            <span className="font-display text-lg font-medium leading-none tracking-tight text-ink-900 sm:text-xl lg:text-2xl">
               <span>Amoonis</span>{" "}
               <span className="text-bloom-600">Boutique</span>
             </span>
@@ -145,19 +144,6 @@ export function Header() {
               onClick={() => router.push(ROUTES.shop)}
             >
               <SearchIcon size={20} />
-            </IconButton>
-            <IconButton
-              label={t("nav.account")}
-              variant="ghost"
-              className="hidden lg:hidden"
-            >
-              <Link
-                href={user ? ROUTES.account : ROUTES.login}
-                aria-label={user ? t("nav.myAccount") : t("common.signIn")}
-                className="flex h-full w-full items-center justify-center"
-              >
-                <UserIcon size={20} />
-              </Link>
             </IconButton>
             <Link
               href={ROUTES.wishlist}

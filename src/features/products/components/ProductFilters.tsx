@@ -51,7 +51,7 @@ export function ProductFilters({
             type="button"
             onClick={() => onChange({ ...filter, category: undefined })}
             className={cn(
-              "rounded-xl px-3 py-2 text-start text-sm transition-colors",
+              "rounded-xl px-3 py-2.5 text-start text-sm transition-colors",
               !filter.category
                 ? "bg-cream-100 font-semibold text-ink-900"
                 : "text-ink-600 hover:bg-cream-50 hover:text-ink-900"
@@ -73,7 +73,7 @@ export function ProductFilters({
                   })
                 }
                 className={cn(
-                  "rounded-xl px-3 py-2 text-start text-sm transition-colors",
+                  "rounded-xl px-3 py-2.5 text-start text-sm transition-colors",
                   active
                     ? "bg-cream-100 font-semibold text-ink-900"
                     : "text-ink-600 hover:bg-cream-50 hover:text-ink-900"
@@ -115,7 +115,7 @@ export function ProductFilters({
         </select>
       </div>
 
-      <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink-700">
+      <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 text-sm text-ink-700">
         <input
           type="checkbox"
           checked={filter.inStock ?? false}

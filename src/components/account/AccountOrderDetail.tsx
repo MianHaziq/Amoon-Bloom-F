@@ -68,11 +68,11 @@ export function AccountOrderDetail({ id }: { id: string }) {
       </div>
 
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="font-mono text-xs text-ink-500">
+        <div className="min-w-0">
+          <p className="font-mono text-xs text-ink-500 break-all">
             {t("order.orderLabel")} #{order.orderNumber ?? order.id.slice(0, 8)}
           </p>
-          <h2 className="font-display text-2xl text-ink-900">
+          <h2 className="font-display text-xl text-ink-900 sm:text-2xl">
             {t("account.placedOn")} {formatDate(order.createdAt, intlLocale(locale))}
           </h2>
         </div>
@@ -82,12 +82,12 @@ export function AccountOrderDetail({ id }: { id: string }) {
       </header>
 
       {!cancelled ? (
-        <section className="rounded-2xl border border-ink-100 bg-white p-5">
-          <div className="grid grid-cols-5 gap-1">
+        <section className="rounded-2xl border border-ink-100 bg-white p-4 sm:p-5">
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
             {PROGRESS_ORDER.map((s, i) => {
               const reached = i <= currentIdx;
               return (
-                <div key={s} className="flex flex-col items-center gap-1">
+                <div key={s} className="flex min-w-0 flex-col items-center gap-1.5">
                   <div
                     className={
                       "h-1.5 w-full rounded-full " +
@@ -96,7 +96,7 @@ export function AccountOrderDetail({ id }: { id: string }) {
                   />
                   <span
                     className={
-                      "text-[10px] uppercase tracking-wider " +
+                      "text-center text-[10px] uppercase tracking-tight sm:tracking-wider " +
                       (reached ? "text-bloom-700" : "text-ink-400")
                     }
                   >
@@ -125,7 +125,7 @@ export function AccountOrderDetail({ id }: { id: string }) {
                 <div className="h-16 w-16 rounded-lg bg-ink-100" />
               )}
               <div className="flex flex-1 items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="font-medium text-ink-900">
                     {item.product?.title ?? t("account.removedProduct")}
                   </p>
@@ -133,12 +133,12 @@ export function AccountOrderDetail({ id }: { id: string }) {
                     {formatCurrency(item.price, currency, curLocale)} × {item.quantity}
                   </p>
                   {item.perProductMessage ? (
-                    <p className="mt-1 text-xs italic text-ink-500">
+                    <p className="mt-1 text-xs italic text-ink-500 wrap-break-word">
                       “{item.perProductMessage}”
                     </p>
                   ) : null}
                 </div>
-                <p className="font-medium text-ink-900">
+                <p className="shrink-0 font-medium text-ink-900">
                   {formatCurrency(item.price * item.quantity, currency, curLocale)}
                 </p>
               </div>

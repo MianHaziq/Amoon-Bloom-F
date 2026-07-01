@@ -102,7 +102,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
 
         {/* Wishlist (top-end) */}
         <div className="absolute end-3 top-3">
-          <WishlistToggle product={product} stopPropagation />
+          <WishlistToggle product={product} size="md" stopPropagation />
         </div>
 
         {/* Quick add — always visible on touch; hover-reveal on desktop (lg+) */}

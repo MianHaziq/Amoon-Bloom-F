@@ -135,7 +135,7 @@ function Receipt({
             {STEPS.map((s, i) => {
               const done = i <= stepIndex;
               return (
-                <li key={s.key} className="flex flex-1 flex-col items-center gap-2">
+                <li key={s.key} className="flex min-w-0 flex-1 flex-col items-center gap-2">
                   <div className="flex w-full items-center">
                     <span
                       className={
@@ -156,7 +156,7 @@ function Receipt({
                   </div>
                   <span
                     className={
-                      "text-center text-[10px] font-medium uppercase tracking-wider sm:text-xs " +
+                      "hyphens-auto wrap-break-word text-center text-[10px] font-medium uppercase tracking-tight sm:text-xs sm:tracking-wider " +
                       (done ? "text-ink-900" : "text-ink-400")
                     }
                   >
