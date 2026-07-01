@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { ProductFilters } from "@/features/products/components/ProductFilters";
+import { Drawer, Button } from "@/components/ui";
+import { FilterIcon } from "@/components/icons";
 import type { Product, ProductFilter } from "@/features/products/types";
 import type { Category } from "@/features/categories/types";
 import { pluralize } from "@/lib/format";
@@ -23,6 +25,15 @@ export function ShopPLP({
     sort: "featured",
     category: lockedCategorySlug,
   });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const hasActiveFilters =
+    (!lockedCategorySlug && Boolean(filter.category)) ||
+    Boolean(filter.inStock) ||
+    (filter.sort ? filter.sort !== "featured" : false);
+
+  const setFilterSafe = (next: ProductFilter) =>
+    setFilter({ ...next, category: lockedCategorySlug ?? next.category });
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -50,32 +61,45 @@ export function ShopPLP({
   }, [products, filter]);
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[16rem_1fr] lg:gap-12">
-      {lockedCategorySlug ? (
-        <div className="hidden lg:block">
-          {/* Empty column for layout symmetry; locked category page hides
-              the sidebar list because it'd be redundant. */}
+    <>
+      {/* Mobile filter/sort bar (sidebar is desktop-only) */}
+      {!lockedCategorySlug && (
+        <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
+          <p className="text-sm text-ink-500">
+            {pluralize(filtered.length, "result")}
+          </p>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-cream-50"
+          >
+            <FilterIcon size={16} />
+            Filter &amp; sort
+            {hasActiveFilters && (
+              <span className="h-1.5 w-1.5 rounded-full bg-bloom-600" />
+            )}
+          </button>
         </div>
-      ) : (
-        <ProductFilters
-          filter={filter}
-          onChange={(next) =>
-            setFilter({
-              ...next,
-              // Don't allow unlocking an explicit category page.
-              category: lockedCategorySlug ?? next.category,
-            })
-          }
-          resultCount={products.length}
-          categories={categories}
-        />
       )}
 
-      <div>
-        <p className="mb-6 text-sm text-ink-500">
-          {pluralize(filtered.length, "result")}
-        </p>
-        {filtered.length === 0 ? (
+      <div className="grid gap-10 lg:grid-cols-[16rem_1fr] lg:gap-12">
+        {lockedCategorySlug ? (
+          <div className="hidden lg:block" />
+        ) : (
+          <ProductFilters
+            className="hidden lg:flex"
+            filter={filter}
+            onChange={setFilterSafe}
+            resultCount={products.length}
+            categories={categories}
+          />
+        )}
+
+        <div>
+          <p className="mb-6 hidden text-sm text-ink-500 lg:block">
+            {pluralize(filtered.length, "result")}
+          </p>
+          {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 py-20 text-center">
             <p className="font-display text-2xl text-ink-900">
               Nothing here just yet.
@@ -88,7 +112,30 @@ export function ShopPLP({
         ) : (
           <ProductGrid products={filtered} columns={3} priorityCount={3} />
         )}
+        </div>
       </div>
-    </div>
+
+      {/* Mobile filter/sort drawer */}
+      {!lockedCategorySlug && (
+        <Drawer
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          side="left"
+          title="Filter & sort"
+        >
+          <div className="flex flex-col gap-6">
+            <ProductFilters
+              filter={filter}
+              onChange={setFilterSafe}
+              resultCount={products.length}
+              categories={categories}
+            />
+            <Button fullWidth size="lg" onClick={() => setFiltersOpen(false)}>
+              Show {pluralize(filtered.length, "result")}
+            </Button>
+          </div>
+        </Drawer>
+      )}
+    </>
   );
 }

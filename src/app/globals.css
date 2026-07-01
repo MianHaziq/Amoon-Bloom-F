@@ -70,8 +70,8 @@
      pre-load flash so it always reads as a polished sans. */
   --font-sans: var(--font-jakarta), ui-sans-serif, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-jakarta), -apple-system, BlinkMacSystemFont,
-    "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, Cambria,
+    "Times New Roman", serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, "Roboto Mono", monospace;
 
   /* --- Radius (large, gentle) --- */
@@ -112,10 +112,12 @@ body {
   letter-spacing: -0.005em;
 }
 
-/* Display headings: tighter tracking for typographic precision at large sizes */
+/* Display headings — Fraunces serif. Slightly looser tracking than the sans
+   since the serif reads best near-neutral; weight 500 keeps it elegant. */
 .font-display {
-  letter-spacing: -0.02em;
-  font-weight: 600;
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  font-weight: 500;
 }
 
 /* Tabular figures inside data tables/prices */

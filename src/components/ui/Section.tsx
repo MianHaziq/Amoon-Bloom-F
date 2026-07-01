@@ -13,10 +13,10 @@ const toneMap: Record<Tone, string> = {
 };
 
 const spacingMap: Record<Spacing, string> = {
-  sm: "py-12 md:py-16",
-  md: "py-16 md:py-24",
-  lg: "py-20 md:py-32",
-  xl: "py-24 md:py-40",
+  sm: "py-10 sm:py-14 md:py-16",
+  md: "py-12 sm:py-16 md:py-24",
+  lg: "py-14 sm:py-20 md:py-32",
+  xl: "py-16 sm:py-24 md:py-40",
 };
 
 interface SectionProps extends HTMLAttributes<HTMLElement> {

@@ -57,6 +57,9 @@ export function CheckoutStepper({ current, className }: CheckoutStepperProps) {
               <span
                 className={cn(
                   "text-xs font-medium uppercase tracking-[0.12em] transition-colors",
+                  // On mobile only the active step keeps its label so the row
+                  // never overflows; all labels show from sm up.
+                  active ? "inline" : "hidden sm:inline",
                   (completed || active) ? "text-ink-900" : "text-ink-400"
                 )}
               >

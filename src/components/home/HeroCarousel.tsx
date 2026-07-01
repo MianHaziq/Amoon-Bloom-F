@@ -1,8 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { ROUTES } from "@/constants/routes";
+import { ArrowRight } from "@/components/icons";
 
 const SLIDE_MS = 6500;
 const FADE_MS = 1100;
@@ -199,6 +202,47 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
       {/* Indicators — progress bar's animationend drives the slide advance,
           so timing is guaranteed in sync with the visible fill. */}
       <div className="relative z-10 mx-auto flex h-full w-full max-w-7xl flex-col justify-end px-4 pb-10 sm:px-6 sm:pb-14 lg:px-10 lg:pb-20">
+        {/* Brand message + primary CTA — pinned bottom-left over the imagery */}
+        <div className="mb-8 max-w-xl sm:mb-10">
+          <p
+            className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/85 sm:text-xs"
+            style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "120ms" }}
+          >
+            Same-day delivery across the UAE
+          </p>
+          <h1
+            className="mt-3 font-display text-4xl font-medium leading-[1.05] text-white sm:text-5xl lg:text-6xl"
+            style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "240ms" }}
+          >
+            Flowers &amp; gifts, <span className="italic">composed by hand.</span>
+          </h1>
+          <p
+            className="mt-4 max-w-md text-sm leading-relaxed text-white/80 sm:text-base"
+            style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "380ms" }}
+          >
+            Hand-tied bouquets and curated gift boxes for birthdays, newborns,
+            weddings — and every quiet moment in between.
+          </p>
+          <div
+            className="mt-7 flex flex-wrap items-center gap-3"
+            style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "520ms" }}
+          >
+            <Link
+              href={ROUTES.shop}
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 text-sm font-semibold text-ink-900 shadow-(--shadow-lift) transition-transform hover:-translate-y-0.5 hover:bg-cream-50"
+            >
+              Shop the collection
+              <ArrowRight size={16} />
+            </Link>
+            <Link
+              href={ROUTES.shop}
+              className="inline-flex h-12 items-center rounded-full border border-white/40 px-6 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
+            >
+              Explore gifts
+            </Link>
+          </div>
+        </div>
+
         {hasMultiple && (
           <div className="flex items-center justify-between gap-6">
             <div className="flex items-center gap-2 sm:gap-3">

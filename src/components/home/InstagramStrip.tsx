@@ -41,7 +41,7 @@ export function InstagramStrip() {
           className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700"
         >
           <InstagramIcon size={16} />
-          @amoonbloom
+          @amoonisboutique
         </a>
         <p className="text-center font-display text-3xl font-medium text-ink-900 md:text-4xl">
           From the boutique, to your feed.

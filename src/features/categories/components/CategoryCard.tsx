@@ -10,6 +10,8 @@ interface CategoryCardProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   priority?: boolean;
+  /** Representative image used when the category has no image of its own. */
+  fallbackImage?: string;
 }
 
 const sizeMap = {
@@ -23,7 +25,15 @@ export function CategoryCard({
   className,
   size = "md",
   priority,
+  fallbackImage,
 }: CategoryCardProps) {
+  // Only real (remote) images render via next/image; the adapter's local
+  // placeholder is treated as "no image" so we fall back gracefully.
+  const realImage = category.image.url.startsWith("http")
+    ? category.image.url
+    : null;
+  const src = realImage ?? fallbackImage ?? null;
+
   return (
     <Link
       href={ROUTES.category(category.slug)}
@@ -33,14 +43,23 @@ export function CategoryCard({
         className
       )}
     >
-      <Image
-        src={category.image.url}
-        alt={category.image.alt}
-        fill
-        priority={priority}
-        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-        className="object-cover transition-transform duration-700 ease-out-soft group-hover:scale-105"
-      />
+      {src ? (
+        <Image
+          src={src}
+          alt={category.title}
+          fill
+          priority={priority}
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover transition-transform duration-700 ease-out-soft group-hover:scale-105"
+        />
+      ) : (
+        // No image anywhere — branded gradient so the card still looks composed.
+        <div className="absolute inset-0 bg-linear-to-br from-bloom-500 via-bloom-700 to-ink-800">
+          <span className="absolute -right-6 -top-8 select-none font-display text-[10rem] leading-none text-white/10">
+            {category.title.charAt(0)}
+          </span>
+        </div>
+      )}
       <div className="absolute inset-0 bg-linear-to-t from-ink-900/65 via-ink-900/15 to-transparent" />
       <div className="relative z-10 mt-auto w-full p-6 text-white">
         {category.tagline && (

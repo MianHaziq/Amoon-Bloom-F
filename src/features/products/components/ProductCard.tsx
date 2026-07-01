@@ -102,13 +102,13 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
           <WishlistToggle product={product} stopPropagation />
         </div>
 
-        {/* Quick add (bottom, on hover) */}
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+        {/* Quick add — always visible on touch; hover-reveal on desktop (lg+) */}
+        <div className="absolute inset-x-2.5 bottom-2.5 translate-y-0 opacity-100 transition-all duration-300 sm:inset-x-3 sm:bottom-3 lg:pointer-events-none lg:translate-y-2 lg:opacity-0 lg:group-hover:pointer-events-auto lg:group-hover:translate-y-0 lg:group-hover:opacity-100">
           <button
             type="button"
             onClick={handleAdd}
             disabled={!product.inStock}
-            className="pointer-events-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink-900 px-4 py-2.5 text-sm font-medium text-white shadow-(--shadow-soft) hover:bg-ink-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="pointer-events-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink-900/95 px-4 py-2.5 text-xs font-medium text-white shadow-(--shadow-soft) backdrop-blur-sm transition-colors hover:bg-ink-800 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
           >
             <BagIcon size={16} />
             {product.inStock ? "Quick add" : "Sold out"}
@@ -119,7 +119,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
       <div className="flex flex-col gap-1">
         <Link
           href={ROUTES.product(product.slug)}
-          className="font-display text-lg font-medium leading-snug text-ink-900 transition-colors hover:text-bloom-700"
+          className="line-clamp-2 font-display text-sm font-medium leading-snug text-ink-900 transition-colors hover:text-bloom-700 sm:text-lg"
         >
           {product.title}
         </Link>

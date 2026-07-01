@@ -9,10 +9,12 @@ interface ProductGridProps {
   priorityCount?: number;
 }
 
+// Mobile-first: always 2 columns on phones (the standard ecommerce pattern),
+// stepping up on larger screens per the requested max column count.
 const columnMap = {
   2: "sm:grid-cols-2",
-  3: "sm:grid-cols-2 lg:grid-cols-3",
-  4: "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+  3: "lg:grid-cols-3",
+  4: "lg:grid-cols-3 xl:grid-cols-4",
 } as const;
 
 export function ProductGrid({
@@ -24,7 +26,7 @@ export function ProductGrid({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-x-6 gap-y-12",
+        "grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-6 sm:gap-y-12",
         columnMap[columns],
         className
       )}

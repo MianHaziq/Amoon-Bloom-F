@@ -53,15 +53,19 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
   const primaryImage = product.images[0];
 
   return (
-    <div
-      aria-hidden={!visible}
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 backdrop-blur-lg transition-all duration-300 ease-out-soft lg:hidden",
-        visible
-          ? "translate-y-0 opacity-100"
-          : "pointer-events-none translate-y-full opacity-0"
-      )}
-    >
+    <>
+      {/* Reserve space so the fixed bar never overlaps the last content/footer
+          on mobile (only present on PDPs, where this component renders). */}
+      <div aria-hidden className="h-20 lg:hidden" />
+      <div
+        aria-hidden={!visible}
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 backdrop-blur-lg transition-all duration-300 ease-out-soft lg:hidden",
+          visible
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-full opacity-0"
+        )}
+      >
       <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3">
         {primaryImage && (
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-blush-50">
@@ -91,6 +95,7 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
           {product.inStock ? "Add" : "Sold out"}
         </Button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

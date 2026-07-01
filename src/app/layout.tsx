@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import { StoreProvider } from "@/store/providers/StoreProvider";
 import { QueryProvider } from "@/store/providers/QueryProvider";
 import { ToastViewport } from "@/components/ui/Toast";
@@ -18,6 +18,19 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
   weight: ["400", "500", "600", "700", "800"],
+});
+
+/**
+ * Fraunces — a warm, high-contrast editorial serif — is our DISPLAY face for
+ * headings. Paired with Jakarta for body/UI, it gives the boutique a refined,
+ * florist-editorial voice instead of a generic single-sans look.
+ */
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -57,7 +70,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${jakarta.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream-50 text-ink-900 font-sans">
         <StoreProvider>
