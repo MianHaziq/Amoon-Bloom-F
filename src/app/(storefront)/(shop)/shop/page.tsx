@@ -14,15 +14,22 @@ export const metadata = { title: "Shop" };
 // renders per-request rather than as a single shared static page.
 export const dynamic = "force-dynamic";
 
-export default async function ShopPage() {
+export default async function ShopPage(props: PageProps<"/shop">) {
   const [region, locale] = await Promise.all([
     getServerRegion(),
     getServerLocale(),
   ]);
+  const searchParams = await props.searchParams;
+  const rawQ = searchParams?.q;
+  const q = (typeof rawQ === "string" ? rawQ : "").trim();
+
+  // When the user searched (?q=), resolve the set through the fast backend search
+  // endpoint (pg_trgm-indexed, region-scoped). Otherwise show the standard catalog.
   const [productPage, apiCategories] = await Promise.all([
-    productsApi
-      .list({ page: 1, limit: 60, region })
-      .catch(() => ({ data: [], meta: {} })),
+    (q
+      ? productsApi.search(q, { page: 1, limit: 60, region })
+      : productsApi.list({ page: 1, limit: 60, region })
+    ).catch(() => ({ data: [], meta: {} })),
     categoriesApi.list(region).catch(() => []),
   ]);
 

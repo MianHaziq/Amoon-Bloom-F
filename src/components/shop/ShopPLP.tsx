@@ -49,14 +49,12 @@ export function ShopPLP({
     setFilter({ ...next, category: lockedCategorySlug ?? next.category });
 
   const filtered = useMemo(() => {
+    // NOTE: text search (`q`) is resolved server-side by the shop page via the
+    // /products/search endpoint, so `products` is already the matched set. We do
+    // NOT re-filter by `q` here — the backend also matches subtitle/category, which
+    // a naive client title-filter would wrongly hide. Category/sort/in-stock remain
+    // client-side refinements layered on top of the (search or full) result set.
     let list = [...products];
-    if (q) {
-      list = list.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          (p.category ?? "").toLowerCase().includes(q)
-      );
-    }
     if (filter.category) {
       list = list.filter((p) => p.categorySlug === filter.category);
     }
@@ -78,7 +76,7 @@ export function ShopPLP({
         break;
     }
     return list;
-  }, [products, filter, q]);
+  }, [products, filter]);
 
   return (
     <>
