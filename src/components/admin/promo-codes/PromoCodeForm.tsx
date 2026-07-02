@@ -32,6 +32,8 @@ const schema = z.object({
   expiresAt: z.string().optional().nullable(),
   usageLimit: z.number().int().positive().nullable(),
   usageLimitPerUser: z.number().int().positive().nullable(),
+  newUsersOnly: z.boolean(),
+  newUserWithinDays: z.number().int().positive().nullable(),
   isActive: z.boolean(),
 });
 
@@ -97,6 +99,8 @@ export function PromoCodeForm({
       expiresAt: "",
       usageLimit: null,
       usageLimitPerUser: null,
+      newUsersOnly: false,
+      newUserWithinDays: null,
       isActive: true,
     },
   });
@@ -121,6 +125,8 @@ export function PromoCodeForm({
       expiresAt: toIsoLocal(initial.expiresAt),
       usageLimit: initial.usageLimit,
       usageLimitPerUser: initial.usageLimitPerUser,
+      newUsersOnly: initial.newUsersOnly ?? false,
+      newUserWithinDays: initial.newUserWithinDays ?? null,
       isActive: initial.isActive,
     });
   }, [initial, reset]);
@@ -129,6 +135,7 @@ export function PromoCodeForm({
   const discountType = watch("discountType");
   const productIds = watch("productIds");
   const categoryIds = watch("categoryIds");
+  const newUsersOnly = watch("newUsersOnly");
 
   const submit = handleSubmit(async (v) => {
     await onSubmit({
@@ -149,6 +156,9 @@ export function PromoCodeForm({
       expiresAt: v.expiresAt ? new Date(v.expiresAt).toISOString() : null,
       usageLimit: v.usageLimit,
       usageLimitPerUser: v.usageLimitPerUser,
+      newUsersOnly: v.newUsersOnly,
+      // Backend wants the account-age window only when the flag is on.
+      newUserWithinDays: v.newUsersOnly ? v.newUserWithinDays ?? 30 : null,
       isActive: v.isActive,
     });
   });
@@ -363,6 +373,31 @@ export function PromoCodeForm({
               setValueAs: (v) => (v === "" || v == null ? null : Number(v)),
             })}
           />
+        </section>
+
+        <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+          <h3 className="mb-4 font-display text-lg text-ink-900">Eligibility</h3>
+          <label className="flex cursor-pointer items-center gap-3">
+            <input
+              type="checkbox"
+              {...register("newUsersOnly")}
+              className="h-5 w-5 accent-bloom-600"
+            />
+            <span className="text-sm text-ink-900">New customers only</span>
+          </label>
+          {newUsersOnly ? (
+            <Input
+              label="Account age window (days)"
+              type="number"
+              step="1"
+              min="1"
+              hint="Only accounts created within this many days can redeem."
+              containerClassName="mt-3"
+              {...register("newUserWithinDays", {
+                setValueAs: (v) => (v === "" || v == null ? null : Number(v)),
+              })}
+            />
+          ) : null}
         </section>
       </aside>
 

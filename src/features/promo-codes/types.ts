@@ -32,6 +32,9 @@ export interface ApiPromoCode {
   usageCount?: number;
   usageLimit: number | null;
   usageLimitPerUser: number | null;
+  /** Restrict redemption to accounts younger than `newUserWithinDays`. */
+  newUsersOnly?: boolean;
+  newUserWithinDays?: number | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -55,6 +58,8 @@ export interface ApiPromoCodeCreateInput {
   expiresAt?: string | null;
   usageLimit?: number | null;
   usageLimitPerUser?: number | null;
+  newUsersOnly?: boolean;
+  newUserWithinDays?: number | null;
   isActive?: boolean;
 }
 
@@ -72,12 +77,27 @@ export interface ApiPromoValidateInput {
   items?: Array<{ productId: string; quantity: number }>;
 }
 
+/**
+ * Success payload of `POST /promo-codes/validate` — mirrors
+ * promoCodeService.validateAndCalculate EXACTLY. An INVALID code does NOT come
+ * back in this shape: the backend throws an HTTP 400/404 whose `{ message }` is
+ * the human reason (min order not met, expired, new-users-only, …). So a
+ * resolved promise here always means "valid & applied".
+ */
 export interface ApiPromoValidationResult {
-  isValid: boolean;
-  reason?: string;
+  promoCode: {
+    id: string;
+    code: string;
+    name: string;
+    discountType: PromoDiscountType;
+    discountValue: number;
+    appliesTo: PromoAppliesTo;
+    newUsersOnly: boolean;
+    newUserWithinDays: number | null;
+  };
+  cartSubtotal: number;
+  eligibleSubtotal: number;
   discountAmount: number;
-  appliedValue: number;
-  maxDiscountAmount: number | null;
-  appliesTo: PromoAppliesTo;
-  scope?: { productIds?: string[]; categoryIds?: string[] };
+  total: number;
+  eligibleProductIds: string[];
 }
