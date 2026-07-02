@@ -30,6 +30,22 @@ export const productsApi = {
     return data;
   },
 
+  /**
+   * Full-text-ish product search (`/products/search`). Matches title/subtitle
+   * (EN + AR) and category name; backed by pg_trgm indexes so it stays fast.
+   * Storefront calls are region-scoped like `list`. A blank `q` returns nothing.
+   */
+  async search(
+    q: string,
+    params: ApiProductListParams = {}
+  ): Promise<PaginatedResponse<ApiProduct>> {
+    const { data } = await http.get<PaginatedResponse<ApiProduct>>(
+      "/products/search",
+      { params: { ...params, q } }
+    );
+    return data;
+  },
+
   async getById(id: string, region?: string): Promise<ApiProduct> {
     const { data } = await http.get<ApiResponse<ApiProduct>>(`/products/${id}`, {
       params: region ? { region } : undefined,
