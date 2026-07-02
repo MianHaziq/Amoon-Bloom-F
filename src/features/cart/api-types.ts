@@ -38,13 +38,22 @@ export interface ApiCartItemMessageInput {
   message?: string | null;
 }
 
+export interface ApiCartSuggestionSection {
+  category: { id: string; title: string };
+  headline: string;
+  subhead: string;
+  products: ApiProduct[];
+}
+
+/**
+ * Shape of `GET /cart/suggestions` (mirrors cart.service.getCartSuggestions):
+ * per-category "more like this" sections plus a cross-category `discover` row.
+ */
 export interface ApiCartSuggestions {
-  byCategory: Array<{
-    categoryId: string;
-    title: string;
-    products: ApiProduct[];
-  }>;
+  sections: ApiCartSuggestionSection[];
   discover: ApiProduct[];
+  headline: string;
+  hint: string;
 }
 
 export interface ApiCartSuggestionsParams {

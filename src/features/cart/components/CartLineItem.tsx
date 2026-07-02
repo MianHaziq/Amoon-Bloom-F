@@ -11,11 +11,8 @@ import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useAppDispatch } from "@/store";
-import {
-  removeItem,
-  updateQuantity,
-  type CartItem,
-} from "@/store/slices/cart.slice";
+import { removeFromCart, setCartQuantity } from "@/features/cart/cart.thunks";
+import { type CartItem } from "@/store/slices/cart.slice";
 import { cn } from "@/lib/cn";
 import { useT } from "@/i18n/useT";
 
@@ -92,14 +89,14 @@ export function CartLineItem({
             size="sm"
             value={item.quantity}
             onChange={(q) =>
-              dispatch(updateQuantity({ productId: item.productId, quantity: q }))
+              dispatch(setCartQuantity(item.productId, q))
             }
           />
           <IconButton
             label={t("common.remove")}
             variant="ghost"
             size="sm"
-            onClick={() => dispatch(removeItem(item.productId))}
+            onClick={() => dispatch(removeFromCart(item.productId))}
             className="text-ink-400 hover:text-ink-900"
           >
             <TrashIcon size={16} />

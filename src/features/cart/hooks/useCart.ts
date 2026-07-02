@@ -3,18 +3,19 @@
 import { useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import {
-  addItem,
-  clearCart,
-  removeItem,
-  updateQuantity,
-} from "@/store/slices/cart.slice";
+  addToCart,
+  setCartQuantity,
+  removeFromCart,
+  emptyCart,
+} from "@/features/cart/cart.thunks";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import type { Product } from "@/features/products/types";
 
 /**
- * Centralised cart accessor. Wraps the redux slice so feature components
- * stay decoupled from store internals — useful when we move to server-side
- * carts later.
+ * Centralised cart accessor. Every mutation goes through the auth-aware cart
+ * thunks: local (instant) for guests, mirrored to the server `/cart` for
+ * signed-in users. Feature components stay decoupled from store internals and
+ * from the guest-vs-server distinction.
  */
 export function useCart() {
   const dispatch = useAppDispatch();
@@ -45,10 +46,10 @@ export function useCart() {
     items,
     ...totals,
     add: (product: Product, quantity = 1) =>
-      dispatch(addItem({ product, quantity })),
-    remove: (productId: string) => dispatch(removeItem(productId)),
+      dispatch(addToCart(product, quantity)),
+    remove: (productId: string) => dispatch(removeFromCart(productId)),
     setQuantity: (productId: string, quantity: number) =>
-      dispatch(updateQuantity({ productId, quantity })),
-    clear: () => dispatch(clearCart()),
+      dispatch(setCartQuantity(productId, quantity)),
+    clear: () => dispatch(emptyCart()),
   };
 }

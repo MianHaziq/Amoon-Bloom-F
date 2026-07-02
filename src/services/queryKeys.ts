@@ -112,6 +112,10 @@ export const queryKeys = {
   notifications: {
     all: ["notifications"] as const,
     preferences: () => [...queryKeys.notifications.all, "preferences"] as const,
+    list: (params?: unknown) =>
+      [...queryKeys.notifications.all, "list", params ?? null] as const,
+    unreadCount: () =>
+      [...queryKeys.notifications.all, "unread-count"] as const,
   },
 
   regions: {

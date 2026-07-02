@@ -6,6 +6,7 @@ import { Container, Section, Button } from "@/components/ui";
 import { ArrowRight, BagIcon } from "@/components/icons";
 import { CartLineItem } from "@/features/cart/components/CartLineItem";
 import { CartSummary } from "@/features/cart/components/CartSummary";
+import { CartSuggestions } from "@/features/cart/components/CartSuggestions";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { ROUTES } from "@/constants/routes";
 import { useT } from "@/i18n/useT";
@@ -68,6 +69,7 @@ export default function CartPage() {
             <CartSummary />
           </div>
         )}
+        {items.length > 0 ? <CartSuggestions /> : null}
       </Section>
     </>
   );
