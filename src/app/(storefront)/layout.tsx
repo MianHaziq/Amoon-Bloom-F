@@ -3,6 +3,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/features/cart/components/CartDrawer";
 import { CartPersistence } from "@/features/cart/components/CartPersistence";
+import { CartSync } from "@/features/cart/components/CartSync";
 import { WishlistPersistence } from "@/features/wishlist/components/WishlistPersistence";
 import { LocationPersistence } from "@/features/location/components/LocationPersistence";
 import { AuthHydrator } from "@/features/auth/components/AuthHydrator";
@@ -17,6 +18,7 @@ export default async function StorefrontLayout({
     <>
       <AuthHydrator />
       <CartPersistence />
+      <CartSync />
       <WishlistPersistence />
       <LocationPersistence />
       <a

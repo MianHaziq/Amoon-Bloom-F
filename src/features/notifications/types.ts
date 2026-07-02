@@ -26,3 +26,32 @@ export interface ApiBroadcastInput {
 export interface ApiBroadcastResult {
   jobId: string;
 }
+
+/**
+ * A single row from the authenticated user's notification inbox
+ * (`GET /notifications`). `data` is an arbitrary payload the backend attached
+ * to the push (may carry a deep-link); `readAt` is null while unread.
+ */
+export interface ApiNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  data: Record<string, unknown> | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface ApiNotificationList {
+  items: ApiNotification[];
+  unreadCount: number;
+  page: number;
+  totalPages: number;
+  total: number;
+}
+
+export interface NotificationListParams {
+  page?: number;
+  limit?: number;
+  unreadOnly?: boolean;
+}

@@ -14,6 +14,7 @@ import { AnnouncementBar } from "./AnnouncementBar";
 import { MegaMenu } from "./MegaMenu";
 import { MobileNav } from "./MobileNav";
 import { LocaleToggle } from "./LocaleToggle";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { DeliverToPill } from "@/features/location/components/DeliverToPill";
 import { ROUTES } from "@/constants/routes";
 import { siteConfig } from "@/config/site";
@@ -145,6 +146,7 @@ export function Header() {
             >
               <SearchIcon size={20} />
             </IconButton>
+            <NotificationBell className="hidden sm:block" />
             <Link
               href={ROUTES.wishlist}
               aria-label={`${t("nav.wishlist")}, ${tc(wishlistCount, "units.itemOne", "units.itemOther")}`}

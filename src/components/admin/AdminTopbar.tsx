@@ -7,6 +7,7 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useAppSelector } from "@/store";
 import { LogoutIcon, MenuIcon, UserIcon } from "@/components/icons";
 import { LocaleToggle } from "@/components/layout/LocaleToggle";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { useT } from "@/i18n/useT";
 
 interface AdminTopbarProps {
@@ -58,6 +59,7 @@ export function AdminTopbar({ title, onOpenMobileNav }: AdminTopbarProps) {
       </h1>
 
       <div className="ms-auto flex items-center gap-2" ref={menuRef}>
+        <NotificationBell />
         <LocaleToggle className="hidden sm:inline-flex" />
         <button
           type="button"

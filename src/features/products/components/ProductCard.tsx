@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useAppDispatch } from "@/store";
-import { addItem } from "@/store/slices/cart.slice";
+import { addToCart } from "@/features/cart/cart.thunks";
 import { pushToast } from "@/store/slices/ui.slice";
 import { WishlistToggle } from "@/features/wishlist/components/WishlistToggle";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
@@ -46,7 +46,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     e.preventDefault();
     e.stopPropagation();
     if (!product.inStock) return;
-    dispatch(addItem({ product }));
+    dispatch(addToCart(product, 1));
     dispatch(
       pushToast({
         title: t("common.addedToCart"),

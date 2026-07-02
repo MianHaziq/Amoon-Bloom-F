@@ -17,6 +17,10 @@ export interface PaginationMeta {
 export interface ResponseMeta {
   pagination?: PaginationMeta;
   total?: number;
+  /** Notifications list echoes the user's current unread count here. */
+  unreadCount?: number;
+  /** Product search echoes the normalized query here. */
+  query?: string;
 }
 
 export interface PaginatedResponse<T> {

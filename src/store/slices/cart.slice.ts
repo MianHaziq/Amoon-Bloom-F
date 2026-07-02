@@ -9,6 +9,8 @@ export interface CartItem {
   unitPrice: number;
   currency: string;
   quantity: number;
+  /** Optional per-item note (gift message / engraving). Mirrors the server cart. */
+  message?: string | null;
 }
 
 export interface CartState {

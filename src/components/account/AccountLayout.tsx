@@ -6,6 +6,7 @@ import { useAppSelector } from "@/store";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { Container } from "@/components/ui";
 import {
+  BellIcon,
   DocumentIcon,
   HeartIcon,
   LogoutIcon,
@@ -27,6 +28,11 @@ const NAV: {
   { href: "/account/orders", labelKey: "account.orders", icon: DocumentIcon },
   { href: "/account/addresses", labelKey: "account.addresses", icon: PinIcon },
   { href: "/account/wishlist", labelKey: "account.wishlist", icon: HeartIcon },
+  {
+    href: "/account/notifications",
+    labelKey: "account.notifications",
+    icon: BellIcon,
+  },
 ];
 
 export function AccountLayout({
