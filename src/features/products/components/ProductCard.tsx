@@ -42,18 +42,22 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     product.compareAtPrice &&
     product.compareAtPrice.amount > product.price.amount;
 
-  const handleAdd = (e: React.MouseEvent) => {
+  const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!product.inStock) return;
-    dispatch(addToCart(product, 1));
-    dispatch(
-      pushToast({
-        title: t("common.addedToCart"),
-        description: product.title,
-        variant: "success",
-      })
-    );
+    // Success toast only once the mutation is confirmed; the thunk raises its
+    // own error toast (e.g. "Only 3 in stock") if the server rejects.
+    const res = await dispatch(addToCart(product, 1));
+    if (res.ok) {
+      dispatch(
+        pushToast({
+          title: t("common.addedToCart"),
+          description: product.title,
+          variant: "success",
+        })
+      );
+    }
   };
 
   return (

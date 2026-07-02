@@ -135,22 +135,21 @@ export function CheckoutClient() {
         })),
       }),
     onSuccess: (result) => {
-      if (result.isValid) {
-        setPromoResult(result);
-        setPromoError(null);
-        toast.success({
-          title: t("checkout.promoApplied"),
-          description: t("checkout.promoAppliedAmount", {
-            amount: formatCurrency(result.discountAmount, currency, locale),
-          }),
-        });
-      } else {
-        setPromoResult(null);
-        setPromoError(result.reason ?? t("checkout.promoInvalid"));
-      }
+      // A resolved validate call means the code is valid and applied — the
+      // backend 400/404s (→ onError) with the reason when it isn't.
+      setPromoResult(result);
+      setPromoError(null);
+      toast.success({
+        title: t("checkout.promoApplied"),
+        description: t("checkout.promoAppliedAmount", {
+          amount: formatCurrency(result.discountAmount, currency, locale),
+        }),
+      });
     },
     onError: (err) => {
       setPromoResult(null);
+      // Surface the backend's specific reason (min order not met, expired,
+      // new-users-only, per-user limit, …) rather than a generic message.
       setPromoError(
         err instanceof ApiError ? err.message : t("checkout.promoError")
       );
@@ -210,7 +209,7 @@ export function CheckoutClient() {
             }
           : undefined,
         paymentMethod: "COD",
-        promoCode: promoResult?.isValid ? promoCode.trim() : undefined,
+        promoCode: promoResult ? promoCode.trim() : undefined,
       });
     },
     onSuccess: (order) => {
@@ -929,14 +928,14 @@ function CheckoutSummary({
 
       <Card variant="flat" padding="md" className="flex flex-col gap-3">
         <h3 className="font-display text-lg text-ink-900">{t("checkout.promoCode")}</h3>
-        {promoResult?.isValid ? (
+        {promoResult ? (
           <div className="flex items-center justify-between rounded-xl border border-bloom-200 bg-bloom-50 px-3 py-2 text-sm text-bloom-700">
             <div>
               <p className="font-semibold uppercase tracking-wider">
                 {promoCode}
               </p>
               <p className="text-xs">
-                {promoResult.discountAmount && discount > 0
+                {discount > 0
                   ? t("checkout.promoAppliedAmount", {
                       amount: formatCurrency(discount, currency, locale),
                     })

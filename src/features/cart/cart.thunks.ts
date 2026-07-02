@@ -7,11 +7,19 @@ import {
   setItems,
   type CartItem,
 } from "@/store/slices/cart.slice";
+import { pushToast } from "@/store/slices/ui.slice";
+import { ApiError } from "@/services/http";
 import { storage } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
 import type { Product } from "@/features/products/types";
 import { cartApi } from "./api/cart.api";
 import { apiCartToCartItems } from "./adapters";
+
+/** Result every cart mutation resolves to, so callers can gate success UI. */
+export interface CartMutationResult {
+  ok: boolean;
+  error?: string;
+}
 
 /**
  * Cart mutations as auth-aware thunks.
@@ -42,24 +50,41 @@ async function reconcile(dispatch: (a: unknown) => void) {
   }
 }
 
+/**
+ * Shared handler for a failed server mutation: pull the backend's message
+ * (e.g. "Only 3 in stock"), roll the optimistic change back to the server's
+ * truth, and surface the reason as an error toast so the revert isn't silent.
+ */
+async function handleServerError(
+  dispatch: (a: unknown) => void,
+  err: unknown
+): Promise<CartMutationResult> {
+  const error =
+    err instanceof ApiError ? err.message : "Couldn't update your cart. Please try again.";
+  await reconcile(dispatch);
+  dispatch(pushToast({ title: error, variant: "error" }));
+  return { ok: false, error };
+}
+
 export const addToCart =
-  (product: Product, quantity = 1): AppThunk =>
+  (product: Product, quantity = 1): AppThunk<Promise<CartMutationResult>> =>
   async (dispatch, getState) => {
     dispatch(addItem({ product, quantity }));
-    if (!isAuthed(getState)) return;
+    if (!isAuthed(getState)) return { ok: true };
     try {
       const server = await cartApi.add({ productId: product.id, quantity });
       dispatch(setItems(apiCartToCartItems(server)));
-    } catch {
-      await reconcile(dispatch);
+      return { ok: true };
+    } catch (err) {
+      return handleServerError(dispatch, err);
     }
   };
 
 export const setCartQuantity =
-  (productId: string, quantity: number): AppThunk =>
+  (productId: string, quantity: number): AppThunk<Promise<CartMutationResult>> =>
   async (dispatch, getState) => {
     dispatch(updateQuantity({ productId, quantity }));
-    if (!isAuthed(getState)) return;
+    if (!isAuthed(getState)) return { ok: true };
     try {
       // Server treats quantity <= 0 as a remove.
       const server =
@@ -67,33 +92,37 @@ export const setCartQuantity =
           ? await cartApi.removeItem(productId)
           : await cartApi.setQuantity({ productId, quantity });
       dispatch(setItems(apiCartToCartItems(server)));
-    } catch {
-      await reconcile(dispatch);
+      return { ok: true };
+    } catch (err) {
+      return handleServerError(dispatch, err);
     }
   };
 
 export const removeFromCart =
-  (productId: string): AppThunk =>
+  (productId: string): AppThunk<Promise<CartMutationResult>> =>
   async (dispatch, getState) => {
     dispatch(removeItem(productId));
-    if (!isAuthed(getState)) return;
+    if (!isAuthed(getState)) return { ok: true };
     try {
       const server = await cartApi.removeItem(productId);
       dispatch(setItems(apiCartToCartItems(server)));
-    } catch {
-      await reconcile(dispatch);
+      return { ok: true };
+    } catch (err) {
+      return handleServerError(dispatch, err);
     }
   };
 
-export const emptyCart = (): AppThunk => async (dispatch, getState) => {
-  dispatch(clearCart());
-  if (!isAuthed(getState)) return;
-  try {
-    await cartApi.clear();
-  } catch {
-    await reconcile(dispatch);
-  }
-};
+export const emptyCart = (): AppThunk<Promise<CartMutationResult>> =>
+  async (dispatch, getState) => {
+    dispatch(clearCart());
+    if (!isAuthed(getState)) return { ok: true };
+    try {
+      await cartApi.clear();
+      return { ok: true };
+    } catch (err) {
+      return handleServerError(dispatch, err);
+    }
+  };
 
 /**
  * On sign-in (or a reload while signed-in): merge any leftover guest cart into
