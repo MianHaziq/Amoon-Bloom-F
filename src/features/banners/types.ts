@@ -2,6 +2,8 @@ export interface ApiBanner {
   id: string;
   url: string;
   sortOrder: number;
+  /** Present on staff reads; storefront only ever receives PUBLISHED. */
+  status?: "DRAFT" | "PUBLISHED";
   createdAt: string;
   updatedAt: string;
 }

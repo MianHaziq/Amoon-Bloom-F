@@ -11,7 +11,9 @@ export type OrderStatus =
   | "DELIVERED"
   | "CANCELLED";
 
-export type PaymentMethod = "COD";
+// The web only initiates COD, but the backend can return MYFATOORAH on orders
+// placed via other clients (e.g. mobile) that the web may still display.
+export type PaymentMethod = "COD" | "MYFATOORAH";
 
 export type PaymentStatus = "UNPAID" | "PAID" | "FAILED";
 
@@ -113,8 +115,15 @@ export interface ApiOrderListRow {
 export interface ApiOrderStatusLite {
   id: string;
   status: OrderStatus;
+  paymentStatus?: PaymentStatus;
   totalAmount: number;
-  progress: { current: number; total: number };
+  /** Mirrors order.service status snapshot exactly. */
+  progress: {
+    currentStep: OrderStatus;
+    isTerminal: boolean;
+    typicalFlow: OrderStatus[];
+    stepIndex: number | null;
+  };
   createdAt: string;
   updatedAt: string;
 }

@@ -89,9 +89,10 @@ export function AccountProfile() {
   const profileMutation = useMutation({
     mutationFn: async (values: ProfileValues) => {
       if (!user?.id) throw new Error("Not signed in");
+      // Backend stores a single `fullName`; combine the two inputs.
+      const fullName = `${values.firstName} ${values.lastName}`.trim();
       const updated = await authApi.updateProfile(user.id, {
-        firstName: values.firstName,
-        lastName: values.lastName,
+        fullName,
         email: values.email,
       });
       if ((values.phone ?? "") !== (user.phone ?? "")) {
@@ -102,11 +103,12 @@ export function AccountProfile() {
     onSuccess: (updated, values) => {
       dispatch(
         updateUser({
+          fullName: updated.fullName,
           firstName: updated.firstName,
           lastName: updated.lastName,
           email: updated.email,
           phone: values.phone,
-          name: `${updated.firstName ?? ""} ${updated.lastName ?? ""}`.trim(),
+          name: updated.name,
         })
       );
       toast.success({ title: t("account.profileUpdated") });

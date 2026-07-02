@@ -12,6 +12,8 @@ export interface ApiSection {
   title_ar: string | null;
   image: string | null;
   sortOrder: number;
+  /** Present on staff reads; storefront only ever receives PUBLISHED. */
+  status?: "DRAFT" | "PUBLISHED";
   products: ApiProduct[];
   categories: ApiCategory[];
   createdAt: string;

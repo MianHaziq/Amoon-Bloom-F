@@ -34,15 +34,11 @@ export function RegisterForm() {
     setFormError(null);
     setSubmitting(true);
     const trimmed = values.name.trim();
-    const [firstName, ...rest] = trimmed.split(/\s+/);
-    const lastName = rest.join(" ");
     try {
       const session = await signup({
         email: values.email,
         password: values.password,
-        firstName,
-        lastName: lastName || firstName,
-        name: trimmed,
+        fullName: trimmed,
       });
       toast.success({
         title: t("auth.welcomeToStore"),

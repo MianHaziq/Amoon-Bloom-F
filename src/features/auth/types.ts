@@ -13,8 +13,11 @@ export type AuthStatus = "ACTIVE" | "INACTIVE";
 export interface User {
   id: string;
   email: string;
-  /** Display name composed from firstName + lastName, or supplied separately. */
+  /** Canonical name field from the backend (a single field; no first/last). */
+  fullName?: string | null;
+  /** Mirrors `fullName`; kept for existing readers. */
   name: string;
+  /** Derived on receipt by splitting `fullName` — the backend has no such fields. */
   firstName?: string;
   lastName?: string;
   avatar?: string;
@@ -43,10 +46,8 @@ export interface AuthCredentials {
 export interface RegisterPayload {
   email: string;
   password: string;
-  /** Convenience single field used by the form; controller will split. */
-  name?: string;
-  firstName?: string;
-  lastName?: string;
+  /** The backend stores a single `fullName` — send it directly. */
+  fullName: string;
 }
 
 export interface AuthSession {
