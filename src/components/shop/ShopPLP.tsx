@@ -5,18 +5,57 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { m, AnimatePresence } from "motion/react";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { ProductFilters } from "@/features/products/components/ProductFilters";
+import {
+  deriveColorFacets,
+  derivePriceBounds,
+  productHasColor,
+} from "@/features/products/facets";
 import { Drawer, Button } from "@/components/ui";
-import { FilterIcon } from "@/components/icons";
+import { FilterIcon, CloseIcon } from "@/components/icons";
 import { baseTransition } from "@/lib/motion";
+import { cn } from "@/lib/cn";
+import { formatCurrency } from "@/lib/format";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
 import type { Product, ProductFilter } from "@/features/products/types";
 import type { Category } from "@/features/categories/types";
 import { useT } from "@/i18n/useT";
+import type { MessageKey } from "@/i18n";
+
+const SORTS: {
+  value: NonNullable<ProductFilter["sort"]>;
+  labelKey: MessageKey;
+}[] = [
+  { value: "featured", labelKey: "shop.sortFeatured" },
+  { value: "newest", labelKey: "shop.sortNewest" },
+  { value: "price-asc", labelKey: "shop.sortPriceAsc" },
+  { value: "price-desc", labelKey: "shop.sortPriceDesc" },
+];
 
 interface ShopPLPProps {
   products: Product[];
   categories: Category[];
   /** When set, the category sidebar is hidden and the filter is locked. */
   lockedCategorySlug?: string;
+}
+
+/** A dismissible active-filter pill shown in the toolbar. */
+function FilterChip({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onRemove}
+      className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 transition-colors hover:border-bloom-300 hover:bg-bloom-50 hover:text-bloom-700"
+    >
+      <span className="capitalize">{label}</span>
+      <CloseIcon size={12} />
+    </button>
+  );
 }
 
 export function ShopPLP({
@@ -30,14 +69,28 @@ export function ShopPLP({
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { t, tc } = useT();
+  const { currency, locale } = useCurrency();
   const router = useRouter();
   const searchParams = useSearchParams();
   const q = (searchParams.get("q") ?? "").trim().toLowerCase();
+
+  // Facets are derived from the full page set so bounds/swatches stay stable as
+  // the user narrows the grid. Both degrade to empty when the data lacks them.
+  const priceBounds = useMemo(() => derivePriceBounds(products), [products]);
+  const colorFacets = useMemo(() => deriveColorFacets(products), [products]);
+
+  const selectedColors = filter.colors ?? [];
+  const priceTouched =
+    priceBounds != null &&
+    ((filter.minPrice != null && filter.minPrice > priceBounds.min) ||
+      (filter.maxPrice != null && filter.maxPrice < priceBounds.max));
 
   const hasActiveFilters =
     (!lockedCategorySlug && Boolean(filter.category)) ||
     Boolean(filter.inStock) ||
     Boolean(q) ||
+    selectedColors.length > 0 ||
+    priceTouched ||
     (filter.sort ? filter.sort !== "featured" : false);
 
   const clearAll = () => {
@@ -52,14 +105,24 @@ export function ShopPLP({
     // NOTE: text search (`q`) is resolved server-side by the shop page via the
     // /products/search endpoint, so `products` is already the matched set. We do
     // NOT re-filter by `q` here — the backend also matches subtitle/category, which
-    // a naive client title-filter would wrongly hide. Category/sort/in-stock remain
-    // client-side refinements layered on top of the (search or full) result set.
+    // a naive client title-filter would wrongly hide. Category/price/colour/stock
+    // and sort are client-side refinements layered on top of that result set.
     let list = [...products];
     if (filter.category) {
       list = list.filter((p) => p.categorySlug === filter.category);
     }
     if (filter.inStock) {
       list = list.filter((p) => p.inStock);
+    }
+    if (filter.minPrice != null) {
+      list = list.filter((p) => p.price.amount >= filter.minPrice!);
+    }
+    if (filter.maxPrice != null) {
+      list = list.filter((p) => p.price.amount <= filter.maxPrice!);
+    }
+    const colors = filter.colors ?? [];
+    if (colors.length > 0) {
+      list = list.filter((p) => productHasColor(p, colors));
     }
     switch (filter.sort) {
       case "price-asc":
@@ -78,51 +141,152 @@ export function ShopPLP({
     return list;
   }, [products, filter]);
 
+  // Category slug → title, for the active-filter chip label.
+  const categoryTitle = filter.category
+    ? categories.find((c) => c.slug === filter.category)?.title ?? filter.category
+    : undefined;
+
+  const filterKey = `${filter.category ?? "all"}|${filter.sort ?? "featured"}|${filter.inStock ? 1 : 0}|${filter.minPrice ?? ""}|${filter.maxPrice ?? ""}|${selectedColors.join(",")}|${q}`;
+
+  const sidebar = (
+    <ProductFilters
+      filter={filter}
+      onChange={setFilterSafe}
+      resultCount={products.length}
+      categories={categories}
+      colorFacets={colorFacets}
+      priceBounds={priceBounds}
+    />
+  );
+
   return (
     <>
-      {/* Mobile filter/sort bar (sidebar is desktop-only) */}
-      {!lockedCategorySlug && (
-        <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
-          <p className="text-sm text-ink-500">
-            {tc(filtered.length, "units.resultOne", "units.resultOther")}
-          </p>
+      {/* Toolbar: result count · sort · mobile filter trigger */}
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <p className="text-sm text-ink-500">
+          {tc(filtered.length, "units.resultOne", "units.resultOther")}
+        </p>
+
+        <div className="flex items-center gap-2.5">
+          {/* Sort — always visible (matches the reference top-right control) */}
+          <div className="relative">
+            <select
+              aria-label={t("shop.sortBy")}
+              value={filter.sort ?? "featured"}
+              onChange={(e) =>
+                setFilterSafe({
+                  ...filter,
+                  sort: e.target.value as ProductFilter["sort"],
+                })
+              }
+              className="min-h-10 appearance-none rounded-full border border-ink-200 bg-white ps-4 pe-9 text-sm font-medium text-ink-900 transition-colors hover:bg-cream-50 focus:border-bloom-400 focus:outline-none focus:ring-4 focus:ring-bloom-100"
+            >
+              {SORTS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {t(opt.labelKey)}
+                </option>
+              ))}
+            </select>
+            <svg
+              viewBox="0 0 24 24"
+              className="pointer-events-none absolute end-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+
+          {/* Mobile filter trigger (sidebar is desktop-only) */}
+          {!lockedCategorySlug && (
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-cream-50 active:bg-cream-100 lg:hidden"
+            >
+              <FilterIcon size={16} />
+              {t("shop.filters")}
+              {hasActiveFilters && (
+                <span className="h-1.5 w-1.5 rounded-full bg-bloom-600" />
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Active-filter chips */}
+      {hasActiveFilters && (
+        <div className="mb-8 flex flex-wrap items-center gap-2">
+          {!lockedCategorySlug && categoryTitle && (
+            <FilterChip
+              label={categoryTitle}
+              onRemove={() => setFilterSafe({ ...filter, category: undefined })}
+            />
+          )}
+          {priceTouched && priceBounds && (
+            <FilterChip
+              label={`${formatCurrency(filter.minPrice ?? priceBounds.min, currency, locale)} – ${formatCurrency(filter.maxPrice ?? priceBounds.max, currency, locale)}`}
+              onRemove={() =>
+                setFilterSafe({
+                  ...filter,
+                  minPrice: undefined,
+                  maxPrice: undefined,
+                })
+              }
+            />
+          )}
+          {selectedColors.map((c) => (
+            <FilterChip
+              key={c}
+              label={c}
+              onRemove={() =>
+                setFilterSafe({
+                  ...filter,
+                  colors:
+                    selectedColors.filter((x) => x !== c).length > 0
+                      ? selectedColors.filter((x) => x !== c)
+                      : undefined,
+                })
+              }
+            />
+          ))}
+          {filter.inStock && (
+            <FilterChip
+              label={t("shop.inStockOnly")}
+              onRemove={() => setFilterSafe({ ...filter, inStock: undefined })}
+            />
+          )}
           <button
             type="button"
-            onClick={() => setFiltersOpen(true)}
-            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-ink-200 bg-white px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-cream-50 active:bg-cream-100"
+            onClick={clearAll}
+            className="ms-1 text-xs font-semibold text-bloom-700 underline-offset-4 hover:underline"
           >
-            <FilterIcon size={16} />
-            {t("shop.filterSort")}
-            {hasActiveFilters && (
-              <span className="h-1.5 w-1.5 rounded-full bg-bloom-600" />
-            )}
+            {t("shop.clearAll")}
           </button>
         </div>
       )}
 
-      <div className="grid gap-10 lg:grid-cols-[16rem_1fr] lg:gap-12">
-        {lockedCategorySlug ? (
-          <div className="hidden lg:block" />
-        ) : (
-          <ProductFilters
-            className="hidden lg:flex"
-            filter={filter}
-            onChange={setFilterSafe}
-            resultCount={products.length}
-            categories={categories}
-          />
+      <div
+        className={cn(
+          "grid gap-10 lg:gap-12",
+          lockedCategorySlug ? "" : "lg:grid-cols-[16rem_1fr]"
+        )}
+      >
+        {!lockedCategorySlug && (
+          <div className="hidden lg:block">{sidebar}</div>
         )}
 
         <div>
-          <p className="mb-6 hidden text-sm text-ink-500 lg:block">
-            {tc(filtered.length, "units.resultOne", "units.resultOther")}
-          </p>
           {/* Crossfade the result set on any filter/sort/search change. The key
               change swaps the panel via AnimatePresence (mode="wait"); the fresh
               ProductGrid remount replays its stagger as the new set enters. */}
           <AnimatePresence mode="wait" initial={false}>
             <m.div
-              key={`${filter.category ?? "all"}|${filter.sort ?? "featured"}|${filter.inStock ? 1 : 0}|${q}`}
+              key={filterKey}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -157,21 +321,16 @@ export function ShopPLP({
         </div>
       </div>
 
-      {/* Mobile filter/sort drawer */}
+      {/* Mobile filter drawer */}
       {!lockedCategorySlug && (
         <Drawer
           open={filtersOpen}
           onClose={() => setFiltersOpen(false)}
           side="left"
-          title={t("shop.filterSort")}
+          title={t("shop.filters")}
         >
           <div className="flex flex-col gap-6">
-            <ProductFilters
-              filter={filter}
-              onChange={setFilterSafe}
-              resultCount={products.length}
-              categories={categories}
-            />
+            {sidebar}
             <Button fullWidth size="lg" onClick={() => setFiltersOpen(false)}>
               {`${t("shop.showResults")} ${tc(filtered.length, "units.resultOne", "units.resultOther")}`}
             </Button>

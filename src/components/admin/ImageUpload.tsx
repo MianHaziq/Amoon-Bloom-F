@@ -16,6 +16,13 @@ interface ImageUploadProps {
   label?: string;
   hint?: string;
   className?: string;
+  /**
+   * Tailwind sizing for the preview image. Pass a fixed aspect ratio so the
+   * admin sees the image in the same shape the storefront renders it —
+   * e.g. `aspect-square` for 1:1 (products/categories) or `aspect-video`
+   * for 16:9 (banners). Defaults to a fixed-height letterbox.
+   */
+  previewClassName?: string;
 }
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -27,6 +34,7 @@ export function ImageUpload({
   label = "Image",
   hint,
   className,
+  previewClassName = "h-44 w-full",
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const dispatch = useAppDispatch();
@@ -100,7 +108,7 @@ export function ImageUpload({
           <img
             src={value}
             alt="Uploaded preview"
-            className="h-44 w-full object-cover"
+            className={"object-cover " + previewClassName}
           />
         ) : (
           <div className="flex flex-col items-center gap-1 px-4 py-8 text-center">

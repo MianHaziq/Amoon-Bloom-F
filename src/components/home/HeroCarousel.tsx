@@ -2,86 +2,29 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { ROUTES } from "@/constants/routes";
 import { ArrowRight } from "@/components/icons";
 import { useT } from "@/i18n/useT";
-
-const SLIDE_MS = 6500;
-const FADE_MS = 1100;
-const KEN_BURNS_MS = 8500;
 
 interface HeroCarouselProps {
   /** Banners pre-sorted by sortOrder by the parent server component. */
   slides: { id: string; url: string }[];
 }
 
+/**
+ * Hero banner — static (no animation). Banner images are shown at a fixed
+ * 16:9 ratio at every breakpoint so admin-uploaded 16:9 art is never cropped.
+ * When there are multiple banners they can be navigated manually (arrows,
+ * indicators, or swipe); nothing auto-advances, zooms, or fades.
+ */
 export function HeroCarousel({ slides }: HeroCarouselProps) {
   const { t } = useT();
   const total = slides.length;
   const hasMultiple = total > 1;
 
   const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const kenBurnsAnims = useRef<(Animation | null)[]>([]);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduceMotion(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-
-  // Restart Ken Burns on the active slide via WAAPI. The previous slide's
-  // animation is left running so its zoom doesn't snap back during fade-out.
-  useEffect(() => {
-    if (reduceMotion) return;
-    const el = slideRefs.current[active];
-    if (!el) return;
-    kenBurnsAnims.current[active]?.cancel();
-    const anim = el.animate(
-      [
-        { transform: "scale(1.02) translate3d(0, 0, 0)" },
-        { transform: "scale(1.12) translate3d(-1.5%, -1%, 0)" },
-      ],
-      {
-        duration: KEN_BURNS_MS,
-        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-        fill: "forwards",
-      }
-    );
-    kenBurnsAnims.current[active] = anim;
-    return () => {
-      // Don't cancel here — let the zoom continue through the fade-out so it
-      // doesn't snap back to scale(1.02). It'll be cancelled the next time
-      // this slot becomes active (above).
-    };
-  }, [active, reduceMotion]);
-
-  // Pause/resume all running Ken Burns animations in sync with hover.
-  useEffect(() => {
-    if (reduceMotion) return;
-    for (const anim of kenBurnsAnims.current) {
-      if (!anim) continue;
-      if (paused) anim.pause();
-      else if (anim.playState === "paused") anim.play();
-    }
-  }, [paused, reduceMotion]);
-
-  // Reduced-motion fallback advance — when there's no bar animation to drive
-  // the cycle, fall back to a plain timer.
-  useEffect(() => {
-    if (!hasMultiple || paused || !reduceMotion) return;
-    const id = window.setTimeout(
-      () => setActive((a) => (a + 1) % total),
-      SLIDE_MS
-    );
-    return () => window.clearTimeout(id);
-  }, [active, paused, reduceMotion, hasMultiple, total]);
 
   const goTo = useCallback(
     (i: number) => setActive(((i % total) + total) % total),
@@ -107,10 +50,6 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
     <section
       aria-roledescription="carousel"
       aria-label={t("hero.carouselLabel")}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={() => setPaused(false)}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       onKeyDown={(e) => {
@@ -118,45 +57,28 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
         if (e.key === "ArrowLeft") prev();
       }}
       tabIndex={hasMultiple ? 0 : -1}
-      className="relative isolate h-[78vh] min-h-[560px] max-h-[820px] w-full overflow-hidden bg-blush-50 outline-none focus-visible:ring-2 focus-visible:ring-bloom-500/40 md:min-h-[640px] lg:min-h-[700px]"
+      className="relative isolate aspect-video max-h-[780px] w-full overflow-hidden bg-blush-50 outline-none focus-visible:ring-2 focus-visible:ring-bloom-500/40"
     >
-      {/* Slides — absolute-stacked crossfade */}
+      {/* Slides — static; the active banner is shown, no transition/zoom. */}
       <div className="absolute inset-0">
-        {slides.map((slide, i) => {
-          const isActive = i === active;
-          return (
-            <div
-              key={slide.id}
-              aria-hidden={!isActive}
-              className="absolute inset-0 transform-gpu"
-              style={{
-                opacity: isActive ? 1 : 0,
-                transition: `opacity ${FADE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-                zIndex: isActive ? 1 : 0,
-                willChange: "opacity",
-              }}
-            >
-              <div
-                ref={(el) => {
-                  slideRefs.current[i] = el;
-                }}
-                className="relative h-full w-full transform-gpu will-change-transform"
-                style={{ transform: "scale(1.02) translate3d(0, 0, 0)" }}
-              >
-                <Image
-                  src={slide.url}
-                  alt=""
-                  fill
-                  priority={i === 0}
-                  loading={i === 0 ? undefined : "eager"}
-                  sizes="100vw"
-                  className="object-cover"
-                  draggable={false}
-                />
-              </div>
-            </div>
-          );
-        })}
+        {slides.map((slide, i) => (
+          <div
+            key={slide.id}
+            aria-hidden={i !== active}
+            className="absolute inset-0"
+            style={{ opacity: i === active ? 1 : 0, zIndex: i === active ? 1 : 0 }}
+          >
+            <Image
+              src={slide.url}
+              alt=""
+              fill
+              priority={i === 0}
+              sizes="100vw"
+              className="object-cover"
+              draggable={false}
+            />
+          </div>
+        ))}
       </div>
 
       {/* Readability gradients */}
@@ -173,17 +95,14 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
         className="pointer-events-none absolute -right-32 top-0 z-[2] h-[36rem] w-[36rem] rounded-full bg-bloom-300/20 blur-3xl"
       />
 
-      {/* Prev / Next */}
+      {/* Prev / Next — manual navigation only (desktop) */}
       {hasMultiple && (
         <>
           <button
             type="button"
             onClick={prev}
             aria-label={t("hero.prevSlide")}
-            className={cn(
-              "absolute inset-s-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-white/15 p-3 text-white backdrop-blur-md transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-white hover:text-ink-900 hover:shadow-(--shadow-lift) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:flex lg:inset-s-6",
-              paused ? "opacity-100" : "opacity-0"
-            )}
+            className="absolute inset-s-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-white/15 p-3 text-white backdrop-blur-md transition-colors hover:bg-white hover:text-ink-900 hover:shadow-(--shadow-lift) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:flex lg:inset-s-6"
           >
             <Chevron direction="left" />
           </button>
@@ -191,54 +110,39 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
             type="button"
             onClick={next}
             aria-label={t("hero.nextSlide")}
-            className={cn(
-              "absolute inset-e-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-white/15 p-3 text-white backdrop-blur-md transition-[opacity,background-color,color,box-shadow] duration-300 ease-out hover:bg-white hover:text-ink-900 hover:shadow-(--shadow-lift) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:flex lg:inset-e-6",
-              paused ? "opacity-100" : "opacity-0"
-            )}
+            className="absolute inset-e-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-white/15 p-3 text-white backdrop-blur-md transition-colors hover:bg-white hover:text-ink-900 hover:shadow-(--shadow-lift) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:flex lg:inset-e-6"
           >
             <Chevron direction="right" />
           </button>
         </>
       )}
 
-      {/* Indicators — progress bar's animationend drives the slide advance,
-          so timing is guaranteed in sync with the visible fill. */}
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-7xl flex-col justify-end px-4 pb-10 sm:px-6 sm:pb-14 lg:px-10 lg:pb-20">
-        {/* Brand message + primary CTA — pinned bottom-left over the imagery */}
-        <div className="mb-8 max-w-xl sm:mb-10">
-          <p
-            className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/85 sm:text-xs"
-            style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "120ms" }}
-          >
+      {/* Content overlay — pinned bottom-start over the imagery */}
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-7xl flex-col justify-end px-4 pb-6 sm:px-6 sm:pb-14 lg:px-10 lg:pb-20">
+        <div className="mb-5 max-w-xl sm:mb-10">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85 sm:text-xs">
             {t("hero.eyebrow")}
           </p>
-          <h1
-            className="mt-3 font-display text-4xl font-medium leading-[1.05] text-white sm:text-5xl lg:text-6xl"
-            style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "240ms" }}
-          >
+          <h1 className="mt-2 font-display text-2xl font-medium leading-[1.08] text-white sm:mt-3 sm:text-5xl sm:leading-[1.05] lg:text-6xl">
             {t("hero.title1")}{" "}
             <span className="italic">{t("hero.titleAccent")}</span>
           </h1>
-          <p
-            className="mt-4 max-w-md text-sm leading-relaxed text-white/80 sm:text-base"
-            style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "380ms" }}
-          >
+          {/* Subtitle is hidden on the compact mobile banner to keep the 16:9
+              box readable; it returns from the sm breakpoint up. */}
+          <p className="mt-4 hidden max-w-md text-sm leading-relaxed text-white/80 sm:block sm:text-base">
             {t("hero.subtitle")}
           </p>
-          <div
-            className="mt-7 flex flex-wrap items-center gap-3"
-            style={{ animation: "hero-rise 800ms var(--ease-out-soft) both", animationDelay: "520ms" }}
-          >
+          <div className="mt-4 flex flex-wrap items-center gap-3 sm:mt-7">
             <Link
               href={ROUTES.shop}
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 text-sm font-semibold text-ink-900 shadow-(--shadow-lift) transition-transform hover:-translate-y-0.5 hover:bg-cream-50"
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-ink-900 shadow-(--shadow-lift) transition-transform hover:-translate-y-0.5 hover:bg-cream-50 sm:h-12 sm:px-6"
             >
               {t("hero.ctaPrimary")}
               <ArrowRight size={16} className="rtl:-scale-x-100" />
             </Link>
             <Link
               href={ROUTES.shop}
-              className="inline-flex h-12 items-center rounded-full border border-white/40 px-6 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
+              className="inline-flex h-11 items-center rounded-full border border-white/40 px-5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10 sm:h-12 sm:px-6"
             >
               {t("hero.ctaSecondary")}
             </Link>
@@ -258,27 +162,12 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
                     aria-label={t("hero.goToSlide", { n: i + 1 })}
                     aria-current={isActive ? "true" : undefined}
                     className={cn(
-                      "relative h-1 overflow-hidden rounded-full transition-[width,background-color] duration-500 ease-out",
+                      "h-1 rounded-full transition-[width,background-color] duration-300 ease-out",
                       isActive
-                        ? "w-12 bg-white/35 sm:w-16"
-                        : "w-6 bg-white/25 hover:bg-white/45 sm:w-8"
+                        ? "w-12 bg-white sm:w-16"
+                        : "w-6 bg-white/40 hover:bg-white/60 sm:w-8"
                     )}
-                  >
-                    {isActive && !reduceMotion && (
-                      <span
-                        key={`progress-${active}`}
-                        aria-hidden
-                        onAnimationEnd={() =>
-                          setActive((a) => (a + 1) % total)
-                        }
-                        className="absolute inset-y-0 inset-s-0 w-full origin-left bg-white will-change-transform"
-                        style={{
-                          animation: `hero-progress ${SLIDE_MS}ms linear forwards`,
-                          animationPlayState: paused ? "paused" : "running",
-                        }}
-                      />
-                    )}
-                  </button>
+                  />
                 );
               })}
             </div>

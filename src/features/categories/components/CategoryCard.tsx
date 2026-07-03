@@ -14,10 +14,12 @@ interface CategoryCardProps {
   fallbackImage?: string;
 }
 
+// Category images are 1:1 (admin uploads square art) — keep every size square
+// so cropping is consistent across the grid, rails, and navigation.
 const sizeMap = {
-  sm: "aspect-4/5",
-  md: "aspect-3/4",
-  lg: "aspect-4/5",
+  sm: "aspect-square",
+  md: "aspect-square",
+  lg: "aspect-square",
 } as const;
 
 export function CategoryCard({

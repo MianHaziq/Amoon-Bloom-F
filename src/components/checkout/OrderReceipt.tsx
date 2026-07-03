@@ -203,13 +203,13 @@ function Receipt({
         <ul className="flex flex-col divide-y divide-ink-100">
           {order.items.map((item) => (
             <li key={item.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-              <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-xl bg-blush-50">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-blush-50">
                 {item.product?.image ? (
                   <Image
                     src={item.product.image}
                     alt={item.product.title}
                     fill
-                    sizes="56px"
+                    sizes="64px"
                     className="object-cover"
                   />
                 ) : null}

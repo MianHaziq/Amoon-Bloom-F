@@ -14,7 +14,10 @@ import { AddToCartPanel } from "@/features/products/components/AddToCartPanel";
 import { StickyAddToCart } from "@/features/products/components/StickyAddToCart";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { ProductPrice } from "@/features/products/components/ProductPrice";
-import { productsApi } from "@/features/products/api/products.api";
+import {
+  getCachedProductById,
+  getCachedProductsByCategory,
+} from "@/services/catalogCache";
 import { toUiProduct, toUiProducts } from "@/features/products/adapters";
 import { ApiError } from "@/services/http";
 import { ROUTES } from "@/constants/routes";
@@ -34,7 +37,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;
   try {
     const region = await getServerRegion();
-    const api = await productsApi.getById(slug, region);
+    const api = await getCachedProductById(region, slug);
     return {
       title: api.title,
       description: api.subtitle ?? api.descriptions?.[0]?.description ?? api.title,
@@ -53,7 +56,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   let api;
   try {
-    api = await productsApi.getById(slug, region);
+    api = await getCachedProductById(region, slug);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       notFound();
@@ -65,10 +68,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   let related: ReturnType<typeof toUiProducts> = [];
   if (api.categoryId) {
     try {
-      const page = await productsApi.listByCategory(api.categoryId, {
-        limit: 8,
-        region,
-      });
+      const page = await getCachedProductsByCategory(region, api.categoryId, 8);
       related = toUiProducts(
         page.data.filter((p) => p.id !== api.id).slice(0, 4),
         { locale }

@@ -361,7 +361,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
 
         <Card
           title={`Images (${images?.length ?? 0}/10)`}
-          description="The first image is the primary."
+          description="The first image is the primary. Square (1:1) recommended."
         >
           <div className="grid grid-cols-2 gap-2">
             {(images ?? []).map((url, i) => (

@@ -3,8 +3,10 @@ import Link from "next/link";
 import { Container, Section } from "@/components/ui";
 import { ChevronRight } from "@/components/icons";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
-import { categoriesApi } from "@/features/categories/api/categories.api";
-import { productsApi } from "@/features/products/api/products.api";
+import {
+  getCachedCategoryById,
+  getCachedProductsByCategory,
+} from "@/services/catalogCache";
 import { toUiCategory } from "@/features/categories/adapters";
 import { toUiProducts } from "@/features/products/adapters";
 import { ApiError } from "@/services/http";
@@ -24,7 +26,7 @@ export async function generateMetadata({ params }: CategoryPageProps) {
   const { slug } = await params;
   try {
     const region = await getServerRegion();
-    const api = await categoriesApi.getById(slug, region);
+    const api = await getCachedCategoryById(region, slug);
     return {
       title: api.title,
       description: api.description ?? `${api.title} at Amoonis Boutique`,
@@ -43,7 +45,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   let categoryApi;
   try {
-    categoryApi = await categoriesApi.getById(slug, region);
+    categoryApi = await getCachedCategoryById(region, slug);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       notFound();
@@ -51,9 +53,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     throw err;
   }
 
-  const productPage = await productsApi
-    .listByCategory(slug, { limit: 60, region })
-    .catch(() => ({ data: [], meta: {} }));
+  const productPage = await getCachedProductsByCategory(region, slug, 24).catch(
+    () => ({ data: [], meta: {} })
+  );
 
   const category = toUiCategory(categoryApi, locale);
   const items = toUiProducts(productPage.data, { locale });

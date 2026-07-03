@@ -1,7 +1,10 @@
 import { Container, Section } from "@/components/ui";
 import { ShopPLP } from "@/components/shop/ShopPLP";
 import { productsApi } from "@/features/products/api/products.api";
-import { categoriesApi } from "@/features/categories/api/categories.api";
+import {
+  getCachedProductList,
+  getCachedCategories,
+} from "@/services/catalogCache";
 import { toUiProducts } from "@/features/products/adapters";
 import { toUiCategories } from "@/features/categories/adapters";
 import { getServerRegion } from "@/services/serverRegion";
@@ -26,11 +29,13 @@ export default async function ShopPage(props: PageProps<"/shop">) {
   // When the user searched (?q=), resolve the set through the fast backend search
   // endpoint (pg_trgm-indexed, region-scoped). Otherwise show the standard catalog.
   const [productPage, apiCategories] = await Promise.all([
+    // Search results vary per query and are inherently uncacheable; the plain
+    // catalog listing goes through the region-cached data layer.
     (q
-      ? productsApi.search(q, { page: 1, limit: 60, region })
-      : productsApi.list({ page: 1, limit: 60, region })
+      ? productsApi.search(q, { page: 1, limit: 24, region })
+      : getCachedProductList(region, 1, 24)
     ).catch(() => ({ data: [], meta: {} })),
-    categoriesApi.list(region).catch(() => []),
+    getCachedCategories(region).catch(() => []),
   ]);
 
   const products = toUiProducts(productPage.data, { locale });

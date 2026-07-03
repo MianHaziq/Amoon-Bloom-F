@@ -20,7 +20,10 @@ const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
+  // Only the weights actually used in the UI (400 body, 500 medium, 600
+  // semibold). 700/800 were shipped but never referenced — dropping them
+  // removes two font files from the critical path.
+  weight: ["400", "500", "600"],
 });
 
 /**
@@ -32,7 +35,9 @@ const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+  // Display weights in use are 400/500/600; 700 was unused. Italic is kept for
+  // the editorial heading accents (e.g. hero title accent).
+  weight: ["400", "500", "600"],
   style: ["normal", "italic"],
 });
 

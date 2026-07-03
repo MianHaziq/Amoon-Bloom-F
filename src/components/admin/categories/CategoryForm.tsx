@@ -113,7 +113,8 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
                 onChange={field.onChange}
                 path="uploads"
                 label=""
-                hint="Used on category cards and the navigation."
+                previewClassName="aspect-square w-full"
+                hint="Square (1:1) recommended — used on category cards and the navigation."
               />
             )}
           />

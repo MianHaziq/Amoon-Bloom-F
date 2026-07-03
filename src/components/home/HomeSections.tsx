@@ -3,7 +3,7 @@ import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
-import { sectionsApi } from "@/features/sections/api/sections.api";
+import { getCachedSections } from "@/services/catalogCache";
 import { toUiProducts } from "@/features/products/adapters";
 import { ROUTES } from "@/constants/routes";
 import { getServerRegion } from "@/services/serverRegion";
@@ -25,7 +25,7 @@ export async function HomeSections() {
     getServerRegion(),
     getServerLocale(),
   ]);
-  const apiSections = await sectionsApi.list(region).catch(() => []);
+  const apiSections = await getCachedSections(region).catch(() => []);
   const eligible = [...apiSections]
     .filter((s) => s.products && s.products.length > 0)
     .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -42,7 +42,7 @@ export async function HomeSections() {
         );
         if (products.length === 0) return null;
         return (
-          <Section key={section.id} spacing="md">
+          <Section key={section.id} spacing="sm">
             <Reveal>
               <SectionHeader
                 eyebrow={t(locale, "home.curatedEdit")}

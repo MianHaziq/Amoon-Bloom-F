@@ -123,7 +123,9 @@ export function BannersAdminPage() {
         >
           {addMutation.isPending ? "Uploading…" : "Choose image"}
         </label>
-        <p className="mt-2 text-xs text-ink-400">PNG, JPG, or WebP · up to 5 MB</p>
+        <p className="mt-2 text-xs text-ink-400">
+          Widescreen 16:9 recommended (e.g. 1920×1080) · PNG, JPG, or WebP · up to 5 MB
+        </p>
       </div>
 
       {query.isPending ? (

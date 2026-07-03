@@ -33,7 +33,9 @@ export function NotificationBell({ className }: { className?: string }) {
     queryKey: queryKeys.notifications.unreadCount(),
     queryFn: () => notificationsApi.unreadCount(),
     enabled: isAuthenticated,
-    refetchInterval: 60_000,
+    // Only poll while the panel is open; when closed the badge still refreshes
+    // on window focus, so we avoid a background request every 60s per session.
+    refetchInterval: open ? 60_000 : false,
     refetchOnWindowFocus: true,
   });
 
@@ -101,7 +103,7 @@ export function NotificationBell({ className }: { className?: string }) {
       {open ? (
         <div
           role="menu"
-          className="absolute inset-e-0 top-12 z-50 w-80 max-w-[90vw] overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-(--shadow-lift)"
+          className="absolute inset-e-0 top-12 z-50 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-(--shadow-lift)"
         >
           <div className="flex items-center justify-between border-b border-ink-100 px-4 py-3">
             <p className="font-display text-base font-medium text-ink-900">

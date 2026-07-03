@@ -11,7 +11,7 @@ import { ApiError } from "@/services/http";
 import {
   ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
-} from "@/components/admin/orders/orderStatus";
+} from "@/features/orders/constants";
 import { formatCurrency } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 

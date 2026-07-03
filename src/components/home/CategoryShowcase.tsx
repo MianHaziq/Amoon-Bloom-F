@@ -3,8 +3,10 @@ import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
 import { CategoryCard } from "@/features/categories/components/CategoryCard";
-import { categoriesApi } from "@/features/categories/api/categories.api";
-import { productsApi } from "@/features/products/api/products.api";
+import {
+  getCachedCategories,
+  getCachedProductsByCategory,
+} from "@/services/catalogCache";
 import { toUiCategories } from "@/features/categories/adapters";
 import { ROUTES } from "@/constants/routes";
 import { getServerRegion } from "@/services/serverRegion";
@@ -16,18 +18,21 @@ export async function CategoryShowcase() {
     getServerRegion(),
     getServerLocale(),
   ]);
-  const apiCategories = await categoriesApi.list(region).catch(() => []);
+  const apiCategories = await getCachedCategories(region).catch(() => []);
   const featured = toUiCategories(apiCategories, locale).slice(0, 3);
 
   if (featured.length === 0) return null;
 
   // Many categories have no image set. Fall back to a representative product
-  // image from the category so the cards always look intentional & composed.
+  // image so the cards always look intentional. These lookups are region-cached
+  // (getCachedProductsByCategory) and this whole section renders inside a
+  // <Suspense> boundary on the home page, so the fallback fetch no longer
+  // blocks first paint or repeats on every visit.
   const cards = await Promise.all(
     featured.map(async (cat) => {
       if (cat.image.url.startsWith("http")) return { cat, fallbackImage: undefined };
       try {
-        const page = await productsApi.listByCategory(cat.id, { limit: 1, region });
+        const page = await getCachedProductsByCategory(region, cat.id, 1);
         const p = page.data?.[0];
         return { cat, fallbackImage: p?.images?.[0] ?? p?.image ?? undefined };
       } catch {
