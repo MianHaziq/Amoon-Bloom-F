@@ -7,6 +7,7 @@ import { BagIcon, HeartIcon, CheckIcon } from "@/components/icons";
 import { microTransition } from "@/lib/motion";
 import { QuantitySelector } from "./QuantitySelector";
 import { OptionPicker } from "./OptionPicker";
+import { usePdpImage } from "./PdpImageContext";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { pushToast, toggleCartDrawer } from "@/store/slices/ui.slice";
@@ -23,6 +24,7 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
   const dispatch = useAppDispatch();
   const { add } = useCart();
   const { t } = useT();
+  const { setActiveUrl } = usePdpImage();
   const wishlisted = useAppSelector((s) =>
     s.wishlist.items.some((i) => i.productId === product.id)
   );
@@ -72,9 +74,12 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
               title={opt.title}
               options={opt.options}
               value={selected[opt.id] ?? null}
-              onChange={(v) =>
-                setSelected((prev) => ({ ...prev, [opt.id]: v }))
-              }
+              onChange={(v) => {
+                setSelected((prev) => ({ ...prev, [opt.id]: v }));
+                // If this value has a mapped image, swap the gallery to it.
+                const img = opt.optionImages?.[opt.options.indexOf(v)]?.trim();
+                if (img) setActiveUrl(img);
+              }}
             />
           ))}
         </div>

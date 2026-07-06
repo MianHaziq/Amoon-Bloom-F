@@ -39,10 +39,23 @@ export function MobileNav() {
       width="max-w-sm"
     >
       <div className="flex flex-col gap-6 px-6 py-4">
+        {/* Standalone Shop link — direct to the full catalogue, above the
+            category breakdown. */}
+        <Link
+          onClick={close}
+          href={ROUTES.shop}
+          className="flex items-center justify-between rounded-2xl bg-ink-900 px-4 py-3 text-white transition-colors hover:bg-ink-800"
+        >
+          <span className="font-display text-lg font-semibold">
+            {t("common.shop")}
+          </span>
+          <ChevronRight size={18} className="text-white/70 rtl:-scale-x-100" />
+        </Link>
+
         {categoryGroups.map((group) => (
           <section key={group.id}>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
-              {group.id === "shop" ? t("common.shop") : group.label}
+              {group.id === "shop" ? t("nav.categories") : group.label}
             </p>
             <ul className="mt-3 flex flex-col gap-1">
               {group.categories.map((cat) => (

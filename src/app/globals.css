@@ -308,6 +308,27 @@ body {
 }
 
 /* =====================================================================
+   Interactive cursors
+   --------------------------------------------------------------------
+   Native <button> defaults to the arrow cursor. Give every clickable
+   control a pointer cursor (unless disabled) so the whole admin + store
+   feels responsive — matches what larger platforms do globally.
+   ===================================================================== */
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label[for],
+summary,
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* =====================================================================
    Reduced motion
    --------------------------------------------------------------------
    Framer Motion's <MotionConfig reducedMotion="user"> already neutralises

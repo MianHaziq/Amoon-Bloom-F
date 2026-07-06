@@ -136,6 +136,33 @@ export function productHasColor(product: Product, selected: string[]): boolean {
   return selected.some((c) => owned.has(norm(c)));
 }
 
+export interface ProductColor {
+  value: string;
+  swatch?: string;
+  needsRing: boolean;
+  /** Product photo assigned to this colour (from ProductOption.optionImages). */
+  image?: string;
+}
+
+/** A single product's colour variants, mapped to swatches (and per-colour
+ *  images when available) — for the dots on product cards. Empty when the
+ *  product has no colour option. */
+export function productColorSwatches(product: Product): ProductColor[] {
+  const group = product.options?.find((g) => COLOR_TITLE.test(norm(g.title)));
+  if (!group) return [];
+  const seen = new Set<string>();
+  const out: ProductColor[] = [];
+  group.options.forEach((raw, i) => {
+    const value = raw.trim();
+    if (!value || seen.has(value)) return;
+    seen.add(value);
+    const key = norm(value);
+    const image = group.optionImages?.[i]?.trim() || undefined;
+    out.push({ value, swatch: SWATCHES[key], needsRing: PALE.has(key), image });
+  });
+  return out;
+}
+
 export interface PriceBounds {
   min: number;
   max: number;

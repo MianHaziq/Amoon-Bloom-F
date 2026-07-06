@@ -62,7 +62,7 @@ export function Header() {
         <AnnouncementBar />
 
         {/* Top utility row — search + utility nav (BloomingBox-inspired) */}
-        <Container className="flex h-16 items-center gap-4 lg:h-20">
+        <Container className="flex h-16 items-center gap-2.5 sm:gap-4 lg:h-20">
           {/* Mobile menu trigger */}
           <IconButton
             label={t("nav.openMenu")}
@@ -79,19 +79,21 @@ export function Header() {
             className="flex shrink-0 items-center gap-2"
             aria-label={`${siteConfig.name} — home`}
           >
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-bloom-500 font-display text-sm font-medium tracking-wide text-white shadow-(--shadow-soft)">
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bloom-500 font-display text-sm font-medium tracking-wide text-white shadow-(--shadow-soft) sm:h-9 sm:w-9">
               A
             </span>
-            <span className="font-display text-lg font-medium leading-none tracking-tight text-ink-900 sm:text-xl lg:text-2xl">
+            <span className="font-display text-base font-medium leading-none tracking-tight text-ink-900 sm:text-xl lg:text-2xl">
               <span>Amoonis</span>{" "}
               <span className="text-bloom-600">Boutique</span>
             </span>
           </Link>
 
-          {/* Search — prominent on the live site */}
+          {/* Search — prominent on the live site. min-w-0 lets this flex item
+              shrink below the input's intrinsic width so it never forces
+              horizontal overflow at tablet widths. */}
           <form
             role="search"
-            className="hidden flex-1 md:block"
+            className="hidden min-w-0 flex-1 md:block"
             onSubmit={submitSearch}
           >
             <label className="group flex h-11 items-center gap-3 rounded-full border border-ink-200 bg-white px-4 transition-all focus-within:border-bloom-400 focus-within:ring-4 focus-within:ring-bloom-100">

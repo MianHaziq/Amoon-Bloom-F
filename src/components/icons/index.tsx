@@ -70,6 +70,18 @@ export const ChevronDown = ({ size, ...rest }: IconProps) => (
   </svg>
 );
 
+/** Drag handle — six dots, the standard "grab to reorder" affordance. */
+export const GripVerticalIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} fill="currentColor" stroke="none" {...rest}>
+    <circle cx="9" cy="6" r="1.4" />
+    <circle cx="15" cy="6" r="1.4" />
+    <circle cx="9" cy="12" r="1.4" />
+    <circle cx="15" cy="12" r="1.4" />
+    <circle cx="9" cy="18" r="1.4" />
+    <circle cx="15" cy="18" r="1.4" />
+  </svg>
+);
+
 export const ArrowRight = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <path d="M5 12h14m-6-6 6 6-6 6" />

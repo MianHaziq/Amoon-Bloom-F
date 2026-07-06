@@ -5,6 +5,7 @@ import {
   useFieldArray,
   useForm,
   Controller,
+  useWatch,
   type Control,
   type UseFormRegister,
   type FieldErrors,
@@ -16,7 +17,9 @@ import { categoriesApi } from "@/features/categories/api/categories.api";
 import { queryKeys } from "@/services/queryKeys";
 import { Button, Input, Textarea } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { PlusIcon, TrashIcon } from "@/components/icons";
+import { SortableList, SortableItem } from "@/components/admin/Sortable";
+import { PlusIcon, TrashIcon, GripVerticalIcon } from "@/components/icons";
+import { cn } from "@/lib/cn";
 import type {
   ApiProduct,
   ApiProductCreateInput,
@@ -36,6 +39,8 @@ const optionSchema = z.object({
     .array(z.string())
     .min(1, "Add at least one choice"),
   options_ar: z.array(z.string()).optional(),
+  // Optional per-choice image URLs, aligned by index with `options`.
+  optionImages: z.array(z.string()).optional(),
 });
 
 const productFormSchema = z.object({
@@ -121,6 +126,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         title_ar: o.title_ar ?? "",
         options: o.options,
         options_ar: o.options_ar,
+        optionImages: o.optionImages ?? [],
       })),
     });
   }, [initial, reset]);
@@ -137,12 +143,24 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       description: d.description.trim(),
       description_ar: d.description_ar?.trim() || null,
     }));
-    const cleanedOptions = values.productOptions.map((o) => ({
-      title: o.title.trim(),
-      title_ar: o.title_ar?.trim() || null,
-      options: o.options.map((s) => s.trim()).filter(Boolean),
-      options_ar: (o.options_ar ?? []).map((s) => s.trim()).filter(Boolean),
-    }));
+    const cleanedOptions = values.productOptions.map((o) => {
+      // Clean choices + their images together so indices stay aligned.
+      const options: string[] = [];
+      const optionImages: string[] = [];
+      (o.options ?? []).forEach((s, i) => {
+        const v = s.trim();
+        if (!v) return;
+        options.push(v);
+        optionImages.push((o.optionImages?.[i] ?? "").trim());
+      });
+      return {
+        title: o.title.trim(),
+        title_ar: o.title_ar?.trim() || null,
+        options,
+        options_ar: (o.options_ar ?? []).map((s) => s.trim()).filter(Boolean),
+        optionImages,
+      };
+    });
 
     await onSubmit({
       title: values.title.trim(),
@@ -333,6 +351,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                 index={index}
                 control={control}
                 register={register}
+                images={images ?? []}
                 onRemove={() => optionsArray.remove(index)}
                 error={errors.productOptions?.[index]}
               />
@@ -363,31 +382,67 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           title={`Images (${images?.length ?? 0}/10)`}
           description="The first image is the primary. Square (1:1) recommended."
         >
-          <div className="grid grid-cols-2 gap-2">
-            {(images ?? []).map((url, i) => (
-              <div
-                key={`${url}-${i}`}
-                className="relative overflow-hidden rounded-lg border border-ink-100"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="aspect-square w-full object-cover" />
-                <button
-                  type="button"
-                  aria-label="Remove image"
-                  onClick={() =>
-                    setValue(
-                      "images",
-                      (images ?? []).filter((_, j) => j !== i),
-                      { shouldDirty: true }
-                    )
-                  }
-                  className="absolute inset-e-1 top-1 rounded-full bg-white/90 p-1 text-ink-700 shadow-sm hover:bg-white"
-                >
-                  <TrashIcon size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
+          {(images?.length ?? 0) > 0 ? (
+            <SortableList
+              items={images ?? []}
+              getId={(url) => url}
+              onReorder={(next) =>
+                setValue("images", next, { shouldDirty: true })
+              }
+              strategy="grid"
+              className="grid grid-cols-2 gap-2"
+            >
+              {(url, i) => (
+                <SortableItem key={url} id={url}>
+                  {({ setNodeRef, style, isDragging, handleProps }) => (
+                    <div
+                      ref={setNodeRef}
+                      style={style}
+                      className={cn(
+                        "relative overflow-hidden rounded-lg border border-ink-100 bg-white",
+                        isDragging && "shadow-(--shadow-lift)"
+                      )}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt=""
+                        className="aspect-square w-full object-cover"
+                      />
+                      {i === 0 ? (
+                        <span className="absolute inset-s-1 top-1 rounded-full bg-ink-900/70 px-2 py-0.5 text-[10px] font-medium text-white">
+                          Primary
+                        </span>
+                      ) : null}
+                      <button
+                        type="button"
+                        {...handleProps}
+                        aria-label="Drag to reorder"
+                        className="absolute inset-s-1 bottom-1 touch-none rounded-full bg-white/90 p-1 text-ink-600 shadow-sm hover:bg-white active:cursor-grabbing"
+                        style={{ cursor: "grab" }}
+                      >
+                        <GripVerticalIcon size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Remove image"
+                        onClick={() =>
+                          setValue(
+                            "images",
+                            (images ?? []).filter((u) => u !== url),
+                            { shouldDirty: true }
+                          )
+                        }
+                        className="absolute inset-e-1 top-1 rounded-full bg-white/90 p-1 text-ink-700 shadow-sm hover:bg-white"
+                      >
+                        <TrashIcon size={14} />
+                      </button>
+                    </div>
+                  )}
+                </SortableItem>
+              )}
+            </SortableList>
+          ) : null}
 
           {(images?.length ?? 0) < 10 ? (
             <Controller
@@ -448,11 +503,12 @@ interface OptionEditorProps {
   index: number;
   control: Control<ProductFormValues>;
   register: UseFormRegister<ProductFormValues>;
+  images: string[];
   onRemove: () => void;
   error?: NonNullable<FieldErrors<ProductFormValues>["productOptions"]>[number];
 }
 
-function OptionEditor({ index, control, register, onRemove, error }: OptionEditorProps) {
+function OptionEditor({ index, control, register, images, onRemove, error }: OptionEditorProps) {
   return (
     <div className="rounded-xl border border-ink-100 bg-cream-50 p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -505,7 +561,87 @@ function OptionEditor({ index, control, register, onRemove, error }: OptionEdito
           />
         )}
       />
+
+      {images.length > 0 && (
+        <OptionImagePicker index={index} control={control} images={images} />
+      )}
     </div>
+  );
+}
+
+// --- Per-choice image assignment (e.g. Blue -> a specific product photo) ---
+
+interface OptionImagePickerProps {
+  index: number;
+  control: Control<ProductFormValues>;
+  images: string[];
+}
+
+function OptionImagePicker({ index, control, images }: OptionImagePickerProps) {
+  const choices =
+    useWatch({ control, name: `productOptions.${index}.options` }) ?? [];
+  if (choices.length === 0) return null;
+
+  return (
+    <Controller
+      control={control}
+      name={`productOptions.${index}.optionImages`}
+      render={({ field }) => {
+        const current: string[] = field.value ?? [];
+        const setAt = (i: number, url: string) => {
+          const next = [...current];
+          while (next.length < choices.length) next.push("");
+          next[i] = next[i] === url ? "" : url; // toggle
+          field.onChange(next);
+        };
+        return (
+          <div className="mt-3">
+            <label className="mb-1.5 block text-xs font-medium text-ink-700">
+              Image per choice (optional)
+            </label>
+            <div className="flex flex-col gap-2">
+              {choices.map((choice, i) => (
+                <div
+                  key={`${choice}-${i}`}
+                  className="flex items-center gap-3 rounded-lg border border-ink-100 bg-white p-2"
+                >
+                  <span className="w-24 shrink-0 truncate text-xs font-medium text-ink-800">
+                    {choice || `Choice ${i + 1}`}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {images.map((url) => {
+                      const active = current[i] === url;
+                      return (
+                        <button
+                          key={url}
+                          type="button"
+                          aria-label={`Use image for ${choice}`}
+                          aria-pressed={active}
+                          onClick={() => setAt(i, url)}
+                          className={cn(
+                            "relative h-11 w-11 overflow-hidden rounded-md ring-offset-1",
+                            active
+                              ? "ring-2 ring-bloom-500"
+                              : "ring-1 ring-ink-200 hover:ring-ink-400"
+                          )}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={url}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }}
+    />
   );
 }
 

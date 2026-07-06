@@ -87,7 +87,7 @@ export default async function AboutPage() {
           </div>
           <div className="relative aspect-4/5 overflow-hidden rounded-3xl">
             <Image
-              src="https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&w=1200&q=85"
+              src="https://ammon-pull-zone.b-cdn.net/uploads/981737f8-e7c8-4fd2-93c8-dd15f62cfef1.webp"
               alt={localized(
                 "Hand-composed Amoonis Boutique gift box",
                 "علبة هدايا من أموونيس بوتيك مؤلَّفة يدويًا",
@@ -119,7 +119,7 @@ export default async function AboutPage() {
         <div className="grid gap-12 md:grid-cols-[1fr_1.2fr] md:items-center">
           <div className="relative aspect-3/4 overflow-hidden rounded-3xl">
             <Image
-              src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=900&q=85"
+              src="https://ammon-pull-zone.b-cdn.net/uploads/5138ca57-4d99-4535-96df-4b657981f9db.webp"
               alt={localized(
                 "Inside the Amoonis Boutique studio",
                 "من داخل استوديو أموونيس بوتيك",

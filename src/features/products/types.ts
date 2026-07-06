@@ -11,6 +11,8 @@ export interface ProductOptionGroup {
   id: string;
   title: string;
   options: string[];
+  /** Optional per-value image URLs, aligned by index with `options`. */
+  optionImages?: string[];
 }
 
 export interface ProductDescriptionBlock {

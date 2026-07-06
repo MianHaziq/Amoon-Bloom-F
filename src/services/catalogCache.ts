@@ -90,8 +90,14 @@ const _sections = unstable_cache(
 export const getCachedSections = cache((region?: string) => _sections(region));
 
 const _banners = unstable_cache(
-  (region?: string) => bannersApi.list(region),
+  (region: string, platform: "MOBILE" | "WEB") =>
+    bannersApi.list(region === "default" ? undefined : region, platform),
   ["catalog:banners"],
   { revalidate: CATALOG_TTL, tags: ["banners"] }
 );
-export const getCachedBanners = cache((region?: string) => _banners(region));
+// The website renders WEB banners (hero videos/images). Region + platform are both
+// part of the cache key so mobile-vs-web and per-region lists never collide.
+export const getCachedBanners = cache(
+  (region?: string, platform: "MOBILE" | "WEB" = "WEB") =>
+    _banners(r(region), platform)
+);

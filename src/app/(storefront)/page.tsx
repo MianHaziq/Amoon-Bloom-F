@@ -1,25 +1,19 @@
 import { Suspense } from "react";
 import { Hero } from "@/components/home/Hero";
-import { TrustStrip } from "@/components/home/TrustStrip";
+import { PromoBanner } from "@/components/home/PromoBanner";
 import { CategoryShowcase } from "@/components/home/CategoryShowcase";
-import { FeaturedProducts } from "@/components/home/FeaturedProducts";
-import { HomeSections } from "@/components/home/HomeSections";
+import { BestSellers } from "@/components/home/BestSellers";
+import { NewArrivals } from "@/components/home/NewArrivals";
+import { TrustStrip } from "@/components/home/TrustStrip";
+import { BrandStory } from "@/components/home/BrandStory";
+import { SupportSection } from "@/components/home/SupportSection";
 import { Container } from "@/components/ui";
 
-// --- Temporarily disabled: sections backed by mock/placeholder (not real
-// backend) data. Re-enable once wired to real content so the home page only
-// shows genuine, on-brand data. ---
-// import { OccasionRail } from "@/components/home/OccasionRail";
-// import { Editorial } from "@/components/home/Editorial";
-// import { Testimonials } from "@/components/home/Testimonials";
-// import { InstagramStrip } from "@/components/home/InstagramStrip";
-
 /**
- * Each section is an async Server Component that fetches from the (region-
- * cached) catalog layer. Wrapping them in <Suspense> lets Next stream the page
- * shell + static strips immediately and swap in each section as its data lands,
- * instead of blocking first byte on the slowest backend call. Fallbacks reserve
- * the section's height to avoid layout shift.
+ * Home page — section order mirrors the client's live site:
+ *   Hero → promo banner → categories → best sellers → new arrivals
+ *        → trust strip → brand story → support.
+ * Data-backed sections stream inside <Suspense> so the shell paints instantly.
  */
 export default function HomePage() {
   return (
@@ -27,33 +21,32 @@ export default function HomePage() {
       <Suspense fallback={<HeroFallback />}>
         <Hero />
       </Suspense>
-      {/* Categories sit directly under the banner so shoppers land straight
-          on what they can browse; the trust strip follows. */}
-      <Suspense fallback={<RowFallback cards={3} />}>
+
+      <PromoBanner />
+
+      <Suspense fallback={<RowFallback cards={4} />}>
         <CategoryShowcase />
       </Suspense>
+
+      <Suspense fallback={<RowFallback cards={4} />}>
+        <BestSellers />
+      </Suspense>
+
+      <Suspense fallback={<RowFallback cards={4} />}>
+        <NewArrivals />
+      </Suspense>
+
       <TrustStrip />
-      {/* <OccasionRail /> — mock occasions data */}
-      <Suspense fallback={<RowFallback cards={4} />}>
-        <FeaturedProducts />
-      </Suspense>
-      <Suspense fallback={<RowFallback cards={4} />}>
-        <HomeSections />
-      </Suspense>
-      {/* <Editorial /> — hardcoded stock imagery/copy */}
-      {/* <Testimonials /> — placeholder reviews */}
-      {/* <InstagramStrip /> — placeholder Instagram feed */}
+
+      <BrandStory />
+
+      <SupportSection />
     </>
   );
 }
 
 function HeroFallback() {
-  return (
-    <div
-      className="skeleton min-h-[60vh] w-full lg:min-h-[70vh]"
-      aria-hidden
-    />
-  );
+  return <div className="skeleton min-h-[60vh] w-full lg:min-h-[70vh]" aria-hidden />;
 }
 
 function RowFallback({ cards }: { cards: 3 | 4 }) {

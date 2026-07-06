@@ -19,17 +19,27 @@ export const siteConfig = {
   // Region selection controls catalog *visibility*, not currency.
   currency: "AED",
   locale: "en-AE",
+  /**
+   * Hero background videos (autoplay, muted, looped) — mirrors the client's
+   * video hero. Self-hosted on Bunny CDN (compressed H.264). WebP/MP4 both play
+   * fine on web + the Flutter mobile app.
+   */
+  heroVideos: [
+    "https://ammon-pull-zone.b-cdn.net/videos/815a3673-06d7-45fa-8c2d-7ca1a880bfbb.mp4",
+    "https://ammon-pull-zone.b-cdn.net/videos/3fc3ab0e-11ac-448a-8279-32bd281ad382.mp4",
+    "https://ammon-pull-zone.b-cdn.net/videos/e9077e2a-808c-4e4c-9dd1-d25826738a5d.mp4",
+  ],
   contact: {
-    email: "hello@amoonis-boutique.com",
-    phone: "+971 4 000 0000",
-    whatsapp: "+971 50 000 0000",
+    email: "management@amoonbloom.com",
+    phone: "+971 50 606 7910",
+    whatsapp: "+971 50 266 1181",
     address: "Dubai, United Arab Emirates",
-    hours: "Daily · 10:00 — 22:00",
+    hours: "Daily · 10:00 — 00:00 (Dubai time)",
   },
   links: {
     instagram: "https://instagram.com/amoonisboutique",
     tiktok: "https://tiktok.com/@amoonisboutique",
-    whatsapp: "https://wa.me/971500000000",
+    whatsapp: "https://wa.me/971502661181",
   },
   shipping: {
     sameDayCutoff: "Order before 6 PM for same-day delivery in Dubai.",

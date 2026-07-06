@@ -5,7 +5,6 @@ import {
   getCachedProductList,
   getCachedCategories,
 } from "@/services/catalogCache";
-import { toUiProducts } from "@/features/products/adapters";
 import { toUiCategories } from "@/features/categories/adapters";
 import { getServerRegion } from "@/services/serverRegion";
 import { getServerLocale } from "@/i18n/server";
@@ -28,18 +27,23 @@ export default async function ShopPage(props: PageProps<"/shop">) {
 
   // When the user searched (?q=), resolve the set through the fast backend search
   // endpoint (pg_trgm-indexed, region-scoped). Otherwise show the standard catalog.
+  // First page only — the client "Load more" control in ShopPLP fetches the
+  // rest incrementally so the initial catalogue paint stays fast.
+  const PAGE_SIZE = 12;
   const [productPage, apiCategories] = await Promise.all([
     // Search results vary per query and are inherently uncacheable; the plain
     // catalog listing goes through the region-cached data layer.
     (q
-      ? productsApi.search(q, { page: 1, limit: 24, region })
-      : getCachedProductList(region, 1, 24)
+      ? productsApi.search(q, { page: 1, limit: PAGE_SIZE, region })
+      : getCachedProductList(region, 1, PAGE_SIZE)
     ).catch(() => ({ data: [], meta: {} })),
     getCachedCategories(region).catch(() => []),
   ]);
 
-  const products = toUiProducts(productPage.data, { locale });
   const categories = toUiCategories(apiCategories, locale);
+  const total =
+    (productPage.meta as { pagination?: { total?: number } } | undefined)
+      ?.pagination?.total ?? productPage.data.length;
 
   return (
     <>
@@ -58,7 +62,13 @@ export default async function ShopPage(props: PageProps<"/shop">) {
       </section>
 
       <Section spacing="md" tone="default">
-        <ShopPLP products={products} categories={categories} />
+        <ShopPLP
+          initialProducts={productPage.data}
+          initialMeta={productPage.meta}
+          categories={categories}
+          catalogTotal={total}
+          pageSize={PAGE_SIZE}
+        />
       </Section>
     </>
   );

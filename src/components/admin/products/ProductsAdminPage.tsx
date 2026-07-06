@@ -15,6 +15,7 @@ import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { formatCurrency } from "@/lib/format";
 import { useToast } from "@/hooks/useToast";
 import type { ApiProduct } from "@/features/products/api-types";
+import type { PaginatedResponse } from "@/types";
 
 const PAGE_SIZE = 20;
 
@@ -36,6 +37,27 @@ export function ProductsAdminPage() {
   });
   const categoryById = (id: string | null) =>
     categoriesQuery.data?.find((c) => c.id === id)?.title ?? "—";
+
+  const reorderMutation = useMutation({
+    mutationFn: (items: { id: string; sortOrder: number }[]) =>
+      productsApi.reorder(items),
+    onSuccess: () => toast.success({ title: "Order saved" }),
+    onError: (err) => {
+      toast.fromError("Could not save order", err);
+      // Roll back to the server's order on failure.
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    },
+  });
+
+  const handleReorder = (rows: ApiProduct[]) => {
+    const key = queryKeys.products.list({ page, limit: PAGE_SIZE });
+    const prev = queryClient.getQueryData<PaginatedResponse<ApiProduct>>(key);
+    if (prev) queryClient.setQueryData(key, { ...prev, data: rows });
+    const base = (page - 1) * PAGE_SIZE;
+    reorderMutation.mutate(
+      rows.map((p, i) => ({ id: p.id, sortOrder: base + i }))
+    );
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => productsApi.remove(id),
@@ -147,7 +169,7 @@ export function ProductsAdminPage() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Products"
-        description="Manage your boutique catalogue."
+        description="Manage your boutique catalogue. Drag the handle to set display order."
         actions={
           <Link
             href="/admin/products/new"
@@ -168,6 +190,8 @@ export function ProductsAdminPage() {
         error={productsQuery.error}
         emptyTitle="No products yet"
         emptyDescription="Add your first product to start selling."
+        sortable
+        onReorder={handleReorder}
         footer={
           <Pagination
             meta={productsQuery.data?.meta?.pagination}

@@ -19,7 +19,7 @@ export async function CategoryShowcase() {
     getServerLocale(),
   ]);
   const apiCategories = await getCachedCategories(region).catch(() => []);
-  const featured = toUiCategories(apiCategories, locale).slice(0, 3);
+  const featured = toUiCategories(apiCategories, locale).slice(0, 4);
 
   if (featured.length === 0) return null;
 
@@ -60,7 +60,7 @@ export async function CategoryShowcase() {
           }
         />
       </Reveal>
-      <StaggerGroup className="mt-10 grid gap-5 md:grid-cols-3 lg:gap-6">
+      <StaggerGroup className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4 lg:gap-6">
         {cards.map(({ cat, fallbackImage }, i) => (
           <StaggerItem key={cat.id}>
             <CategoryCard

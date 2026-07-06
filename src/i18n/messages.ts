@@ -74,6 +74,7 @@ export const messages = {
     nav: {
       ourStory: "Our story",
       contact: "Contact",
+      categories: "Categories",
       login: "Login",
       myAccount: "My account",
       account: "Account",
@@ -120,6 +121,31 @@ export const messages = {
       viewEdit: "View edit",
       curatedEdit: "Curated edit",
       viewAll: "View all",
+      promoEyebrow: "Delivered across the UAE",
+      promoTitle: "The extra mile, always.",
+      promoSubtitle:
+        "Hand-packed in our Dubai boutique and delivered to your door — same-day on orders before 6 PM.",
+      promoCta: "Get started",
+      bestSellersEyebrow: "Loved by our customers",
+      bestSellersTitle: "Best selling products.",
+      bestSellersDesc:
+        "The pieces our customers reach for again and again — ready to gift for any occasion.",
+      newArrivalsEyebrow: "Fresh in",
+      newArrivalsTitle: "New arrivals.",
+      newArrivalsDesc:
+        "Just added to the boutique — the latest hand-arranged bouquets, boxes and keepsakes.",
+      storyEyebrow: "Online gift shop",
+      storyTitle: "Ready-to-gift collections for every special occasion.",
+      storyBody:
+        "Amoon Boutique curates luxury flowers, gift boxes and newborn keepsakes — thoughtfully composed and beautifully wrapped, so every gift feels personal. From celebrations to quiet thank-yous, we make gifting effortless across the UAE.",
+      storyCta: "Explore the boutique",
+      supportEyebrow: "Here to help",
+      supportTitle: "We've got you.",
+      supportBody:
+        "Questions about an order, a custom arrangement, or same-day delivery? Our team replies fast.",
+      supportEmail: "Email us",
+      supportCall: "Call us",
+      supportWhatsapp: "WhatsApp",
     },
     trust: {
       sameDayTitle: "Same-day delivery",
@@ -151,6 +177,12 @@ export const messages = {
       decreaseQty: "Decrease quantity",
       increaseQty: "Increase quantity",
       viewImage: "View image {n} of {total}",
+      hoverToZoom: "Hover to zoom",
+      tabDescription: "Description",
+      tabInfo: "Additional information",
+      tabReviews: "Reviews",
+      noReviews: "No reviews yet.",
+      noReviewsBody: "Be the first to review this piece.",
       saveToWishlist: "Save to wishlist",
       removeFromWishlist: "Remove from wishlist",
     },
@@ -188,6 +220,8 @@ export const messages = {
       clearAll: "Clear all",
       reset: "Reset",
       sortBy: "Sort by",
+      showing: "Showing {shown} of {total}",
+      loadMore: "Load more",
     },
     cart: {
       title: "Your cart",
@@ -623,6 +657,7 @@ export const messages = {
     nav: {
       ourStory: "قصتنا",
       contact: "تواصل معنا",
+      categories: "الفئات",
       login: "تسجيل الدخول",
       myAccount: "حسابي",
       account: "الحساب",
@@ -668,6 +703,31 @@ export const messages = {
       viewEdit: "عرض الاختيار",
       curatedEdit: "اختيار مُنسّق",
       viewAll: "عرض الكل",
+      promoEyebrow: "توصيل في كل أنحاء الإمارات",
+      promoTitle: "دائمًا نبذل جهدًا إضافيًا.",
+      promoSubtitle:
+        "تُغلّف يدويًا في بوتيكنا بدبي وتُوصّل إلى بابك — في نفس اليوم للطلبات قبل الساعة 6 مساءً.",
+      promoCta: "ابدأ الآن",
+      bestSellersEyebrow: "المفضّلة لدى عملائنا",
+      bestSellersTitle: "المنتجات الأكثر مبيعًا.",
+      bestSellersDesc:
+        "القطع التي يختارها عملاؤنا مرارًا وتكرارًا — جاهزة للإهداء في أي مناسبة.",
+      newArrivalsEyebrow: "وصل حديثًا",
+      newArrivalsTitle: "أحدث المنتجات.",
+      newArrivalsDesc:
+        "أُضيفت للتو إلى البوتيك — أحدث الباقات والعلب والهدايا المُنسّقة يدويًا.",
+      storyEyebrow: "متجر الهدايا الإلكتروني",
+      storyTitle: "مجموعات جاهزة للإهداء لكل مناسبة خاصة.",
+      storyBody:
+        "ينسّق أمون بوتيك الزهور الفاخرة وعلب الهدايا وهدايا المواليد — بعناية وتغليف أنيق ليكون كل هدية شخصية. من الاحتفالات إلى كلمات الشكر، نجعل الإهداء سهلاً في كل أنحاء الإمارات.",
+      storyCta: "اكتشف البوتيك",
+      supportEyebrow: "نحن هنا لمساعدتك",
+      supportTitle: "نحن معك.",
+      supportBody:
+        "أسئلة حول طلب، أو تنسيق مخصّص، أو توصيل في نفس اليوم؟ فريقنا يردّ بسرعة.",
+      supportEmail: "راسلنا",
+      supportCall: "اتصل بنا",
+      supportWhatsapp: "واتساب",
     },
     trust: {
       sameDayTitle: "توصيل في نفس اليوم",
@@ -699,6 +759,12 @@ export const messages = {
       decreaseQty: "إنقاص الكمية",
       increaseQty: "زيادة الكمية",
       viewImage: "عرض الصورة {n} من {total}",
+      hoverToZoom: "مرّر للتكبير",
+      tabDescription: "الوصف",
+      tabInfo: "معلومات إضافية",
+      tabReviews: "التقييمات",
+      noReviews: "لا توجد تقييمات بعد.",
+      noReviewsBody: "كن أول من يقيّم هذه القطعة.",
       saveToWishlist: "أضف إلى المفضلة",
       removeFromWishlist: "أزل من المفضلة",
     },
@@ -736,6 +802,8 @@ export const messages = {
       clearAll: "مسح الكل",
       reset: "إعادة تعيين",
       sortBy: "ترتيب حسب",
+      showing: "عرض {shown} من {total}",
+      loadMore: "تحميل المزيد",
     },
     cart: {
       title: "سلتك",

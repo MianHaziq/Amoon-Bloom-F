@@ -24,6 +24,15 @@ export function MegaMenu({ className }: MegaMenuProps) {
       className={cn("relative flex items-center gap-1", className)}
       onMouseLeave={() => setActiveId(null)}
     >
+      {/* Standalone Shop link — goes straight to the full catalogue, separate
+          from the categories dropdown beside it. */}
+      <Link
+        href={ROUTES.shop}
+        onMouseEnter={() => setActiveId(null)}
+        className="rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-ink-900"
+      >
+        {t("common.shop")}
+      </Link>
       {groups.map((group) => (
         <MegaMenuTrigger
           key={group.id}
@@ -68,7 +77,7 @@ function MegaMenuTrigger({
         )}
         aria-expanded={isActive}
       >
-        {group.id === "shop" ? t("common.shop") : group.label}
+        {group.id === "shop" ? t("nav.categories") : group.label}
         <ChevronDown
           size={14}
           className={cn("transition-transform", isActive && "rotate-180")}

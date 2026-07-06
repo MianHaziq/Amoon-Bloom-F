@@ -19,6 +19,8 @@ export interface ApiProductOptionGroup {
   title_ar: string | null;
   options: string[];
   options_ar: string[];
+  /** Optional per-value image URLs, aligned by index with `options`. */
+  optionImages?: string[];
 }
 
 export interface ApiProductCategoryRef {
@@ -58,6 +60,8 @@ export interface ApiProductOptionInput {
   title_ar?: string | null;
   options: string[];
   options_ar?: string[];
+  /** Optional per-value image URLs, aligned by index with `options`. */
+  optionImages?: string[];
 }
 
 export interface ApiProductCreateInput {

@@ -66,4 +66,14 @@ export const productsApi = {
   async remove(id: string): Promise<void> {
     await http.delete(`/products/${id}`);
   },
+
+  /**
+   * Persist admin drag-and-drop order. `sortOrder` is the absolute display
+   * position (page offset + row index) so ordering is consistent across pages.
+   */
+  async reorder(
+    items: { id: string; sortOrder: number }[]
+  ): Promise<void> {
+    await http.patch("/products/order", { items });
+  },
 };
