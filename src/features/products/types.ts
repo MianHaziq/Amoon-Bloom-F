@@ -11,6 +11,12 @@ export interface ProductOptionGroup {
   id: string;
   title: string;
   options: string[];
+  /** Optional per-value image URLs (first photo of each set), aligned with `options`. */
+  optionImages?: string[];
+  /** Optional per-value swatch colours (hex), aligned by index with `options`. */
+  optionColors?: string[];
+  /** Optional per-value image SETS (array-of-arrays), aligned with `options`. */
+  optionImageSets?: string[][];
 }
 
 export interface ProductDescriptionBlock {
@@ -45,6 +51,8 @@ export interface ProductFilter {
   collection?: string;
   minPrice?: number;
   maxPrice?: number;
+  /** Selected colour option values (matched against product colour options). */
+  colors?: string[];
   search?: string;
   sort?: "featured" | "newest" | "price-asc" | "price-desc";
   inStock?: boolean;

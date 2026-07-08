@@ -11,9 +11,10 @@ import { Pagination } from "@/components/admin/Pagination";
 import { useDebounce } from "@/hooks/useDebounce";
 import { formatDate } from "@/lib/format";
 import { SearchIcon } from "@/components/icons";
+import { useT } from "@/i18n/useT";
 import {
   CONTACT_STATUSES,
-  CONTACT_STATUS_LABEL,
+  CONTACT_STATUS_LABEL_KEY,
   CONTACT_STATUS_TONE,
 } from "./contactStatus";
 import type { ApiContactMessage, ContactStatus } from "@/features/contact/types";
@@ -21,6 +22,7 @@ import type { ApiContactMessage, ContactStatus } from "@/features/contact/types"
 const PAGE_SIZE = 20;
 
 export function ContactAdminPage() {
+  const { t } = useT();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const debounced = useDebounce(search, 300);
@@ -42,38 +44,40 @@ export function ContactAdminPage() {
   const columns: Column<ApiContactMessage>[] = [
     {
       key: "from",
-      header: "From",
+      header: t("admin.contactPage.columnFrom"),
       cell: (m) => (
         <div>
           <p className="font-medium text-ink-900">{m.user?.fullName ?? "—"}</p>
-          <p className="text-xs text-ink-500">{m.user?.email ?? "Unknown user"}</p>
+          <p className="text-xs text-ink-500">
+            {m.user?.email ?? t("admin.contactPage.unknownUser")}
+          </p>
         </div>
       ),
     },
     {
       key: "subject",
-      header: "Subject",
+      header: t("admin.contactPage.columnSubject"),
       cell: (m) => <span className="text-ink-700">{m.subject || "—"}</span>,
     },
     {
       key: "preview",
-      header: "Message",
+      header: t("admin.contactPage.columnMessage"),
       cell: (m) => (
         <p className="line-clamp-1 max-w-40 text-sm text-ink-500 sm:max-w-64">{m.message}</p>
       ),
     },
     {
       key: "status",
-      header: "Status",
+      header: t("admin.status"),
       cell: (m) => (
         <Badge tone={CONTACT_STATUS_TONE[m.status]}>
-          {CONTACT_STATUS_LABEL[m.status]}
+          {t(CONTACT_STATUS_LABEL_KEY[m.status])}
         </Badge>
       ),
     },
     {
       key: "received",
-      header: "Received",
+      header: t("admin.contactPage.columnReceived"),
       cell: (m) => <span className="text-ink-500">{formatDate(m.createdAt)}</span>,
     },
   ];
@@ -81,8 +85,8 @@ export function ContactAdminPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Contact messages"
-        description="Customer enquiries submitted from the app. Read-only — reply via the customer's email."
+        title={t("admin.contactPage.title")}
+        description={t("admin.contactPage.description")}
       />
 
       <DataTable
@@ -98,7 +102,7 @@ export function ContactAdminPage() {
             <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5 sm:max-w-sm">
               <SearchIcon size={16} className="text-ink-400" />
               <input
-                placeholder="Search by name, email, subject, message"
+                placeholder={t("admin.contactPage.searchPlaceholder")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -115,10 +119,10 @@ export function ContactAdminPage() {
               }}
               className="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm"
             >
-              <option value="ALL">All statuses</option>
+              <option value="ALL">{t("admin.contactPage.allStatusesOption")}</option>
               {CONTACT_STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {CONTACT_STATUS_LABEL[s]}
+                  {t(CONTACT_STATUS_LABEL_KEY[s])}
                 </option>
               ))}
             </select>
@@ -136,23 +140,23 @@ export function ContactAdminPage() {
       <Drawer
         open={Boolean(selected)}
         onClose={() => setSelected(null)}
-        title={selected?.subject || "Message"}
+        title={selected?.subject || t("admin.contactPage.columnMessage")}
         description={selected ? formatDate(selected.createdAt) : undefined}
       >
         {selected ? (
           <div className="flex flex-col gap-5 px-6 py-5">
             <div className="flex items-center gap-2">
               <Badge tone={CONTACT_STATUS_TONE[selected.status]}>
-                {CONTACT_STATUS_LABEL[selected.status]}
+                {t(CONTACT_STATUS_LABEL_KEY[selected.status])}
               </Badge>
             </div>
 
             <div className="rounded-xl border border-ink-100 bg-cream-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
-                From
+                {t("admin.contactPage.columnFrom")}
               </p>
               <p className="mt-1 font-medium text-ink-900">
-                {selected.user?.fullName ?? "Unknown user"}
+                {selected.user?.fullName ?? t("admin.contactPage.unknownUser")}
               </p>
               {selected.user?.email ? (
                 <a
@@ -169,7 +173,7 @@ export function ContactAdminPage() {
 
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-ink-500">
-                Message
+                {t("admin.contactPage.columnMessage")}
               </p>
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-800">
                 {selected.message}

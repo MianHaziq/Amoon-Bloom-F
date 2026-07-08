@@ -24,7 +24,7 @@ export async function BannerStrip() {
           {sorted.map((b, i) => (
             <div
               key={b.id}
-              className="relative aspect-[5/2] min-w-[88%] shrink-0 snap-start overflow-hidden rounded-3xl bg-blush-100 shadow-(--shadow-soft) sm:min-w-[60%] md:min-w-[48%] lg:min-w-[40%]"
+              className="relative aspect-video min-w-[88%] shrink-0 snap-start overflow-hidden rounded-3xl bg-blush-100 shadow-(--shadow-soft) sm:min-w-[60%] md:min-w-[48%] lg:min-w-[40%]"
             >
               <Image
                 src={b.url}

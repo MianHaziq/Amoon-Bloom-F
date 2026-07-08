@@ -15,7 +15,7 @@ import { useCurrency } from "@/features/location/hooks/useCurrency";
 import {
   ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
-} from "@/components/admin/orders/orderStatus";
+} from "@/features/orders/constants";
 
 const PAGE_SIZE = 10;
 

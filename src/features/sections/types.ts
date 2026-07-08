@@ -4,7 +4,7 @@
  */
 
 import type { ApiCategory } from "@/features/categories/api-types";
-import type { ApiProduct } from "@/features/products/api-types";
+import type { ApiProduct, ApiProductRegionRef } from "@/features/products/api-types";
 
 export interface ApiSection {
   id: string;
@@ -14,6 +14,9 @@ export interface ApiSection {
   sortOrder: number;
   /** Present on staff reads; storefront only ever receives PUBLISHED. */
   status?: "DRAFT" | "PUBLISHED";
+  /** Regions this section is visible in. Present on staff reads only. */
+  regions?: ApiProductRegionRef[];
+  regionIds?: string[];
   products: ApiProduct[];
   categories: ApiCategory[];
   createdAt: string;
@@ -27,6 +30,10 @@ export interface ApiSectionCreateInput {
   productIds?: string[];
   categoryIds?: string[];
   sortOrder?: number;
+  /** Publish state. Defaults to PUBLISHED from the admin form. */
+  status?: "DRAFT" | "PUBLISHED";
+  /** Regions this section should be visible in. Defaults to the default region (UAE) if omitted. */
+  regionIds?: string[];
 }
 
 export type ApiSectionUpdateInput = Partial<ApiSectionCreateInput>;

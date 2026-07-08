@@ -2,6 +2,7 @@
 
 import { Modal } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/i18n/useT";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -19,13 +20,14 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   destructive = false,
   loading = false,
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
+  const { t } = useT();
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
       {description ? (
@@ -33,14 +35,14 @@ export function ConfirmDialog({
       ) : null}
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="outline" onClick={onClose} disabled={loading}>
-          {cancelLabel}
+          {cancelLabel ?? t("common.cancel")}
         </Button>
         <Button
           variant={destructive ? "danger" : "primary"}
           onClick={onConfirm}
           isLoading={loading}
         >
-          {confirmLabel}
+          {confirmLabel ?? t("admin.common.confirm")}
         </Button>
       </div>
     </Modal>

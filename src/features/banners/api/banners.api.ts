@@ -1,11 +1,17 @@
 import { http } from "@/services/http";
 import type { ApiResponse, PaginatedResponse } from "@/types";
-import type { ApiBanner, ApiBannerCreateInput } from "../types";
+import type { ApiBanner, ApiBannerCreateInput, BannerPlatform } from "../types";
 
 export const bannersApi = {
-  async list(region?: string): Promise<ApiBanner[]> {
+  async list(
+    region?: string,
+    platform?: BannerPlatform
+  ): Promise<ApiBanner[]> {
+    const params: Record<string, string> = {};
+    if (region) params.region = region;
+    if (platform) params.platform = platform;
     const { data } = await http.get<PaginatedResponse<ApiBanner>>("/banners", {
-      params: region ? { region } : undefined,
+      params: Object.keys(params).length ? params : undefined,
     });
     return data.data;
   },

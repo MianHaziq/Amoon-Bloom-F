@@ -3,36 +3,47 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "@/features/analytics/api/analytics.api";
+import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Skeleton } from "@/components/ui/Loader";
 import { ApiError } from "@/services/http";
 import { formatCurrency } from "@/lib/format";
+import { useT } from "@/i18n/useT";
+import type { MessageKey } from "@/i18n/messages";
 
 const PRESETS = [
-  { value: "today", label: "Today" },
-  { value: "week", label: "7 days" },
-  { value: "month", label: "30 days" },
-  { value: "year", label: "1 year" },
-  { value: "all_time", label: "All time" },
-] as const;
+  { value: "today", labelKey: "admin.analyticsPage.presetToday" },
+  { value: "week", labelKey: "admin.analyticsPage.presetWeek" },
+  { value: "month", labelKey: "admin.analyticsPage.presetMonth" },
+  { value: "year", labelKey: "admin.analyticsPage.presetYear" },
+  { value: "all_time", labelKey: "admin.analyticsPage.presetAllTime" },
+] as const satisfies { value: string; labelKey: MessageKey }[];
 
 type Preset = typeof PRESETS[number]["value"];
 
 export function AnalyticsAdminPage() {
+  const { t } = useT();
   const [preset, setPreset] = useState<Preset>("month");
+  const [region, setRegion] = useState<string>("ALL");
+  const regionParam = region === "ALL" ? {} : { region };
+
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+  });
 
   const revenueQuery = useQuery({
-    queryKey: queryKeys.analytics.revenue({ preset }),
-    queryFn: () => analyticsApi.revenue({ preset }),
+    queryKey: queryKeys.analytics.revenue({ preset, ...regionParam }),
+    queryFn: () => analyticsApi.revenue({ preset, ...regionParam }),
   });
   const byCategoryQuery = useQuery({
-    queryKey: queryKeys.analytics.revenueByCategory({ preset }),
-    queryFn: () => analyticsApi.revenueByCategory({ preset }),
+    queryKey: queryKeys.analytics.revenueByCategory({ preset, ...regionParam }),
+    queryFn: () => analyticsApi.revenueByCategory({ preset, ...regionParam }),
   });
   const dailyQuery = useQuery({
-    queryKey: queryKeys.analytics.salesByDay({ preset }),
-    queryFn: () => analyticsApi.salesByDay({ preset }),
+    queryKey: queryKeys.analytics.salesByDay({ preset, ...regionParam }),
+    queryFn: () => analyticsApi.salesByDay({ preset, ...regionParam }),
   });
 
   const summary = revenueQuery.data?.summary;
@@ -62,25 +73,39 @@ export function AnalyticsAdminPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Analytics"
-        description="Revenue and orders across your store."
+        title={t("admin.analyticsPage.title")}
+        description={t("admin.analyticsPage.description")}
         actions={
-          <div className="flex max-w-full overflow-x-auto rounded-full border border-ink-200 bg-white p-1 text-xs">
-            {PRESETS.map((p) => (
-              <button
-                key={p.value}
-                type="button"
-                onClick={() => setPreset(p.value)}
-                className={
-                  "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 transition-colors " +
-                  (preset === p.value
-                    ? "bg-ink-900 text-white"
-                    : "text-ink-700 hover:bg-ink-50")
-                }
-              >
-                {p.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              className="rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs text-ink-900 focus:border-bloom-500 focus:outline-none"
+            >
+              <option value="ALL">{t("admin.analyticsPage.allRegionsOption")}</option>
+              {(regionsQuery.data ?? []).map((r) => (
+                <option key={r.id} value={r.code}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            <div className="flex max-w-full overflow-x-auto rounded-full border border-ink-200 bg-white p-1 text-xs">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setPreset(p.value)}
+                  className={
+                    "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 transition-colors " +
+                    (preset === p.value
+                      ? "bg-ink-900 text-white"
+                      : "text-ink-700 hover:bg-ink-50")
+                  }
+                >
+                  {t(p.labelKey)}
+                </button>
+              ))}
+            </div>
           </div>
         }
       />
@@ -91,17 +116,17 @@ export function AnalyticsAdminPage() {
 
       <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Kpi
-          label="Revenue"
+          label={t("admin.analyticsPage.kpiRevenue")}
           value={summary ? formatCurrency(summary.revenue, currency) : null}
           loading={revenueQuery.isPending}
         />
         <Kpi
-          label="Orders"
+          label={t("admin.analyticsPage.kpiOrders")}
           value={summary ? String(summary.activeOrderCount) : null}
           loading={revenueQuery.isPending}
         />
         <Kpi
-          label="Avg. order value"
+          label={t("admin.analyticsPage.kpiAvgOrderValue")}
           value={
             summary ? formatCurrency(summary.averageOrderValue, currency) : null
           }
@@ -110,14 +135,16 @@ export function AnalyticsAdminPage() {
       </section>
 
       <section className="mb-6 rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-        <h3 className="mb-4 font-display text-lg text-ink-900">Sales by day</h3>
+        <h3 className="mb-4 font-display text-lg text-ink-900">
+          {t("admin.analyticsPage.salesByDayHeading")}
+        </h3>
         {dailyQuery.isPending ? (
           <Skeleton className="h-48 w-full" />
         ) : dailyQuery.isError ? (
           <ErrorBanner error={dailyQuery.error} />
         ) : series.length === 0 ? (
           <p className="py-10 text-center text-sm text-ink-500">
-            No data for this range.
+            {t("admin.analyticsPage.noDataForRange")}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -130,7 +157,7 @@ export function AnalyticsAdminPage() {
                     key={label}
                     className="group relative min-w-1 flex-1 rounded-t-md bg-bloom-200 transition-colors hover:bg-bloom-400"
                     style={{ height: `${(value / max) * 100}%` }}
-                    title={`${label}: ${formatCurrency(value, currency)} (${d.netOrderCount} orders)`}
+                    title={`${label}: ${formatCurrency(value, currency)} (${t("admin.analyticsPage.ordersCount", { count: d.netOrderCount })})`}
                   />
                 );
               })}
@@ -140,13 +167,17 @@ export function AnalyticsAdminPage() {
       </section>
 
       <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-        <h3 className="mb-4 font-display text-lg text-ink-900">Revenue by category</h3>
+        <h3 className="mb-4 font-display text-lg text-ink-900">
+          {t("admin.analyticsPage.revenueByCategoryHeading")}
+        </h3>
         {byCategoryQuery.isPending ? (
           <Skeleton className="h-32 w-full" />
         ) : byCategoryQuery.isError ? (
           <ErrorBanner error={byCategoryQuery.error} />
         ) : categories.length === 0 ? (
-          <p className="py-6 text-center text-sm text-ink-500">No category sales yet.</p>
+          <p className="py-6 text-center text-sm text-ink-500">
+            {t("admin.analyticsPage.noCategorySales")}
+          </p>
         ) : (
           <ul className="flex flex-col gap-3">
             {categories.map((row) => {
@@ -163,7 +194,7 @@ export function AnalyticsAdminPage() {
                     <span className="text-ink-700">
                       {formatCurrency(row.revenue, currency)}
                       <span className="ms-2 text-xs text-ink-400">
-                        {row.orderCount} orders
+                        {t("admin.analyticsPage.ordersCount", { count: row.orderCount })}
                       </span>
                     </span>
                   </div>
@@ -207,8 +238,9 @@ function Kpi({ label, value, loading }: KpiProps) {
 }
 
 function ErrorBanner({ error }: { error: unknown }) {
+  const { t } = useT();
   const message =
-    error instanceof ApiError ? error.message : "Could not load this section.";
+    error instanceof ApiError ? error.message : t("admin.common.loadFailed");
   return (
     <div className="mb-4 rounded-lg border border-bloom-200 bg-bloom-50 px-4 py-3 text-sm text-bloom-700">
       {message}

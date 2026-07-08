@@ -13,7 +13,13 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    optimizePackageImports: ["clsx", "tailwind-merge"],
+    optimizePackageImports: [
+      "clsx",
+      "tailwind-merge",
+      "motion",
+      "@tanstack/react-query",
+      "@reduxjs/toolkit",
+    ],
   },
   async redirects() {
     return [

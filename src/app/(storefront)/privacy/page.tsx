@@ -41,16 +41,16 @@ const getSections = (locale: Locale) => [
   {
     title: localized("5. Your rights", "5. حقوقك", locale),
     body: localized(
-      "You can ask for a copy of the data we hold, request a correction, or ask us to delete it — write to hello@amoonis-boutique.com and we will respond within 30 days.",
-      "يمكنك طلب نسخة من البيانات التي نحتفظ بها، أو طلب تصحيحها، أو طلب حذفها — راسلنا على hello@amoonis-boutique.com وسنردّ عليك خلال 30 يومًا.",
+      "You can ask for a copy of the data we hold, request a correction, or ask us to delete it — write to management@amoonbloom.com and we will respond within 30 days.",
+      "يمكنك طلب نسخة من البيانات التي نحتفظ بها، أو طلب تصحيحها، أو طلب حذفها — راسلنا على management@amoonbloom.com وسنردّ عليك خلال 30 يومًا.",
       locale
     ),
   },
   {
     title: localized("6. Contact", "6. التواصل", locale),
     body: localized(
-      "Questions? Reach our concierge at hello@amoonis-boutique.com.",
-      "هل لديك أسئلة؟ تواصل مع خدمة الكونسيرج لدينا عبر hello@amoonis-boutique.com.",
+      "Questions? Reach our concierge at management@amoonbloom.com.",
+      "هل لديك أسئلة؟ تواصل مع خدمة الكونسيرج لدينا عبر management@amoonbloom.com.",
       locale
     ),
   },

@@ -17,6 +17,8 @@ export interface AnalyticsRangeParams {
   preset?: AnalyticsPreset;
   from?: string;
   to?: string;
+  /** Region code (e.g. "UAE", "SA") to scope analytics to a single region. Omit for a combined view across all regions. */
+  region?: string;
 }
 
 export interface ApiAnalyticsPreset {

@@ -7,36 +7,38 @@ import { queryKeys } from "@/services/queryKeys";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { UserForm, type UserCreateFormValues } from "./UserForm";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 import type { ApiUserCreateInput, ManagerPermission } from "@/features/users/types";
 
 export function UserCreatePage() {
   const router = useRouter();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { t } = useT();
 
   const mutation = useMutation({
     mutationFn: usersApi.create,
     onSuccess: (created) => {
-      toast.success({ title: "User created", description: created.email });
+      toast.success({ title: t("admin.usersPage.toastCreated"), description: created.email });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       router.push("/admin/users");
     },
-    onError: (err) => toast.fromError("Could not create user", err),
+    onError: (err) => toast.fromError(t("admin.usersPage.toastCreateError"), err),
   });
 
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title="New user"
+        title={t("admin.usersPage.newUser")}
         crumbs={[
-          { label: "Admin", href: "/admin" },
-          { label: "Users", href: "/admin/users" },
-          { label: "New" },
+          { label: t("admin.common.breadcrumbHome"), href: "/admin" },
+          { label: t("admin.users"), href: "/admin/users" },
+          { label: t("admin.common.new") },
         ]}
       />
       <UserForm
         mode="create"
-        submitLabel="Create user"
+        submitLabel={t("admin.usersPage.createSubmit")}
         submitting={mutation.isPending}
         onSubmit={async (values) => {
           const v = values as UserCreateFormValues;

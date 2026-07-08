@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { productsApi } from "@/features/products/api/products.api";
 import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Spinner } from "@/components/ui/Loader";
 import { ProductForm } from "./ProductForm";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 
 interface ProductEditPageProps {
   id: string;
@@ -17,6 +19,7 @@ export function ProductEditPage({ id }: ProductEditPageProps) {
   const router = useRouter();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { t } = useT();
 
   const productQuery = useQuery({
     queryKey: queryKeys.products.detail(id),
@@ -27,20 +30,21 @@ export function ProductEditPage({ id }: ProductEditPageProps) {
     mutationFn: (payload: Parameters<typeof productsApi.update>[1]) =>
       productsApi.update(id, payload),
     onSuccess: (updated) => {
-      toast.success({ title: "Product updated", description: updated.title });
+      toast.success({ title: t("admin.productsPage.toastUpdated"), description: updated.title });
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
       queryClient.setQueryData(queryKeys.products.detail(id), updated);
+      revalidateCatalog();
     },
-    onError: (err) => toast.fromError("Could not update product", err),
+    onError: (err) => toast.fromError(t("admin.productsPage.toastUpdateError"), err),
   });
 
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title={productQuery.data?.title ?? "Edit product"}
+        title={productQuery.data?.title ?? t("admin.productsPage.editFallbackTitle")}
         crumbs={[
-          { label: "Admin", href: "/admin" },
-          { label: "Products", href: "/admin/products" },
+          { label: t("admin.common.breadcrumbHome"), href: "/admin" },
+          { label: t("admin.products"), href: "/admin/products" },
           { label: productQuery.data?.title ?? "…" },
         ]}
       />
@@ -51,19 +55,19 @@ export function ProductEditPage({ id }: ProductEditPageProps) {
         </div>
       ) : productQuery.isError ? (
         <div className="rounded-xl border border-bloom-200 bg-bloom-50 p-6 text-bloom-700">
-          <p className="font-medium">Could not load this product.</p>
+          <p className="font-medium">{t("admin.productsPage.loadError")}</p>
           <button
             type="button"
             className="mt-2 text-sm underline"
             onClick={() => router.replace("/admin/products")}
           >
-            Back to products
+            {t("admin.productsPage.backToList")}
           </button>
         </div>
       ) : (
         <ProductForm
           initial={productQuery.data}
-          submitLabel="Save changes"
+          submitLabel={t("admin.common.saveChanges")}
           submitting={mutation.isPending}
           onSubmit={async (payload) => {
             await mutation.mutateAsync(payload);

@@ -3,7 +3,7 @@ import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
-import { productsApi } from "@/features/products/api/products.api";
+import { getCachedProductList } from "@/services/catalogCache";
 import { toUiProducts } from "@/features/products/adapters";
 import { ROUTES } from "@/constants/routes";
 import { getServerRegion } from "@/services/serverRegion";
@@ -21,15 +21,16 @@ export async function FeaturedProducts() {
     getServerRegion(),
     getServerLocale(),
   ]);
-  const page = await productsApi
-    .list({ page: 1, limit: 4, region })
-    .catch(() => ({ data: [], meta: {} }));
+  const page = await getCachedProductList(region, 1, 4).catch(() => ({
+    data: [],
+    meta: {},
+  }));
   const featured = toUiProducts(page.data, { locale });
 
   if (featured.length === 0) return null;
 
   return (
-    <Section spacing="lg">
+    <Section spacing="md">
       <Reveal>
         <SectionHeader
           eyebrow={t(locale, "home.featuredEyebrow")}

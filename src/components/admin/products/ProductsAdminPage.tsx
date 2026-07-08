@@ -14,7 +14,10 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { formatCurrency } from "@/lib/format";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import type { ApiProduct } from "@/features/products/api-types";
+import type { PaginatedResponse } from "@/types";
 
 const PAGE_SIZE = 20;
 
@@ -23,6 +26,7 @@ export function ProductsAdminPage() {
   const [pendingDelete, setPendingDelete] = useState<ApiProduct | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { t } = useT();
 
   const productsQuery = useQuery({
     queryKey: queryKeys.products.list({ page, limit: PAGE_SIZE }),
@@ -37,16 +41,41 @@ export function ProductsAdminPage() {
   const categoryById = (id: string | null) =>
     categoriesQuery.data?.find((c) => c.id === id)?.title ?? "—";
 
+  const reorderMutation = useMutation({
+    mutationFn: (items: { id: string; sortOrder: number }[]) =>
+      productsApi.reorder(items),
+    onSuccess: () => {
+      toast.success({ title: t("admin.productsPage.toastOrderSaved") });
+      revalidateCatalog(["products", "sections"]);
+    },
+    onError: (err) => {
+      toast.fromError(t("admin.productsPage.toastOrderError"), err);
+      // Roll back to the server's order on failure.
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    },
+  });
+
+  const handleReorder = (rows: ApiProduct[]) => {
+    const key = queryKeys.products.list({ page, limit: PAGE_SIZE });
+    const prev = queryClient.getQueryData<PaginatedResponse<ApiProduct>>(key);
+    if (prev) queryClient.setQueryData(key, { ...prev, data: rows });
+    const base = (page - 1) * PAGE_SIZE;
+    reorderMutation.mutate(
+      rows.map((p, i) => ({ id: p.id, sortOrder: base + i }))
+    );
+  };
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => productsApi.remove(id),
     onSuccess: () => {
-      toast.success({ title: "Product deleted" });
+      toast.success({ title: t("admin.productsPage.toastDeleted") });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      revalidateCatalog();
     },
     onError: (err) => {
-      toast.fromError("Could not delete product", err);
+      toast.fromError(t("admin.productsPage.toastDeleteError"), err);
     },
   });
 
@@ -69,7 +98,7 @@ export function ProductsAdminPage() {
     },
     {
       key: "title",
-      header: "Product",
+      header: t("admin.productsPage.columnProduct"),
       cell: (p) => (
         <div>
           <p className="font-medium text-ink-900">{p.title}</p>
@@ -81,12 +110,12 @@ export function ProductsAdminPage() {
     },
     {
       key: "category",
-      header: "Category",
+      header: t("admin.productsPage.columnCategory"),
       cell: (p) => <span className="text-ink-700">{categoryById(p.categoryId)}</span>,
     },
     {
       key: "price",
-      header: "Price",
+      header: t("admin.productsPage.columnPrice"),
       align: "right",
       cell: (p) => (
         <div className="text-end">
@@ -107,13 +136,13 @@ export function ProductsAdminPage() {
     },
     {
       key: "stock",
-      header: "Stock",
+      header: t("admin.productsPage.columnStock"),
       align: "right",
       cell: (p) =>
         p.quantity > 0 ? (
           <Badge tone={p.quantity < 5 ? "warning" : "neutral"}>{p.quantity}</Badge>
         ) : (
-          <Badge tone="danger">Out</Badge>
+          <Badge tone="danger">{t("admin.productsPage.outOfStock")}</Badge>
         ),
     },
     {
@@ -126,7 +155,7 @@ export function ProductsAdminPage() {
           <Link
             href={`/admin/products/${p.id}/edit`}
             className="rounded-md p-2 text-ink-500 hover:bg-ink-50 hover:text-ink-900"
-            aria-label="Edit"
+            aria-label={t("common.edit")}
           >
             <PencilIcon size={16} />
           </Link>
@@ -134,7 +163,7 @@ export function ProductsAdminPage() {
             type="button"
             onClick={() => setPendingDelete(p)}
             className="rounded-md p-2 text-bloom-700 hover:bg-bloom-50"
-            aria-label="Delete"
+            aria-label={t("common.delete")}
           >
             <TrashIcon size={16} />
           </button>
@@ -146,15 +175,15 @@ export function ProductsAdminPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Products"
-        description="Manage your boutique catalogue."
+        title={t("admin.productsPage.title")}
+        description={t("admin.productsPage.description")}
         actions={
           <Link
             href="/admin/products/new"
             className="inline-flex h-11 items-center gap-2 rounded-full bg-bloom-600 px-5 text-sm font-medium text-white shadow-(--shadow-bloom) transition-colors hover:bg-bloom-700"
           >
             <PlusIcon size={16} />
-            New product
+            {t("admin.productsPage.newProduct")}
           </Link>
         }
       />
@@ -166,8 +195,10 @@ export function ProductsAdminPage() {
         isLoading={productsQuery.isPending}
         isError={productsQuery.isError}
         error={productsQuery.error}
-        emptyTitle="No products yet"
-        emptyDescription="Add your first product to start selling."
+        emptyTitle={t("admin.productsPage.emptyTitle")}
+        emptyDescription={t("admin.productsPage.emptyDescription")}
+        sortable
+        onReorder={handleReorder}
         footer={
           <Pagination
             meta={productsQuery.data?.meta?.pagination}
@@ -179,9 +210,9 @@ export function ProductsAdminPage() {
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title={`Delete ${pendingDelete?.title}?`}
-        description="This permanently removes the product from your catalogue. Active orders are unaffected."
-        confirmLabel="Delete"
+        title={t("admin.productsPage.deleteTitle", { title: pendingDelete?.title ?? "" })}
+        description={t("admin.productsPage.deleteDescription")}
+        confirmLabel={t("common.delete")}
         destructive
         loading={deleteMutation.isPending}
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}

@@ -10,6 +10,8 @@ export interface ApiRegion {
   code: string;
   name: string;
   name_ar: string | null;
+  /** ISO 4217 currency code shown/charged for this region (e.g. "AED", "SAR"). */
+  currency: string;
   isDefault: boolean;
   isActive: boolean;
   sortOrder: number;
@@ -21,6 +23,7 @@ export interface ApiRegionCreateInput {
   code: string;
   name: string;
   name_ar?: string | null;
+  currency?: string;
   isDefault?: boolean;
   isActive?: boolean;
   sortOrder?: number;

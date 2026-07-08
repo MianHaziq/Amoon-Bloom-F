@@ -85,6 +85,10 @@ export interface ApiOrder {
   appliedPromoCode: string | null;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+  /** Currency the order was totaled/charged in (e.g. "AED", "SAR"). */
+  currency?: string;
+  /** Region the order was placed in. */
+  regionId?: string | null;
   status: OrderStatus;
   shippingAddress: OrderShippingAddress | null;
   inventoryDeducted: boolean;
@@ -98,6 +102,12 @@ export interface ApiOrder {
  * `GET /orders/admin/history`). Backend rolls items up into `itemCount` and
  * omits the shipping address. Optional `user` is present on admin endpoints.
  */
+export interface ApiOrderListRegion {
+  id: string;
+  code: string;
+  name: string;
+}
+
 export interface ApiOrderListRow {
   id: string;
   orderNumber: number | null;
@@ -105,6 +115,10 @@ export interface ApiOrderListRow {
   user?: ApiOrderListUser;
   orderMessage: string | null;
   totalAmount: number;
+  /** Currency the order was totaled in (e.g. "AED", "SAR"). Defaults to AED for legacy orders. */
+  currency?: string;
+  /** Region the order was placed in. */
+  region?: ApiOrderListRegion | null;
   status: OrderStatus;
   itemCount: number;
   createdAt: string;
@@ -139,6 +153,8 @@ export interface ApiOrderHistoryParams {
   page?: number;
   limit?: number;
   status?: OrderStatus;
+  /** Admin-only region filter — region code (e.g. "UAE", "SA"). */
+  region?: string;
 }
 
 export interface ApiAdminOrderHistoryParams extends ApiOrderHistoryParams {

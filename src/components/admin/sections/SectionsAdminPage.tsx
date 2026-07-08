@@ -5,17 +5,20 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sectionsApi } from "@/features/sections/api/sections.api";
 import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 import type { ApiSection } from "@/features/sections/types";
 
 export function SectionsAdminPage() {
   const [pendingDelete, setPendingDelete] = useState<ApiSection | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { t } = useT();
 
   const query = useQuery({
     queryKey: queryKeys.sections.list(),
@@ -25,12 +28,32 @@ export function SectionsAdminPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => sectionsApi.remove(id),
     onSuccess: () => {
-      toast.success({ title: "Section deleted" });
+      toast.success({ title: t("admin.sectionsPage.toastDeleted") });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.sections.all });
+      revalidateCatalog(["sections"]);
     },
-    onError: (err) => toast.fromError("Could not delete section", err),
+    onError: (err) => toast.fromError(t("admin.sectionsPage.toastDeleteError"), err),
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: (items: { id: string; sortOrder: number }[]) =>
+      sectionsApi.reorder(items),
+    onSuccess: () => {
+      toast.success({ title: t("admin.sectionsPage.toastOrderSaved") });
+      revalidateCatalog(["sections"]);
+    },
+    onError: (err) => {
+      toast.fromError(t("admin.sectionsPage.toastOrderError"), err);
+      queryClient.invalidateQueries({ queryKey: queryKeys.sections.all });
+    },
+  });
+
+  const handleReorder = (rows: ApiSection[]) => {
+    const key = queryKeys.sections.list();
+    queryClient.setQueryData(key, rows);
+    reorderMutation.mutate(rows.map((s, i) => ({ id: s.id, sortOrder: i })));
+  };
 
   const columns: Column<ApiSection>[] = [
     {
@@ -47,7 +70,7 @@ export function SectionsAdminPage() {
     },
     {
       key: "title",
-      header: "Section",
+      header: t("admin.sectionsPage.columnSection"),
       cell: (s) => (
         <div>
           <p className="font-medium text-ink-900">{s.title}</p>
@@ -57,16 +80,19 @@ export function SectionsAdminPage() {
     },
     {
       key: "items",
-      header: "Items",
+      header: t("admin.sectionsPage.columnItems"),
       cell: (s) => (
         <span className="text-xs text-ink-500">
-          {s.products.length} products · {s.categories.length} categories
+          {t("admin.sectionsPage.itemsSummary", {
+            products: s.products.length,
+            categories: s.categories.length,
+          })}
         </span>
       ),
     },
     {
       key: "sortOrder",
-      header: "Order",
+      header: t("admin.sectionsPage.columnOrder"),
       align: "right",
       cell: (s) => <span className="text-ink-700">{s.sortOrder}</span>,
     },
@@ -80,7 +106,7 @@ export function SectionsAdminPage() {
           <Link
             href={`/admin/sections/${s.id}/edit`}
             className="rounded-md p-2 text-ink-500 hover:bg-ink-50 hover:text-ink-900"
-            aria-label="Edit"
+            aria-label={t("common.edit")}
           >
             <PencilIcon size={16} />
           </Link>
@@ -88,7 +114,7 @@ export function SectionsAdminPage() {
             type="button"
             onClick={() => setPendingDelete(s)}
             className="rounded-md p-2 text-bloom-700 hover:bg-bloom-50"
-            aria-label="Delete"
+            aria-label={t("common.delete")}
           >
             <TrashIcon size={16} />
           </button>
@@ -100,15 +126,15 @@ export function SectionsAdminPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title="Sections"
-        description="Curated rails of products and categories surfaced on the homepage."
+        title={t("admin.sectionsPage.title")}
+        description={t("admin.sectionsPage.description")}
         actions={
           <Link
             href="/admin/sections/new"
             className="inline-flex h-11 items-center gap-2 rounded-full bg-bloom-600 px-5 text-sm font-medium text-white shadow-(--shadow-bloom) transition-colors hover:bg-bloom-700"
           >
             <PlusIcon size={16} />
-            New section
+            {t("admin.sectionsPage.newSection")}
           </Link>
         }
       />
@@ -120,15 +146,17 @@ export function SectionsAdminPage() {
         isLoading={query.isPending}
         isError={query.isError}
         error={query.error}
-        emptyTitle="No sections yet"
-        emptyDescription="Create a section to feature picks on the homepage."
+        emptyTitle={t("admin.sectionsPage.emptyTitle")}
+        emptyDescription={t("admin.sectionsPage.emptyDescription")}
+        sortable
+        onReorder={handleReorder}
       />
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title={`Delete ${pendingDelete?.title}?`}
-        description="Removing the section won't delete its products or categories."
-        confirmLabel="Delete"
+        title={t("admin.sectionsPage.deleteTitle", { title: pendingDelete?.title ?? "" })}
+        description={t("admin.sectionsPage.deleteDescription")}
+        confirmLabel={t("common.delete")}
         destructive
         loading={deleteMutation.isPending}
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}

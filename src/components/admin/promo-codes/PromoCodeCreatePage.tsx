@@ -7,34 +7,36 @@ import { queryKeys } from "@/services/queryKeys";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { PromoCodeForm } from "./PromoCodeForm";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 
 export function PromoCodeCreatePage() {
   const router = useRouter();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { t } = useT();
 
   const mutation = useMutation({
     mutationFn: promoCodesApi.create,
     onSuccess: (created) => {
-      toast.success({ title: "Promo code created", description: created.code });
+      toast.success({ title: t("admin.promoCodesPage.toastCreated"), description: created.code });
       queryClient.invalidateQueries({ queryKey: queryKeys.promoCodes.all });
       router.push("/admin/promo-codes");
     },
-    onError: (err) => toast.fromError("Could not create promo code", err),
+    onError: (err) => toast.fromError(t("admin.promoCodesPage.toastCreateError"), err),
   });
 
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title="New promo code"
+        title={t("admin.promoCodesPage.newPromoCode")}
         crumbs={[
-          { label: "Admin", href: "/admin" },
-          { label: "Promo codes", href: "/admin/promo-codes" },
-          { label: "New" },
+          { label: t("admin.common.breadcrumbHome"), href: "/admin" },
+          { label: t("admin.promoCodes"), href: "/admin/promo-codes" },
+          { label: t("admin.common.new") },
         ]}
       />
       <PromoCodeForm
-        submitLabel="Create promo code"
+        submitLabel={t("admin.promoCodesPage.createSubmit")}
         submitting={mutation.isPending}
         onSubmit={async (payload) => {
           await mutation.mutateAsync(payload);

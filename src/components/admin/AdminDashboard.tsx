@@ -16,6 +16,7 @@ import { ApiError } from "@/services/http";
 import type { ManagerPermission } from "@/features/users/types";
 import { ArrowRight } from "@/components/icons";
 import { formatCurrency } from "@/lib/format";
+import { useT } from "@/i18n/useT";
 
 function hasPerm(
   role: string | undefined,
@@ -28,6 +29,7 @@ function hasPerm(
 }
 
 export function AdminDashboard() {
+  const { t } = useT();
   const user = useAppSelector((s) => s.auth.user);
   const role = user?.role;
   const perms = user?.managerPermissions;
@@ -71,11 +73,11 @@ export function AdminDashboard() {
     <div className="mx-auto flex max-w-7xl flex-col gap-8">
       <header>
         <h2 className="font-display text-2xl text-ink-900">
-          Welcome back{user?.firstName ? `, ${user.firstName}` : ""}
+          {user?.firstName
+            ? t("admin.dashboardPage.welcomeBackName", { name: user.firstName })
+            : t("admin.dashboardPage.welcomeBack")}
         </h2>
-        <p className="mt-1 text-sm text-ink-500">
-          Here&apos;s what&apos;s happening this month.
-        </p>
+        <p className="mt-1 text-sm text-ink-500">{t("admin.dashboardPage.subtitle")}</p>
       </header>
 
       <m.section
@@ -85,7 +87,7 @@ export function AdminDashboard() {
         animate="show"
       >
         <KpiCard
-          label="Revenue (30d)"
+          label={t("admin.dashboardPage.kpiRevenue")}
           value={
             !canSeeRevenue
               ? "—"
@@ -96,7 +98,7 @@ export function AdminDashboard() {
           loading={canSeeRevenue && revenueQuery.isPending}
         />
         <KpiCard
-          label="Orders (30d)"
+          label={t("admin.dashboardPage.kpiOrders")}
           value={
             !canSeeRevenue
               ? "—"
@@ -107,7 +109,7 @@ export function AdminDashboard() {
           loading={canSeeRevenue && revenueQuery.isPending}
         />
         <KpiCard
-          label="Avg. order value"
+          label={t("admin.dashboardPage.kpiAvgOrderValue")}
           value={
             !canSeeRevenue
               ? "—"
@@ -118,7 +120,11 @@ export function AdminDashboard() {
           loading={canSeeRevenue && revenueQuery.isPending}
         />
         <KpiCard
-          label={canSeeUsers ? "Active customers" : "New messages"}
+          label={
+            canSeeUsers
+              ? t("admin.dashboardPage.kpiActiveCustomers")
+              : t("admin.dashboardPage.kpiNewMessages")
+          }
           value={
             canSeeUsers
               ? userStatsQuery.isPending
@@ -146,14 +152,18 @@ export function AdminDashboard() {
         >
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <h3 className="font-display text-lg text-ink-900">Latest orders</h3>
-              <p className="text-xs text-ink-500">Last 5 orders across the store.</p>
+              <h3 className="font-display text-lg text-ink-900">
+                {t("admin.dashboardPage.latestOrdersHeading")}
+              </h3>
+              <p className="text-xs text-ink-500">
+                {t("admin.dashboardPage.latestOrdersDescription")}
+              </p>
             </div>
             <Link
               href="/admin/orders"
               className="inline-flex items-center gap-1 text-sm font-medium text-bloom-700 hover:text-bloom-800"
             >
-              View all <ArrowRight size={14} />
+              {t("admin.dashboardPage.viewAll")} <ArrowRight size={14} />
             </Link>
           </div>
 
@@ -166,16 +176,22 @@ export function AdminDashboard() {
           ) : recentOrdersQuery.isError ? (
             <ErrorBlock error={recentOrdersQuery.error} />
           ) : (recentOrdersQuery.data?.data ?? []).length === 0 ? (
-            <p className="py-6 text-center text-sm text-ink-500">No orders yet.</p>
+            <p className="py-6 text-center text-sm text-ink-500">
+              {t("admin.dashboardPage.emptyOrders")}
+            </p>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-ink-100">
               <table className="w-full min-w-120 text-start text-sm">
                 <thead className="bg-cream-100 text-xs uppercase tracking-wider text-ink-500">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Order</th>
-                    <th className="px-4 py-3 font-medium">Customer</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 text-end font-medium">Total</th>
+                    <th className="px-4 py-3 font-medium">
+                      {t("admin.dashboardPage.columnOrder")}
+                    </th>
+                    <th className="px-4 py-3 font-medium">
+                      {t("admin.dashboardPage.columnCustomer")}
+                    </th>
+                    <th className="px-4 py-3 font-medium">{t("admin.status")}</th>
+                    <th className="px-4 py-3 text-end font-medium">{t("common.total")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -239,8 +255,9 @@ function KpiCard({ label, value, loading }: KpiCardProps) {
 }
 
 function ErrorBlock({ error }: { error: unknown }) {
+  const { t } = useT();
   const message =
-    error instanceof ApiError ? error.message : "Could not load this section.";
+    error instanceof ApiError ? error.message : t("admin.common.loadFailed");
   return (
     <div className="rounded-lg border border-bloom-200 bg-bloom-50 px-4 py-3 text-sm text-bloom-700">
       {message}

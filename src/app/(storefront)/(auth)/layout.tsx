@@ -17,7 +17,7 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
       {/* Editorial column */}
       <aside className="relative hidden overflow-hidden bg-blush-50 lg:block">
         <Image
-          src="https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=1400&q=85"
+          src="https://ammon-pull-zone.b-cdn.net/uploads/98eefa8b-3766-4bc4-ab71-5cadf6f0e0ce.webp"
           alt=""
           fill
           sizes="50vw"

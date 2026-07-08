@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Modal, Button } from "@/components/ui";
 import { CheckIcon, PinIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
@@ -21,6 +23,8 @@ interface LocationSheetProps {
  */
 export function LocationSheet({ open, onClose }: LocationSheetProps) {
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { t } = useT();
   const current = useAppSelector((s) => s.location);
   const [country, setSelectedCountry] = useState<CountryCode>(current.country);
@@ -31,8 +35,17 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
     const finalCity = (def.cities as readonly string[]).includes(city)
       ? city
       : def.defaultCity;
+    const countryChanged = country !== current.country;
     dispatch(setLocation({ country, city: finalCity }));
     onClose();
+    if (countryChanged) {
+      // Region (and therefore catalog visibility + currency) changed — refresh
+      // server-rendered data (home, shop, PDP) and drop client-side caches
+      // (cart, product lists, promo codes) so they refetch with the new
+      // X-Region header instead of showing the previous region's content.
+      router.refresh();
+      queryClient.invalidateQueries();
+    }
   };
 
   return (

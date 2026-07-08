@@ -4,15 +4,18 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Spinner } from "@/components/ui/Loader";
 import { CategoryForm } from "./CategoryForm";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 
 export function CategoryEditPage({ id }: { id: string }) {
   const router = useRouter();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { t } = useT();
 
   const detailQuery = useQuery({
     queryKey: queryKeys.categories.detail(id),
@@ -23,19 +26,20 @@ export function CategoryEditPage({ id }: { id: string }) {
     mutationFn: (payload: Parameters<typeof categoriesApi.update>[1]) =>
       categoriesApi.update(id, payload),
     onSuccess: (updated) => {
-      toast.success({ title: "Category updated", description: updated.title });
+      toast.success({ title: t("admin.categoriesPage.toastUpdated"), description: updated.title });
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      revalidateCatalog();
     },
-    onError: (err) => toast.fromError("Could not update category", err),
+    onError: (err) => toast.fromError(t("admin.categoriesPage.toastUpdateError"), err),
   });
 
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title={detailQuery.data?.title ?? "Edit category"}
+        title={detailQuery.data?.title ?? t("admin.categoriesPage.editFallbackTitle")}
         crumbs={[
-          { label: "Admin", href: "/admin" },
-          { label: "Categories", href: "/admin/categories" },
+          { label: t("admin.common.breadcrumbHome"), href: "/admin" },
+          { label: t("admin.categories"), href: "/admin/categories" },
           { label: detailQuery.data?.title ?? "…" },
         ]}
       />
@@ -46,19 +50,19 @@ export function CategoryEditPage({ id }: { id: string }) {
         </div>
       ) : detailQuery.isError ? (
         <div className="rounded-xl border border-bloom-200 bg-bloom-50 p-6 text-bloom-700">
-          <p className="font-medium">Could not load this category.</p>
+          <p className="font-medium">{t("admin.categoriesPage.loadError")}</p>
           <button
             type="button"
             className="mt-2 text-sm underline"
             onClick={() => router.replace("/admin/categories")}
           >
-            Back to categories
+            {t("admin.categoriesPage.backToList")}
           </button>
         </div>
       ) : (
         <CategoryForm
           initial={detailQuery.data}
-          submitLabel="Save changes"
+          submitLabel={t("admin.common.saveChanges")}
           submitting={mutation.isPending}
           onSubmit={async (payload) => {
             await mutation.mutateAsync(payload);

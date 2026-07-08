@@ -16,6 +16,18 @@ interface ImageUploadProps {
   label?: string;
   hint?: string;
   className?: string;
+  /** Allow selecting/dropping several images at once. Uploads them all and
+   *  reports the URLs via `onUploadMany`. */
+  multiple?: boolean;
+  /** Called with all uploaded URLs when `multiple` is set. */
+  onUploadMany?: (urls: string[]) => void;
+  /**
+   * Tailwind sizing for the preview image. Pass a fixed aspect ratio so the
+   * admin sees the image in the same shape the storefront renders it —
+   * e.g. `aspect-square` for 1:1 (products/categories) or `aspect-video`
+   * for 16:9 (banners). Defaults to a fixed-height letterbox.
+   */
+  previewClassName?: string;
 }
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -27,6 +39,9 @@ export function ImageUpload({
   label = "Image",
   hint,
   className,
+  previewClassName = "h-44 w-full",
+  multiple = false,
+  onUploadMany,
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const dispatch = useAppDispatch();
@@ -47,6 +62,46 @@ export function ImageUpload({
       );
     },
   });
+
+  // Multi-file: validate each, upload in parallel, report all URLs at once.
+  const uploadManyMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      const valid = files.filter(
+        (f) => f.type.startsWith("image/") && f.size <= MAX_BYTES
+      );
+      const skipped = files.length - valid.length;
+      const urls = await Promise.all(valid.map((f) => uploadsApi.image(f, path)));
+      return { urls, skipped };
+    },
+    onSuccess: ({ urls, skipped }) => {
+      if (urls.length > 0) onUploadMany?.(urls);
+      if (skipped > 0) {
+        dispatch(
+          pushToast({
+            title: "Some files skipped",
+            description: `${skipped} file(s) weren’t images or were larger than 5 MB.`,
+            variant: "warning",
+          })
+        );
+      }
+    },
+    onError: (err) => {
+      dispatch(
+        pushToast({
+          title: "Upload failed",
+          description: err instanceof ApiError ? err.message : "Could not upload images.",
+          variant: "error",
+        })
+      );
+    },
+  });
+
+  const busy = uploadMutation.isPending || uploadManyMutation.isPending;
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    uploadManyMutation.mutate(Array.from(files));
+  };
 
   const handleFile = (file: File | null | undefined) => {
     if (!file) return;
@@ -88,10 +143,11 @@ export function ImageUpload({
         onDrop={(e) => {
           e.preventDefault();
           setDragOver(false);
-          handleFile(e.dataTransfer.files?.[0]);
+          if (multiple) handleFiles(e.dataTransfer.files);
+          else handleFile(e.dataTransfer.files?.[0]);
         }}
         className={
-          "relative flex min-h-[160px] flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed transition-colors " +
+          "relative flex min-h-40 flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed transition-colors " +
           (dragOver ? "border-bloom-500 bg-bloom-50" : "border-ink-200 bg-cream-50")
         }
       >
@@ -100,15 +156,21 @@ export function ImageUpload({
           <img
             src={value}
             alt="Uploaded preview"
-            className="h-44 w-full object-cover"
+            className={"object-cover " + previewClassName}
           />
         ) : (
           <div className="flex flex-col items-center gap-1 px-4 py-8 text-center">
             <ImageIcon size={28} className="text-ink-400" />
             <p className="text-sm font-medium text-ink-700">
-              {uploadMutation.isPending ? "Uploading…" : "Drop an image here"}
+              {busy
+                ? "Uploading…"
+                : multiple
+                  ? "Drop images here"
+                  : "Drop an image here"}
             </p>
-            <p className="text-xs text-ink-400">PNG, JPG, or WebP · up to 5 MB</p>
+            <p className="text-xs text-ink-400">
+              PNG, JPG, or WebP · up to 5 MB{multiple ? " each" : ""}
+            </p>
           </div>
         )}
 
@@ -116,8 +178,13 @@ export function ImageUpload({
           ref={inputRef}
           type="file"
           accept="image/*"
+          multiple={multiple}
           className="sr-only"
-          onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            if (multiple) handleFiles(e.target.files);
+            else handleFile(e.target.files?.[0] ?? null);
+            e.target.value = ""; // allow re-selecting the same file(s)
+          }}
         />
       </div>
 
@@ -140,9 +207,9 @@ export function ImageUpload({
             size="sm"
             type="button"
             onClick={() => inputRef.current?.click()}
-            isLoading={uploadMutation.isPending}
+            isLoading={busy}
           >
-            {value ? "Replace" : "Choose file"}
+            {value ? "Replace" : multiple ? "Choose files" : "Choose file"}
           </Button>
         </div>
       </div>

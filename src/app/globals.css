@@ -252,6 +252,83 @@ body {
 }
 
 /* =====================================================================
+   Price range slider
+   --------------------------------------------------------------------
+   Two overlapping <input type="range"> stacked over a shared track. The
+   inputs themselves are transparent; only the thumb is painted so the two
+   thumbs sit above the coloured fill drawn by the wrapper. pointer-events
+   are re-enabled on the thumb alone so both handles stay grabbable.
+   ===================================================================== */
+.range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 1.25rem;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+}
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  height: 1.15rem;
+  width: 1.15rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 2px solid var(--color-bloom-600);
+  box-shadow: 0 2px 6px -1px rgba(19, 17, 16, 0.25);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+}
+.range-input:active::-webkit-slider-thumb {
+  box-shadow: 0 0 0 6px var(--color-bloom-100);
+}
+.range-input::-moz-range-thumb {
+  pointer-events: auto;
+  height: 1.15rem;
+  width: 1.15rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 2px solid var(--color-bloom-600);
+  box-shadow: 0 2px 6px -1px rgba(19, 17, 16, 0.25);
+  cursor: pointer;
+}
+.range-input::-moz-range-track {
+  background: transparent;
+}
+
+/* =====================================================================
+   Interactive cursors
+   --------------------------------------------------------------------
+   Native <button> defaults to the arrow cursor. Give every clickable
+   control a pointer cursor (unless disabled) so the whole admin + store
+   feels responsive — matches what larger platforms do globally.
+   ===================================================================== */
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label[for],
+summary,
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* =====================================================================
    Reduced motion
    --------------------------------------------------------------------
    Framer Motion's <MotionConfig reducedMotion="user"> already neutralises

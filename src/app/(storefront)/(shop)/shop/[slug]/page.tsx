@@ -14,7 +14,12 @@ import { AddToCartPanel } from "@/features/products/components/AddToCartPanel";
 import { StickyAddToCart } from "@/features/products/components/StickyAddToCart";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { ProductPrice } from "@/features/products/components/ProductPrice";
-import { productsApi } from "@/features/products/api/products.api";
+import { ProductTabs } from "@/features/products/components/ProductTabs";
+import { PdpImageProvider } from "@/features/products/components/PdpImageContext";
+import {
+  getCachedProductById,
+  getCachedProductsByCategory,
+} from "@/services/catalogCache";
 import { toUiProduct, toUiProducts } from "@/features/products/adapters";
 import { ApiError } from "@/services/http";
 import { ROUTES } from "@/constants/routes";
@@ -34,7 +39,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;
   try {
     const region = await getServerRegion();
-    const api = await productsApi.getById(slug, region);
+    const api = await getCachedProductById(region, slug);
     return {
       title: api.title,
       description: api.subtitle ?? api.descriptions?.[0]?.description ?? api.title,
@@ -53,7 +58,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   let api;
   try {
-    api = await productsApi.getById(slug, region);
+    api = await getCachedProductById(region, slug);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       notFound();
@@ -65,10 +70,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   let related: ReturnType<typeof toUiProducts> = [];
   if (api.categoryId) {
     try {
-      const page = await productsApi.listByCategory(api.categoryId, {
-        limit: 8,
-        region,
-      });
+      const page = await getCachedProductsByCategory(region, api.categoryId, 8);
       related = toUiProducts(
         page.data.filter((p) => p.id !== api.id).slice(0, 4),
         { locale }
@@ -107,6 +109,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </section>
 
       <Section spacing="sm" tone="cream">
+        <PdpImageProvider>
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           <ProductGallery images={product.images} title={product.title} />
 
@@ -128,14 +131,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <StaggerItem>
               <ProductPrice product={product} size="lg" />
             </StaggerItem>
-
-            {product.description ? (
-              <StaggerItem>
-                <p className="text-base leading-relaxed text-ink-700">
-                  {product.description}
-                </p>
-              </StaggerItem>
-            ) : null}
 
             <StaggerItem>
               <Divider />
@@ -172,27 +167,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </StaggerItem>
           </StaggerGroup>
         </div>
+        </PdpImageProvider>
       </Section>
 
-      {/* Detail blocks */}
-      {product.descriptions && product.descriptions.length > 0 && (
-        <Section spacing="md" tone="default" containerSize="md">
-          <div className="grid gap-10 md:grid-cols-2">
-            {product.descriptions.map((d) => (
-              <div key={d.id}>
-                {d.title && (
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
-                    {d.title}
-                  </p>
-                )}
-                <p className="mt-3 text-base leading-relaxed text-ink-700">
-                  {d.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
+      {/* Description · Additional information · Reviews (tabbed, like client) */}
+      <Section spacing="md" tone="default" containerSize="md">
+        <ProductTabs
+          description={product.description}
+          descriptions={product.descriptions}
+          options={product.options}
+          category={product.category}
+        />
+      </Section>
 
       {related.length > 0 && (
         <Section spacing="md" tone="cream">

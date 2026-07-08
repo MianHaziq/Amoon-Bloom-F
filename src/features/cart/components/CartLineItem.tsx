@@ -48,7 +48,7 @@ export function CartLineItem({
         onClick={onNavigate}
         className={cn(
           "relative shrink-0 overflow-hidden rounded-xl bg-blush-50",
-          variant === "drawer" ? "h-24 w-20" : "h-28 w-24 md:h-32 md:w-28"
+          variant === "drawer" ? "h-20 w-20" : "h-24 w-24 md:h-28 md:w-28"
         )}
       >
         {item.imageUrl && (

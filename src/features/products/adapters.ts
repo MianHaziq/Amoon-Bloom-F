@@ -37,6 +37,13 @@ const adaptOption = (
   title: localized(o.title, o.title_ar, locale),
   options:
     locale === "ar" && o.options_ar?.length ? o.options_ar : o.options ?? [],
+  // Images align by index with the canonical `options` order, which also holds
+  // for `options_ar` (same order), so no re-indexing is needed per locale.
+  optionImages: o.optionImages ?? [],
+  // Swatch colours align by the same canonical index.
+  optionColors: o.optionColors ?? [],
+  // Per-value image sets align by the same canonical index.
+  optionImageSets: o.optionImageSets ?? [],
 });
 
 export interface ToUiProductOptions {

@@ -3,7 +3,7 @@
  * `./types.ts` and is kept stable; admin and the API layer use these.
  */
 
-import type { ApiProduct } from "@/features/products/api-types";
+import type { ApiProduct, ApiProductRegionRef } from "@/features/products/api-types";
 
 export interface ApiCategory {
   id: string;
@@ -13,6 +13,11 @@ export interface ApiCategory {
   description_ar: string | null;
   image: string | null;
   totalProducts: number;
+  /** Publish state. Storefront only ever sees PUBLISHED; staff reads include DRAFT. */
+  status?: "DRAFT" | "PUBLISHED";
+  /** Regions this category is visible in. Present on staff reads only. */
+  regions?: ApiProductRegionRef[];
+  regionIds?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -27,6 +32,9 @@ export interface ApiCategoryCreateInput {
   description?: string | null;
   description_ar?: string | null;
   image?: string | null;
+  status?: "DRAFT" | "PUBLISHED";
+  /** Regions this category should be visible in. Defaults to the default region (UAE) if omitted. */
+  regionIds?: string[];
 }
 
 export type ApiCategoryUpdateInput = Partial<ApiCategoryCreateInput>;

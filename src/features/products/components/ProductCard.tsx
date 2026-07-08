@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { Badge } from "@/components/ui";
 import { BagIcon, StarIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
@@ -14,6 +15,7 @@ import { WishlistToggle } from "@/features/wishlist/components/WishlistToggle";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n";
+import { productColorSwatches } from "../facets";
 import type { Product } from "../types";
 
 interface ProductCardProps {
@@ -41,6 +43,14 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
   const hasDiscount =
     product.compareAtPrice &&
     product.compareAtPrice.amount > product.price.amount;
+  const colors = productColorSwatches(product);
+
+  // Colour-variant image swap: hovering a dot previews its image, clicking pins
+  // it — all in-place, no navigation. Falls back to the default primary image.
+  const [previewImg, setPreviewImg] = useState<string | null>(null);
+  const [pinnedImg, setPinnedImg] = useState<string | null>(null);
+  const activeColorImg = previewImg ?? pinnedImg;
+  const shownUrl = activeColorImg ?? primary?.url;
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -72,18 +82,20 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
         className="relative block overflow-hidden rounded-2xl bg-blush-50 transition-transform duration-300 ease-out-soft will-change-transform group-hover:-translate-y-1"
         aria-label={product.title}
       >
-        <div className="relative aspect-4/5 w-full">
-          {primary && (
+        <div className="relative aspect-square w-full">
+          {shownUrl && (
             <Image
-              src={primary.url}
-              alt={primary.alt}
+              key={shownUrl}
+              src={shownUrl}
+              alt={primary?.alt ?? product.title}
               fill
               priority={priority}
               sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
               className="object-cover transition-transform duration-700 ease-out-soft group-hover:scale-[1.04]"
             />
           )}
-          {secondary && (
+          {/* Secondary hover image only when no colour is being previewed. */}
+          {secondary && !activeColorImg && (
             <Image
               src={secondary.url}
               alt={secondary.alt}
@@ -124,16 +136,20 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
       </Link>
 
       <div className="flex flex-col gap-1">
+        {/* Category eyebrow — basic product detail only (matches the client's
+            card: category · name · price · colour variants). */}
+        {product.category && (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-bloom-700">
+            {product.category}
+          </p>
+        )}
         <Link
           href={ROUTES.product(product.slug)}
-          className="line-clamp-2 text-sm font-medium leading-snug tracking-tight text-ink-900 transition-colors hover:text-bloom-700 sm:text-base"
+          className="line-clamp-1 text-sm font-medium leading-snug tracking-tight text-ink-900 transition-colors hover:text-bloom-700 sm:text-base"
         >
           {product.title}
         </Link>
-        {product.subtitle && (
-          <p className="text-xs text-ink-500">{product.subtitle}</p>
-        )}
-        <div className="mt-1 flex items-center justify-between">
+        <div className="mt-1 flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
             <span className="text-base font-semibold text-ink-900">
               {formatCurrency(product.price.amount, currency, locale)}
@@ -148,7 +164,50 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
               </span>
             )}
           </div>
-          {product.rating && (
+
+          {colors.length > 0 ? (
+            <span
+              className="flex items-center gap-1.5"
+              aria-label="Available colours"
+              onMouseLeave={() => setPreviewImg(null)}
+            >
+              {colors.slice(0, 4).map((c) => {
+                const swatchClass = cn(
+                  "h-3.5 w-3.5 rounded-full ring-1 ring-inset transition-shadow",
+                  c.needsRing ? "ring-ink-200" : "ring-black/10",
+                  pinnedImg && pinnedImg === c.image &&
+                    "shadow-[0_0_0_2px_var(--color-bloom-500)]"
+                );
+                const style = { background: c.swatch ?? "var(--color-ink-100)" };
+                // Only colours with a mapped image become interactive swappers.
+                return c.image ? (
+                  <button
+                    key={c.value}
+                    type="button"
+                    title={c.value}
+                    aria-label={c.value}
+                    onMouseEnter={() => setPreviewImg(c.image ?? null)}
+                    onFocus={() => setPreviewImg(c.image ?? null)}
+                    onBlur={() => setPreviewImg(null)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setPinnedImg((cur) => (cur === c.image ? null : c.image ?? null));
+                    }}
+                    className={cn(swatchClass, "cursor-pointer hover:scale-110")}
+                    style={style}
+                  />
+                ) : (
+                  <span key={c.value} title={c.value} className={swatchClass} style={style} />
+                );
+              })}
+              {colors.length > 4 && (
+                <span className="text-[10px] text-ink-400">
+                  +{colors.length - 4}
+                </span>
+              )}
+            </span>
+          ) : product.rating ? (
             <span className="inline-flex items-center gap-1 text-xs text-ink-500">
               <StarIcon size={12} className="text-(--color-gold-500)" />
               {product.rating.toFixed(1)}
@@ -156,7 +215,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
                 <span className="text-ink-400">({product.reviewCount})</span>
               )}
             </span>
-          )}
+          ) : null}
         </div>
       </div>
     </article>
