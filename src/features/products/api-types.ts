@@ -33,6 +33,13 @@ export interface ApiProductCategoryRef {
   title_ar?: string | null;
 }
 
+export interface ApiProductRegionRef {
+  id: string;
+  code: string;
+  name: string;
+  name_ar?: string | null;
+}
+
 export interface ApiProduct {
   id: string;
   title: string;
@@ -41,11 +48,17 @@ export interface ApiProduct {
   subtitle_ar: string | null;
   price: number;
   discountedPrice: number | null;
+  /** Manual Saudi Riyal price override (admin-entered, no auto FX). Null = not set. */
+  priceSar?: number | null;
+  discountedPriceSar?: number | null;
   quantity: number;
   categoryId: string | null;
   category?: ApiProductCategoryRef | null;
   /** Publish state. Storefront only ever sees PUBLISHED; staff reads include DRAFT. */
   status?: "DRAFT" | "PUBLISHED";
+  /** Regions this product is visible in. Present on staff reads only. */
+  regions?: ApiProductRegionRef[];
+  regionIds?: string[];
   image: string | null;
   images: string[];
   descriptions: ApiProductDescriptionBlock[];
@@ -81,6 +94,8 @@ export interface ApiProductCreateInput {
   subtitle_ar?: string | null;
   price: number;
   discountedPrice?: number | null;
+  priceSar?: number | null;
+  discountedPriceSar?: number | null;
   quantity?: number;
   categoryId?: string | null;
   descriptions?: ApiProductDescriptionInput[];
@@ -88,6 +103,8 @@ export interface ApiProductCreateInput {
   productOptions?: ApiProductOptionInput[];
   /** Publish state. Defaults to PUBLISHED from the admin form. */
   status?: "DRAFT" | "PUBLISHED";
+  /** Regions this product should be visible in. Defaults to the default region (UAE) if omitted. */
+  regionIds?: string[];
 }
 
 export type ApiProductUpdateInput = Partial<ApiProductCreateInput>;

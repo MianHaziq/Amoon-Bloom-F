@@ -36,6 +36,8 @@ export interface ApiPromoCode {
   newUsersOnly?: boolean;
   newUserWithinDays?: number | null;
   isActive: boolean;
+  /** Regions this code can be redeemed in. Defaults to the default region (UAE) if omitted on create. */
+  regionIds?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -61,6 +63,7 @@ export interface ApiPromoCodeCreateInput {
   newUsersOnly?: boolean;
   newUserWithinDays?: number | null;
   isActive?: boolean;
+  regionIds?: string[];
 }
 
 export type ApiPromoCodeUpdateInput = Partial<ApiPromoCodeCreateInput>;

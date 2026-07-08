@@ -13,6 +13,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, SearchIcon, TrashIcon } from "@/components/icons";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 import { formatDate } from "@/lib/format";
 import type { ApiAdminUser } from "@/features/users/types";
 
@@ -27,6 +28,7 @@ export function UsersAdminPage() {
 
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { t } = useT();
 
   const params = {
     page,
@@ -42,27 +44,27 @@ export function UsersAdminPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => usersApi.remove(id),
     onSuccess: () => {
-      toast.success({ title: "User deleted" });
+      toast.success({ title: t("admin.usersPage.toastDeleted") });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     },
-    onError: (err) => toast.fromError("Could not delete user", err),
+    onError: (err) => toast.fromError(t("admin.usersPage.toastDeleteError"), err),
   });
 
   const toggleStatusMutation = useMutation({
     mutationFn: (id: string) => usersApi.setStatus(id),
     onSuccess: () => {
-      toast.success({ title: "Status updated" });
+      toast.success({ title: t("admin.usersPage.toastStatusUpdated") });
       setPendingToggle(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     },
-    onError: (err) => toast.fromError("Could not update status", err),
+    onError: (err) => toast.fromError(t("admin.usersPage.toastStatusError"), err),
   });
 
   const columns: Column<ApiAdminUser>[] = [
     {
       key: "name",
-      header: "User",
+      header: t("admin.usersPage.columnUser"),
       cell: (u) => (
         <div className="flex items-center gap-3">
           {u.avatar?.startsWith("http") ? (
@@ -86,7 +88,7 @@ export function UsersAdminPage() {
     },
     {
       key: "role",
-      header: "Role",
+      header: t("admin.usersPage.columnRole"),
       cell: (u) => (
         <Badge tone={u.role === "Admin" ? "ink" : u.role === "Manager" ? "bloom" : "neutral"}>
           {u.role}
@@ -95,14 +97,14 @@ export function UsersAdminPage() {
     },
     {
       key: "status",
-      header: "Status",
+      header: t("admin.status"),
       cell: (u) => (
         <Badge tone={u.status === "Active" ? "success" : "warning"}>{u.status}</Badge>
       ),
     },
     {
       key: "joined",
-      header: "Joined",
+      header: t("admin.usersPage.columnJoined"),
       cell: (u) => <span className="text-ink-500">{formatDate(u.joinedAt)}</span>,
     },
     {
@@ -117,12 +119,12 @@ export function UsersAdminPage() {
             onClick={() => setPendingToggle(u)}
             className="rounded-md px-2 py-1 text-xs font-medium text-ink-700 hover:bg-ink-50"
           >
-            {u.status === "Active" ? "Deactivate" : "Activate"}
+            {u.status === "Active" ? t("admin.usersPage.deactivate") : t("admin.usersPage.activate")}
           </button>
           <Link
             href={`/admin/users/${u.id}/edit`}
             className="rounded-md p-2 text-ink-500 hover:bg-ink-50 hover:text-ink-900"
-            aria-label="Edit"
+            aria-label={t("common.edit")}
           >
             <PencilIcon size={16} />
           </Link>
@@ -130,7 +132,7 @@ export function UsersAdminPage() {
             type="button"
             onClick={() => setPendingDelete(u)}
             className="rounded-md p-2 text-bloom-700 hover:bg-bloom-50"
-            aria-label="Delete"
+            aria-label={t("common.delete")}
           >
             <TrashIcon size={16} />
           </button>
@@ -142,15 +144,15 @@ export function UsersAdminPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Users"
-        description="Customers, managers, and admins."
+        title={t("admin.usersPage.title")}
+        description={t("admin.usersPage.description")}
         actions={
           <Link
             href="/admin/users/new"
             className="inline-flex h-11 items-center gap-2 rounded-full bg-bloom-600 px-5 text-sm font-medium text-white shadow-(--shadow-bloom) transition-colors hover:bg-bloom-700"
           >
             <PlusIcon size={16} />
-            New user
+            {t("admin.usersPage.newUser")}
           </Link>
         }
       />
@@ -167,7 +169,7 @@ export function UsersAdminPage() {
             <div className="flex flex-1 items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5">
               <SearchIcon size={16} className="text-ink-400" />
               <input
-                placeholder="Search by name or email"
+                placeholder={t("admin.usersPage.searchPlaceholder")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -189,9 +191,9 @@ export function UsersAdminPage() {
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title={`Delete ${pendingDelete?.name}?`}
-        description="This permanently removes the user. Their orders are kept for accounting."
-        confirmLabel="Delete user"
+        title={t("admin.usersPage.deleteTitle", { name: pendingDelete?.name ?? "" })}
+        description={t("admin.usersPage.deleteDescription")}
+        confirmLabel={t("admin.usersPage.deleteConfirm")}
         destructive
         loading={deleteMutation.isPending}
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}
@@ -202,15 +204,19 @@ export function UsersAdminPage() {
         open={Boolean(pendingToggle)}
         title={
           pendingToggle?.status === "Active"
-            ? `Deactivate ${pendingToggle?.name}?`
-            : `Activate ${pendingToggle?.name}?`
+            ? t("admin.usersPage.deactivateTitle", { name: pendingToggle?.name ?? "" })
+            : t("admin.usersPage.activateTitle", { name: pendingToggle?.name ?? "" })
         }
         description={
           pendingToggle?.status === "Active"
-            ? "Deactivated users cannot sign in."
-            : "Activate this user so they can sign in again."
+            ? t("admin.usersPage.deactivateDescription")
+            : t("admin.usersPage.activateDescription")
         }
-        confirmLabel={pendingToggle?.status === "Active" ? "Deactivate" : "Activate"}
+        confirmLabel={
+          pendingToggle?.status === "Active"
+            ? t("admin.usersPage.deactivate")
+            : t("admin.usersPage.activate")
+        }
         loading={toggleStatusMutation.isPending}
         onConfirm={() =>
           pendingToggle && toggleStatusMutation.mutate(pendingToggle.id)

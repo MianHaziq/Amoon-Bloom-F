@@ -11,6 +11,7 @@ import { DataTable, type Column } from "@/components/admin/DataTable";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, SearchIcon, TrashIcon } from "@/components/icons";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 import type { ApiRegion } from "@/features/regions/types";
 
 export function RegionsAdminPage() {
@@ -19,6 +20,7 @@ export function RegionsAdminPage() {
 
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { t } = useT();
 
   const query = useQuery({
     queryKey: queryKeys.regions.list(),
@@ -40,17 +42,17 @@ export function RegionsAdminPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => regionsApi.remove(id),
     onSuccess: () => {
-      toast.success({ title: "Region deleted" });
+      toast.success({ title: t("admin.regionsPage.toastDeleted") });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.regions.all });
     },
-    onError: (err) => toast.fromError("Could not delete region", err),
+    onError: (err) => toast.fromError(t("admin.regionsPage.toastDeleteError"), err),
   });
 
   const columns: Column<ApiRegion>[] = [
     {
       key: "code",
-      header: "Code",
+      header: t("admin.regionsPage.columnCode"),
       cell: (r) => (
         <span className="font-mono font-semibold uppercase tracking-wider text-ink-900">
           {r.code}
@@ -59,7 +61,7 @@ export function RegionsAdminPage() {
     },
     {
       key: "name",
-      header: "Name",
+      header: t("admin.regionsPage.columnName"),
       cell: (r) => (
         <div>
           <p className="text-ink-900">{r.name}</p>
@@ -72,24 +74,35 @@ export function RegionsAdminPage() {
       ),
     },
     {
+      key: "currency",
+      header: t("admin.regionsPage.columnCurrency"),
+      cell: (r) => (
+        <span className="font-mono text-xs font-medium text-ink-700">{r.currency}</span>
+      ),
+    },
+    {
       key: "default",
-      header: "Default",
+      header: t("admin.regionsPage.columnDefault"),
       cell: (r) =>
-        r.isDefault ? <Badge tone="success">Default</Badge> : <span className="text-ink-300">—</span>,
+        r.isDefault ? (
+          <Badge tone="success">{t("common.default")}</Badge>
+        ) : (
+          <span className="text-ink-300">—</span>
+        ),
     },
     {
       key: "status",
-      header: "Status",
+      header: t("admin.status"),
       cell: (r) =>
         r.isActive ? (
-          <Badge tone="success">Active</Badge>
+          <Badge tone="success">{t("admin.active")}</Badge>
         ) : (
-          <Badge tone="neutral">Inactive</Badge>
+          <Badge tone="neutral">{t("admin.inactive")}</Badge>
         ),
     },
     {
       key: "sortOrder",
-      header: "Order",
+      header: t("admin.regionsPage.columnOrder"),
       align: "right",
       cell: (r) => <span className="text-ink-700">{r.sortOrder}</span>,
     },
@@ -103,7 +116,7 @@ export function RegionsAdminPage() {
           <Link
             href={`/admin/regions/${r.id}/edit`}
             className="rounded-md p-2 text-ink-500 hover:bg-ink-50 hover:text-ink-900"
-            aria-label="Edit"
+            aria-label={t("common.edit")}
           >
             <PencilIcon size={16} />
           </Link>
@@ -112,8 +125,8 @@ export function RegionsAdminPage() {
             onClick={() => setPendingDelete(r)}
             disabled={r.isDefault}
             className="rounded-md p-2 text-bloom-700 hover:bg-bloom-50 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent"
-            aria-label={r.isDefault ? "Default region cannot be deleted" : "Delete"}
-            title={r.isDefault ? "Default region cannot be deleted" : "Delete"}
+            aria-label={r.isDefault ? t("admin.regionsPage.cannotDeleteDefault") : t("common.delete")}
+            title={r.isDefault ? t("admin.regionsPage.cannotDeleteDefault") : t("common.delete")}
           >
             <TrashIcon size={16} />
           </button>
@@ -125,15 +138,15 @@ export function RegionsAdminPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Regions"
-        description="Storefront regions used for region-scoped catalog, pricing, and orders."
+        title={t("admin.regionsPage.title")}
+        description={t("admin.regionsPage.description")}
         actions={
           <Link
             href="/admin/regions/new"
             className="inline-flex h-11 items-center gap-2 rounded-full bg-bloom-600 px-5 text-sm font-medium text-white shadow-(--shadow-bloom) transition-colors hover:bg-bloom-700"
           >
             <PlusIcon size={16} />
-            New region
+            {t("admin.regionsPage.newRegion")}
           </Link>
         }
       />
@@ -145,14 +158,14 @@ export function RegionsAdminPage() {
         isLoading={query.isPending}
         isError={query.isError}
         error={query.error}
-        emptyTitle="No regions yet"
-        emptyDescription="Create your first region to enable region-scoped content."
+        emptyTitle={t("admin.regionsPage.emptyTitle")}
+        emptyDescription={t("admin.regionsPage.emptyDescription")}
         toolbar={
           <div className="flex flex-1 items-center gap-2 sm:max-w-sm">
             <div className="flex flex-1 items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5">
               <SearchIcon size={16} className="text-ink-400" />
               <input
-                placeholder="Search by code or name"
+                placeholder={t("admin.regionsPage.searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 bg-transparent text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
@@ -164,9 +177,9 @@ export function RegionsAdminPage() {
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title={`Delete ${pendingDelete?.code}?`}
-        description="This is blocked if the region is in use by products, users, or orders. Reassign those first."
-        confirmLabel="Delete"
+        title={t("admin.regionsPage.deleteTitle", { code: pendingDelete?.code ?? "" })}
+        description={t("admin.regionsPage.deleteDescription")}
+        confirmLabel={t("common.delete")}
         destructive
         loading={deleteMutation.isPending}
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}

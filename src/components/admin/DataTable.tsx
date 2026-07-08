@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { Skeleton } from "@/components/ui/Loader";
 import { staggerContainer, subtleRise } from "@/lib/motion";
 import { ApiError } from "@/services/http";
+import { useT } from "@/i18n/useT";
 import {
   SortableProvider,
   SortableZone,
@@ -46,7 +47,7 @@ export function DataTable<T>({
   isLoading,
   isError,
   error,
-  emptyTitle = "Nothing here yet",
+  emptyTitle,
   emptyDescription,
   rowKey,
   onRowClick,
@@ -55,6 +56,7 @@ export function DataTable<T>({
   sortable,
   onReorder,
 }: DataTableProps<T>) {
+  const { t } = useT();
   const dragEnabled = Boolean(sortable && onReorder);
   const colCount = columns.length + (dragEnabled ? 1 : 0);
   const table = (
@@ -105,7 +107,7 @@ export function DataTable<T>({
                   <p className="text-sm text-bloom-700">
                     {error instanceof ApiError
                       ? error.message
-                      : "Something went wrong while loading."}
+                      : t("admin.common.loadFailed")}
                   </p>
                 </td>
               </tr>
@@ -114,7 +116,9 @@ export function DataTable<T>({
             <tbody>
               <tr>
                 <td colSpan={colCount} className="px-4 py-12 text-center">
-                  <p className="font-display text-lg text-ink-700">{emptyTitle}</p>
+                  <p className="font-display text-lg text-ink-700">
+                    {emptyTitle ?? t("admin.common.nothingHereYet")}
+                  </p>
                   {emptyDescription ? (
                     <p className="mt-1 text-sm text-ink-500">{emptyDescription}</p>
                   ) : null}
@@ -142,7 +146,7 @@ export function DataTable<T>({
                           <button
                             type="button"
                             {...handleProps}
-                            aria-label="Drag to reorder"
+                            aria-label={t("admin.common.dragToReorder")}
                             className="flex h-8 w-8 touch-none items-center justify-center rounded-md text-ink-400 hover:bg-ink-50 hover:text-ink-700 active:cursor-grabbing"
                             style={{ cursor: "grab" }}
                           >

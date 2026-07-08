@@ -9,30 +9,39 @@ import { Button, Input } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { usersApi } from "@/features/users/api/users.api";
 import { queryKeys } from "@/services/queryKeys";
+import { useT } from "@/i18n/useT";
 import type {
   ApiAdminUser,
   ManagerPermission,
   UserRoleEnum,
 } from "@/features/users/types";
 
-const baseSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Enter a valid email"),
-  role: z.enum(["CUSTOMER", "MANAGER"]),
-  managerTitle: z.string().optional().nullable(),
-  managerPermissions: z.array(z.string()),
-  avatar: z.string().url().nullable(),
-});
+function useUserFormSchemas() {
+  const { t } = useT();
+  return useMemo(() => {
+    const baseSchema = z.object({
+      firstName: z.string().min(1, t("admin.userForm.firstNameRequired")),
+      lastName: z.string().min(1, t("admin.userForm.lastNameRequired")),
+      email: z.string().email(t("admin.userForm.emailInvalid")),
+      role: z.enum(["CUSTOMER", "MANAGER"]),
+      managerTitle: z.string().optional().nullable(),
+      managerPermissions: z.array(z.string()),
+      avatar: z.string().url().nullable(),
+    });
 
-const createSchema = baseSchema.extend({
-  password: z.string().min(6, "At least 6 characters"),
-});
+    const createSchema = baseSchema.extend({
+      password: z.string().min(6, t("admin.userForm.passwordMin")),
+    });
 
-const editSchema = baseSchema;
+    const editSchema = baseSchema;
+    return { createSchema, editSchema };
+  }, [t]);
+}
 
-export type UserCreateFormValues = z.infer<typeof createSchema>;
-export type UserEditFormValues = z.infer<typeof editSchema>;
+export type UserCreateFormValues = z.infer<
+  ReturnType<typeof useUserFormSchemas>["createSchema"]
+>;
+export type UserEditFormValues = z.infer<ReturnType<typeof useUserFormSchemas>["editSchema"]>;
 
 interface UserFormProps {
   initial?: ApiAdminUser;
@@ -49,6 +58,8 @@ export function UserForm({
   submitLabel,
   submitting,
 }: UserFormProps) {
+  const { t } = useT();
+  const { createSchema, editSchema } = useUserFormSchemas();
   const permsQuery = useQuery({
     queryKey: queryKeys.users.permissionsCatalog(),
     queryFn: () => usersApi.permissionsCatalog(),
@@ -133,20 +144,20 @@ export function UserForm({
     <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[2fr_1fr]" noValidate>
       <div className="flex flex-col gap-6">
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Profile</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.userForm.profileHeading")}</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="First name"
+              label={t("admin.userForm.firstNameLabel")}
               error={errors.firstName?.message}
               {...register("firstName")}
             />
             <Input
-              label="Last name"
+              label={t("admin.userForm.lastNameLabel")}
               error={errors.lastName?.message}
               {...register("lastName")}
             />
             <Input
-              label="Email"
+              label={t("admin.userForm.emailLabel")}
               type="email"
               error={errors.email?.message}
               containerClassName="sm:col-span-2"
@@ -154,9 +165,9 @@ export function UserForm({
             />
             {mode === "create" ? (
               <Input
-                label="Temporary password"
+                label={t("admin.userForm.tempPasswordLabel")}
                 type="password"
-                hint="Share it with the user; they can change it later."
+                hint={t("admin.userForm.tempPasswordHint")}
                 error={errors.password?.message}
                 containerClassName="sm:col-span-2"
                 {...register("password")}
@@ -166,11 +177,10 @@ export function UserForm({
         </section>
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Role</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.userForm.roleHeading")}</h3>
           {isAdminInitial ? (
             <p className="mb-3 rounded-lg border border-bloom-200 bg-bloom-50 px-3 py-2 text-xs text-bloom-700">
-              This user is currently an Admin. Demote them via the dedicated role
-              endpoint to change their role from this form.
+              {t("admin.userForm.adminNotice")}
             </p>
           ) : null}
           <div className="grid gap-2 sm:grid-cols-2">
@@ -178,28 +188,28 @@ export function UserForm({
               value="CUSTOMER"
               currentValue={role}
               onChange={(v) => setValue("role", v, { shouldDirty: true })}
-              title="Customer"
-              description="Standard storefront account."
+              title={t("admin.userForm.customerTitle")}
+              description={t("admin.userForm.customerDescription")}
             />
             <RoleCard
               value="MANAGER"
               currentValue={role}
               onChange={(v) => setValue("role", v, { shouldDirty: true })}
-              title="Manager"
-              description="Custom permissions across the admin panel."
+              title={t("admin.userForm.managerTitle")}
+              description={t("admin.userForm.managerDescription")}
             />
           </div>
 
           {role === "MANAGER" ? (
             <div className="mt-5 grid gap-4 border-t border-ink-100 pt-5">
               <Input
-                label="Manager title"
+                label={t("admin.userForm.managerTitleLabel")}
                 placeholder="Senior Operations Manager"
                 {...register("managerTitle")}
               />
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-700">
-                  Permissions
+                  {t("admin.userForm.permissionsLabel")}
                 </p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {permsList.map((p) => {
@@ -228,7 +238,7 @@ export function UserForm({
                 </div>
                 {selectedPerms.length === 0 ? (
                   <p className="mt-2 text-xs text-bloom-700">
-                    Pick at least one permission for the manager.
+                    {t("admin.userForm.pickPermissionHint")}
                   </p>
                 ) : null}
               </div>
@@ -239,7 +249,7 @@ export function UserForm({
 
       <aside>
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Avatar</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.userForm.avatarHeading")}</h3>
           <Controller
             control={control}
             name="avatar"
@@ -249,7 +259,7 @@ export function UserForm({
                 onChange={field.onChange}
                 path="team"
                 label=""
-                hint="Optional. Initials are used when empty."
+                hint={t("admin.userForm.avatarHint")}
               />
             )}
           />

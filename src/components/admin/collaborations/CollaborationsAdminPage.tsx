@@ -3,6 +3,7 @@
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Badge } from "@/components/ui";
 import { ImageIcon } from "@/components/icons";
+import { useT } from "@/i18n/useT";
 
 const PARTNERS = [
   { name: "Netflix", category: "Entertainment" },
@@ -17,21 +18,25 @@ const PARTNERS = [
  * the backend exposes a `/collaborations` endpoint.
  */
 export function CollaborationsAdminPage() {
+  const { t } = useT();
   return (
     <>
       <PageHeader
-        title="Collaborations"
-        description="Brand partners surfaced on the storefront home. CRUD comes online once the backend collaborations endpoint ships."
-        crumbs={[{ label: "Admin", href: "/admin" }, { label: "Collaborations" }]}
+        title={t("admin.collaborationsPage.title")}
+        description={t("admin.collaborationsPage.description")}
+        crumbs={[
+          { label: t("admin.common.breadcrumbHome"), href: "/admin" },
+          { label: t("admin.collaborations") },
+        ]}
       />
 
       <div className="rounded-2xl border border-ink-100 bg-white">
         <div className="flex items-center justify-between gap-3 border-b border-ink-100 px-5 py-4">
           <div className="flex items-center gap-2 text-sm text-ink-500">
             <ImageIcon size={16} className="text-ink-400" />
-            Read-only preview
+            {t("admin.collaborationsPage.readOnlyPreview")}
           </div>
-          <Badge tone="bloom">Mock data</Badge>
+          <Badge tone="bloom">{t("admin.collaborationsPage.mockDataBadge")}</Badge>
         </div>
         <ul className="divide-y divide-ink-100">
           {PARTNERS.map((p) => (
@@ -44,7 +49,7 @@ export function CollaborationsAdminPage() {
                 <p className="text-xs text-ink-400">{p.category}</p>
               </div>
               <span className="text-xs uppercase tracking-[0.12em] text-ink-400">
-                Pending API
+                {t("admin.collaborationsPage.pendingApi")}
               </span>
             </li>
           ))}

@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui";
 import { ChevronRight } from "@/components/icons";
+import { useT } from "@/i18n/useT";
 import type { PaginationMeta } from "@/types/api";
 
 interface PaginationProps {
@@ -12,6 +13,7 @@ interface PaginationProps {
 }
 
 export function Pagination({ meta, page, onChange, className }: PaginationProps) {
+  const { t } = useT();
   if (!meta) return null;
   const { totalPages, total, limit } = meta;
   const start = total === 0 ? 0 : (page - 1) * limit + 1;
@@ -22,16 +24,13 @@ export function Pagination({ meta, page, onChange, className }: PaginationProps)
   return (
     <div className={className ?? "flex w-full flex-wrap items-center justify-between gap-3"}>
       <p className="text-xs text-ink-500">
-        {total === 0 ? (
-          "No results"
-        ) : (
-          <>
-            <span className="font-medium text-ink-700">
-              {start.toLocaleString()}–{end.toLocaleString()}
-            </span>{" "}
-            of {total.toLocaleString()}
-          </>
-        )}
+        {total === 0
+          ? t("admin.common.noResults")
+          : t("admin.common.resultsRange", {
+              start: start.toLocaleString(),
+              end: end.toLocaleString(),
+              total: total.toLocaleString(),
+            })}
       </p>
       <div className="flex items-center gap-1">
         <Button
@@ -41,10 +40,10 @@ export function Pagination({ meta, page, onChange, className }: PaginationProps)
           onClick={() => onChange(page - 1)}
           leadingIcon={<ChevronRight size={14} className="rotate-180 rtl:-scale-x-100" />}
         >
-          Prev
+          {t("admin.common.prev")}
         </Button>
         <span className="px-2 text-xs text-ink-500">
-          Page {page} / {Math.max(1, totalPages)}
+          {t("admin.common.pageOf", { page, total: Math.max(1, totalPages) })}
         </span>
         <Button
           variant="outline"
@@ -53,7 +52,7 @@ export function Pagination({ meta, page, onChange, className }: PaginationProps)
           onClick={() => onChange(page + 1)}
           trailingIcon={<ChevronRight size={14} className="rtl:-scale-x-100" />}
         >
-          Next
+          {t("common.next")}
         </Button>
       </div>
     </div>

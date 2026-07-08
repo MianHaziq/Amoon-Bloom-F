@@ -4,15 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ordersApi } from "@/features/orders/api/orders.api";
+import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { Badge } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Pagination } from "@/components/admin/Pagination";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { useT } from "@/i18n/useT";
 import {
   ORDER_STATUSES,
-  ORDER_STATUS_LABEL,
+  ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
 } from "./orderStatus";
 import type { ApiOrderListRow, OrderStatus } from "@/features/orders/types";
@@ -38,12 +40,20 @@ function lineItemCount(o: ApiOrderListRow): number {
 export function OrdersAdminPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<OrderStatus | "ALL">("ALL");
+  const [region, setRegion] = useState<string>("ALL");
   const router = useRouter();
+  const { t } = useT();
+
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+  });
 
   const params = {
     page,
     limit: PAGE_SIZE,
     ...(status === "ALL" ? {} : { status }),
+    ...(region === "ALL" ? {} : { region }),
   };
 
   const query = useQuery({
@@ -54,14 +64,14 @@ export function OrdersAdminPage() {
   const columns: Column<ApiOrderListRow>[] = [
     {
       key: "id",
-      header: "Order",
+      header: t("admin.ordersPage.columnOrder"),
       cell: (o) => (
         <span className="font-mono text-xs text-ink-700">{o.id.slice(0, 8)}</span>
       ),
     },
     {
       key: "customer",
-      header: "Customer",
+      header: t("admin.ordersPage.columnCustomer"),
       cell: (o) => (
         <div className="max-w-56">
           <p className="truncate text-ink-900">{customerLabel(o)}</p>
@@ -73,30 +83,40 @@ export function OrdersAdminPage() {
     },
     {
       key: "items",
-      header: "Items",
+      header: t("admin.ordersPage.columnItems"),
       cell: (o) => <span className="text-ink-700">{lineItemCount(o)}</span>,
     },
     {
       key: "status",
-      header: "Status",
+      header: t("admin.status"),
       cell: (o) => (
         <Badge tone={ORDER_STATUS_TONE[o.status]}>
-          {ORDER_STATUS_LABEL[o.status]}
+          {t(ORDER_STATUS_LABEL_KEY[o.status])}
         </Badge>
       ),
     },
     {
+      key: "region",
+      header: t("admin.ordersPage.columnRegion"),
+      cell: (o) =>
+        o.region ? (
+          <span className="text-xs font-medium text-ink-700">{o.region.code}</span>
+        ) : (
+          <span className="text-ink-300">—</span>
+        ),
+    },
+    {
       key: "date",
-      header: "Placed",
+      header: t("admin.ordersPage.columnPlaced"),
       cell: (o) => <span className="text-ink-500">{formatDate(o.createdAt)}</span>,
     },
     {
       key: "total",
-      header: "Total",
+      header: t("common.total"),
       align: "right",
       cell: (o) => (
         <span className="font-medium text-ink-900">
-          {formatCurrency(o.totalAmount)}
+          {formatCurrency(o.totalAmount, o.currency ?? "AED")}
         </span>
       ),
     },
@@ -105,8 +125,8 @@ export function OrdersAdminPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Orders"
-        description="All customer orders, latest first."
+        title={t("admin.ordersPage.title")}
+        description={t("admin.ordersPage.description")}
       />
 
       <DataTable
@@ -116,12 +136,12 @@ export function OrdersAdminPage() {
         isLoading={query.isPending}
         isError={query.isError}
         error={query.error}
-        emptyTitle="No orders match"
+        emptyTitle={t("admin.ordersPage.emptyTitle")}
         onRowClick={(o) => router.push(`/admin/orders/${o.id}`)}
         toolbar={
           <div className="flex items-center gap-2">
             <label className="text-xs font-medium uppercase tracking-wider text-ink-500">
-              Status
+              {t("admin.status")}
             </label>
             <select
               value={status}
@@ -131,10 +151,29 @@ export function OrdersAdminPage() {
               }}
               className="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none"
             >
-              <option value="ALL">All</option>
+              <option value="ALL">{t("admin.ordersPage.allOption")}</option>
               {ORDER_STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {ORDER_STATUS_LABEL[s]}
+                  {t(ORDER_STATUS_LABEL_KEY[s])}
+                </option>
+              ))}
+            </select>
+
+            <label className="ms-2 text-xs font-medium uppercase tracking-wider text-ink-500">
+              {t("admin.ordersPage.columnRegion")}
+            </label>
+            <select
+              value={region}
+              onChange={(e) => {
+                setRegion(e.target.value);
+                setPage(1);
+              }}
+              className="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none"
+            >
+              <option value="ALL">{t("admin.ordersPage.allRegionsOption")}</option>
+              {(regionsQuery.data ?? []).map((r) => (
+                <option key={r.id} value={r.code}>
+                  {r.name}
                 </option>
               ))}
             </select>

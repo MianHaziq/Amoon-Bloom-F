@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Input } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { RegionPicker } from "@/components/admin/RegionPicker";
 import { SortableList, SortableItem } from "@/components/admin/Sortable";
 import {
   GripVerticalIcon,
@@ -17,19 +18,8 @@ import { cn } from "@/lib/cn";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { productsApi } from "@/features/products/api/products.api";
 import { queryKeys } from "@/services/queryKeys";
+import { useT } from "@/i18n/useT";
 import type { ApiSection, ApiSectionCreateInput } from "@/features/sections/types";
-
-const schema = z.object({
-  title: z.string().min(1, "Title is required"),
-  title_ar: z.string().optional().nullable(),
-  image: z.string().url().nullable(),
-  sortOrder: z.number().int().nonnegative(),
-  status: z.enum(["DRAFT", "PUBLISHED"]),
-  productIds: z.array(z.string()),
-  categoryIds: z.array(z.string()),
-});
-
-type FormValues = z.infer<typeof schema>;
 
 interface Props {
   initial?: ApiSection;
@@ -39,6 +29,24 @@ interface Props {
 }
 
 export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Props) {
+  const { t } = useT();
+  const schema = useMemo(
+    () =>
+      z.object({
+        title: z.string().min(1, t("admin.sectionForm.titleRequired")),
+        title_ar: z.string().optional().nullable(),
+        image: z.string().url().nullable(),
+        sortOrder: z.number().int().nonnegative(),
+        status: z.enum(["DRAFT", "PUBLISHED"]),
+        regionIds: z.array(z.string()),
+        productIds: z.array(z.string()),
+        categoryIds: z.array(z.string()),
+      }),
+    [t]
+  );
+
+  type FormValues = z.infer<typeof schema>;
+
   const productsQuery = useQuery({
     queryKey: queryKeys.products.list({ limit: 100 }),
     queryFn: () => productsApi.list({ limit: 100 }),
@@ -64,6 +72,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       image: null,
       sortOrder: 0,
       status: "PUBLISHED",
+      regionIds: [],
       productIds: [],
       categoryIds: [],
     },
@@ -77,6 +86,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       image: initial.image,
       sortOrder: initial.sortOrder,
       status: initial.status ?? "PUBLISHED",
+      regionIds: initial.regionIds ?? [],
       productIds: initial.products.map((p) => p.id),
       categoryIds: initial.categories.map((c) => c.id),
     });
@@ -103,6 +113,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       image: v.image,
       sortOrder: v.sortOrder,
       status: v.status,
+      regionIds: v.regionIds,
       productIds: v.productIds,
       categoryIds: v.categoryIds,
     });
@@ -112,66 +123,77 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
     <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[2fr_1fr]" noValidate>
       <div className="flex flex-col gap-6">
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Section details</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.sectionForm.detailsHeading")}</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="Title (EN)"
+              label={t("admin.sectionForm.titleEn")}
               placeholder="Best sellers"
               error={errors.title?.message}
               {...register("title")}
             />
-            <Input label="Title (AR)" dir="rtl" {...register("title_ar")} />
+            <Input label={t("admin.sectionForm.titleAr")} dir="rtl" {...register("title_ar")} />
           </div>
         </section>
 
         <OrderedMultiSelect
-          label="Products"
+          label={t("admin.sectionForm.productsLabel")}
           items={products}
           selectedIds={productIds}
           onChange={(ids) => setValue("productIds", ids, { shouldDirty: true })}
           loading={productsQuery.isPending}
           searchable
-          emptyHint="No products yet."
+          emptyHint={t("admin.sectionForm.noProductsYet")}
         />
 
         <OrderedMultiSelect
-          label="Categories"
+          label={t("admin.sectionForm.categoriesLabel")}
           items={categories}
           selectedIds={categoryIds}
           onChange={(ids) => setValue("categoryIds", ids, { shouldDirty: true })}
           loading={categoriesQuery.isPending}
-          emptyHint="No categories yet."
+          emptyHint={t("admin.sectionForm.noCategoriesYet")}
         />
       </div>
 
       <aside className="flex flex-col gap-6">
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-1 font-display text-lg text-ink-900">Visibility</h3>
+          <h3 className="mb-1 font-display text-lg text-ink-900">{t("admin.sectionForm.visibilityHeading")}</h3>
           <p className="mb-3 text-xs text-ink-500">
-            Published sections appear on the homepage. Draft keeps them hidden.
+            {t("admin.sectionForm.visibilityHint")}
           </p>
           <select
             {...register("status")}
             className="block w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
           >
-            <option value="PUBLISHED">Published — visible on the homepage</option>
-            <option value="DRAFT">Draft — hidden</option>
+            <option value="PUBLISHED">{t("admin.sectionForm.statusPublished")}</option>
+            <option value="DRAFT">{t("admin.sectionForm.statusDraft")}</option>
           </select>
 
           <label className="mb-1.5 mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
-            Sort order
+            {t("admin.sectionForm.sortOrderLabel")}
           </label>
           <Input
             type="number"
             step="1"
             min="0"
-            hint="Lower numbers come first. You can also drag sections on the list."
+            hint={t("admin.sectionForm.sortOrderHint")}
             {...register("sortOrder", { valueAsNumber: true })}
           />
         </section>
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Cover image</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">Regions</h3>
+          <Controller
+            control={control}
+            name="regionIds"
+            render={({ field }) => (
+              <RegionPicker selectedIds={field.value} onChange={field.onChange} />
+            )}
+          />
+        </section>
+
+        <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.sectionForm.coverImageHeading")}</h3>
           <Controller
             control={control}
             name="image"
@@ -218,6 +240,7 @@ function OrderedMultiSelect({
   searchable,
   emptyHint,
 }: OrderedMultiSelectProps) {
+  const { t } = useT();
   const [q, setQ] = useState("");
   const byId = (id: string) => items.find((it) => it.id === id);
   const toggle = (id: string) =>
@@ -238,8 +261,7 @@ function OrderedMultiSelect({
         {label} ({selectedIds.length})
       </h3>
       <p className="mb-3 text-xs text-ink-500">
-        Tick to add, then drag the chosen {label.toLowerCase()} to set the order
-        shown on the shop.
+        {t("admin.sectionForm.pickHint", { label: label.toLowerCase() })}
       </p>
 
       {/* Chosen items — draggable to reorder */}
@@ -266,7 +288,7 @@ function OrderedMultiSelect({
                     <button
                       type="button"
                       {...handleProps}
-                      aria-label="Drag to reorder"
+                      aria-label={t("admin.common.dragToReorder")}
                       className="flex h-7 w-6 shrink-0 touch-none items-center justify-center rounded text-ink-400 hover:text-ink-700 active:cursor-grabbing"
                       style={{ cursor: "grab" }}
                     >
@@ -291,7 +313,7 @@ function OrderedMultiSelect({
                     <button
                       type="button"
                       onClick={() => toggle(id)}
-                      aria-label={`Remove ${it?.title ?? "item"}`}
+                      aria-label={`${t("common.remove")} ${it?.title ?? ""}`}
                       className="shrink-0 rounded-md p-1.5 text-ink-400 hover:bg-ink-50 hover:text-bloom-700"
                     >
                       <CloseIcon size={14} />
@@ -313,7 +335,7 @@ function OrderedMultiSelect({
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={`Search ${label.toLowerCase()}…`}
+            placeholder={t("admin.sectionForm.searchPlaceholder", { label: label.toLowerCase() })}
             className="h-9 w-full rounded-lg border border-ink-200 bg-white ps-9 pe-3 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
           />
         </div>
@@ -321,10 +343,10 @@ function OrderedMultiSelect({
 
       <div className="grid max-h-60 gap-1 overflow-y-auto rounded-xl border border-ink-100 bg-cream-50 p-3 sm:grid-cols-2">
         {loading ? (
-          <p className="p-2 text-sm text-ink-400">Loading…</p>
+          <p className="p-2 text-sm text-ink-400">{t("common.loading")}</p>
         ) : filtered.length === 0 ? (
           <p className="p-2 text-sm text-ink-400">
-            {query ? "No matches." : emptyHint ?? "Nothing to show."}
+            {query ? t("admin.common.noMatches") : emptyHint ?? t("admin.common.nothingToShow")}
           </p>
         ) : (
           filtered.map((it) => {

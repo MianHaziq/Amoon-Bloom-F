@@ -13,6 +13,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { SortableList, SortableItem } from "@/components/admin/Sortable";
 import { TrashIcon, ImageIcon, GripVerticalIcon } from "@/components/icons";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 import { ApiError } from "@/services/http";
 import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { cn } from "@/lib/cn";
@@ -23,6 +24,7 @@ const MAX_VIDEO_BYTES = 100 * 1024 * 1024; // 100 MB
 
 export function BannersAdminPage() {
   const toast = useToast();
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [pendingDelete, setPendingDelete] = useState<ApiBanner | null>(null);
   // Which client the NEXT uploaded banner targets. Default MOBILE — the mobile app
@@ -50,35 +52,35 @@ export function BannersAdminPage() {
       return bannersApi.create({ url, platform, status: "PUBLISHED" });
     },
     onSuccess: () => {
-      toast.success({ title: "Banner added" });
+      toast.success({ title: t("admin.bannersPage.toastAdded") });
       queryClient.invalidateQueries({ queryKey: queryKeys.banners.all });
       revalidateCatalog(["banners"]);
       setOverride(null);
     },
-    onError: (err) => toast.fromError("Could not add banner", err),
+    onError: (err) => toast.fromError(t("admin.bannersPage.toastAddError"), err),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => bannersApi.remove(id),
     onSuccess: () => {
-      toast.success({ title: "Banner removed" });
+      toast.success({ title: t("admin.bannersPage.toastRemoved") });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.banners.all });
       revalidateCatalog(["banners"]);
       setOverride(null);
     },
-    onError: (err) => toast.fromError("Could not remove banner", err),
+    onError: (err) => toast.fromError(t("admin.bannersPage.toastRemoveError"), err),
   });
 
   const reorderMutation = useMutation({
     mutationFn: (ids: string[]) => bannersApi.reorder(ids),
     onSuccess: () => {
-      toast.success({ title: "Order saved" });
+      toast.success({ title: t("admin.bannersPage.toastOrderSaved") });
       queryClient.invalidateQueries({ queryKey: queryKeys.banners.all });
       revalidateCatalog(["banners"]);
       setOverride(null);
     },
-    onError: (err) => toast.fromError("Could not save order", err),
+    onError: (err) => toast.fromError(t("admin.bannersPage.toastOrderError"), err),
   });
 
   const isWeb = platform === "WEB";
@@ -90,17 +92,23 @@ export function BannersAdminPage() {
 
     if (!isImage && !isVideo) {
       toast.error({
-        title: "Image or video only",
-        description: "Choose an image or a video file.",
+        title: t("admin.bannersPage.fileTypeErrorTitle"),
+        description: t("admin.bannersPage.fileTypeErrorDescription"),
       });
       return;
     }
     if (isVideo && file.size > MAX_VIDEO_BYTES) {
-      toast.error({ title: "Video too large", description: "Up to 100 MB. Compress it first." });
+      toast.error({
+        title: t("admin.bannersPage.videoTooLargeTitle"),
+        description: t("admin.bannersPage.videoTooLargeDescription"),
+      });
       return;
     }
     if (isImage && file.size > MAX_IMAGE_BYTES) {
-      toast.error({ title: "Image too large", description: "Up to 5 MB." });
+      toast.error({
+        title: t("admin.bannersPage.imageTooLargeTitle"),
+        description: t("admin.bannersPage.imageTooLargeDescription"),
+      });
       return;
     }
     addMutation.mutate(file);
@@ -109,15 +117,15 @@ export function BannersAdminPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title="Homepage banners"
-        description="Hero carousel media (image or video). Mobile banners show in the app; web banners show on the website. Drag to reorder; the first is shown first."
+        title={t("admin.bannersPage.title")}
+        description={t("admin.bannersPage.description")}
         actions={
           dirty ? (
             <Button
               isLoading={reorderMutation.isPending}
               onClick={() => reorderMutation.mutate(order.map((b) => b.id))}
             >
-              Save order
+              {t("admin.bannersPage.saveOrder")}
             </Button>
           ) : null
         }
@@ -130,7 +138,7 @@ export function BannersAdminPage() {
         <div className="mb-4 flex justify-center">
           <div
             role="tablist"
-            aria-label="Banner platform"
+            aria-label={t("admin.bannersPage.platformTabsAriaLabel")}
             className="inline-flex rounded-full border border-ink-200 bg-white p-1"
           >
             {(["MOBILE", "WEB"] as const).map((p) => (
@@ -147,7 +155,9 @@ export function BannersAdminPage() {
                     : "text-ink-600 hover:text-ink-900")
                 }
               >
-                {p === "MOBILE" ? "Mobile app" : "Website"}
+                {p === "MOBILE"
+                  ? t("admin.bannersPage.platformMobile")
+                  : t("admin.bannersPage.platformWeb")}
               </button>
             ))}
           </div>
@@ -155,10 +165,10 @@ export function BannersAdminPage() {
 
         <p className="mb-3 text-sm text-ink-700">
           {addMutation.isPending
-            ? "Uploading…"
+            ? t("admin.common.uploading")
             : isWeb
-              ? "Add a website banner (image or video)"
-              : "Add a mobile app banner (image or video)"}
+              ? t("admin.bannersPage.uploadPromptWeb")
+              : t("admin.bannersPage.uploadPromptMobile")}
         </p>
         <input
           type="file"
@@ -180,12 +190,11 @@ export function BannersAdminPage() {
               : "cursor-pointer bg-ink-900 hover:bg-ink-800")
           }
         >
-          {addMutation.isPending ? "Uploading…" : "Choose image or video"}
+          {addMutation.isPending
+            ? t("admin.common.uploading")
+            : t("admin.bannersPage.chooseFile")}
         </label>
-        <p className="mt-2 text-xs text-ink-400">
-          Widescreen 16:9 (e.g. 1920×1080). Image: PNG/JPG/WebP up to 5 MB · Video:
-          MP4/WebM up to 100 MB (compress first).
-        </p>
+        <p className="mt-2 text-xs text-ink-400">{t("admin.bannersPage.uploadHint")}</p>
       </div>
 
       {query.isPending ? (
@@ -196,12 +205,16 @@ export function BannersAdminPage() {
         <div className="rounded-xl border border-bloom-200 bg-bloom-50 p-6 text-bloom-700">
           {query.error instanceof ApiError
             ? query.error.message
-            : "Could not load banners."}
+            : t("admin.bannersPage.loadError")}
         </div>
       ) : order.length === 0 ? (
         <div className="rounded-2xl border border-ink-100 bg-white p-12 text-center">
-          <p className="font-display text-lg text-ink-700">No banners yet</p>
-          <p className="mt-1 text-sm text-ink-500">Add your first banner above.</p>
+          <p className="font-display text-lg text-ink-700">
+            {t("admin.bannersPage.emptyTitle")}
+          </p>
+          <p className="mt-1 text-sm text-ink-500">
+            {t("admin.bannersPage.emptyDescription")}
+          </p>
         </div>
       ) : (
         <SortableList
@@ -253,15 +266,17 @@ export function BannersAdminPage() {
                             (isWebBanner ? "bg-bloom-600/90" : "bg-ink-900/80")
                           }
                         >
-                          {isWebBanner ? "Web" : "Mobile"}
-                          {video ? " · Video" : ""}
+                          {isWebBanner
+                            ? t("admin.bannersPage.badgeWeb")
+                            : t("admin.bannersPage.badgeMobile")}
+                          {video ? t("admin.bannersPage.badgeVideoSuffix") : ""}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           {...handleProps}
-                          aria-label="Drag to reorder"
+                          aria-label={t("admin.common.dragToReorder")}
                           className="touch-none rounded-full bg-white/90 p-2 text-ink-600 shadow-sm transition-colors hover:bg-white active:cursor-grabbing"
                           style={{ cursor: "grab" }}
                         >
@@ -271,7 +286,7 @@ export function BannersAdminPage() {
                           type="button"
                           onClick={() => setPendingDelete(banner)}
                           className="rounded-full bg-white/90 p-2 text-bloom-700 shadow-sm transition-colors hover:bg-white"
-                          aria-label="Remove banner"
+                          aria-label={t("admin.bannersPage.removeAriaLabel")}
                         >
                           <TrashIcon size={14} />
                         </button>
@@ -287,9 +302,9 @@ export function BannersAdminPage() {
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title="Remove banner?"
-        description="This deletes the banner immediately."
-        confirmLabel="Remove"
+        title={t("admin.bannersPage.deleteTitle")}
+        description={t("admin.bannersPage.deleteDescription")}
+        confirmLabel={t("admin.common.remove")}
         destructive
         loading={deleteMutation.isPending}
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}

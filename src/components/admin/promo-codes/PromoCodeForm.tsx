@@ -1,43 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Input, Textarea } from "@/components/ui";
+import { RegionPicker } from "@/components/admin/RegionPicker";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { productsApi } from "@/features/products/api/products.api";
 import { queryKeys } from "@/services/queryKeys";
+import { useT } from "@/i18n/useT";
 import type {
   ApiPromoCode,
   ApiPromoCodeCreateInput,
 } from "@/features/promo-codes/types";
-
-const schema = z.object({
-  code: z.string().min(2, "At least 2 characters").max(40),
-  name: z.string().min(1, "Name is required"),
-  name_ar: z.string().optional().nullable(),
-  description: z.string().optional().nullable(),
-  description_ar: z.string().optional().nullable(),
-  discountType: z.enum(["PERCENTAGE", "FIXED"]),
-  discountValue: z.number().nonnegative("Must be ≥ 0"),
-  maxDiscountAmount: z.number().nonnegative().nullable(),
-  appliesTo: z.enum(["ALL_PRODUCTS", "SPECIFIC_PRODUCTS", "SPECIFIC_CATEGORIES"]),
-  productIds: z.array(z.string()),
-  categoryIds: z.array(z.string()),
-  minOrderAmount: z.number().nonnegative().nullable(),
-  maxOrderAmount: z.number().nonnegative().nullable(),
-  startsAt: z.string().optional().nullable(),
-  expiresAt: z.string().optional().nullable(),
-  usageLimit: z.number().int().positive().nullable(),
-  usageLimitPerUser: z.number().int().positive().nullable(),
-  newUsersOnly: z.boolean(),
-  newUserWithinDays: z.number().int().positive().nullable(),
-  isActive: z.boolean(),
-});
-
-type FormValues = z.infer<typeof schema>;
 
 interface PromoCodeFormProps {
   initial?: ApiPromoCode;
@@ -63,6 +40,37 @@ export function PromoCodeForm({
   submitLabel,
   submitting,
 }: PromoCodeFormProps) {
+  const { t } = useT();
+  const schema = useMemo(
+    () =>
+      z.object({
+        code: z.string().min(2, t("admin.promoCodeForm.codeMin")).max(40),
+        name: z.string().min(1, t("admin.promoCodeForm.nameRequired")),
+        name_ar: z.string().optional().nullable(),
+        description: z.string().optional().nullable(),
+        description_ar: z.string().optional().nullable(),
+        discountType: z.enum(["PERCENTAGE", "FIXED"]),
+        discountValue: z.number().nonnegative(t("admin.promoCodeForm.discountValueMin")),
+        maxDiscountAmount: z.number().nonnegative().nullable(),
+        appliesTo: z.enum(["ALL_PRODUCTS", "SPECIFIC_PRODUCTS", "SPECIFIC_CATEGORIES"]),
+        productIds: z.array(z.string()),
+        categoryIds: z.array(z.string()),
+        minOrderAmount: z.number().nonnegative().nullable(),
+        maxOrderAmount: z.number().nonnegative().nullable(),
+        startsAt: z.string().optional().nullable(),
+        expiresAt: z.string().optional().nullable(),
+        usageLimit: z.number().int().positive().nullable(),
+        usageLimitPerUser: z.number().int().positive().nullable(),
+        newUsersOnly: z.boolean(),
+        newUserWithinDays: z.number().int().positive().nullable(),
+        isActive: z.boolean(),
+        regionIds: z.array(z.string()),
+      }),
+    [t]
+  );
+
+  type FormValues = z.infer<typeof schema>;
+
   const productsQuery = useQuery({
     queryKey: queryKeys.products.list({ limit: 100 }),
     queryFn: () => productsApi.list({ limit: 100 }),
@@ -74,6 +82,7 @@ export function PromoCodeForm({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -102,6 +111,7 @@ export function PromoCodeForm({
       newUsersOnly: false,
       newUserWithinDays: null,
       isActive: true,
+      regionIds: [],
     },
   });
 
@@ -128,6 +138,7 @@ export function PromoCodeForm({
       newUsersOnly: initial.newUsersOnly ?? false,
       newUserWithinDays: initial.newUserWithinDays ?? null,
       isActive: initial.isActive,
+      regionIds: initial.regionIds ?? [],
     });
   }, [initial, reset]);
 
@@ -160,6 +171,7 @@ export function PromoCodeForm({
       // Backend wants the account-age window only when the flag is on.
       newUserWithinDays: v.newUsersOnly ? v.newUserWithinDays ?? 30 : null,
       isActive: v.isActive,
+      regionIds: v.regionIds,
     });
   });
 
@@ -172,30 +184,34 @@ export function PromoCodeForm({
     <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[2fr_1fr]" noValidate>
       <div className="flex flex-col gap-6">
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Basics</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.promoCodeForm.basicsHeading")}</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="Code"
+              label={t("admin.promoCodeForm.codeLabel")}
               placeholder="WELCOME10"
               error={errors.code?.message}
               {...register("code")}
             />
             <Input
-              label="Display name"
+              label={t("admin.promoCodeForm.displayNameLabel")}
               placeholder="Welcome 10%"
               error={errors.name?.message}
               {...register("name")}
             />
-            <Input label="Display name (AR)" dir="rtl" {...register("name_ar")} />
+            <Input
+              label={t("admin.promoCodeForm.displayNameArLabel")}
+              dir="rtl"
+              {...register("name_ar")}
+            />
             <div className="hidden sm:block" /> {/* spacer */}
             <Textarea
-              label="Description (EN)"
+              label={t("admin.promoCodeForm.descriptionEnLabel")}
               rows={2}
               containerClassName="sm:col-span-2"
               {...register("description")}
             />
             <Textarea
-              label="Description (AR)"
+              label={t("admin.promoCodeForm.descriptionArLabel")}
               rows={2}
               dir="rtl"
               containerClassName="sm:col-span-2"
@@ -205,22 +221,26 @@ export function PromoCodeForm({
         </section>
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Discount</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.promoCodeForm.discountHeading")}</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="sm:col-span-1">
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
-                Type
+                {t("admin.promoCodeForm.typeLabel")}
               </label>
               <select
                 {...register("discountType")}
                 className="block w-full rounded-2xl border border-ink-200 bg-white px-3 py-3 text-base text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-4 focus:ring-bloom-100"
               >
-                <option value="PERCENTAGE">Percentage</option>
-                <option value="FIXED">Fixed amount</option>
+                <option value="PERCENTAGE">{t("admin.promoCodeForm.typePercentage")}</option>
+                <option value="FIXED">{t("admin.promoCodeForm.typeFixed")}</option>
               </select>
             </div>
             <Input
-              label={discountType === "PERCENTAGE" ? "Percent off" : "Amount off"}
+              label={
+                discountType === "PERCENTAGE"
+                  ? t("admin.promoCodeForm.percentOffLabel")
+                  : t("admin.promoCodeForm.amountOffLabel")
+              }
               type="number"
               step={discountType === "PERCENTAGE" ? "1" : "0.01"}
               min="0"
@@ -228,11 +248,11 @@ export function PromoCodeForm({
               {...register("discountValue", { valueAsNumber: true })}
             />
             <Input
-              label="Max discount cap"
+              label={t("admin.promoCodeForm.maxDiscountCapLabel")}
               type="number"
               step="0.01"
               min="0"
-              hint="Caps PERCENT discounts."
+              hint={t("admin.promoCodeForm.maxDiscountCapHint")}
               {...register("maxDiscountAmount", {
                 setValueAs: (v) => (v === "" || v == null ? null : Number(v)),
               })}
@@ -241,14 +261,14 @@ export function PromoCodeForm({
         </section>
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Scope</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.promoCodeForm.scopeHeading")}</h3>
           <select
             {...register("appliesTo")}
             className="mb-4 block w-full rounded-2xl border border-ink-200 bg-white px-3 py-3 text-base text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-4 focus:ring-bloom-100"
           >
-            <option value="ALL_PRODUCTS">All products</option>
-            <option value="SPECIFIC_PRODUCTS">Specific products</option>
-            <option value="SPECIFIC_CATEGORIES">Specific categories</option>
+            <option value="ALL_PRODUCTS">{t("admin.promoCodeForm.scopeAllProducts")}</option>
+            <option value="SPECIFIC_PRODUCTS">{t("admin.promoCodeForm.scopeSpecificProducts")}</option>
+            <option value="SPECIFIC_CATEGORIES">{t("admin.promoCodeForm.scopeSpecificCategories")}</option>
           </select>
 
           {appliesTo === "SPECIFIC_PRODUCTS" ? (
@@ -305,26 +325,37 @@ export function PromoCodeForm({
 
       <aside className="flex flex-col gap-6">
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Status</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.promoCodeForm.statusHeading")}</h3>
           <label className="flex cursor-pointer items-center gap-3">
             <input
               type="checkbox"
               {...register("isActive")}
               className="h-5 w-5 accent-bloom-600"
             />
-            <span className="text-sm text-ink-900">Code is active</span>
+            <span className="text-sm text-ink-900">{t("admin.promoCodeForm.codeActiveLabel")}</span>
           </label>
         </section>
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Window</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">Regions</h3>
+          <Controller
+            control={control}
+            name="regionIds"
+            render={({ field }) => (
+              <RegionPicker selectedIds={field.value} onChange={field.onChange} />
+            )}
+          />
+        </section>
+
+        <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.promoCodeForm.windowHeading")}</h3>
           <Input
-            label="Starts"
+            label={t("admin.promoCodeForm.startsLabel")}
             type="datetime-local"
             {...register("startsAt")}
           />
           <Input
-            label="Expires"
+            label={t("admin.promoCodeForm.expiresLabel")}
             type="datetime-local"
             containerClassName="mt-3"
             {...register("expiresAt")}
@@ -332,9 +363,9 @@ export function PromoCodeForm({
         </section>
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Limits</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.promoCodeForm.limitsHeading")}</h3>
           <Input
-            label="Min order amount"
+            label={t("admin.promoCodeForm.minOrderAmountLabel")}
             type="number"
             step="0.01"
             min="0"
@@ -343,7 +374,7 @@ export function PromoCodeForm({
             })}
           />
           <Input
-            label="Max order amount"
+            label={t("admin.promoCodeForm.maxOrderAmountLabel")}
             type="number"
             step="0.01"
             min="0"
@@ -353,18 +384,18 @@ export function PromoCodeForm({
             })}
           />
           <Input
-            label="Total uses"
+            label={t("admin.promoCodeForm.totalUsesLabel")}
             type="number"
             step="1"
             min="0"
-            hint="Across all customers."
+            hint={t("admin.promoCodeForm.totalUsesHint")}
             containerClassName="mt-3"
             {...register("usageLimit", {
               setValueAs: (v) => (v === "" || v == null ? null : Number(v)),
             })}
           />
           <Input
-            label="Per-customer limit"
+            label={t("admin.promoCodeForm.perCustomerLimitLabel")}
             type="number"
             step="1"
             min="0"
@@ -376,22 +407,22 @@ export function PromoCodeForm({
         </section>
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-4 font-display text-lg text-ink-900">Eligibility</h3>
+          <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.promoCodeForm.eligibilityHeading")}</h3>
           <label className="flex cursor-pointer items-center gap-3">
             <input
               type="checkbox"
               {...register("newUsersOnly")}
               className="h-5 w-5 accent-bloom-600"
             />
-            <span className="text-sm text-ink-900">New customers only</span>
+            <span className="text-sm text-ink-900">{t("admin.promoCodeForm.newCustomersOnlyLabel")}</span>
           </label>
           {newUsersOnly ? (
             <Input
-              label="Account age window (days)"
+              label={t("admin.promoCodeForm.accountAgeWindowLabel")}
               type="number"
               step="1"
               min="1"
-              hint="Only accounts created within this many days can redeem."
+              hint={t("admin.promoCodeForm.accountAgeWindowHint")}
               containerClassName="mt-3"
               {...register("newUserWithinDays", {
                 setValueAs: (v) => (v === "" || v == null ? null : Number(v)),

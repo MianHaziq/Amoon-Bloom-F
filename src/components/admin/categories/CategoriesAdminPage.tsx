@@ -11,12 +11,14 @@ import { DataTable, type Column } from "@/components/admin/DataTable";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 import type { ApiCategory } from "@/features/categories/api-types";
 
 export function CategoriesAdminPage() {
   const [pendingDelete, setPendingDelete] = useState<ApiCategory | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { t } = useT();
 
   const query = useQuery({
     queryKey: queryKeys.categories.list(),
@@ -26,12 +28,12 @@ export function CategoriesAdminPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => categoriesApi.remove(id),
     onSuccess: () => {
-      toast.success({ title: "Category deleted" });
+      toast.success({ title: t("admin.categoriesPage.toastDeleted") });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
       revalidateCatalog();
     },
-    onError: (err) => toast.fromError("Could not delete category", err),
+    onError: (err) => toast.fromError(t("admin.categoriesPage.toastDeleteError"), err),
   });
 
   const columns: Column<ApiCategory>[] = [
@@ -49,7 +51,7 @@ export function CategoriesAdminPage() {
     },
     {
       key: "title",
-      header: "Category",
+      header: t("admin.categoriesPage.columnCategory"),
       cell: (c) => (
         <div>
           <p className="font-medium text-ink-900">{c.title}</p>
@@ -59,7 +61,7 @@ export function CategoriesAdminPage() {
     },
     {
       key: "products",
-      header: "Products",
+      header: t("admin.categoriesPage.columnProducts"),
       align: "right",
       cell: (c) => <span className="text-ink-700">{c.totalProducts}</span>,
     },
@@ -73,7 +75,7 @@ export function CategoriesAdminPage() {
           <Link
             href={`/admin/categories/${c.id}/edit`}
             className="rounded-md p-2 text-ink-500 hover:bg-ink-50 hover:text-ink-900"
-            aria-label="Edit"
+            aria-label={t("common.edit")}
           >
             <PencilIcon size={16} />
           </Link>
@@ -81,7 +83,7 @@ export function CategoriesAdminPage() {
             type="button"
             onClick={() => setPendingDelete(c)}
             className="rounded-md p-2 text-bloom-700 hover:bg-bloom-50"
-            aria-label="Delete"
+            aria-label={t("common.delete")}
           >
             <TrashIcon size={16} />
           </button>
@@ -93,15 +95,15 @@ export function CategoriesAdminPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title="Categories"
-        description="Top-level groupings for your catalogue."
+        title={t("admin.categoriesPage.title")}
+        description={t("admin.categoriesPage.description")}
         actions={
           <Link
             href="/admin/categories/new"
             className="inline-flex h-11 items-center gap-2 rounded-full bg-bloom-600 px-5 text-sm font-medium text-white shadow-(--shadow-bloom) transition-colors hover:bg-bloom-700"
           >
             <PlusIcon size={16} />
-            New category
+            {t("admin.categoriesPage.newCategory")}
           </Link>
         }
       />
@@ -113,15 +115,15 @@ export function CategoriesAdminPage() {
         isLoading={query.isPending}
         isError={query.isError}
         error={query.error}
-        emptyTitle="No categories yet"
-        emptyDescription="Create a category to start organising your products."
+        emptyTitle={t("admin.categoriesPage.emptyTitle")}
+        emptyDescription={t("admin.categoriesPage.emptyDescription")}
       />
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title={`Delete ${pendingDelete?.title}?`}
-        description="Categories with products cannot be deleted. Move or remove the products first."
-        confirmLabel="Delete"
+        title={t("admin.categoriesPage.deleteTitle", { title: pendingDelete?.title ?? "" })}
+        description={t("admin.categoriesPage.deleteDescription")}
+        confirmLabel={t("common.delete")}
         destructive
         loading={deleteMutation.isPending}
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}

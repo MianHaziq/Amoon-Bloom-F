@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useFieldArray,
   useForm,
@@ -18,6 +18,7 @@ import { categoriesApi } from "@/features/categories/api/categories.api";
 import { queryKeys } from "@/services/queryKeys";
 import { Button, Input, Textarea } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { RegionPicker } from "@/components/admin/RegionPicker";
 import { SortableList, SortableItem } from "@/components/admin/Sortable";
 import {
   PlusIcon,
@@ -28,52 +29,62 @@ import {
 } from "@/components/icons";
 import { isColorGroupTitle, swatchForValue } from "@/features/products/facets";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
 import type {
   ApiProduct,
   ApiProductCreateInput,
 } from "@/features/products/api-types";
 
-const descriptionSchema = z.object({
-  title: z.string().optional().nullable(),
-  title_ar: z.string().optional().nullable(),
-  description: z.string().min(1, "Description text is required"),
-  description_ar: z.string().optional().nullable(),
-});
+function useProductFormSchema() {
+  const { t } = useT();
+  return useMemo(() => {
+    const descriptionSchema = z.object({
+      title: z.string().optional().nullable(),
+      title_ar: z.string().optional().nullable(),
+      description: z.string().min(1, t("admin.productForm.descriptionRequired")),
+      description_ar: z.string().optional().nullable(),
+    });
 
-const optionSchema = z.object({
-  title: z.string().min(1, "Option title required"),
-  title_ar: z.string().optional().nullable(),
-  options: z
-    .array(z.string())
-    .min(1, "Add at least one choice"),
-  options_ar: z.array(z.string()).optional(),
-  // Optional per-choice image URLs (first photo of each set), aligned with `options`.
-  optionImages: z.array(z.string()).optional(),
-  // Optional per-choice swatch colours (hex), aligned by index with `options`.
-  optionColors: z.array(z.string()).optional(),
-  // Optional per-choice image SETS (several photos per value), aligned with `options`.
-  optionImageSets: z.array(z.array(z.string())).optional(),
-});
+    const optionSchema = z.object({
+      title: z.string().min(1, t("admin.productForm.optionTitleRequired")),
+      title_ar: z.string().optional().nullable(),
+      options: z.array(z.string()).min(1, t("admin.productForm.optionValuesRequired")),
+      options_ar: z.array(z.string()).optional(),
+      // Optional per-choice image URLs (first photo of each set), aligned with `options`.
+      optionImages: z.array(z.string()).optional(),
+      // Optional per-choice swatch colours (hex), aligned by index with `options`.
+      optionColors: z.array(z.string()).optional(),
+      // Optional per-choice image SETS (several photos per value), aligned with `options`.
+      optionImageSets: z.array(z.array(z.string())).optional(),
+    });
 
-const productFormSchema = z.object({
-  title: z.string().min(1, "Product title is required"),
-  title_ar: z.string().optional().nullable(),
-  subtitle: z.string().optional().nullable(),
-  subtitle_ar: z.string().optional().nullable(),
-  price: z.number({ message: "Enter a valid price" }).nonnegative("Price must be ≥ 0"),
-  discountedPrice: z
-    .number()
-    .nonnegative("Discount must be ≥ 0")
-    .nullable(),
-  quantity: z.number().int("Whole number").nonnegative("Stock must be ≥ 0"),
-  categoryId: z.string().optional().nullable(),
-  status: z.enum(["DRAFT", "PUBLISHED"]),
-  images: z.array(z.string().url()).max(10, "Up to 10 images"),
-  descriptions: z.array(descriptionSchema),
-  productOptions: z.array(optionSchema),
-});
+    return z.object({
+      title: z.string().min(1, t("admin.productForm.productTitleRequired")),
+      title_ar: z.string().optional().nullable(),
+      subtitle: z.string().optional().nullable(),
+      subtitle_ar: z.string().optional().nullable(),
+      price: z
+        .number({ message: t("admin.productForm.priceInvalid") })
+        .nonnegative(t("admin.productForm.priceMin")),
+      discountedPrice: z.number().nonnegative(t("admin.productForm.discountMin")).nullable(),
+      // Manual Saudi Riyal price override — no auto FX, admin enters it explicitly.
+      priceSar: z.number().nonnegative().nullable(),
+      discountedPriceSar: z.number().nonnegative().nullable(),
+      quantity: z
+        .number()
+        .int(t("admin.productForm.quantityWhole"))
+        .nonnegative(t("admin.productForm.quantityMin")),
+      categoryId: z.string().optional().nullable(),
+      status: z.enum(["DRAFT", "PUBLISHED"]),
+      regionIds: z.array(z.string()),
+      images: z.array(z.string().url()).max(10, t("admin.productForm.imagesMax")),
+      descriptions: z.array(descriptionSchema),
+      productOptions: z.array(optionSchema),
+    });
+  }, [t]);
+}
 
-export type ProductFormValues = z.infer<typeof productFormSchema>;
+export type ProductFormValues = z.infer<ReturnType<typeof useProductFormSchema>>;
 
 interface ProductFormProps {
   initial?: ApiProduct;
@@ -89,15 +100,20 @@ const emptyDefaults: ProductFormValues = {
   subtitle_ar: "",
   price: 0,
   discountedPrice: null,
+  priceSar: null,
+  discountedPriceSar: null,
   quantity: 0,
   categoryId: null,
   status: "PUBLISHED",
+  regionIds: [],
   images: [],
   descriptions: [],
   productOptions: [],
 };
 
 export function ProductForm({ initial, onSubmit, submitting, submitLabel }: ProductFormProps) {
+  const { t } = useT();
+  const productFormSchema = useProductFormSchema();
   const categoriesQuery = useQuery({
     queryKey: queryKeys.categories.list(),
     queryFn: () => categoriesApi.list(),
@@ -126,9 +142,12 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       subtitle_ar: initial.subtitle_ar ?? "",
       price: initial.price,
       discountedPrice: initial.discountedPrice,
+      priceSar: initial.priceSar ?? null,
+      discountedPriceSar: initial.discountedPriceSar ?? null,
       quantity: initial.quantity,
       categoryId: initial.categoryId,
       status: initial.status ?? "PUBLISHED",
+      regionIds: initial.regionIds ?? [],
       images: initial.images,
       descriptions: initial.descriptions.map((d) => ({
         title: d.title ?? "",
@@ -208,9 +227,18 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         values.discountedPrice === null || values.discountedPrice === undefined
           ? null
           : Number(values.discountedPrice),
+      priceSar:
+        values.priceSar === null || values.priceSar === undefined
+          ? null
+          : Number(values.priceSar),
+      discountedPriceSar:
+        values.discountedPriceSar === null || values.discountedPriceSar === undefined
+          ? null
+          : Number(values.discountedPriceSar),
       quantity: values.quantity,
       categoryId: values.categoryId || null,
       status: values.status,
+      regionIds: values.regionIds,
       images: values.images,
       descriptions: cleanedDescriptions,
       productOptions: cleanedOptions,
@@ -221,37 +249,37 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
     <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[2fr_1fr]" noValidate>
       {/* MAIN COLUMN */}
       <div className="flex flex-col gap-6">
-        <Card title="Basics">
+        <Card title={t("admin.productForm.basicsHeading")}>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="Title (English)"
+              label={t("admin.productForm.titleEn")}
               placeholder="Garden Bouquet"
               error={errors.title?.message}
               {...register("title")}
             />
             <Input
-              label="Title (Arabic)"
+              label={t("admin.productForm.titleAr")}
               placeholder="باقة الحديقة"
               dir="rtl"
               {...register("title_ar")}
             />
             <Input
-              label="Subtitle (English)"
+              label={t("admin.productForm.subtitleEn")}
               placeholder="A garden in bloom"
               {...register("subtitle")}
             />
             <Input
-              label="Subtitle (Arabic)"
+              label={t("admin.productForm.subtitleAr")}
               dir="rtl"
               {...register("subtitle_ar")}
             />
           </div>
         </Card>
 
-        <Card title="Pricing & inventory">
+        <Card title={t("admin.productForm.pricingHeading")}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Input
-              label="Price"
+              label={t("admin.productForm.priceLabel")}
               type="number"
               step="0.01"
               min="0"
@@ -259,17 +287,17 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               {...register("price", { valueAsNumber: true })}
             />
             <Input
-              label="Discounted price"
+              label={t("admin.productForm.discountedPriceLabel")}
               type="number"
               step="0.01"
               min="0"
-              hint="Leave empty for no discount"
+              hint={t("admin.productForm.discountedPriceHint")}
               {...register("discountedPrice", {
                 setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
               })}
             />
             <Input
-              label="Stock"
+              label={t("admin.productForm.stockLabel")}
               type="number"
               step="1"
               min="0"
@@ -277,10 +305,43 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               {...register("quantity", { valueAsNumber: true })}
             />
           </div>
+
+          <div className="mt-4 border-t border-ink-100 pt-4">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
+              Saudi Riyal pricing (optional)
+            </p>
+            <p className="mb-3 text-xs text-ink-500">
+              Enter a separate SAR price for the Saudi region. Leave empty to
+              fall back to the AED price above.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="SAR price"
+                type="number"
+                step="0.01"
+                min="0"
+                error={errors.priceSar?.message}
+                {...register("priceSar", {
+                  setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+                })}
+              />
+              <Input
+                label="SAR discounted price"
+                type="number"
+                step="0.01"
+                min="0"
+                hint="Leave empty for no SAR discount"
+                error={errors.discountedPriceSar?.message}
+                {...register("discountedPriceSar", {
+                  setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+                })}
+              />
+            </div>
+          </div>
         </Card>
 
         <Card
-          title="Descriptions"
+          title={t("admin.productForm.descriptionsHeading")}
           action={
             <button
               type="button"
@@ -295,14 +356,13 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               className="inline-flex items-center gap-1 text-sm font-medium text-bloom-700 hover:text-bloom-800"
             >
               <PlusIcon size={14} />
-              Add block
+              {t("admin.productForm.addBlock")}
             </button>
           }
         >
           {descriptionsArray.fields.length === 0 ? (
             <p className="text-sm text-ink-500">
-              Add one or more description blocks (e.g. &ldquo;Care guide&rdquo;,
-              &ldquo;Composition&rdquo;).
+              {t("admin.productForm.descriptionsEmptyHint")}
             </p>
           ) : null}
           <div className="flex flex-col gap-4">
@@ -313,11 +373,11 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               >
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
-                    Block {index + 1}
+                    {t("admin.productForm.blockLabel", { n: index + 1 })}
                   </p>
                   <button
                     type="button"
-                    aria-label="Remove block"
+                    aria-label={t("admin.productForm.removeBlockAria")}
                     onClick={() => descriptionsArray.remove(index)}
                     className="rounded-md p-1.5 text-bloom-700 hover:bg-bloom-50"
                   >
@@ -326,25 +386,25 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Input
-                    label="Heading (EN)"
+                    label={t("admin.productForm.headingEn")}
                     placeholder="Care guide"
                     {...register(`descriptions.${index}.title`)}
                   />
                   <Input
-                    label="Heading (AR)"
+                    label={t("admin.productForm.headingAr")}
                     dir="rtl"
                     {...register(`descriptions.${index}.title_ar`)}
                   />
                 </div>
                 <Textarea
-                  label="Body (EN)"
+                  label={t("admin.productForm.bodyEn")}
                   rows={3}
                   containerClassName="mt-3"
                   error={errors.descriptions?.[index]?.description?.message}
                   {...register(`descriptions.${index}.description`)}
                 />
                 <Textarea
-                  label="Body (AR)"
+                  label={t("admin.productForm.bodyAr")}
                   rows={3}
                   containerClassName="mt-3"
                   dir="rtl"
@@ -356,8 +416,8 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         </Card>
 
         <Card
-          title="Variants & options"
-          description="Colour, size, wrap, greeting card… For colour, attach a photo to each value and the shop swaps the main image when a shopper hovers or taps that colour."
+          title={t("admin.productForm.variantsHeading")}
+          description={t("admin.productForm.variantsDescription")}
           action={
             <div className="flex items-center gap-3">
               <button
@@ -375,7 +435,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                 className="inline-flex items-center gap-1 text-sm font-medium text-bloom-700 hover:text-bloom-800"
               >
                 <PlusIcon size={14} />
-                Add colour
+                {t("admin.productForm.addColour")}
               </button>
               <button
                 type="button"
@@ -392,7 +452,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                 className="inline-flex items-center gap-1 text-sm font-medium text-ink-600 hover:text-ink-900"
               >
                 <PlusIcon size={14} />
-                Add option
+                {t("admin.productForm.addOption")}
               </button>
             </div>
           }
@@ -400,13 +460,13 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           {optionsArray.fields.length === 0 ? (
             <div className="rounded-xl border border-dashed border-ink-200 bg-cream-50 p-5 text-center">
               <p className="text-sm font-medium text-ink-700">
-                No variants yet
+                {t("admin.productForm.noVariantsTitle")}
               </p>
               <p className="mx-auto mt-1 max-w-md text-xs text-ink-500">
-                Tap <span className="font-medium text-bloom-700">Add colour</span>{" "}
-                to offer colour choices with a photo per colour, or{" "}
-                <span className="font-medium text-ink-700">Add option</span> for
-                sizes, wraps, greeting cards, etc.
+                {t("admin.productForm.noVariantsHint", {
+                  addColour: t("admin.productForm.addColour"),
+                  addOption: t("admin.productForm.addOption"),
+                })}
               </p>
             </div>
           ) : null}
@@ -430,26 +490,36 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       {/* SIDEBAR COLUMN */}
       <aside className="flex flex-col gap-6">
         <Card
-          title="Visibility"
-          description="Published products are live on the shop. Draft hides them from customers."
+          title={t("admin.productForm.visibilityHeading")}
+          description={t("admin.productForm.visibilityDescription")}
         >
           <select
             {...register("status")}
             className="block w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
           >
-            <option value="PUBLISHED">Published — visible on the shop</option>
-            <option value="DRAFT">Draft — hidden from customers</option>
+            <option value="PUBLISHED">{t("admin.productForm.statusPublished")}</option>
+            <option value="DRAFT">{t("admin.productForm.statusDraft")}</option>
           </select>
         </Card>
 
-        <Card title="Category">
+        <Card title="Regions">
+          <Controller
+            control={control}
+            name="regionIds"
+            render={({ field }) => (
+              <RegionPicker selectedIds={field.value} onChange={field.onChange} />
+            )}
+          />
+        </Card>
+
+        <Card title={t("admin.productForm.categoryHeading")}>
           <select
             {...register("categoryId", {
               setValueAs: (v) => (v === "" ? null : v),
             })}
             className="block w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
           >
-            <option value="">— Uncategorised —</option>
+            <option value="">{t("admin.productForm.uncategorizedOption")}</option>
             {categoriesQuery.data?.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title}
@@ -459,8 +529,8 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         </Card>
 
         <Card
-          title={`Images (${images?.length ?? 0}/10)`}
-          description="The first image is the primary. Square (1:1) recommended."
+          title={t("admin.productForm.imagesHeading", { count: images?.length ?? 0 })}
+          description={t("admin.productForm.imagesDescription")}
         >
           {(images?.length ?? 0) > 0 ? (
             <SortableList
@@ -491,13 +561,13 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                       />
                       {i === 0 ? (
                         <span className="absolute inset-s-1 top-1 rounded-full bg-ink-900/70 px-2 py-0.5 text-[10px] font-medium text-white">
-                          Primary
+                          {t("admin.productForm.primaryBadge")}
                         </span>
                       ) : null}
                       <button
                         type="button"
                         {...handleProps}
-                        aria-label="Drag to reorder"
+                        aria-label={t("admin.common.dragToReorder")}
                         className="absolute inset-s-1 bottom-1 touch-none rounded-full bg-white/90 p-1 text-ink-600 shadow-sm hover:bg-white active:cursor-grabbing"
                         style={{ cursor: "grab" }}
                       >
@@ -505,7 +575,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                       </button>
                       <button
                         type="button"
-                        aria-label="Remove image"
+                        aria-label={t("admin.productForm.removeImageAria")}
                         onClick={() =>
                           setValue(
                             "images",
@@ -608,6 +678,7 @@ function OptionEditor({
   onRemove,
   error,
 }: OptionEditorProps) {
+  const { t } = useT();
   const title = useWatch({ control, name: `productOptions.${index}.title` }) ?? "";
   const isColor = isColorGroupTitle(title);
 
@@ -616,17 +687,19 @@ function OptionEditor({
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
-            {isColor ? "Colour variant" : `Option ${index + 1}`}
+            {isColor
+              ? t("admin.productForm.colourVariantLabel")
+              : t("admin.productForm.optionLabel", { n: index + 1 })}
           </p>
           {isColor ? (
             <span className="rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-medium text-bloom-700">
-              image swap on
+              {t("admin.productForm.imageSwapBadge")}
             </span>
           ) : null}
         </div>
         <button
           type="button"
-          aria-label="Remove option group"
+          aria-label={t("admin.productForm.removeOptionGroupAria")}
           onClick={onRemove}
           className="rounded-md p-1.5 text-bloom-700 hover:bg-bloom-50"
         >
@@ -636,13 +709,13 @@ function OptionEditor({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Input
-          label="Group name (EN)"
+          label={t("admin.productForm.groupNameEn")}
           placeholder="Colour"
           error={error?.title?.message}
           {...register(`productOptions.${index}.title`)}
         />
         <Input
-          label="Group name (AR)"
+          label={t("admin.productForm.groupNameAr")}
           placeholder="اللون"
           dir="rtl"
           {...register(`productOptions.${index}.title_ar`)}
@@ -651,8 +724,8 @@ function OptionEditor({
 
       <p className="mt-2 text-[11px] leading-relaxed text-ink-500">
         {isColor
-          ? "Recognised colour names (Red, Blue, Pink, Gold…) show a swatch automatically. Attach a photo to each colour to power the shop’s hover/tap image swap."
-          : "Tip: name this group “Colour” (or اللون) to turn it into a colour variant with swatches and per-colour image swap on the shop."}
+          ? t("admin.productForm.colourHint")
+          : t("admin.productForm.genericGroupHint")}
       </p>
 
       <OptionValueRows
@@ -686,6 +759,7 @@ function OptionValueRows({
   isColor,
   optionsError,
 }: OptionValueRowsProps) {
+  const { t } = useT();
   // Which value row currently has its image picker expanded.
   const [pickerOpen, setPickerOpen] = useState<number | null>(null);
   // Close the open picker when clicking anywhere outside its row.
@@ -779,7 +853,7 @@ function OptionValueRows({
   return (
     <div className="mt-3">
       <label className="mb-1.5 block text-xs font-medium text-ink-700">
-        {isColor ? "Colours" : "Values"}
+        {isColor ? t("admin.productForm.coloursLabel") : t("admin.productForm.valuesLabel")}
       </label>
 
       <div className="flex flex-col gap-2">
@@ -819,7 +893,7 @@ function OptionValueRows({
                           : "border-black/10"
                       )}
                       style={swatchBg ? { background: swatchBg } : undefined}
-                      title="Click to pick an exact colour"
+                      title={t("admin.productForm.pickColourTitle")}
                     >
                       {!swatchBg ? (
                         <span className="text-[10px] text-ink-400">?</span>
@@ -828,7 +902,9 @@ function OptionValueRows({
                         type="color"
                         value={pickerValue}
                         onChange={(e) => setColor(i, e.target.value)}
-                        aria-label={`Pick colour for ${value || "this value"}`}
+                        aria-label={t("admin.productForm.pickColourAria", {
+                          value: value || t("admin.productForm.thisValueFallback"),
+                        })}
                         className="absolute inset-0 cursor-pointer opacity-0"
                       />
                     </label>
@@ -836,10 +912,10 @@ function OptionValueRows({
                       <button
                         type="button"
                         onClick={() => setColor(i, "")}
-                        title="Use the name's colour instead"
+                        title={t("admin.productForm.autoColourTitle")}
                         className="text-[10px] font-medium text-ink-400 hover:text-ink-700"
                       >
-                        auto
+                        {t("admin.productForm.autoColourLabel")}
                       </button>
                     ) : null}
                   </div>
@@ -848,14 +924,14 @@ function OptionValueRows({
                 <input
                   value={value}
                   onChange={(e) => setEn(i, e.target.value)}
-                  placeholder={isColor ? "Red" : "Value (EN)"}
+                  placeholder={isColor ? "Red" : t("admin.productForm.valuePlaceholderEn")}
                   className="h-9 min-w-0 flex-1 rounded-lg border border-ink-200 bg-white px-2.5 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
                 />
                 <input
                   value={optionsAr[i] ?? ""}
                   onChange={(e) => setArVal(i, e.target.value)}
                   dir="rtl"
-                  placeholder={isColor ? "أحمر" : "(AR)"}
+                  placeholder={isColor ? "أحمر" : t("admin.productForm.valuePlaceholderArShort")}
                   className="h-9 w-20 shrink-0 rounded-lg border border-ink-200 bg-white px-2.5 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
                 />
 
@@ -875,18 +951,24 @@ function OptionValueRows({
                         className="h-6 w-6 rounded object-cover"
                       />
                       <span className="hidden sm:inline">
-                        {set.length > 1 ? `${set.length} photos` : "Photo"}
+                        {set.length > 1
+                          ? t("admin.productForm.photosCountLabel", { count: set.length })
+                          : t("admin.productForm.photoLabel")}
                       </span>
                     </>
                   ) : (
-                    <span>{images.length === 0 ? "No images" : "Add photos"}</span>
+                    <span>
+                      {images.length === 0
+                        ? t("admin.productForm.noImagesLabel")
+                        : t("admin.productForm.addPhotosLabel")}
+                    </span>
                   )}
                   <ChevronDown size={12} />
                 </button>
 
                 <button
                   type="button"
-                  aria-label="Remove value"
+                  aria-label={t("admin.productForm.removeValueAria")}
                   onClick={() => removeRow(i)}
                   className="shrink-0 rounded-md p-1.5 text-ink-400 hover:bg-ink-50 hover:text-bloom-700"
                 >
@@ -909,14 +991,14 @@ function OptionValueRows({
                           aria-pressed={active}
                           aria-label={
                             taken && !active
-                              ? "Already used by another colour"
+                              ? t("admin.productForm.alreadyUsedAria")
                               : active
-                                ? "Remove this photo"
-                                : "Add this photo"
+                                ? t("admin.productForm.removePhotoAria")
+                                : t("admin.productForm.addPhotoAria")
                           }
                           title={
                             taken && !active
-                              ? "Already used by another colour"
+                              ? t("admin.productForm.alreadyUsedAria")
                               : undefined
                           }
                           onClick={() => toggleImg(i, url)}
@@ -941,8 +1023,7 @@ function OptionValueRows({
                     })}
                   </div>
                   <p className="mt-1.5 text-[11px] text-ink-400">
-                    Pick one or more photos — the first (①) shows on hover. Each
-                    photo belongs to one colour only.
+                    {t("admin.productForm.pickPhotosHint")}
                   </p>
                 </div>
               ) : null}
@@ -960,12 +1041,13 @@ function OptionValueRows({
         onClick={addRow}
         className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-bloom-700 hover:text-bloom-800"
       >
-        <PlusIcon size={14} /> {isColor ? "Add colour" : "Add value"}
+        <PlusIcon size={14} />{" "}
+        {isColor ? t("admin.productForm.addColour") : t("admin.productForm.addValueLabel")}
       </button>
 
       {images.length === 0 ? (
         <p className="mt-2 text-[11px] text-ink-400">
-          Upload product images (in the Images card) to attach one to each value.
+          {t("admin.productForm.uploadImagesHint")}
         </p>
       ) : null}
     </div>

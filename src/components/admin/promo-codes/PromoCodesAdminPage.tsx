@@ -14,6 +14,7 @@ import { PencilIcon, PlusIcon, SearchIcon, TrashIcon } from "@/components/icons"
 import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/useToast";
 import { formatDate } from "@/lib/format";
+import { useT } from "@/i18n/useT";
 import type { ApiPromoCode } from "@/features/promo-codes/types";
 
 const PAGE_SIZE = 20;
@@ -26,6 +27,7 @@ export function PromoCodesAdminPage() {
 
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { t } = useT();
 
   const params = {
     page,
@@ -41,17 +43,17 @@ export function PromoCodesAdminPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => promoCodesApi.remove(id),
     onSuccess: () => {
-      toast.success({ title: "Promo code deleted" });
+      toast.success({ title: t("admin.promoCodesPage.toastDeleted") });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.promoCodes.all });
     },
-    onError: (err) => toast.fromError("Could not delete promo code", err),
+    onError: (err) => toast.fromError(t("admin.promoCodesPage.toastDeleteError"), err),
   });
 
   const columns: Column<ApiPromoCode>[] = [
     {
       key: "code",
-      header: "Code",
+      header: t("admin.promoCodesPage.columnCode"),
       cell: (p) => (
         <div>
           <p className="font-mono font-semibold uppercase tracking-wider text-ink-900">
@@ -63,7 +65,7 @@ export function PromoCodesAdminPage() {
     },
     {
       key: "discount",
-      header: "Discount",
+      header: t("admin.promoCodesPage.columnDiscount"),
       cell: (p) => (
         <span className="text-ink-700">
           {p.discountType === "PERCENTAGE"
@@ -74,33 +76,40 @@ export function PromoCodesAdminPage() {
     },
     {
       key: "scope",
-      header: "Scope",
+      header: t("admin.promoCodesPage.columnScope"),
       cell: (p) => (
         <span className="text-xs text-ink-500">
           {p.appliesTo === "ALL_PRODUCTS"
-            ? "All products"
+            ? t("admin.promoCodesPage.scopeAllProducts")
             : p.appliesTo === "SPECIFIC_PRODUCTS"
-            ? `${p.productIds?.length ?? 0} products`
-            : `${p.categoryIds?.length ?? 0} categories`}
+            ? t("admin.promoCodesPage.scopeProductsCount", {
+                count: p.productIds?.length ?? 0,
+              })
+            : t("admin.promoCodesPage.scopeCategoriesCount", {
+                count: p.categoryIds?.length ?? 0,
+              })}
         </span>
       ),
     },
     {
       key: "status",
-      header: "Status",
+      header: t("admin.promoCodesPage.columnStatus"),
       cell: (p) => {
         const now = Date.now();
         const expired = p.expiresAt && new Date(p.expiresAt).getTime() < now;
         const scheduled = p.startsAt && new Date(p.startsAt).getTime() > now;
-        if (!p.isActive) return <Badge tone="neutral">Inactive</Badge>;
-        if (expired) return <Badge tone="danger">Expired</Badge>;
-        if (scheduled) return <Badge tone="warning">Scheduled</Badge>;
-        return <Badge tone="success">Active</Badge>;
+        if (!p.isActive)
+          return <Badge tone="neutral">{t("admin.promoCodesPage.statusInactive")}</Badge>;
+        if (expired)
+          return <Badge tone="danger">{t("admin.promoCodesPage.statusExpired")}</Badge>;
+        if (scheduled)
+          return <Badge tone="warning">{t("admin.promoCodesPage.statusScheduled")}</Badge>;
+        return <Badge tone="success">{t("admin.promoCodesPage.statusActive")}</Badge>;
       },
     },
     {
       key: "expires",
-      header: "Expires",
+      header: t("admin.promoCodesPage.columnExpires"),
       cell: (p) => (
         <span className="text-xs text-ink-500">
           {p.expiresAt ? formatDate(p.expiresAt) : "—"}
@@ -109,7 +118,7 @@ export function PromoCodesAdminPage() {
     },
     {
       key: "uses",
-      header: "Uses",
+      header: t("admin.promoCodesPage.columnUses"),
       align: "right",
       cell: (p) => (
         <span className="text-ink-700">
@@ -128,7 +137,7 @@ export function PromoCodesAdminPage() {
           <Link
             href={`/admin/promo-codes/${p.id}/edit`}
             className="rounded-md p-2 text-ink-500 hover:bg-ink-50 hover:text-ink-900"
-            aria-label="Edit"
+            aria-label={t("common.edit")}
           >
             <PencilIcon size={16} />
           </Link>
@@ -136,7 +145,7 @@ export function PromoCodesAdminPage() {
             type="button"
             onClick={() => setPendingDelete(p)}
             className="rounded-md p-2 text-bloom-700 hover:bg-bloom-50"
-            aria-label="Delete"
+            aria-label={t("common.delete")}
           >
             <TrashIcon size={16} />
           </button>
@@ -148,15 +157,15 @@ export function PromoCodesAdminPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Promo codes"
-        description="Discount codes you can share with customers."
+        title={t("admin.promoCodesPage.title")}
+        description={t("admin.promoCodesPage.description")}
         actions={
           <Link
             href="/admin/promo-codes/new"
             className="inline-flex h-11 items-center gap-2 rounded-full bg-bloom-600 px-5 text-sm font-medium text-white shadow-(--shadow-bloom) transition-colors hover:bg-bloom-700"
           >
             <PlusIcon size={16} />
-            New code
+            {t("admin.promoCodesPage.newCode")}
           </Link>
         }
       />
@@ -173,7 +182,7 @@ export function PromoCodesAdminPage() {
             <div className="flex flex-1 items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5">
               <SearchIcon size={16} className="text-ink-400" />
               <input
-                placeholder="Search by code or name"
+                placeholder={t("admin.promoCodesPage.searchPlaceholder")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -195,9 +204,9 @@ export function PromoCodesAdminPage() {
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title={`Delete ${pendingDelete?.code}?`}
-        description="This permanently removes the code. Existing redemptions are kept for reporting."
-        confirmLabel="Delete"
+        title={t("admin.promoCodesPage.deleteTitle", { code: pendingDelete?.code ?? "" })}
+        description={t("admin.promoCodesPage.deleteDescription")}
+        confirmLabel={t("common.delete")}
         destructive
         loading={deleteMutation.isPending}
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}

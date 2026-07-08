@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { Spinner } from "@/components/ui/Loader";
 import { UserForm, type UserEditFormValues } from "./UserForm";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 import type {
   ApiUserUpdateInput,
   ManagerPermission,
@@ -18,6 +19,7 @@ export function UserEditPage({ id }: { id: string }) {
   const router = useRouter();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { t } = useT();
 
   const detailQuery = useQuery({
     queryKey: queryKeys.users.detail(id),
@@ -27,19 +29,19 @@ export function UserEditPage({ id }: { id: string }) {
   const updateMutation = useMutation({
     mutationFn: (payload: ApiUserUpdateInput) => usersApi.update(id, payload),
     onSuccess: (updated) => {
-      toast.success({ title: "User updated", description: updated.email });
+      toast.success({ title: t("admin.usersPage.toastUpdated"), description: updated.email });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     },
-    onError: (err) => toast.fromError("Could not update user", err),
+    onError: (err) => toast.fromError(t("admin.usersPage.toastUpdateError"), err),
   });
 
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title={detailQuery.data?.name ?? "Edit user"}
+        title={detailQuery.data?.name ?? t("admin.usersPage.editFallbackTitle")}
         crumbs={[
-          { label: "Admin", href: "/admin" },
-          { label: "Users", href: "/admin/users" },
+          { label: t("admin.common.breadcrumbHome"), href: "/admin" },
+          { label: t("admin.users"), href: "/admin/users" },
           { label: detailQuery.data?.name ?? "…" },
         ]}
       />
@@ -50,20 +52,20 @@ export function UserEditPage({ id }: { id: string }) {
         </div>
       ) : detailQuery.isError ? (
         <div className="rounded-xl border border-bloom-200 bg-bloom-50 p-6 text-bloom-700">
-          <p className="font-medium">Could not load this user.</p>
+          <p className="font-medium">{t("admin.usersPage.loadError")}</p>
           <button
             type="button"
             className="mt-2 text-sm underline"
             onClick={() => router.replace("/admin/users")}
           >
-            Back to users
+            {t("admin.usersPage.backToList")}
           </button>
         </div>
       ) : (
         <UserForm
           mode="edit"
           initial={detailQuery.data}
-          submitLabel="Save changes"
+          submitLabel={t("admin.common.saveChanges")}
           submitting={updateMutation.isPending}
           onSubmit={async (values) => {
             const v = values as UserEditFormValues;

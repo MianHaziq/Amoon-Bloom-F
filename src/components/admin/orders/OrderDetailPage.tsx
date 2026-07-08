@@ -9,15 +9,17 @@ import { Spinner } from "@/components/ui/Loader";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
   ORDER_STATUSES,
-  ORDER_STATUS_LABEL,
+  ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
 } from "./orderStatus";
 import { useToast } from "@/hooks/useToast";
+import { useT } from "@/i18n/useT";
 import type { OrderStatus } from "@/features/orders/types";
 
 export function OrderDetailPage({ id }: { id: string }) {
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { t } = useT();
 
   const orderQuery = useQuery({
     queryKey: queryKeys.orders.detail(id),
@@ -28,13 +30,15 @@ export function OrderDetailPage({ id }: { id: string }) {
     mutationFn: (status: OrderStatus) => ordersApi.updateStatus(id, status),
     onSuccess: (updated) => {
       toast.success({
-        title: "Order updated",
-        description: `Now ${ORDER_STATUS_LABEL[updated.status]}.`,
+        title: t("admin.orderDetailPage.toastUpdated"),
+        description: t("admin.orderDetailPage.toastUpdatedDescription", {
+          status: t(ORDER_STATUS_LABEL_KEY[updated.status]),
+        }),
       });
       queryClient.setQueryData(queryKeys.orders.detail(id), updated);
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
     },
-    onError: (err) => toast.fromError("Could not update status", err),
+    onError: (err) => toast.fromError(t("admin.orderDetailPage.toastUpdateError"), err),
   });
 
   if (orderQuery.isPending) {
@@ -48,7 +52,7 @@ export function OrderDetailPage({ id }: { id: string }) {
   if (orderQuery.isError || !orderQuery.data) {
     return (
       <div className="rounded-xl border border-bloom-200 bg-bloom-50 p-6 text-bloom-700">
-        Could not load this order.
+        {t("admin.orderDetailPage.loadError")}
       </div>
     );
   }
@@ -59,16 +63,18 @@ export function OrderDetailPage({ id }: { id: string }) {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title={`Order ${order.id.slice(0, 8)}`}
-        description={`Placed ${formatDate(order.createdAt)}`}
+        title={t("admin.orderDetailPage.titleTemplate", { id: order.id.slice(0, 8) })}
+        description={t("admin.orderDetailPage.descriptionTemplate", {
+          date: formatDate(order.createdAt),
+        })}
         crumbs={[
-          { label: "Admin", href: "/admin" },
-          { label: "Orders", href: "/admin/orders" },
+          { label: t("admin.common.breadcrumbHome"), href: "/admin" },
+          { label: t("admin.orders"), href: "/admin/orders" },
           { label: order.id.slice(0, 8) },
         ]}
         actions={
           <Badge tone={ORDER_STATUS_TONE[order.status]}>
-            {ORDER_STATUS_LABEL[order.status]}
+            {t(ORDER_STATUS_LABEL_KEY[order.status])}
           </Badge>
         }
       />
@@ -77,7 +83,7 @@ export function OrderDetailPage({ id }: { id: string }) {
         {/* LEFT */}
         <div className="flex flex-col gap-6">
           <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-            <h3 className="mb-4 font-display text-lg text-ink-900">Items</h3>
+            <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.orderDetailPage.itemsHeading")}</h3>
             <ul className="divide-y divide-ink-100">
               {order.items.map((item) => (
                 <li key={item.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
@@ -94,7 +100,7 @@ export function OrderDetailPage({ id }: { id: string }) {
                   <div className="flex flex-1 items-start justify-between gap-3">
                     <div>
                       <p className="font-medium text-ink-900">
-                        {item.product?.title ?? "Deleted product"}
+                        {item.product?.title ?? t("admin.orderDetailPage.deletedProductFallback")}
                       </p>
                       <p className="text-xs text-ink-500">
                         {formatCurrency(item.price)} × {item.quantity}
@@ -115,13 +121,13 @@ export function OrderDetailPage({ id }: { id: string }) {
 
             <dl className="mt-4 space-y-1 border-t border-ink-100 pt-4 text-sm">
               <div className="flex justify-between text-ink-500">
-                <dt>Subtotal</dt>
+                <dt>{t("common.subtotal")}</dt>
                 <dd>{formatCurrency(itemsTotal)}</dd>
               </div>
               {order.discountAmount && order.discountAmount > 0 ? (
                 <div className="flex justify-between text-ink-500">
                   <dt>
-                    Discount{" "}
+                    {t("common.discount")}{" "}
                     {order.appliedPromoCode ? (
                       <span className="ms-1 text-xs text-ink-400">
                         ({order.appliedPromoCode})
@@ -132,7 +138,7 @@ export function OrderDetailPage({ id }: { id: string }) {
                 </div>
               ) : null}
               <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">
-                <dt>Total</dt>
+                <dt>{t("common.total")}</dt>
                 <dd>{formatCurrency(order.totalAmount)}</dd>
               </div>
             </dl>
@@ -140,7 +146,7 @@ export function OrderDetailPage({ id }: { id: string }) {
 
           {order.orderMessage ? (
             <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-              <h3 className="mb-2 font-display text-lg text-ink-900">Order note</h3>
+              <h3 className="mb-2 font-display text-lg text-ink-900">{t("admin.orderDetailPage.orderNoteHeading")}</h3>
               <p className="text-sm italic text-ink-700">“{order.orderMessage}”</p>
             </section>
           ) : null}
@@ -149,7 +155,7 @@ export function OrderDetailPage({ id }: { id: string }) {
         {/* RIGHT */}
         <aside className="flex flex-col gap-6">
           <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-            <h3 className="mb-3 font-display text-lg text-ink-900">Update status</h3>
+            <h3 className="mb-3 font-display text-lg text-ink-900">{t("admin.orderDetailPage.updateStatusHeading")}</h3>
             <div className="grid grid-cols-2 gap-2">
               {ORDER_STATUSES.map((s) => {
                 const isCurrent = order.status === s;
@@ -166,21 +172,21 @@ export function OrderDetailPage({ id }: { id: string }) {
                         : "border-ink-200 text-ink-700 hover:bg-cream-50 disabled:opacity-50")
                     }
                   >
-                    {ORDER_STATUS_LABEL[s]}
+                    {t(ORDER_STATUS_LABEL_KEY[s])}
                   </button>
                 );
               })}
             </div>
             {order.inventoryDeducted ? (
               <p className="mt-3 text-xs text-ink-500">
-                Inventory has been deducted from stock.
+                {t("admin.orderDetailPage.inventoryDeductedNote")}
               </p>
             ) : null}
           </section>
 
           {order.shippingAddress ? (
             <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-              <h3 className="mb-3 font-display text-lg text-ink-900">Shipping</h3>
+              <h3 className="mb-3 font-display text-lg text-ink-900">{t("admin.orderDetailPage.shippingHeading")}</h3>
               <div className="text-sm text-ink-700">
                 <p className="font-medium text-ink-900">
                   {order.shippingAddress.fullName}
@@ -205,9 +211,9 @@ export function OrderDetailPage({ id }: { id: string }) {
           ) : null}
 
           <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-            <h3 className="mb-3 font-display text-lg text-ink-900">Payment</h3>
+            <h3 className="mb-3 font-display text-lg text-ink-900">{t("admin.orderDetailPage.paymentHeading")}</h3>
             <p className="text-sm text-ink-700">
-              {order.paymentMethod === "COD" ? "Cash on Delivery" : order.paymentMethod}
+              {order.paymentMethod === "COD" ? t("admin.orderDetailPage.codLabel") : order.paymentMethod}
             </p>
           </section>
         </aside>
