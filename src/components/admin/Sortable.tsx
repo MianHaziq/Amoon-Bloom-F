@@ -31,6 +31,86 @@ export interface SortableItemRenderProps {
   handleProps: Record<string, unknown>;
 }
 
+function useSortableSensors() {
+  return useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+}
+
+interface SortableProviderProps<T> {
+  items: T[];
+  getId: (item: T) => string;
+  onReorder: (next: T[]) => void;
+  children: ReactNode;
+}
+
+/**
+ * The DndContext half of the sortable pair. Renders dnd-kit's (hidden)
+ * accessibility nodes, so it must sit at a place where extra <div>s are valid —
+ * e.g. wrapping a table's container, NOT inside a <tbody>. Pair with
+ * <SortableZone> around the actual sortable items.
+ */
+export function SortableProvider<T>({
+  items,
+  getId,
+  onReorder,
+  children,
+}: SortableProviderProps<T>) {
+  const ids = items.map(getId);
+  const sensors = useSortableSensors();
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = ids.indexOf(String(active.id));
+    const newIndex = ids.indexOf(String(over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    onReorder(arrayMove(items, oldIndex, newIndex));
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      {children}
+    </DndContext>
+  );
+}
+
+interface SortableZoneProps<T> {
+  items: T[];
+  getId: (item: T) => string;
+  strategy?: "vertical" | "grid";
+  children: ReactNode;
+}
+
+/**
+ * The SortableContext half of the sortable pair. Renders NO DOM element of its
+ * own, so it is safe to place directly inside a <tbody> (or any element with
+ * restrictive allowed children). Must be a descendant of a <SortableProvider>.
+ */
+export function SortableZone<T>({
+  items,
+  getId,
+  strategy = "vertical",
+  children,
+}: SortableZoneProps<T>) {
+  const ids = items.map(getId);
+  return (
+    <SortableContext
+      items={ids}
+      strategy={
+        strategy === "grid" ? rectSortingStrategy : verticalListSortingStrategy
+      }
+    >
+      {children}
+    </SortableContext>
+  );
+}
+
 interface SortableListProps<T> {
   items: T[];
   getId: (item: T) => string;
@@ -44,10 +124,10 @@ interface SortableListProps<T> {
 }
 
 /**
- * Thin, reusable drag-and-drop reorder wrapper around dnd-kit. Handles sensors
- * (pointer + keyboard, with a small drag threshold so clicks still work),
- * collision detection, and array reordering — callers just render each item and
- * wire a drag handle via <SortableItem>.
+ * Convenience wrapper: DndContext + SortableContext together. Use for grids /
+ * flow layouts where the extra accessibility <div>s dnd-kit emits are valid
+ * siblings. For tables, use <SortableProvider> + <SortableZone> separately so
+ * those <div>s don't land inside a <tbody>.
  */
 export function SortableList<T>({
   items,
@@ -57,38 +137,13 @@ export function SortableList<T>({
   className,
   children,
 }: SortableListProps<T>) {
-  const ids = items.map(getId);
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = ids.indexOf(String(active.id));
-    const newIndex = ids.indexOf(String(over.id));
-    if (oldIndex < 0 || newIndex < 0) return;
-    onReorder(arrayMove(items, oldIndex, newIndex));
-  }
-
   const rendered = items.map((item, i) => children(item, i));
-
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={ids}
-        strategy={
-          strategy === "grid" ? rectSortingStrategy : verticalListSortingStrategy
-        }
-      >
+    <SortableProvider items={items} getId={getId} onReorder={onReorder}>
+      <SortableZone items={items} getId={getId} strategy={strategy}>
         {className ? <div className={className}>{rendered}</div> : rendered}
-      </SortableContext>
-    </DndContext>
+      </SortableZone>
+    </SortableProvider>
   );
 }
 

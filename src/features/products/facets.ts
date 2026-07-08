@@ -74,6 +74,20 @@ const SWATCHES: Record<string, string> = {
   متعدد: "conic-gradient(from 0deg,#f173a0,#eab308,#16a34a,#3b82f6,#9333ea,#f173a0)",
 };
 
+/** True when an option group's title marks it as a colour group (so the shop
+ *  renders swatches and does the colour→image swap). Shared with the admin so
+ *  the editor can show admins exactly what the storefront will do. */
+export function isColorGroupTitle(title: string): boolean {
+  return COLOR_TITLE.test(norm(title || ""));
+}
+
+/** Swatch (and pale-ring flag) for a single colour value name — same mapping the
+ *  storefront uses, so the admin preview matches the shop 1:1. */
+export function swatchForValue(value: string): { swatch?: string; needsRing: boolean } {
+  const key = norm(value || "");
+  return { swatch: SWATCHES[key], needsRing: PALE.has(key) };
+}
+
 export interface ColorFacet {
   /** The colour value exactly as stored on the product option. */
   value: string;
@@ -140,8 +154,10 @@ export interface ProductColor {
   value: string;
   swatch?: string;
   needsRing: boolean;
-  /** Product photo assigned to this colour (from ProductOption.optionImages). */
+  /** First photo for this colour — used for the card/hover swap. */
   image?: string;
+  /** All photos for this colour (from optionImageSets) — used by the PDP gallery. */
+  images?: string[];
 }
 
 /** A single product's colour variants, mapped to swatches (and per-colour
@@ -157,8 +173,24 @@ export function productColorSwatches(product: Product): ProductColor[] {
     if (!value || seen.has(value)) return;
     seen.add(value);
     const key = norm(value);
-    const image = group.optionImages?.[i]?.trim() || undefined;
-    out.push({ value, swatch: SWATCHES[key], needsRing: PALE.has(key), image });
+    // Full photo set for this value (if any), else the single legacy image.
+    const rawSet = group.optionImageSets?.[i];
+    const setImages =
+      Array.isArray(rawSet) && rawSet.length
+        ? rawSet.map((s) => s.trim()).filter(Boolean)
+        : undefined;
+    const single = group.optionImages?.[i]?.trim() || undefined;
+    const images = setImages ?? (single ? [single] : undefined);
+    const image = images?.[0];
+    // Prefer an admin-picked exact swatch colour; fall back to the name→hex map.
+    const custom = group.optionColors?.[i]?.trim() || undefined;
+    out.push({
+      value,
+      swatch: custom ?? SWATCHES[key],
+      needsRing: custom ? false : PALE.has(key),
+      image,
+      images,
+    });
   });
   return out;
 }

@@ -2,8 +2,7 @@ import { Suspense } from "react";
 import { Hero } from "@/components/home/Hero";
 import { PromoBanner } from "@/components/home/PromoBanner";
 import { CategoryShowcase } from "@/components/home/CategoryShowcase";
-import { BestSellers } from "@/components/home/BestSellers";
-import { NewArrivals } from "@/components/home/NewArrivals";
+import { HomeSections } from "@/components/home/HomeSections";
 import { TrustStrip } from "@/components/home/TrustStrip";
 import { BrandStory } from "@/components/home/BrandStory";
 import { SupportSection } from "@/components/home/SupportSection";
@@ -28,12 +27,10 @@ export default function HomePage() {
         <CategoryShowcase />
       </Suspense>
 
+      {/* Admin-managed product rails (Best sellers, New arrivals, …) in the
+          order set in the admin Sections screen. */}
       <Suspense fallback={<RowFallback cards={4} />}>
-        <BestSellers />
-      </Suspense>
-
-      <Suspense fallback={<RowFallback cards={4} />}>
-        <NewArrivals />
+        <HomeSections />
       </Suspense>
 
       <TrustStrip />

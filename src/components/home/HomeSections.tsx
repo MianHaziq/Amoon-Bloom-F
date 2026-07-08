@@ -3,22 +3,26 @@ import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
-import { getCachedSections } from "@/services/catalogCache";
+import { ProductRail } from "./ProductRail";
+import { getCachedSections, getCachedProductList } from "@/services/catalogCache";
 import { toUiProducts } from "@/features/products/adapters";
 import { ROUTES } from "@/constants/routes";
 import { getServerRegion } from "@/services/serverRegion";
 import { getServerLocale } from "@/i18n/server";
 import { localized, t } from "@/i18n";
 
-const MAX_SECTIONS = 3;
-const PRODUCTS_PER_SECTION = 4;
+// Generous cap so admins can add several rails; guards against a runaway home.
+const MAX_SECTIONS = 8;
+const PRODUCTS_PER_SECTION = 8;
 
 /**
- * Server component — pulls curated sections from `/sections` and renders
- * each one as a titled row of products. Mirrors the mobile app's stacked
- * product sections on the home tab (spec §3.5). Sections without products
- * are skipped silently. Falls back to an empty fragment when the API is
- * unreachable so the rest of the home page survives.
+ * Home product rails, driven entirely by admin-managed Sections (e.g. "Best
+ * sellers", "New arrivals"). Sections render in the admin-chosen `sortOrder`,
+ * each as a titled rail of its curated, ordered products. Category-only
+ * sections (no products) are skipped here.
+ *
+ * Fallback: if no published sections carry products yet (fresh DB), show a
+ * newest-products rail so the home never renders an empty gap.
  */
 export async function HomeSections() {
   const [region, locale] = await Promise.all([
@@ -31,18 +35,38 @@ export async function HomeSections() {
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .slice(0, MAX_SECTIONS);
 
-  if (eligible.length === 0) return null;
+  if (eligible.length === 0) {
+    const page = await getCachedProductList(region, 1, 8).catch(() => ({
+      data: [],
+      meta: {},
+    }));
+    const products = toUiProducts(page.data, { locale }).slice(0, 8);
+    return (
+      <ProductRail
+        locale={locale}
+        eyebrowKey="home.newArrivalsEyebrow"
+        titleKey="home.newArrivalsTitle"
+        descKey="home.newArrivalsDesc"
+        products={products}
+        tone="cream"
+      />
+    );
+  }
 
   return (
     <>
-      {eligible.map((section) => {
+      {eligible.map((section, idx) => {
         const products = toUiProducts(section.products, { locale }).slice(
           0,
           PRODUCTS_PER_SECTION
         );
         if (products.length === 0) return null;
         return (
-          <Section key={section.id} spacing="sm">
+          <Section
+            key={section.id}
+            spacing="md"
+            tone={idx % 2 === 0 ? "cream" : "default"}
+          >
             <Reveal>
               <SectionHeader
                 eyebrow={t(locale, "home.curatedEdit")}
@@ -61,7 +85,7 @@ export async function HomeSections() {
                 }
               />
             </Reveal>
-            <div className="mt-10">
+            <div className="mt-12">
               <ProductGrid products={products} columns={4} />
             </div>
           </Section>

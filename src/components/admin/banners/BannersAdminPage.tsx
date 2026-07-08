@@ -14,6 +14,7 @@ import { SortableList, SortableItem } from "@/components/admin/Sortable";
 import { TrashIcon, ImageIcon, GripVerticalIcon } from "@/components/icons";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { cn } from "@/lib/cn";
 import type { ApiBanner, BannerPlatform } from "@/features/banners/types";
 
@@ -51,6 +52,7 @@ export function BannersAdminPage() {
     onSuccess: () => {
       toast.success({ title: "Banner added" });
       queryClient.invalidateQueries({ queryKey: queryKeys.banners.all });
+      revalidateCatalog(["banners"]);
       setOverride(null);
     },
     onError: (err) => toast.fromError("Could not add banner", err),
@@ -62,6 +64,7 @@ export function BannersAdminPage() {
       toast.success({ title: "Banner removed" });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.banners.all });
+      revalidateCatalog(["banners"]);
       setOverride(null);
     },
     onError: (err) => toast.fromError("Could not remove banner", err),
@@ -72,6 +75,7 @@ export function BannersAdminPage() {
     onSuccess: () => {
       toast.success({ title: "Order saved" });
       queryClient.invalidateQueries({ queryKey: queryKeys.banners.all });
+      revalidateCatalog(["banners"]);
       setOverride(null);
     },
     onError: (err) => toast.fromError("Could not save order", err),

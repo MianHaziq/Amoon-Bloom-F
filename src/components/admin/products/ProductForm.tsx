@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useFieldArray,
   useForm,
@@ -8,6 +8,7 @@ import {
   useWatch,
   type Control,
   type UseFormRegister,
+  type UseFormSetValue,
   type FieldErrors,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +19,14 @@ import { queryKeys } from "@/services/queryKeys";
 import { Button, Input, Textarea } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { SortableList, SortableItem } from "@/components/admin/Sortable";
-import { PlusIcon, TrashIcon, GripVerticalIcon } from "@/components/icons";
+import {
+  PlusIcon,
+  TrashIcon,
+  GripVerticalIcon,
+  ChevronDown,
+  CloseIcon,
+} from "@/components/icons";
+import { isColorGroupTitle, swatchForValue } from "@/features/products/facets";
 import { cn } from "@/lib/cn";
 import type {
   ApiProduct,
@@ -39,8 +47,12 @@ const optionSchema = z.object({
     .array(z.string())
     .min(1, "Add at least one choice"),
   options_ar: z.array(z.string()).optional(),
-  // Optional per-choice image URLs, aligned by index with `options`.
+  // Optional per-choice image URLs (first photo of each set), aligned with `options`.
   optionImages: z.array(z.string()).optional(),
+  // Optional per-choice swatch colours (hex), aligned by index with `options`.
+  optionColors: z.array(z.string()).optional(),
+  // Optional per-choice image SETS (several photos per value), aligned with `options`.
+  optionImageSets: z.array(z.array(z.string())).optional(),
 });
 
 const productFormSchema = z.object({
@@ -55,6 +67,7 @@ const productFormSchema = z.object({
     .nullable(),
   quantity: z.number().int("Whole number").nonnegative("Stock must be ≥ 0"),
   categoryId: z.string().optional().nullable(),
+  status: z.enum(["DRAFT", "PUBLISHED"]),
   images: z.array(z.string().url()).max(10, "Up to 10 images"),
   descriptions: z.array(descriptionSchema),
   productOptions: z.array(optionSchema),
@@ -78,6 +91,7 @@ const emptyDefaults: ProductFormValues = {
   discountedPrice: null,
   quantity: 0,
   categoryId: null,
+  status: "PUBLISHED",
   images: [],
   descriptions: [],
   productOptions: [],
@@ -114,6 +128,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       discountedPrice: initial.discountedPrice,
       quantity: initial.quantity,
       categoryId: initial.categoryId,
+      status: initial.status ?? "PUBLISHED",
       images: initial.images,
       descriptions: initial.descriptions.map((d) => ({
         title: d.title ?? "",
@@ -127,6 +142,11 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         options: o.options,
         options_ar: o.options_ar,
         optionImages: o.optionImages ?? [],
+        optionColors: o.optionColors ?? [],
+        optionImageSets:
+          o.optionImageSets && o.optionImageSets.length > 0
+            ? o.optionImageSets
+            : (o.optionImages ?? []).map((u) => (u ? [u] : [])),
       })),
     });
   }, [initial, reset]);
@@ -143,24 +163,40 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       description: d.description.trim(),
       description_ar: d.description_ar?.trim() || null,
     }));
-    const cleanedOptions = values.productOptions.map((o) => {
-      // Clean choices + their images together so indices stay aligned.
-      const options: string[] = [];
-      const optionImages: string[] = [];
-      (o.options ?? []).forEach((s, i) => {
-        const v = s.trim();
-        if (!v) return;
-        options.push(v);
-        optionImages.push((o.optionImages?.[i] ?? "").trim());
-      });
-      return {
-        title: o.title.trim(),
-        title_ar: o.title_ar?.trim() || null,
-        options,
-        options_ar: (o.options_ar ?? []).map((s) => s.trim()).filter(Boolean),
-        optionImages,
-      };
-    });
+    const cleanedOptions = values.productOptions
+      .map((o) => {
+        // Keep each value's EN label, AR label, and photo on the same index so
+        // the shop can read them index-aligned. Drop rows with an empty EN label.
+        const options: string[] = [];
+        const options_ar: string[] = [];
+        const optionImages: string[] = [];
+        const optionColors: string[] = [];
+        const optionImageSets: string[][] = [];
+        (o.options ?? []).forEach((s, i) => {
+          const v = s.trim();
+          if (!v) return;
+          options.push(v);
+          options_ar.push((o.options_ar?.[i] ?? "").trim());
+          const set = (o.optionImageSets?.[i] ?? [])
+            .map((u) => (u ?? "").trim())
+            .filter(Boolean);
+          optionImageSets.push(set);
+          // Keep the single per-value image = first of the set (mobile/hover).
+          optionImages.push(set[0] ?? (o.optionImages?.[i] ?? "").trim());
+          optionColors.push((o.optionColors?.[i] ?? "").trim());
+        });
+        return {
+          title: o.title.trim(),
+          title_ar: o.title_ar?.trim() || null,
+          options,
+          options_ar,
+          optionImages,
+          optionColors,
+          optionImageSets,
+        };
+      })
+      // Drop entirely-empty groups (a title with no usable values).
+      .filter((o) => o.options.length > 0);
 
     await onSubmit({
       title: values.title.trim(),
@@ -174,6 +210,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           : Number(values.discountedPrice),
       quantity: values.quantity,
       categoryId: values.categoryId || null,
+      status: values.status,
       images: values.images,
       descriptions: cleanedDescriptions,
       productOptions: cleanedOptions,
@@ -319,30 +356,59 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         </Card>
 
         <Card
-          title="Options"
+          title="Variants & options"
+          description="Colour, size, wrap, greeting card… For colour, attach a photo to each value and the shop swaps the main image when a shopper hovers or taps that colour."
           action={
-            <button
-              type="button"
-              onClick={() =>
-                optionsArray.append({
-                  title: "",
-                  title_ar: "",
-                  options: [],
-                  options_ar: [],
-                })
-              }
-              className="inline-flex items-center gap-1 text-sm font-medium text-bloom-700 hover:text-bloom-800"
-            >
-              <PlusIcon size={14} />
-              Add option
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  optionsArray.append({
+                    title: "Colour",
+                    title_ar: "اللون",
+                    options: [""],
+                    options_ar: [""],
+                    optionImages: [""],
+                    optionColors: [""],
+                  })
+                }
+                className="inline-flex items-center gap-1 text-sm font-medium text-bloom-700 hover:text-bloom-800"
+              >
+                <PlusIcon size={14} />
+                Add colour
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  optionsArray.append({
+                    title: "",
+                    title_ar: "",
+                    options: [""],
+                    options_ar: [""],
+                    optionImages: [""],
+                    optionColors: [""],
+                  })
+                }
+                className="inline-flex items-center gap-1 text-sm font-medium text-ink-600 hover:text-ink-900"
+              >
+                <PlusIcon size={14} />
+                Add option
+              </button>
+            </div>
           }
         >
           {optionsArray.fields.length === 0 ? (
-            <p className="text-sm text-ink-500">
-              Add option groups for variants like Size, Wrap colour, or
-              Greeting card.
-            </p>
+            <div className="rounded-xl border border-dashed border-ink-200 bg-cream-50 p-5 text-center">
+              <p className="text-sm font-medium text-ink-700">
+                No variants yet
+              </p>
+              <p className="mx-auto mt-1 max-w-md text-xs text-ink-500">
+                Tap <span className="font-medium text-bloom-700">Add colour</span>{" "}
+                to offer colour choices with a photo per colour, or{" "}
+                <span className="font-medium text-ink-700">Add option</span> for
+                sizes, wraps, greeting cards, etc.
+              </p>
+            </div>
           ) : null}
           <div className="flex flex-col gap-4">
             {optionsArray.fields.map((field, index) => (
@@ -351,6 +417,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                 index={index}
                 control={control}
                 register={register}
+                setValue={setValue}
                 images={images ?? []}
                 onRemove={() => optionsArray.remove(index)}
                 error={errors.productOptions?.[index]}
@@ -362,6 +429,19 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
 
       {/* SIDEBAR COLUMN */}
       <aside className="flex flex-col gap-6">
+        <Card
+          title="Visibility"
+          description="Published products are live on the shop. Draft hides them from customers."
+        >
+          <select
+            {...register("status")}
+            className="block w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+          >
+            <option value="PUBLISHED">Published — visible on the shop</option>
+            <option value="DRAFT">Draft — hidden from customers</option>
+          </select>
+        </Card>
+
         <Card title="Category">
           <select
             {...register("categoryId", {
@@ -454,8 +534,14 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                   value={null}
                   path="products"
                   label=""
+                  multiple
                   onChange={(url) => {
                     if (url) field.onChange([...(field.value ?? []), url]);
+                  }}
+                  onUploadMany={(urls) => {
+                    // Append up to the 10-image cap, in the order chosen.
+                    const current = field.value ?? [];
+                    field.onChange([...current, ...urls].slice(0, 10));
                   }}
                 />
               )}
@@ -497,207 +583,391 @@ function Card({ title, description, action, children }: CardProps) {
   );
 }
 
-// --- Option editor (chip-style choices) ---
+// --- Variant / option editor --------------------------------------------
+// A group (e.g. "Colour") holds one or more values. Each value has an English +
+// Arabic label and an optional product photo. When the group is a colour group,
+// the shop shows a swatch per value AND swaps the main product image to that
+// value's photo on hover/tap — so this editor mirrors the storefront 1:1.
 
 interface OptionEditorProps {
   index: number;
   control: Control<ProductFormValues>;
   register: UseFormRegister<ProductFormValues>;
+  setValue: UseFormSetValue<ProductFormValues>;
   images: string[];
   onRemove: () => void;
   error?: NonNullable<FieldErrors<ProductFormValues>["productOptions"]>[number];
 }
 
-function OptionEditor({ index, control, register, images, onRemove, error }: OptionEditorProps) {
+function OptionEditor({
+  index,
+  control,
+  register,
+  setValue,
+  images,
+  onRemove,
+  error,
+}: OptionEditorProps) {
+  const title = useWatch({ control, name: `productOptions.${index}.title` }) ?? "";
+  const isColor = isColorGroupTitle(title);
+
   return (
     <div className="rounded-xl border border-ink-100 bg-cream-50 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
-          Option {index + 1}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
+            {isColor ? "Colour variant" : `Option ${index + 1}`}
+          </p>
+          {isColor ? (
+            <span className="rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-medium text-bloom-700">
+              image swap on
+            </span>
+          ) : null}
+        </div>
         <button
           type="button"
-          aria-label="Remove option"
+          aria-label="Remove option group"
           onClick={onRemove}
           className="rounded-md p-1.5 text-bloom-700 hover:bg-bloom-50"
         >
           <TrashIcon size={14} />
         </button>
       </div>
+
       <div className="grid gap-3 sm:grid-cols-2">
         <Input
-          label="Title (EN)"
-          placeholder="Wrap colour"
+          label="Group name (EN)"
+          placeholder="Colour"
           error={error?.title?.message}
           {...register(`productOptions.${index}.title`)}
         />
         <Input
-          label="Title (AR)"
+          label="Group name (AR)"
+          placeholder="اللون"
           dir="rtl"
           {...register(`productOptions.${index}.title_ar`)}
         />
       </div>
-      <Controller
-        control={control}
-        name={`productOptions.${index}.options`}
-        render={({ field }) => (
-          <ChipsInput
-            label="Choices (EN)"
-            value={field.value ?? []}
-            onChange={field.onChange}
-            error={error?.options?.message}
-          />
-        )}
-      />
-      <Controller
-        control={control}
-        name={`productOptions.${index}.options_ar`}
-        render={({ field }) => (
-          <ChipsInput
-            label="Choices (AR)"
-            dir="rtl"
-            value={field.value ?? []}
-            onChange={field.onChange}
-          />
-        )}
-      />
 
-      {images.length > 0 && (
-        <OptionImagePicker index={index} control={control} images={images} />
-      )}
+      <p className="mt-2 text-[11px] leading-relaxed text-ink-500">
+        {isColor
+          ? "Recognised colour names (Red, Blue, Pink, Gold…) show a swatch automatically. Attach a photo to each colour to power the shop’s hover/tap image swap."
+          : "Tip: name this group “Colour” (or اللون) to turn it into a colour variant with swatches and per-colour image swap on the shop."}
+      </p>
+
+      <OptionValueRows
+        index={index}
+        control={control}
+        setValue={setValue}
+        images={images}
+        isColor={isColor}
+        optionsError={error?.options?.message}
+      />
     </div>
   );
 }
 
-// --- Per-choice image assignment (e.g. Blue -> a specific product photo) ---
+// --- Per-value rows: label (EN/AR) + swatch + attached photo -------------
 
-interface OptionImagePickerProps {
+interface OptionValueRowsProps {
   index: number;
   control: Control<ProductFormValues>;
+  setValue: UseFormSetValue<ProductFormValues>;
   images: string[];
+  isColor: boolean;
+  optionsError?: string;
 }
 
-function OptionImagePicker({ index, control, images }: OptionImagePickerProps) {
-  const choices =
+function OptionValueRows({
+  index,
+  control,
+  setValue,
+  images,
+  isColor,
+  optionsError,
+}: OptionValueRowsProps) {
+  // Which value row currently has its image picker expanded.
+  const [pickerOpen, setPickerOpen] = useState<number | null>(null);
+  // Close the open picker when clicking anywhere outside its row.
+  const openRowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (pickerOpen === null) return;
+    const onDown = (e: MouseEvent) => {
+      if (openRowRef.current && !openRowRef.current.contains(e.target as Node)) {
+        setPickerOpen(null);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [pickerOpen]);
+
+  const options =
     useWatch({ control, name: `productOptions.${index}.options` }) ?? [];
-  if (choices.length === 0) return null;
+  const optionsAr =
+    useWatch({ control, name: `productOptions.${index}.options_ar` }) ?? [];
+  const optionColors =
+    useWatch({ control, name: `productOptions.${index}.optionColors` }) ?? [];
+  const optionImageSets = (useWatch({
+    control,
+    name: `productOptions.${index}.optionImageSets`,
+  }) ?? []) as string[][];
 
-  return (
-    <Controller
-      control={control}
-      name={`productOptions.${index}.optionImages`}
-      render={({ field }) => {
-        const current: string[] = field.value ?? [];
-        const setAt = (i: number, url: string) => {
-          const next = [...current];
-          while (next.length < choices.length) next.push("");
-          next[i] = next[i] === url ? "" : url; // toggle
-          field.onChange(next);
-        };
-        return (
-          <div className="mt-3">
-            <label className="mb-1.5 block text-xs font-medium text-ink-700">
-              Image per choice (optional)
-            </label>
-            <div className="flex flex-col gap-2">
-              {choices.map((choice, i) => (
-                <div
-                  key={`${choice}-${i}`}
-                  className="flex items-center gap-3 rounded-lg border border-ink-100 bg-white p-2"
-                >
-                  <span className="w-24 shrink-0 truncate text-xs font-medium text-ink-800">
-                    {choice || `Choice ${i + 1}`}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {images.map((url) => {
-                      const active = current[i] === url;
-                      return (
-                        <button
-                          key={url}
-                          type="button"
-                          aria-label={`Use image for ${choice}`}
-                          aria-pressed={active}
-                          onClick={() => setAt(i, url)}
-                          className={cn(
-                            "relative h-11 w-11 overflow-hidden rounded-md ring-offset-1",
-                            active
-                              ? "ring-2 ring-bloom-500"
-                              : "ring-1 ring-ink-200 hover:ring-ink-400"
-                          )}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={url}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      }}
-    />
-  );
-}
+  const count = options.length;
 
-interface ChipsInputProps {
-  label: string;
-  value: string[];
-  onChange: (next: string[]) => void;
-  error?: string;
-  dir?: "ltr" | "rtl";
-}
-
-function ChipsInput({ label, value, onChange, error, dir = "ltr" }: ChipsInputProps) {
-  const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      const text = (e.currentTarget.value || "").trim();
-      if (!text) return;
-      onChange([...value, text]);
-      e.currentTarget.value = "";
-    }
+  // Persist all parallel arrays together so a value's EN label, AR label, photo
+  // set, and swatch colour always share the same index (the shop reads them
+  // aligned). `optionImages` is derived = first photo of each set, which the
+  // mobile app and card/hover swap read.
+  const commit = (
+    opts: string[],
+    ars: string[],
+    cols: string[],
+    sets: string[][]
+  ) => {
+    const imgs = sets.map((set) => set?.[0] ?? "");
+    setValue(`productOptions.${index}.options`, opts, { shouldDirty: true });
+    setValue(`productOptions.${index}.options_ar`, ars, { shouldDirty: true });
+    setValue(`productOptions.${index}.optionColors`, cols, { shouldDirty: true });
+    setValue(`productOptions.${index}.optionImageSets`, sets, { shouldDirty: true });
+    setValue(`productOptions.${index}.optionImages`, imgs, { shouldDirty: true });
+  };
+  const padded = () => {
+    const ars = [...optionsAr];
+    const cols = [...optionColors];
+    const sets = optionImageSets.map((s) => (Array.isArray(s) ? [...s] : []));
+    while (ars.length < count) ars.push("");
+    while (cols.length < count) cols.push("");
+    while (sets.length < count) sets.push([]);
+    return { opts: [...options], ars, cols, sets };
+  };
+  const setEn = (i: number, v: string) => {
+    const s = padded();
+    s.opts[i] = v;
+    commit(s.opts, s.ars, s.cols, s.sets);
+  };
+  const setArVal = (i: number, v: string) => {
+    const s = padded();
+    s.ars[i] = v;
+    commit(s.opts, s.ars, s.cols, s.sets);
+  };
+  const toggleImg = (i: number, url: string) => {
+    const s = padded();
+    const set = s.sets[i];
+    s.sets[i] = set.includes(url) ? set.filter((u) => u !== url) : [...set, url];
+    commit(s.opts, s.ars, s.cols, s.sets);
+  };
+  const setColor = (i: number, hex: string) => {
+    const s = padded();
+    s.cols[i] = hex;
+    commit(s.opts, s.ars, s.cols, s.sets);
+  };
+  const addRow = () => {
+    const s = padded();
+    commit([...s.opts, ""], [...s.ars, ""], [...s.cols, ""], [...s.sets, []]);
+  };
+  const removeRow = (i: number) => {
+    const s = padded();
+    commit(
+      s.opts.filter((_, j) => j !== i),
+      s.ars.filter((_, j) => j !== i),
+      s.cols.filter((_, j) => j !== i),
+      s.sets.filter((_, j) => j !== i)
+    );
+    setPickerOpen(null);
   };
 
   return (
     <div className="mt-3">
       <label className="mb-1.5 block text-xs font-medium text-ink-700">
-        {label}
+        {isColor ? "Colours" : "Values"}
       </label>
-      <div
-        dir={dir}
-        className="flex min-h-11 flex-wrap items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 focus-within:border-bloom-500 focus-within:ring-2 focus-within:ring-bloom-500/20"
-      >
-        {value.map((v, i) => (
-          <span
-            key={`${v}-${i}`}
-            className="inline-flex items-center gap-1 rounded-md bg-cream-100 px-2 py-1 text-xs text-ink-800"
-          >
-            {v}
-            <button
-              type="button"
-              aria-label={`Remove ${v}`}
-              onClick={() => onChange(value.filter((_, j) => j !== i))}
-              className="text-ink-500 hover:text-ink-900"
+
+      <div className="flex flex-col gap-2">
+        {options.map((value, i) => {
+          const nameSwatch = isColor ? swatchForValue(value) : null;
+          const custom = (optionColors[i] || "").trim();
+          // What the swatch shows: an explicit picked colour wins over the
+          // name-derived one; may still be undefined for an unknown name.
+          const swatchBg = custom || nameSwatch?.swatch;
+          // <input type=color> needs a plain #rrggbb; gradients/unknowns fall back.
+          const hexRe = /^#([0-9a-f]{6})$/i;
+          const pickerValue = hexRe.test(custom)
+            ? custom
+            : hexRe.test(nameSwatch?.swatch ?? "")
+              ? (nameSwatch!.swatch as string)
+              : "#dda0dd";
+          const set = optionImageSets[i] ?? [];
+          const firstImg = set[0] || "";
+          // Photos already used by ANOTHER value in this group can't be reused.
+          const takenElsewhere = new Set(
+            optionImageSets.flatMap((s, j) => (j === i ? [] : s ?? []))
+          );
+          return (
+            <div
+              key={i}
+              ref={pickerOpen === i ? openRowRef : undefined}
+              className="rounded-lg border border-ink-100 bg-white p-2"
             >
-              ×
-            </button>
-          </span>
-        ))}
-        <input
-          type="text"
-          dir={dir}
-          onKeyDown={handleKey}
-          placeholder="Type and press Enter"
-          className="flex-1 min-w-[100px] bg-transparent py-1 text-sm placeholder:text-ink-400 focus:outline-none"
-        />
+              <div className="flex items-center gap-2">
+                {isColor ? (
+                  <div className="flex shrink-0 items-center gap-1">
+                    <label
+                      className={cn(
+                        "relative flex h-7 w-7 cursor-pointer items-center justify-center overflow-hidden rounded-full border",
+                        nameSwatch?.needsRing && !custom
+                          ? "border-ink-300"
+                          : "border-black/10"
+                      )}
+                      style={swatchBg ? { background: swatchBg } : undefined}
+                      title="Click to pick an exact colour"
+                    >
+                      {!swatchBg ? (
+                        <span className="text-[10px] text-ink-400">?</span>
+                      ) : null}
+                      <input
+                        type="color"
+                        value={pickerValue}
+                        onChange={(e) => setColor(i, e.target.value)}
+                        aria-label={`Pick colour for ${value || "this value"}`}
+                        className="absolute inset-0 cursor-pointer opacity-0"
+                      />
+                    </label>
+                    {custom ? (
+                      <button
+                        type="button"
+                        onClick={() => setColor(i, "")}
+                        title="Use the name's colour instead"
+                        className="text-[10px] font-medium text-ink-400 hover:text-ink-700"
+                      >
+                        auto
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <input
+                  value={value}
+                  onChange={(e) => setEn(i, e.target.value)}
+                  placeholder={isColor ? "Red" : "Value (EN)"}
+                  className="h-9 min-w-0 flex-1 rounded-lg border border-ink-200 bg-white px-2.5 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                />
+                <input
+                  value={optionsAr[i] ?? ""}
+                  onChange={(e) => setArVal(i, e.target.value)}
+                  dir="rtl"
+                  placeholder={isColor ? "أحمر" : "(AR)"}
+                  className="h-9 w-20 shrink-0 rounded-lg border border-ink-200 bg-white px-2.5 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(pickerOpen === i ? null : i)}
+                  disabled={images.length === 0}
+                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-2 text-xs text-ink-700 hover:border-ink-400 disabled:opacity-50"
+                  aria-expanded={pickerOpen === i}
+                >
+                  {firstImg ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={firstImg}
+                        alt=""
+                        className="h-6 w-6 rounded object-cover"
+                      />
+                      <span className="hidden sm:inline">
+                        {set.length > 1 ? `${set.length} photos` : "Photo"}
+                      </span>
+                    </>
+                  ) : (
+                    <span>{images.length === 0 ? "No images" : "Add photos"}</span>
+                  )}
+                  <ChevronDown size={12} />
+                </button>
+
+                <button
+                  type="button"
+                  aria-label="Remove value"
+                  onClick={() => removeRow(i)}
+                  className="shrink-0 rounded-md p-1.5 text-ink-400 hover:bg-ink-50 hover:text-bloom-700"
+                >
+                  <CloseIcon size={14} />
+                </button>
+              </div>
+
+              {pickerOpen === i && images.length > 0 ? (
+                <div className="mt-2 border-t border-ink-100 pt-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {images.map((url) => {
+                      const pos = set.indexOf(url);
+                      const active = pos !== -1;
+                      const taken = takenElsewhere.has(url);
+                      return (
+                        <button
+                          key={url}
+                          type="button"
+                          disabled={taken && !active}
+                          aria-pressed={active}
+                          aria-label={
+                            taken && !active
+                              ? "Already used by another colour"
+                              : active
+                                ? "Remove this photo"
+                                : "Add this photo"
+                          }
+                          title={
+                            taken && !active
+                              ? "Already used by another colour"
+                              : undefined
+                          }
+                          onClick={() => toggleImg(i, url)}
+                          className={cn(
+                            "relative h-12 w-12 overflow-hidden rounded-md ring-offset-1",
+                            active
+                              ? "ring-2 ring-bloom-500"
+                              : "ring-1 ring-ink-200 hover:ring-ink-400",
+                            taken && !active &&
+                              "cursor-not-allowed opacity-40 grayscale hover:ring-ink-200"
+                          )}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt="" className="h-full w-full object-cover" />
+                          {active ? (
+                            <span className="absolute inset-e-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-bloom-500 text-[9px] font-semibold text-white">
+                              {pos + 1}
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-ink-400">
+                    Pick one or more photos — the first (①) shows on hover. Each
+                    photo belongs to one colour only.
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
-      {error ? <p className="mt-1 text-xs text-bloom-700">{error}</p> : null}
+
+      {optionsError ? (
+        <p className="mt-1 text-xs text-bloom-700">{optionsError}</p>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={addRow}
+        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-bloom-700 hover:text-bloom-800"
+      >
+        <PlusIcon size={14} /> {isColor ? "Add colour" : "Add value"}
+      </button>
+
+      {images.length === 0 ? (
+        <p className="mt-2 text-[11px] text-ink-400">
+          Upload product images (in the Images card) to attach one to each value.
+        </p>
+      ) : null}
     </div>
   );
 }

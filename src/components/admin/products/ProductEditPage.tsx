@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { productsApi } from "@/features/products/api/products.api";
 import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Spinner } from "@/components/ui/Loader";
 import { ProductForm } from "./ProductForm";
@@ -30,6 +31,7 @@ export function ProductEditPage({ id }: ProductEditPageProps) {
       toast.success({ title: "Product updated", description: updated.title });
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
       queryClient.setQueryData(queryKeys.products.detail(id), updated);
+      revalidateCatalog();
     },
     onError: (err) => toast.fromError("Could not update product", err),
   });

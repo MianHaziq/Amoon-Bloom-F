@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sectionsApi } from "@/features/sections/api/sections.api";
 import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
@@ -28,9 +29,29 @@ export function SectionsAdminPage() {
       toast.success({ title: "Section deleted" });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.sections.all });
+      revalidateCatalog(["sections"]);
     },
     onError: (err) => toast.fromError("Could not delete section", err),
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: (items: { id: string; sortOrder: number }[]) =>
+      sectionsApi.reorder(items),
+    onSuccess: () => {
+      toast.success({ title: "Order saved" });
+      revalidateCatalog(["sections"]);
+    },
+    onError: (err) => {
+      toast.fromError("Could not save order", err);
+      queryClient.invalidateQueries({ queryKey: queryKeys.sections.all });
+    },
+  });
+
+  const handleReorder = (rows: ApiSection[]) => {
+    const key = queryKeys.sections.list();
+    queryClient.setQueryData(key, rows);
+    reorderMutation.mutate(rows.map((s, i) => ({ id: s.id, sortOrder: i })));
+  };
 
   const columns: Column<ApiSection>[] = [
     {
@@ -101,7 +122,7 @@ export function SectionsAdminPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Sections"
-        description="Curated rails of products and categories surfaced on the homepage."
+        description="Curated rails of products and categories surfaced on the homepage. Drag to set their order."
         actions={
           <Link
             href="/admin/sections/new"
@@ -122,6 +143,8 @@ export function SectionsAdminPage() {
         error={query.error}
         emptyTitle="No sections yet"
         emptyDescription="Create a section to feature picks on the homepage."
+        sortable
+        onReorder={handleReorder}
       />
 
       <ConfirmDialog

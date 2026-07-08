@@ -17,15 +17,18 @@ interface ProductGalleryProps {
 const ZOOM = 2; // magnification on hover (Amazon-style)
 
 export function ProductGallery({ images, title }: ProductGalleryProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
   // Cursor-following zoom (desktop hover only; touch never fires these).
   const [zoom, setZoom] = useState({ on: false, x: 50, y: 50 });
   const { t } = useT();
-  // A colour selection (from the option picker) overrides the shown image.
-  const { activeUrl, setActiveUrl } = usePdpImage();
-  const active = activeUrl
-    ? { url: activeUrl, alt: title }
-    : images[activeIndex] ?? images[0];
+  // A colour selection (from the option picker) can replace the gallery with
+  // that colour's photo set; `activeUrl` is the currently-shown main image.
+  const { activeUrl, setActiveUrl, activeImages } = usePdpImage();
+  const gallery =
+    activeImages && activeImages.length > 0
+      ? activeImages.map((url) => ({ url, alt: title }))
+      : images;
+  const mainUrl = activeUrl ?? gallery[0]?.url;
+  const active = mainUrl ? { url: mainUrl, alt: title } : undefined;
 
   if (!active) {
     return (
@@ -80,20 +83,14 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
         </span>
       </div>
 
-      {images.length > 1 && (
+      {gallery.length > 1 && (
         <div className="grid grid-cols-4 gap-3">
-          {images.map((img, i) => (
+          {gallery.map((img, i) => (
             <button
               key={img.url}
               type="button"
-              onClick={() => {
-                setActiveIndex(i);
-                setActiveUrl(null);
-              }}
-              onMouseEnter={() => {
-                setActiveIndex(i);
-                setActiveUrl(null);
-              }}
+              onClick={() => setActiveUrl(img.url)}
+              onMouseEnter={() => setActiveUrl(img.url)}
               className={cn(
                 "relative aspect-square overflow-hidden rounded-xl bg-cream-100 transition-all duration-200 active:scale-95",
                 "ring-offset-2 ring-offset-cream-50",
@@ -103,7 +100,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
               )}
               aria-label={t("product.viewImage", {
                 n: i + 1,
-                total: images.length,
+                total: gallery.length,
               })}
             >
               <Image

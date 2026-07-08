@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Spinner } from "@/components/ui/Loader";
 import { CategoryForm } from "./CategoryForm";
@@ -25,6 +26,7 @@ export function CategoryEditPage({ id }: { id: string }) {
     onSuccess: (updated) => {
       toast.success({ title: "Category updated", description: updated.title });
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      revalidateCatalog();
     },
     onError: (err) => toast.fromError("Could not update category", err),
   });

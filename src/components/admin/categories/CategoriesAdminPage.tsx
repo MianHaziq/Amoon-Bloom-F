@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
@@ -28,6 +29,7 @@ export function CategoriesAdminPage() {
       toast.success({ title: "Category deleted" });
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      revalidateCatalog();
     },
     onError: (err) => toast.fromError("Could not delete category", err),
   });

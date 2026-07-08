@@ -24,7 +24,7 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
   const dispatch = useAppDispatch();
   const { add } = useCart();
   const { t } = useT();
-  const { setActiveUrl } = usePdpImage();
+  const { setActiveUrl, setActiveImages } = usePdpImage();
   const wishlisted = useAppSelector((s) =>
     s.wishlist.items.some((i) => i.productId === product.id)
   );
@@ -76,9 +76,18 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
               value={selected[opt.id] ?? null}
               onChange={(v) => {
                 setSelected((prev) => ({ ...prev, [opt.id]: v }));
-                // If this value has a mapped image, swap the gallery to it.
-                const img = opt.optionImages?.[opt.options.indexOf(v)]?.trim();
-                if (img) setActiveUrl(img);
+                // If this value has mapped photos, swap the gallery to its set
+                // (first photo becomes the main image).
+                const idx = opt.options.indexOf(v);
+                const set = (opt.optionImageSets?.[idx] ?? [])
+                  .map((u) => u.trim())
+                  .filter(Boolean);
+                const single = opt.optionImages?.[idx]?.trim();
+                const gallery = set.length > 0 ? set : single ? [single] : [];
+                if (gallery.length > 0) {
+                  setActiveImages(gallery);
+                  setActiveUrl(gallery[0]);
+                }
               }}
             />
           ))}

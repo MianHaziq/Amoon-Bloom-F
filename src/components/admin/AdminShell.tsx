@@ -102,7 +102,8 @@ export function AdminShell({ children, title }: AdminShellProps) {
 
   return (
     <div className="flex min-h-screen bg-cream-50 font-sans">
-      <div className="hidden lg:flex">
+      {/* Sticky so the nav stays put while the page content scrolls. */}
+      <div className="sticky top-0 hidden h-screen shrink-0 lg:flex">
         <AdminSidebar />
       </div>
 

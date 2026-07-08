@@ -40,6 +40,10 @@ const adaptOption = (
   // Images align by index with the canonical `options` order, which also holds
   // for `options_ar` (same order), so no re-indexing is needed per locale.
   optionImages: o.optionImages ?? [],
+  // Swatch colours align by the same canonical index.
+  optionColors: o.optionColors ?? [],
+  // Per-value image sets align by the same canonical index.
+  optionImageSets: o.optionImageSets ?? [],
 });
 
 export interface ToUiProductOptions {

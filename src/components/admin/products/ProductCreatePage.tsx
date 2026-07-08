@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { productsApi } from "@/features/products/api/products.api";
 import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { ProductForm } from "./ProductForm";
 import { useToast } from "@/hooks/useToast";
@@ -19,6 +20,7 @@ export function ProductCreatePage() {
       toast.success({ title: "Product created", description: created.title });
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      revalidateCatalog();
       router.push("/admin/products");
     },
     onError: (err) => toast.fromError("Could not create product", err),

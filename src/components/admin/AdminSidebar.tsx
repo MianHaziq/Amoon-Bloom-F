@@ -50,7 +50,7 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-full w-64 shrink-0 flex-col border-e border-ink-100 bg-cream-50",
+        "flex h-full w-64 shrink-0 flex-col overflow-y-auto border-e border-ink-100 bg-cream-50",
         className
       )}
       aria-label="Admin navigation"

@@ -35,4 +35,9 @@ export const sectionsApi = {
   async remove(id: string): Promise<void> {
     await http.delete(`/sections/${id}`);
   },
+
+  /** Persist admin drag-and-drop order of sections. */
+  async reorder(items: { id: string; sortOrder: number }[]): Promise<void> {
+    await http.patch("/sections/order", { items });
+  },
 };

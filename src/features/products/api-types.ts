@@ -19,8 +19,12 @@ export interface ApiProductOptionGroup {
   title_ar: string | null;
   options: string[];
   options_ar: string[];
-  /** Optional per-value image URLs, aligned by index with `options`. */
+  /** Optional per-value image URLs (first photo of each set), aligned with `options`. */
   optionImages?: string[];
+  /** Optional per-value swatch colours (hex), aligned by index with `options`. */
+  optionColors?: string[];
+  /** Optional per-value image SETS (array-of-arrays), aligned with `options`. */
+  optionImageSets?: string[][];
 }
 
 export interface ApiProductCategoryRef {
@@ -40,6 +44,8 @@ export interface ApiProduct {
   quantity: number;
   categoryId: string | null;
   category?: ApiProductCategoryRef | null;
+  /** Publish state. Storefront only ever sees PUBLISHED; staff reads include DRAFT. */
+  status?: "DRAFT" | "PUBLISHED";
   image: string | null;
   images: string[];
   descriptions: ApiProductDescriptionBlock[];
@@ -60,8 +66,12 @@ export interface ApiProductOptionInput {
   title_ar?: string | null;
   options: string[];
   options_ar?: string[];
-  /** Optional per-value image URLs, aligned by index with `options`. */
+  /** Optional per-value image URLs (first photo of each set), aligned with `options`. */
   optionImages?: string[];
+  /** Optional per-value swatch colours (hex), aligned by index with `options`. */
+  optionColors?: string[];
+  /** Optional per-value image SETS (array-of-arrays), aligned with `options`. */
+  optionImageSets?: string[][];
 }
 
 export interface ApiProductCreateInput {
@@ -76,6 +86,8 @@ export interface ApiProductCreateInput {
   descriptions?: ApiProductDescriptionInput[];
   images?: string[];
   productOptions?: ApiProductOptionInput[];
+  /** Publish state. Defaults to PUBLISHED from the admin form. */
+  status?: "DRAFT" | "PUBLISHED";
 }
 
 export type ApiProductUpdateInput = Partial<ApiProductCreateInput>;

@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { formatCurrency } from "@/lib/format";
 import { useToast } from "@/hooks/useToast";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import type { ApiProduct } from "@/features/products/api-types";
 import type { PaginatedResponse } from "@/types";
 
@@ -41,7 +42,10 @@ export function ProductsAdminPage() {
   const reorderMutation = useMutation({
     mutationFn: (items: { id: string; sortOrder: number }[]) =>
       productsApi.reorder(items),
-    onSuccess: () => toast.success({ title: "Order saved" }),
+    onSuccess: () => {
+      toast.success({ title: "Order saved" });
+      revalidateCatalog(["products", "sections"]);
+    },
     onError: (err) => {
       toast.fromError("Could not save order", err);
       // Roll back to the server's order on failure.
@@ -66,6 +70,7 @@ export function ProductsAdminPage() {
       setPendingDelete(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      revalidateCatalog();
     },
     onError: (err) => {
       toast.fromError("Could not delete product", err);

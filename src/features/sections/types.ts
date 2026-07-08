@@ -27,6 +27,8 @@ export interface ApiSectionCreateInput {
   productIds?: string[];
   categoryIds?: string[];
   sortOrder?: number;
+  /** Publish state. Defaults to PUBLISHED from the admin form. */
+  status?: "DRAFT" | "PUBLISHED";
 }
 
 export type ApiSectionUpdateInput = Partial<ApiSectionCreateInput>;

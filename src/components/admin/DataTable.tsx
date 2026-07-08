@@ -6,7 +6,11 @@ import { cn } from "@/lib/cn";
 import { Skeleton } from "@/components/ui/Loader";
 import { staggerContainer, subtleRise } from "@/lib/motion";
 import { ApiError } from "@/services/http";
-import { SortableList, SortableItem } from "@/components/admin/Sortable";
+import {
+  SortableProvider,
+  SortableZone,
+  SortableItem,
+} from "@/components/admin/Sortable";
 import { GripVerticalIcon } from "@/components/icons";
 
 export interface Column<T> {
@@ -53,7 +57,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   const dragEnabled = Boolean(sortable && onReorder);
   const colCount = columns.length + (dragEnabled ? 1 : 0);
-  return (
+  const table = (
     <div className="rounded-2xl border border-ink-100 bg-white">
       {toolbar ? (
         <div className="flex flex-wrap items-center gap-2 border-b border-ink-100 px-4 py-3 sm:px-5">
@@ -122,13 +126,8 @@ export function DataTable<T>({
             // fight dnd-kit's) wrapped in a sortable context. A grip handle in
             // the leading cell starts the drag.
             <tbody>
-              <SortableList
-                items={rows}
-                getId={rowKey}
-                onReorder={onReorder!}
-                strategy="vertical"
-              >
-                {(row) => (
+              <SortableZone items={rows} getId={rowKey} strategy="vertical">
+                {rows.map((row) => (
                   <SortableItem key={rowKey(row)} id={rowKey(row)}>
                     {({ setNodeRef, style, isDragging, handleProps }) => (
                       <tr
@@ -166,8 +165,8 @@ export function DataTable<T>({
                       </tr>
                     )}
                   </SortableItem>
-                )}
-              </SortableList>
+                ))}
+              </SortableZone>
             </tbody>
           ) : (
             // Real rows cascade in once on mount — a quick, subtle stagger that
@@ -218,5 +217,15 @@ export function DataTable<T>({
         </div>
       ) : null}
     </div>
+  );
+
+  // The DndContext (which emits hidden accessibility <div>s) wraps the whole
+  // table container — never inside <tbody>, which only allows table-row content.
+  return dragEnabled ? (
+    <SortableProvider items={rows ?? []} getId={rowKey} onReorder={onReorder!}>
+      {table}
+    </SortableProvider>
+  ) : (
+    table
   );
 }
