@@ -41,10 +41,47 @@ export function Header() {
   const user = useAppSelector((s) => s.auth.user);
   const isStaff = user?.role === "ADMIN" || user?.role === "MANAGER";
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
+    const REVEAL_ZONE = 96; // always visible until scrolled past this
+    const HIDE_AFTER = 28; // px of sustained downward travel before hiding
+    const SHOW_AFTER = 8; // px of sustained upward travel before revealing
+
+    let lastY = window.scrollY;
+    let dir: "up" | "down" | null = null;
+    let travel = 0; // accumulated distance in the current direction
+    let ticking = false;
+
+    const evaluate = () => {
+      const y = window.scrollY;
+      setScrolled(y > 8);
+
+      const delta = y - lastY;
+      if (delta !== 0) {
+        const newDir = delta > 0 ? "down" : "up";
+        travel = newDir === dir ? travel + Math.abs(delta) : Math.abs(delta);
+        dir = newDir;
+      }
+
+      // Hysteresis: a scroll direction must persist for a few pixels before
+      // it flips the header state. Prevents flicker from trackpad momentum
+      // jitter, which reports tiny alternating deltas frame to frame.
+      if (y <= REVEAL_ZONE) setHidden(false);
+      else if (dir === "down" && travel > HIDE_AFTER) setHidden(true);
+      else if (dir === "up" && travel > SHOW_AFTER) setHidden(false);
+
+      lastY = y;
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(evaluate);
+    };
+
+    evaluate();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -53,10 +90,11 @@ export function Header() {
     <>
       <header
         className={cn(
-          "sticky top-0 z-40 transition-all duration-300 ease-out-soft",
+          "sticky top-0 z-40 transform-gpu will-change-transform transition-[transform,translate,background-color,border-color,box-shadow] duration-300 ease-out-soft",
+          hidden ? "-translate-y-full" : "translate-y-0",
           scrolled
-            ? "border-b border-ink-100 bg-cream-50/95 backdrop-blur-md"
-            : "bg-cream-50"
+            ? "border-b border-ink-100 bg-cream-50/95 shadow-(--shadow-soft) backdrop-blur-md"
+            : "border-b border-transparent bg-cream-50"
         )}
       >
         <AnnouncementBar />

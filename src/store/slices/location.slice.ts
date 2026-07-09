@@ -60,9 +60,31 @@ const locationSlice = createSlice({
         state.hasChosen = action.payload.hasChosen;
       }
     },
+    /**
+     * Seeds the store's country from the `region` cookie at creation time (see
+     * `StoreProvider`'s `initialCountry` prop), so the client's first render
+     * already matches what the server rendered from that same cookie —
+     * otherwise client components (which read Redux, not the cookie) always
+     * start from the hardcoded UAE default and throw a hydration mismatch the
+     * moment a returning visitor's real region differs. Deliberately leaves
+     * `hasChosen` untouched: this isn't a user pick, so the localStorage
+     * hydration in `LocationPersistence` still takes precedence if present.
+     */
+    setCountryFromRegion(state, action: PayloadAction<CountryCode>) {
+      const def = getCountry(action.payload);
+      state.country = def.code;
+      if (!(def.cities as readonly string[]).includes(state.city)) {
+        state.city = def.defaultCity;
+      }
+    },
   },
 });
 
-export const { setCountry, setCity, setLocation, setLocationFromStorage } =
-  locationSlice.actions;
+export const {
+  setCountry,
+  setCity,
+  setLocation,
+  setLocationFromStorage,
+  setCountryFromRegion,
+} = locationSlice.actions;
 export default locationSlice.reducer;

@@ -12,6 +12,7 @@ import { ROUTES } from "@/constants/routes";
 import { getServerRegion } from "@/services/serverRegion";
 import { getServerLocale } from "@/i18n/server";
 import { t } from "@/i18n";
+import { regionCopyFromRegionCode } from "@/features/location/regionCopy";
 
 export async function CategoryShowcase() {
   const [region, locale] = await Promise.all([
@@ -20,6 +21,7 @@ export async function CategoryShowcase() {
   ]);
   const apiCategories = await getCachedCategories(region).catch(() => []);
   const featured = toUiCategories(apiCategories, locale).slice(0, 4);
+  const regionCopy = regionCopyFromRegionCode(region, locale);
 
   if (featured.length === 0) return null;
 
@@ -47,7 +49,7 @@ export async function CategoryShowcase() {
         <SectionHeader
           eyebrow={t(locale, "home.categoriesEyebrow")}
           title={t(locale, "home.categoriesTitle")}
-          description={t(locale, "home.categoriesDesc")}
+          description={t(locale, "home.categoriesDesc", { city: regionCopy.city })}
           action={
             <Link href={ROUTES.shop} className="contents">
               <Button

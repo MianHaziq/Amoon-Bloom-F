@@ -3,13 +3,21 @@
 import { Container } from "@/components/ui";
 import { TruckIcon, SparkleIcon, PinIcon } from "@/components/icons";
 import { useT } from "@/i18n/useT";
+import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 
 export function AnnouncementBar() {
   const { t } = useT();
+  const regionCopy = useRegionCopy();
   const items = [
-    { icon: TruckIcon, label: t("announcement.sameDay") },
-    { icon: SparkleIcon, label: t("announcement.handPacked") },
-    { icon: PinIcon, label: t("announcement.branches") },
+    { icon: TruckIcon, label: t("announcement.sameDay", { city: regionCopy.city }) },
+    { icon: SparkleIcon, label: t("announcement.handPacked", { city: regionCopy.city }) },
+    {
+      icon: PinIcon,
+      label:
+        regionCopy.countryCode === "UAE"
+          ? t("announcement.branches", { country: regionCopy.country })
+          : t("announcement.deliveryOnly", { country: regionCopy.country }),
+    },
   ];
 
   return (

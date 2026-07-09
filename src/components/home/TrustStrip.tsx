@@ -7,8 +7,10 @@ import {
   HeartIcon,
 } from "@/components/icons";
 import { getServerLocale } from "@/i18n/server";
+import { getServerRegion } from "@/services/serverRegion";
 import { t } from "@/i18n";
 import type { MessageKey } from "@/i18n";
+import { regionCopyFromRegionCode } from "@/features/location/regionCopy";
 
 const items = [
   {
@@ -38,7 +40,11 @@ const items = [
 }[];
 
 export async function TrustStrip() {
-  const locale = await getServerLocale();
+  const [locale, region] = await Promise.all([
+    getServerLocale(),
+    getServerRegion(),
+  ]);
+  const regionCopy = regionCopyFromRegionCode(region, locale);
   return (
     <section className="border-y border-ink-100 bg-white">
       <Container className="py-10 md:py-12">
@@ -56,7 +62,7 @@ export async function TrustStrip() {
                   {t(locale, titleKey)}
                 </p>
                 <p className="mt-0.5 text-sm text-ink-500">
-                  {t(locale, descriptionKey)}
+                  {t(locale, descriptionKey, { city: regionCopy.city })}
                 </p>
               </div>
             </StaggerItem>

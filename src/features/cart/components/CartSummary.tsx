@@ -9,6 +9,7 @@ import { microTransition } from "@/lib/motion";
 import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 import { useT } from "@/i18n/useT";
 
 interface CartSummaryProps {
@@ -18,6 +19,7 @@ interface CartSummaryProps {
 export function CartSummary({ variant = "page" }: CartSummaryProps) {
   const items = useAppSelector((s) => s.cart.items);
   const { currency, locale } = useCurrency();
+  const regionCopy = useRegionCopy();
   const { t } = useT();
   const subtotal = items.reduce(
     (sum, i) => sum + i.unitPrice * i.quantity,
@@ -86,11 +88,11 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
       <ul className="flex flex-col gap-2 pt-1 text-xs text-ink-500">
         <li className="inline-flex items-center gap-2">
           <TruckIcon size={14} className="text-bloom-600" />
-          {t("cart.cutoff")}
+          {t("cart.cutoff", { city: regionCopy.city })}
         </li>
         <li className="inline-flex items-center gap-2">
           <ShieldIcon size={14} className="text-bloom-600" />
-          {t("cart.secureCod")}
+          {t("cart.secureCod", { city: regionCopy.city })}
         </li>
       </ul>
     </aside>

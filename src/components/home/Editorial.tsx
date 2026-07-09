@@ -2,8 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { Container, Badge, Button } from "@/components/ui";
 import { ArrowRight } from "@/components/icons";
+import { getServerRegion } from "@/services/serverRegion";
+import { regionCopyFromRegionCode } from "@/features/location/regionCopy";
 
-export function Editorial() {
+export async function Editorial() {
+  const region = await getServerRegion();
+  const regionCopy = regionCopyFromRegionCode(region, "en");
   return (
     <section className="bg-ink-900 text-cream-50">
       <Container className="grid gap-12 py-20 md:grid-cols-2 md:items-center md:py-28 lg:py-36">
@@ -28,9 +32,9 @@ export function Editorial() {
           </h2>
           <p className="max-w-md text-lg text-cream-100/80">
             From a single rose to our most generous graduation deluxe — every
-            Amoonis Boutique box is hand-packed in Dubai, finished with a
-            hand-tied ribbon and a printed card. Same-day delivery across the
-            UAE.
+            Amoonis Boutique box is hand-packed in {regionCopy.city}, finished
+            with a hand-tied ribbon and a printed card. Same-day delivery
+            across {regionCopy.country}.
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
             <Link href="/about" className="contents">

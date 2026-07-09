@@ -1,12 +1,14 @@
 import { Section, SectionHeader, Card } from "@/components/ui";
 import { StarIcon } from "@/components/icons";
+import { getServerRegion } from "@/services/serverRegion";
+import { regionCopyFromRegionCode } from "@/features/location/regionCopy";
 
-const reviews = [
+const getReviews = (city: string) => [
   {
     quote:
       "Every arrangement arrives looking like a magazine cover. The peonies lasted twelve days.",
     name: "Maya K.",
-    role: "Repeat client · Downtown Dubai",
+    role: `Repeat client · ${city}`,
   },
   {
     quote:
@@ -22,7 +24,10 @@ const reviews = [
   },
 ];
 
-export function Testimonials() {
+export async function Testimonials() {
+  const region = await getServerRegion();
+  const regionCopy = regionCopyFromRegionCode(region, "en");
+  const reviews = getReviews(regionCopy.city);
   return (
     <Section spacing="lg" tone="cream">
       <SectionHeader

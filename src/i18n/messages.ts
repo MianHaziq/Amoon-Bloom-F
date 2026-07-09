@@ -91,12 +91,13 @@ export const messages = {
       join: "Join",
     },
     announcement: {
-      sameDay: "Same-day delivery in Dubai · order before 6 PM",
-      handPacked: "Hand-packed in our Dubai boutique",
-      branches: "Boutique branches across the UAE",
+      sameDay: "Same-day delivery in {city} · order before 6 PM",
+      handPacked: "Hand-packed in our {city} boutique",
+      branches: "Boutique branches across {country}",
+      deliveryOnly: "Delivering across {country} — shop online",
     },
     hero: {
-      eyebrow: "Same-day delivery across the UAE",
+      eyebrow: "Same-day delivery across {country}",
       title1: "Flowers & gifts,",
       titleAccent: "composed by hand.",
       subtitle:
@@ -112,7 +113,7 @@ export const messages = {
       categoriesEyebrow: "Browse the boutique",
       categoriesTitle: "For every quiet celebration.",
       categoriesDesc:
-        "From a single peony to a corporate installation, every category is composed by our team in Downtown Dubai.",
+        "From a single peony to a corporate installation, every category is composed by our team in {city}.",
       browseAll: "Browse all",
       featuredEyebrow: "Florist's edit",
       featuredTitle: "The week's quiet favourites.",
@@ -137,7 +138,7 @@ export const messages = {
       storyEyebrow: "Online gift shop",
       storyTitle: "Ready-to-gift collections for every special occasion.",
       storyBody:
-        "Amoon Boutique curates luxury flowers, gift boxes and newborn keepsakes — thoughtfully composed and beautifully wrapped, so every gift feels personal. From celebrations to quiet thank-yous, we make gifting effortless across the UAE.",
+        "Amoon Boutique curates luxury flowers, gift boxes and newborn keepsakes — thoughtfully composed and beautifully wrapped, so every gift feels personal. From celebrations to quiet thank-yous, we make gifting effortless across {country}.",
       storyCta: "Explore the boutique",
       supportEyebrow: "Here to help",
       supportTitle: "We've got you.",
@@ -149,7 +150,7 @@ export const messages = {
     },
     trust: {
       sameDayTitle: "Same-day delivery",
-      sameDayDesc: "Order by 6 PM across Dubai.",
+      sameDayDesc: "Order by 6 PM across {city}.",
       handTitle: "Hand-composed daily",
       handDesc: "Every box packed by our team.",
       cardTitle: "Free message card",
@@ -190,7 +191,7 @@ export const messages = {
       title: "Shop the boutique",
       heading: "Hand-arranged for every quiet celebration.",
       heroSubtitle:
-        "Composed in our Downtown Dubai studio. Same-day delivery on orders placed before 6 PM.",
+        "Composed in our {city} studio. Same-day delivery on orders placed before 6 PM.",
       filterSort: "Filter & sort",
       results: "results",
       result: "result",
@@ -232,8 +233,8 @@ export const messages = {
       checkout: "Continue to checkout",
       freeDelivery: "Free delivery",
       secureCheckout: "Secure checkout · COD available",
-      secureCod: "Secure checkout · COD available in Dubai",
-      cutoff: "Order before 6 PM for same-day delivery in Dubai.",
+      secureCod: "Secure checkout · COD available in {city}",
+      cutoff: "Order before 6 PM for same-day delivery in {city}.",
       eyebrow: "Your selection",
       heading: "Cart",
       deliveryNote: "Free delivery on every order.",
@@ -456,7 +457,8 @@ export const messages = {
         "Be first to see seasonal boxes, member-only edits, and behind the scenes.",
       poweredBy: "Powered by",
       brandDesc:
-        "Curated gift boxes, hand-tied flowers, and same-day delivery in the UAE. Composed by hand for every quiet celebration.",
+        "Curated gift boxes, hand-tied flowers, and same-day delivery in {country}. Composed by hand for every quiet celebration.",
+      hoursTemplate: "Daily · 10:00 — 00:00 ({city} time)",
     },
     newsletter: {
       welcomeTitle: "Welcome to the letter",
@@ -1251,12 +1253,13 @@ export const messages = {
       join: "انضمّ",
     },
     announcement: {
-      sameDay: "توصيل في نفس اليوم داخل دبي · اطلب قبل الساعة 6 مساءً",
-      handPacked: "يُغلّف يدويًا في بوتيكنا بدبي",
-      branches: "فروع البوتيك في جميع أنحاء الإمارات",
+      sameDay: "توصيل في نفس اليوم داخل {city} · اطلب قبل الساعة 6 مساءً",
+      handPacked: "يُغلّف يدويًا في بوتيكنا في {city}",
+      branches: "فروع البوتيك في جميع أنحاء {country}",
+      deliveryOnly: "التوصيل إلى جميع أنحاء {country} — تسوّق أونلاين",
     },
     hero: {
-      eyebrow: "توصيل في نفس اليوم في جميع أنحاء الإمارات",
+      eyebrow: "توصيل في نفس اليوم في جميع أنحاء {country}",
       title1: "ورود وهدايا،",
       titleAccent: "مُنسّقة يدويًا.",
       subtitle:
@@ -1272,7 +1275,7 @@ export const messages = {
       categoriesEyebrow: "تصفّح البوتيك",
       categoriesTitle: "لكل مناسبة جميلة.",
       categoriesDesc:
-        "من زهرة واحدة إلى تنسيق للشركات، تُنسّق كل فئة على يد فريقنا في وسط مدينة دبي.",
+        "من زهرة واحدة إلى تنسيق للشركات، تُنسّق كل فئة على يد فريقنا في {city}.",
       browseAll: "تصفّح الكل",
       featuredEyebrow: "اختيار المنسّق",
       featuredTitle: "المفضّلة لهذا الأسبوع.",
@@ -1296,7 +1299,7 @@ export const messages = {
       storyEyebrow: "متجر الهدايا الإلكتروني",
       storyTitle: "مجموعات جاهزة للإهداء لكل مناسبة خاصة.",
       storyBody:
-        "ينسّق أمون بوتيك الزهور الفاخرة وعلب الهدايا وهدايا المواليد — بعناية وتغليف أنيق ليكون كل هدية شخصية. من الاحتفالات إلى كلمات الشكر، نجعل الإهداء سهلاً في كل أنحاء الإمارات.",
+        "ينسّق أمون بوتيك الزهور الفاخرة وعلب الهدايا وهدايا المواليد — بعناية وتغليف أنيق ليكون كل هدية شخصية. من الاحتفالات إلى كلمات الشكر، نجعل الإهداء سهلاً في كل أنحاء {country}.",
       storyCta: "اكتشف البوتيك",
       supportEyebrow: "نحن هنا لمساعدتك",
       supportTitle: "نحن معك.",
@@ -1308,7 +1311,7 @@ export const messages = {
     },
     trust: {
       sameDayTitle: "توصيل في نفس اليوم",
-      sameDayDesc: "اطلب قبل الساعة 6 مساءً في جميع أنحاء دبي.",
+      sameDayDesc: "اطلب قبل الساعة 6 مساءً في جميع أنحاء {city}.",
       handTitle: "تنسيق يدوي يوميًا",
       handDesc: "يُغلّف كل صندوق على يد فريقنا.",
       cardTitle: "بطاقة إهداء مجانية",
@@ -1349,7 +1352,7 @@ export const messages = {
       title: "تسوّق البوتيك",
       heading: "مُنسّقة يدويًا لكل مناسبة جميلة.",
       heroSubtitle:
-        "تُنسّق في استوديونا بوسط مدينة دبي. توصيل في نفس اليوم للطلبات قبل الساعة 6 مساءً.",
+        "تُنسّق في استوديونا في {city}. توصيل في نفس اليوم للطلبات قبل الساعة 6 مساءً.",
       filterSort: "تصفية وترتيب",
       results: "نتيجة",
       result: "نتيجة",
@@ -1391,8 +1394,8 @@ export const messages = {
       checkout: "متابعة إلى الدفع",
       freeDelivery: "توصيل مجاني",
       secureCheckout: "دفع آمن · الدفع عند الاستلام متاح",
-      secureCod: "دفع آمن · الدفع عند الاستلام متاح في دبي",
-      cutoff: "اطلب قبل الساعة 6 مساءً للتوصيل في نفس اليوم داخل دبي.",
+      secureCod: "دفع آمن · الدفع عند الاستلام متاح في {city}",
+      cutoff: "اطلب قبل الساعة 6 مساءً للتوصيل في نفس اليوم داخل {city}.",
       eyebrow: "اختيارك",
       heading: "السلة",
       deliveryNote: "توصيل مجاني لكل الطلبات.",
@@ -1615,7 +1618,8 @@ export const messages = {
         "كن أول من يرى العلب الموسمية، والاختيارات الخاصة بالأعضاء، وما وراء الكواليس.",
       poweredBy: "مُشغّل بواسطة",
       brandDesc:
-        "علب هدايا مختارة، وورود مُنسّقة يدويًا، وتوصيل في نفس اليوم في الإمارات. مُنسّقة يدويًا لكل مناسبة جميلة.",
+        "علب هدايا مختارة، وورود مُنسّقة يدويًا، وتوصيل في نفس اليوم في {country}. مُنسّقة يدويًا لكل مناسبة جميلة.",
+      hoursTemplate: "يوميًا · 10:00 — 00:00 (بتوقيت {city})",
     },
     newsletter: {
       welcomeTitle: "أهلاً بك في القائمة",
@@ -2327,6 +2331,19 @@ type NestedKeys<T, P extends string = ""> = {
 
 export type MessageKey = NestedKeys<Dict>;
 
+/** Replaces `{token}` placeholders in `str` with the given values. */
+export function interpolate(
+  str: string,
+  vars?: Record<string, string | number>
+): string {
+  if (!vars) return str;
+  let out = str;
+  for (const [k, v] of Object.entries(vars)) {
+    out = out.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
+  }
+  return out;
+}
+
 /** Resolve a dot-path key for the given locale; falls back to English. */
 export function t(
   locale: Locale,
@@ -2344,13 +2361,8 @@ export function t(
     }
     return typeof node === "string" ? node : undefined;
   };
-  let str = read(messages[locale]) ?? read(messages.en) ?? key;
-  if (vars) {
-    for (const [k, v] of Object.entries(vars)) {
-      str = str.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
-    }
-  }
-  return str;
+  const str = read(messages[locale]) ?? read(messages.en) ?? key;
+  return interpolate(str, vars);
 }
 
 /**

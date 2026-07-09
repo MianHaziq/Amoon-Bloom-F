@@ -17,9 +17,15 @@ import { siteConfig } from "@/config/site";
 import { ROUTES } from "@/constants/routes";
 import { NewsletterForm } from "./NewsletterForm";
 import { getServerT } from "@/i18n/server";
+import { getServerRegion } from "@/services/serverRegion";
+import { regionCopyFromRegionCode } from "@/features/location/regionCopy";
 
 export async function Footer() {
-  const { t } = await getServerT();
+  const [{ t, locale }, region] = await Promise.all([
+    getServerT(),
+    getServerRegion(),
+  ]);
+  const regionCopy = regionCopyFromRegionCode(region, locale);
 
   const footerNav = [
     { href: ROUTES.shop, label: t("footer.menu") },
@@ -93,7 +99,7 @@ export async function Footer() {
             </span>
           </Link>
           <p className="mt-4 max-w-sm text-sm text-cream-100/70">
-            {t("footer.brandDesc")}
+            {t("footer.brandDesc", { country: regionCopy.country })}
           </p>
           <div className="mt-6 flex flex-col gap-3 text-sm text-cream-100/80">
             <a
@@ -112,7 +118,7 @@ export async function Footer() {
             </a>
             <span className="inline-flex items-center gap-2">
               <PinIcon size={16} className="text-bloom-300" />
-              {siteConfig.contact.address}
+              {regionCopy.city}, {regionCopy.country}
             </span>
           </div>
         </div>

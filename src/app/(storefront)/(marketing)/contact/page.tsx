@@ -22,9 +22,11 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
 import { useT } from "@/i18n/useT";
+import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 
 export default function ContactPage() {
   const { t } = useT();
+  const regionCopy = useRegionCopy();
   const toast = useToast();
   const { isAuthenticated } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -159,14 +161,14 @@ export default function ContactPage() {
             <ContactRow
               icon={<PinIcon size={18} />}
               title={t("contact.boutiqueTitle")}
-              value={siteConfig.contact.address}
+              value={`${regionCopy.city}, ${regionCopy.country}`}
             />
             <Card padding="md" className="bg-cream-50">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
                 {t("contact.openDaily")}
               </p>
               <p className="mt-2 font-display text-xl font-medium text-ink-900">
-                {siteConfig.contact.hours}
+                {t("footer.hoursTemplate", { city: regionCopy.city })}
               </p>
               <p className="mt-1 text-sm text-ink-500">
                 {t("contact.walkIns")}

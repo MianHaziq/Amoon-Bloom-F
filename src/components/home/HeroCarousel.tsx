@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { ROUTES } from "@/constants/routes";
 import { ArrowRight } from "@/components/icons";
 import { useT } from "@/i18n/useT";
+import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 
 export interface HeroSlide {
   id: string;
@@ -20,7 +21,7 @@ interface HeroCarouselProps {
 }
 
 /**
- * Hero — full-bleed slideshow supporting video and image slides. Video slides
+ * Hero — inset 16:9 rounded slideshow supporting video and image slides. Video slides
  * autoplay muted (only the active one plays) and advance to the next slide when
  * they end; images auto-advance on a timer. Manual nav (arrows/dots/swipe) is
  * always available. Respects prefers-reduced-motion (no autoplay / no auto-
@@ -28,6 +29,7 @@ interface HeroCarouselProps {
  */
 export function HeroCarousel({ slides }: HeroCarouselProps) {
   const { t } = useT();
+  const regionCopy = useRegionCopy();
   const total = slides.length;
   const hasMultiple = total > 1;
 
@@ -96,7 +98,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
         if (e.key === "ArrowLeft") prev();
       }}
       tabIndex={hasMultiple ? 0 : -1}
-      className="relative isolate aspect-video max-h-[780px] w-full overflow-hidden bg-blush-50 outline-none focus-visible:ring-2 focus-visible:ring-bloom-500/40"
+      className="relative isolate aspect-video w-full overflow-hidden rounded-2xl bg-blush-50 outline-none focus-visible:ring-2 focus-visible:ring-bloom-500/40 sm:rounded-3xl lg:aspect-auto lg:h-110 xl:h-125 2xl:h-150"
     >
       <div className="absolute inset-0">
         {slides.map((slide, i) => (
@@ -173,10 +175,10 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
       )}
 
       {/* Content overlay */}
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-7xl flex-col justify-end px-4 pb-6 sm:px-6 sm:pb-14 lg:px-10 lg:pb-20">
-        <div className="mb-5 max-w-xl sm:mb-10">
+      <div className="relative z-10 flex h-full w-full flex-col justify-end p-5 sm:p-8 lg:p-12">
+        <div className="hidden max-w-xl sm:mb-10 sm:block">
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85 sm:text-xs">
-            {t("hero.eyebrow")}
+            {t("hero.eyebrow", { country: regionCopy.country })}
           </p>
           <h1 className="mt-2 font-display text-2xl font-medium leading-[1.08] text-white sm:mt-3 sm:text-5xl sm:leading-[1.05] lg:text-6xl">
             {t("hero.title1")}{" "}

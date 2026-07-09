@@ -1,4 +1,5 @@
 import type { Locale } from "@/store/slices/ui.slice";
+import { interpolate } from "./messages";
 export { t, tCount, messages, type MessageKey } from "./messages";
 
 export const LOCALE_COOKIE = "locale";
@@ -29,7 +30,9 @@ export function writeLocaleCookie(locale: Locale): void {
 export function localized(
   en: string,
   ar: string | null | undefined,
-  locale: Locale
+  locale: Locale,
+  vars?: Record<string, string | number>
 ): string {
-  return locale === "ar" && ar ? ar : en;
+  const str = locale === "ar" && ar ? ar : en;
+  return interpolate(str, vars);
 }

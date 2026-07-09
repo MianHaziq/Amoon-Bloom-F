@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/Loader";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
+import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import type {
   ApiAddress,
@@ -29,19 +30,6 @@ type FormValues = {
   postalCode?: string;
   country: string;
   isDefault?: boolean;
-};
-
-const emptyDefaults: FormValues = {
-  label: "",
-  fullName: "",
-  phone: "",
-  streetAddress: "",
-  apartment: "",
-  city: "",
-  state: "",
-  postalCode: "",
-  country: "United Arab Emirates",
-  isDefault: false,
 };
 
 export function AddressBook() {
@@ -194,6 +182,23 @@ function AddressFormModal({ open, onClose, initial, title }: AddressFormModalPro
   const toast = useToast();
   const queryClient = useQueryClient();
   const { t } = useT();
+  const regionCopy = useRegionCopy();
+
+  const emptyDefaults: FormValues = useMemo(
+    () => ({
+      label: "",
+      fullName: "",
+      phone: "",
+      streetAddress: "",
+      apartment: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: regionCopy.country,
+      isDefault: false,
+    }),
+    [regionCopy.country]
+  );
 
   const schema = useMemo(
     () =>

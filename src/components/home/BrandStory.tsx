@@ -4,14 +4,20 @@ import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 import { getServerLocale } from "@/i18n/server";
+import { getServerRegion } from "@/services/serverRegion";
 import { t } from "@/i18n";
+import { regionCopyFromRegionCode } from "@/features/location/regionCopy";
 
 /**
  * Brand story blurb ("Online gift shop") — mirrors the client's about section.
  * Centered editorial copy on cream with a single CTA.
  */
 export async function BrandStory() {
-  const locale = await getServerLocale();
+  const [locale, region] = await Promise.all([
+    getServerLocale(),
+    getServerRegion(),
+  ]);
+  const regionCopy = regionCopyFromRegionCode(region, locale);
   return (
     <Section spacing="lg" tone="cream" containerSize="md">
       <Reveal>
@@ -23,7 +29,7 @@ export async function BrandStory() {
             {t(locale, "home.storyTitle")}
           </h2>
           <p className="mt-5 text-base leading-relaxed text-ink-600 md:text-lg">
-            {t(locale, "home.storyBody")}
+            {t(locale, "home.storyBody", { country: regionCopy.country })}
           </p>
           <Link href={ROUTES.shop} className="mt-8 inline-flex">
             <Button

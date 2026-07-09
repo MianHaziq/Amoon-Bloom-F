@@ -4,18 +4,21 @@ import { Container, Section, Button } from "@/components/ui";
 import { ArrowRight } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 import { getServerLocale } from "@/i18n/server";
+import { getServerRegion } from "@/services/serverRegion";
 import { localized } from "@/i18n";
+import { regionCopyFromRegionCode, type RegionCopy } from "@/features/location/regionCopy";
 import type { Locale } from "@/store/slices/ui.slice";
 
 export const metadata = { title: "About us" };
 
-const principles = (locale: Locale) => [
+const principles = (locale: Locale, regionCopy: RegionCopy) => [
   {
     title: localized("Composed, not assembled.", "مؤلَّفة بعناية، لا مجمّعة.", locale),
     body: localized(
-      "Every Amoonis Boutique box is hand-packed in our Dubai studio the morning of delivery — no pre-made gift sets, no shortcuts.",
-      "تُغلَّف كل علبة من أموونيس بوتيك يدويًا في استوديونا بدبي صباح يوم التسليم — دون مجموعات هدايا جاهزة، ودون اختصارات.",
-      locale
+      "Every Amoonis Boutique box is hand-packed in our {city} studio the morning of delivery — no pre-made gift sets, no shortcuts.",
+      "تُغلَّف كل علبة من أموونيس بوتيك يدويًا في استوديونا في {city} صباح يوم التسليم — دون مجموعات هدايا جاهزة، ودون اختصارات.",
+      locale,
+      { city: regionCopy.city }
     ),
   },
   {
@@ -36,17 +39,37 @@ const principles = (locale: Locale) => [
   },
 ];
 
-const milestones = (locale: Locale) => [
-  { year: "2020", title: localized("Amoonis Boutique opens in Dubai", "افتتاح أموونيس بوتيك في دبي", locale) },
+const milestones = (locale: Locale, regionCopy: RegionCopy) => [
+  {
+    year: "2020",
+    title: localized(
+      "Amoonis Boutique opens in {city}",
+      "افتتاح أموونيس بوتيك في {city}",
+      locale,
+      { city: regionCopy.city }
+    ),
+  },
   { year: "2022", title: localized("Newborn & graduation editions launch", "إطلاق إصدارَي المواليد والتخرّج", locale) },
-  { year: "2024", title: localized("Same-day UAE-wide delivery", "التوصيل في اليوم نفسه على مستوى الإمارات", locale) },
+  {
+    year: "2024",
+    title: localized(
+      "Same-day delivery across {country}",
+      "التوصيل في اليوم نفسه على مستوى {country}",
+      locale,
+      { country: regionCopy.country }
+    ),
+  },
   { year: "2026", title: localized("VIBE by Amoon — self-care line", "VIBE من أمون — خط العناية بالذات", locale) },
 ];
 
 export default async function AboutPage() {
-  const locale = await getServerLocale();
-  const principlesList = principles(locale);
-  const milestonesList = milestones(locale);
+  const [locale, region] = await Promise.all([
+    getServerLocale(),
+    getServerRegion(),
+  ]);
+  const regionCopy = regionCopyFromRegionCode(region, locale);
+  const principlesList = principles(locale, regionCopy);
+  const milestonesList = milestones(locale, regionCopy);
   return (
     <>
       <section className="bg-cream-50 pt-16 pb-12 lg:pt-24">
@@ -64,9 +87,10 @@ export default async function AboutPage() {
             </h1>
             <p className="mt-5 max-w-md text-lg text-ink-600">
               {localized(
-                "Amoonis Boutique began as a small atelier in Dubai composing gift boxes for the moments that matter — graduations, Eid, newborns, and the quiet days in between. Today the boutique ships across the UAE, but every box is still composed by hand.",
-                "بدأ أموونيس بوتيك ورشةً صغيرة في دبي تؤلّف علب الهدايا للحظات المهمة — التخرّج والعيد والمواليد الجدد والأيام الهادئة بينها. واليوم يوصّل البوتيك إلى جميع أنحاء الإمارات، لكن كل علبة لا تزال تُؤلَّف يدويًا.",
-                locale
+                "Amoonis Boutique began as a small atelier in {city} composing gift boxes for the moments that matter — graduations, Eid, newborns, and the quiet days in between. Today the boutique ships across {country}, but every box is still composed by hand.",
+                "بدأ أموونيس بوتيك ورشةً صغيرة في {city} تؤلّف علب الهدايا للحظات المهمة — التخرّج والعيد والمواليد الجدد والأيام الهادئة بينها. واليوم يوصّل البوتيك إلى جميع أنحاء {country}، لكن كل علبة لا تزال تُؤلَّف يدويًا.",
+                locale,
+                { city: regionCopy.city, country: regionCopy.country }
               )}
             </p>
             <div className="mt-7 flex flex-wrap gap-3">

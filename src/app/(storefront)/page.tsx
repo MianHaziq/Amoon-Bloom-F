@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { Hero } from "@/components/home/Hero";
-import { PromoBanner } from "@/components/home/PromoBanner";
 import { CategoryShowcase } from "@/components/home/CategoryShowcase";
 import { HomeSections } from "@/components/home/HomeSections";
 import { TrustStrip } from "@/components/home/TrustStrip";
@@ -10,7 +9,7 @@ import { Container } from "@/components/ui";
 
 /**
  * Home page — section order mirrors the client's live site:
- *   Hero → promo banner → categories → best sellers → new arrivals
+ *   Hero → categories → best sellers → new arrivals
  *        → trust strip → brand story → support.
  * Data-backed sections stream inside <Suspense> so the shell paints instantly.
  */
@@ -20,8 +19,6 @@ export default function HomePage() {
       <Suspense fallback={<HeroFallback />}>
         <Hero />
       </Suspense>
-
-      <PromoBanner />
 
       <Suspense fallback={<RowFallback cards={4} />}>
         <CategoryShowcase />
@@ -43,7 +40,13 @@ export default function HomePage() {
 }
 
 function HeroFallback() {
-  return <div className="skeleton min-h-[60vh] w-full lg:min-h-[70vh]" aria-hidden />;
+  return (
+    <section className="bg-cream-50 pt-3 pb-6 sm:pt-4 sm:pb-8 lg:pt-6 lg:pb-10" aria-hidden>
+      <Container size="lg">
+        <div className="skeleton aspect-video w-full rounded-2xl sm:rounded-3xl" />
+      </Container>
+    </section>
+  );
 }
 
 function RowFallback({ cards }: { cards: 3 | 4 }) {

@@ -15,6 +15,7 @@ export const COUNTRIES = [
     currency: "AED",
     locale: "en-AE",
     cities: ["Dubai", "Abu Dhabi", "Sharjah"],
+    citiesAr: ["دبي", "أبوظبي", "الشارقة"],
     defaultCity: "Dubai",
   },
   {
@@ -26,6 +27,7 @@ export const COUNTRIES = [
     currency: "SAR",
     locale: "en-SA",
     cities: ["Riyadh", "Jeddah", "Dammam"],
+    citiesAr: ["الرياض", "جدة", "الدمام"],
     defaultCity: "Riyadh",
   },
 ] as const;

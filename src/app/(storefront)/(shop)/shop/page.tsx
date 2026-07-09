@@ -9,6 +9,7 @@ import { toUiCategories } from "@/features/categories/adapters";
 import { getServerRegion } from "@/services/serverRegion";
 import { getServerLocale } from "@/i18n/server";
 import { t } from "@/i18n";
+import { regionCopyFromRegionCode } from "@/features/location/regionCopy";
 
 export const metadata = { title: "Shop" };
 
@@ -21,6 +22,7 @@ export default async function ShopPage(props: PageProps<"/shop">) {
     getServerRegion(),
     getServerLocale(),
   ]);
+  const regionCopy = regionCopyFromRegionCode(region, locale);
   const searchParams = await props.searchParams;
   const rawQ = searchParams?.q;
   const q = (typeof rawQ === "string" ? rawQ : "").trim();
@@ -56,7 +58,7 @@ export default async function ShopPage(props: PageProps<"/shop">) {
             {t(locale, "shop.heading")}
           </h1>
           <p className="mt-3 max-w-2xl text-ink-500">
-            {t(locale, "shop.heroSubtitle")}
+            {t(locale, "shop.heroSubtitle", { city: regionCopy.city })}
           </p>
         </Container>
       </section>

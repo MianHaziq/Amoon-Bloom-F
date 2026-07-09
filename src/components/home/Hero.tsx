@@ -2,10 +2,11 @@ import { getCachedBanners } from "@/services/catalogCache";
 import { getServerRegion } from "@/services/serverRegion";
 import { siteConfig } from "@/config/site";
 import { bannerMediaKind } from "@/features/banners/media";
+import { Container } from "@/components/ui";
 import { HeroCarousel, type HeroSlide } from "./HeroCarousel";
 
 /**
- * Hero — full-bleed slideshow (mirrors the client's video hero).
+ * Hero — inset 16:9 slideshow, padded to align with the product grid container.
  *
  * Source precedence:
  *   1. Admin-managed WEB banners (videos and/or images) — set in the admin panel.
@@ -51,5 +52,11 @@ export async function Hero() {
         ? videoSlides
         : FALLBACK_SLIDES;
 
-  return <HeroCarousel slides={slides} />;
+  return (
+    <section className="bg-cream-50 pt-3 pb-6 sm:pt-4 sm:pb-8 lg:pt-6 lg:pb-10">
+      <Container size="lg">
+        <HeroCarousel slides={slides} />
+      </Container>
+    </section>
+  );
 }
