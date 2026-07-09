@@ -8,6 +8,10 @@ import { pushToast } from "@/store/slices/ui.slice";
 import { Button } from "@/components/ui/Button";
 import { ImageIcon, TrashIcon } from "@/components/icons";
 import { ApiError } from "@/services/http";
+import { useT } from "@/i18n/useT";
+
+const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+const ACCEPT_ATTR = ACCEPTED_TYPES.join(",");
 
 interface ImageUploadProps {
   value: string | null | undefined;
@@ -36,7 +40,7 @@ export function ImageUpload({
   value,
   onChange,
   path = "uploads",
-  label = "Image",
+  label,
   hint,
   className,
   previewClassName = "h-44 w-full",
@@ -45,6 +49,7 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const dispatch = useAppDispatch();
+  const { t } = useT();
   const [dragOver, setDragOver] = useState(false);
 
   const uploadMutation = useMutation({
@@ -55,8 +60,10 @@ export function ImageUpload({
     onError: (err) => {
       dispatch(
         pushToast({
-          title: "Upload failed",
-          description: err instanceof ApiError ? err.message : "Could not upload image.",
+          title: t("admin.imageUpload.uploadFailedTitle"),
+          description: err instanceof ApiError
+            ? err.message
+            : t("admin.imageUpload.uploadFailedDescription"),
           variant: "error",
         })
       );
@@ -67,7 +74,7 @@ export function ImageUpload({
   const uploadManyMutation = useMutation({
     mutationFn: async (files: File[]) => {
       const valid = files.filter(
-        (f) => f.type.startsWith("image/") && f.size <= MAX_BYTES
+        (f) => ACCEPTED_TYPES.includes(f.type) && f.size <= MAX_BYTES
       );
       const skipped = files.length - valid.length;
       const urls = await Promise.all(valid.map((f) => uploadsApi.image(f, path)));
@@ -78,8 +85,10 @@ export function ImageUpload({
       if (skipped > 0) {
         dispatch(
           pushToast({
-            title: "Some files skipped",
-            description: `${skipped} file(s) weren’t images or were larger than 5 MB.`,
+            title: t("admin.imageUpload.someSkippedTitle"),
+            description: t("admin.imageUpload.someSkippedDescription", {
+              count: skipped,
+            }),
             variant: "warning",
           })
         );
@@ -88,8 +97,10 @@ export function ImageUpload({
     onError: (err) => {
       dispatch(
         pushToast({
-          title: "Upload failed",
-          description: err instanceof ApiError ? err.message : "Could not upload images.",
+          title: t("admin.imageUpload.uploadFailedTitle"),
+          description: err instanceof ApiError
+            ? err.message
+            : t("admin.imageUpload.uploadManyFailedDescription"),
           variant: "error",
         })
       );
@@ -105,11 +116,11 @@ export function ImageUpload({
 
   const handleFile = (file: File | null | undefined) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
       dispatch(
         pushToast({
-          title: "Invalid file",
-          description: "Please choose an image file.",
+          title: t("admin.imageUpload.invalidFileTitle"),
+          description: t("admin.imageUpload.invalidFileDescription"),
           variant: "warning",
         })
       );
@@ -118,8 +129,8 @@ export function ImageUpload({
     if (file.size > MAX_BYTES) {
       dispatch(
         pushToast({
-          title: "Too large",
-          description: "Images must be 5 MB or smaller.",
+          title: t("admin.imageUpload.tooLargeTitle"),
+          description: t("admin.imageUpload.tooLargeDescription"),
           variant: "warning",
         })
       );
@@ -130,9 +141,9 @@ export function ImageUpload({
 
   return (
     <div className={className}>
-      {label ? (
-        <label className="mb-1.5 block text-xs font-medium text-ink-700">{label}</label>
-      ) : null}
+      <label className="mb-1.5 block text-xs font-medium text-ink-700">
+        {label ?? t("admin.imageUpload.image")}
+      </label>
 
       <div
         onDragOver={(e) => {
@@ -146,6 +157,7 @@ export function ImageUpload({
           if (multiple) handleFiles(e.dataTransfer.files);
           else handleFile(e.dataTransfer.files?.[0]);
         }}
+        onDoubleClick={() => inputRef.current?.click()}
         className={
           "relative flex min-h-40 flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed transition-colors " +
           (dragOver ? "border-bloom-500 bg-bloom-50" : "border-ink-200 bg-cream-50")
@@ -163,13 +175,15 @@ export function ImageUpload({
             <ImageIcon size={28} className="text-ink-400" />
             <p className="text-sm font-medium text-ink-700">
               {busy
-                ? "Uploading…"
+                ? t("admin.common.uploading")
                 : multiple
-                  ? "Drop images here"
-                  : "Drop an image here"}
+                  ? t("admin.imageUpload.dropImages")
+                  : t("admin.imageUpload.dropImage")}
             </p>
             <p className="text-xs text-ink-400">
-              PNG, JPG, or WebP · up to 5 MB{multiple ? " each" : ""}
+              {multiple
+                ? t("admin.imageUpload.formatsHintEach")
+                : t("admin.imageUpload.formatsHint")}
             </p>
           </div>
         )}
@@ -177,7 +191,7 @@ export function ImageUpload({
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept={ACCEPT_ATTR}
           multiple={multiple}
           className="sr-only"
           onChange={(e) => {
@@ -199,7 +213,7 @@ export function ImageUpload({
               onClick={() => onChange(null)}
               leadingIcon={<TrashIcon size={14} />}
             >
-              Remove
+              {t("admin.common.remove")}
             </Button>
           ) : null}
           <Button
@@ -209,7 +223,11 @@ export function ImageUpload({
             onClick={() => inputRef.current?.click()}
             isLoading={busy}
           >
-            {value ? "Replace" : multiple ? "Choose files" : "Choose file"}
+            {value
+              ? t("admin.imageUpload.replace")
+              : multiple
+                ? t("admin.imageUpload.chooseFiles")
+                : t("admin.imageUpload.chooseFile")}
           </Button>
         </div>
       </div>

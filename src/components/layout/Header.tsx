@@ -190,7 +190,7 @@ export function Header() {
             <Link
               href={ROUTES.wishlist}
               aria-label={`${t("nav.wishlist")}, ${tc(wishlistCount, "units.itemOne", "units.itemOther")}`}
-              className="relative hidden h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all hover:bg-cream-100 sm:inline-flex"
+              className="relative hidden h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all hover:bg-ink-900 hover:text-white sm:inline-flex"
             >
               <HeartIcon size={20} />
               {wishlistCount > 0 ? (

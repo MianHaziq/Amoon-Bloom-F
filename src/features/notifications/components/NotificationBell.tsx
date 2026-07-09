@@ -90,7 +90,7 @@ export function NotificationBell({ className }: { className?: string }) {
         aria-label={t("notifications.bell")}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all hover:bg-cream-100"
+        className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all hover:bg-ink-900 hover:text-white"
       >
         <BellIcon size={20} />
         {unread > 0 ? (
@@ -143,7 +143,7 @@ export function NotificationBell({ className }: { className?: string }) {
                       type="button"
                       onClick={() => onItemClick(n)}
                       className={cn(
-                        "flex w-full flex-col gap-0.5 px-4 py-3 text-start transition-colors hover:bg-cream-50",
+                        "flex w-full flex-col gap-0.5 px-4 py-3 text-start transition-colors hover:bg-bloom-50",
                         !n.readAt && "bg-blush-50/60"
                       )}
                     >
@@ -174,7 +174,7 @@ export function NotificationBell({ className }: { className?: string }) {
           <Link
             href={ROUTES.notifications}
             onClick={() => setOpen(false)}
-            className="block border-t border-ink-100 px-4 py-3 text-center text-sm font-medium text-bloom-700 transition-colors hover:bg-cream-50"
+            className="block border-t border-ink-100 px-4 py-3 text-center text-sm font-medium text-bloom-700 transition-colors hover:bg-bloom-50"
           >
             {t("notifications.viewAll")}
           </Link>

@@ -28,10 +28,10 @@
   --color-blush-300: #f1bba6;
   --color-blush-400: #e8957a;
 
-  /* --- Cream (page surfaces) --- */
-  --color-cream-50: #fdfbf6;
-  --color-cream-100: #f9f3e6;
-  --color-cream-200: #f1e7cf;
+  /* --- Cream (page surfaces; neutralized to warm-gray, no beige tint) --- */
+  --color-cream-50: #ffffff;
+  --color-cream-100: #f7f6f3;
+  --color-cream-200: #ebe9e3;
 
   /* --- Ink (warm neutrals for text) --- */
   --color-ink-50: #f7f6f3;

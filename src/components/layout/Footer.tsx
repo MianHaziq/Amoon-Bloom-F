@@ -69,7 +69,7 @@ export async function Footer() {
   ];
 
   return (
-    <footer className="bg-ink-900 text-cream-100">
+    <footer className="bg-black text-cream-100">
       {/* Newsletter strip */}
       <Container className="grid gap-10 border-b border-white/10 py-16 lg:grid-cols-[1fr_1fr] lg:items-center lg:py-20">
         <div>
@@ -104,14 +104,14 @@ export async function Footer() {
           <div className="mt-6 flex flex-col gap-3 text-sm text-cream-100/80">
             <a
               href={`mailto:${siteConfig.contact.email}`}
-              className="inline-flex items-center gap-2 hover:text-cream-50"
+              className="inline-flex items-center gap-2 hover:text-bloom-300"
             >
               <MailIcon size={16} className="text-bloom-300" />
               {siteConfig.contact.email}
             </a>
             <a
               href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`}
-              className="inline-flex items-center gap-2 hover:text-cream-50"
+              className="inline-flex items-center gap-2 hover:text-bloom-300"
             >
               <PhoneIcon size={16} className="text-bloom-300" />
               {siteConfig.contact.phone}
@@ -132,7 +132,7 @@ export async function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-cream-100/85 transition-colors hover:text-cream-50"
+                    className="text-sm text-cream-100/85 transition-colors hover:text-bloom-300"
                   >
                     {link.label}
                   </Link>
@@ -151,7 +151,7 @@ export async function Footer() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="transition-colors hover:text-cream-50"
+                className="transition-colors hover:text-bloom-300"
               >
                 {item.label}
               </Link>
@@ -164,7 +164,7 @@ export async function Footer() {
               target="_blank"
               rel="noreferrer"
               aria-label="Instagram"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 transition-colors hover:bg-white/10 hover:text-cream-50"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 transition-colors hover:bg-white/10 hover:text-bloom-300"
             >
               <InstagramIcon size={16} />
             </a>
@@ -173,7 +173,7 @@ export async function Footer() {
               target="_blank"
               rel="noreferrer"
               aria-label="WhatsApp"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 transition-colors hover:bg-white/10 hover:text-cream-50"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 transition-colors hover:bg-white/10 hover:text-bloom-300"
             >
               <WhatsAppIcon size={16} />
             </a>
@@ -182,7 +182,7 @@ export async function Footer() {
               target="_blank"
               rel="noreferrer"
               aria-label="TikTok"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 transition-colors hover:bg-white/10 hover:text-cream-50"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 transition-colors hover:bg-white/10 hover:text-bloom-300"
             >
               <TikTokIcon size={16} />
             </a>
@@ -197,7 +197,7 @@ export async function Footer() {
       </div>
 
       {/* Powered-by + copyright */}
-      <div className="border-t border-white/10 bg-ink-900">
+      <div className="border-t border-white/10 bg-black">
         <Container className="flex flex-col items-center justify-between gap-2 py-5 text-[0.7rem] uppercase tracking-[0.18em] text-cream-100/50 md:flex-row">
           <span>
             © {new Date().getFullYear()} {siteConfig.name}. {t("footer.rights")}

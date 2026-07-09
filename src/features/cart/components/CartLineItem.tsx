@@ -97,7 +97,7 @@ export function CartLineItem({
             variant="ghost"
             size="sm"
             onClick={() => dispatch(removeFromCart(item.productId))}
-            className="text-ink-400 hover:text-ink-900"
+            className="text-ink-400"
           >
             <TrashIcon size={16} />
           </IconButton>

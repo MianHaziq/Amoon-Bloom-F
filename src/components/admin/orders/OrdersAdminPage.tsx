@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Pagination } from "@/components/admin/Pagination";
+import { Select } from "@/components/admin/Select";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 import {
@@ -21,12 +22,13 @@ import type { ApiOrderListRow, OrderStatus } from "@/features/orders/types";
 
 const PAGE_SIZE = 20;
 
+function customerName(o: ApiOrderListRow): string {
+  if (!o.user) return "";
+  return [o.user.firstName, o.user.lastName].filter(Boolean).join(" ");
+}
+
 function customerLabel(o: ApiOrderListRow): string {
-  if (o.user) {
-    const name = [o.user.firstName, o.user.lastName].filter(Boolean).join(" ");
-    return name || o.user.email || "—";
-  }
-  return "—";
+  return customerName(o) || o.user?.email || "—";
 }
 
 function lineItemCount(o: ApiOrderListRow): number {
@@ -75,7 +77,7 @@ export function OrdersAdminPage() {
       cell: (o) => (
         <div className="max-w-56">
           <p className="truncate text-ink-900">{customerLabel(o)}</p>
-          {o.user?.email ? (
+          {customerName(o) && o.user?.email ? (
             <p className="truncate text-xs text-ink-500">{o.user.email}</p>
           ) : null}
         </div>
@@ -143,40 +145,40 @@ export function OrdersAdminPage() {
             <label className="text-xs font-medium uppercase tracking-wider text-ink-500">
               {t("admin.status")}
             </label>
-            <select
+            <Select
               value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as OrderStatus | "ALL");
+              onChange={(v) => {
+                setStatus(v as OrderStatus | "ALL");
                 setPage(1);
               }}
-              className="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none"
-            >
-              <option value="ALL">{t("admin.ordersPage.allOption")}</option>
-              {ORDER_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {t(ORDER_STATUS_LABEL_KEY[s])}
-                </option>
-              ))}
-            </select>
+              aria-label={t("admin.status")}
+              options={[
+                { value: "ALL", label: t("admin.ordersPage.allOption") },
+                ...ORDER_STATUSES.map((s) => ({
+                  value: s,
+                  label: t(ORDER_STATUS_LABEL_KEY[s]),
+                })),
+              ]}
+            />
 
             <label className="ms-2 text-xs font-medium uppercase tracking-wider text-ink-500">
               {t("admin.ordersPage.columnRegion")}
             </label>
-            <select
+            <Select
               value={region}
-              onChange={(e) => {
-                setRegion(e.target.value);
+              onChange={(v) => {
+                setRegion(v);
                 setPage(1);
               }}
-              className="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none"
-            >
-              <option value="ALL">{t("admin.ordersPage.allRegionsOption")}</option>
-              {(regionsQuery.data ?? []).map((r) => (
-                <option key={r.id} value={r.code}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+              aria-label={t("admin.ordersPage.columnRegion")}
+              options={[
+                { value: "ALL", label: t("admin.ordersPage.allRegionsOption") },
+                ...(regionsQuery.data ?? []).map((r) => ({
+                  value: r.code,
+                  label: r.name,
+                })),
+              ]}
+            />
           </div>
         }
         footer={

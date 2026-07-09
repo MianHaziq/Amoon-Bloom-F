@@ -182,7 +182,7 @@ export function AdminDashboard() {
           ) : (
             <div className="overflow-x-auto rounded-xl border border-ink-100">
               <table className="w-full min-w-120 text-start text-sm">
-                <thead className="bg-cream-100 text-xs uppercase tracking-wider text-ink-500">
+                <thead className="bg-bloom-100 text-xs uppercase tracking-wider text-bloom-800">
                   <tr>
                     <th className="px-4 py-3 font-medium">
                       {t("admin.dashboardPage.columnOrder")}

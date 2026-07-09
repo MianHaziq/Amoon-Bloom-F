@@ -29,9 +29,9 @@ export function MegaMenu({ className }: MegaMenuProps) {
       <Link
         href={ROUTES.shop}
         onMouseEnter={() => setActiveId(null)}
-        className="rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-ink-900"
+        className="group rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-bloom-600"
       >
-        {t("common.shop")}
+        <AnimatedLabel>{t("common.shop")}</AnimatedLabel>
       </Link>
       {groups.map((group) => (
         <MegaMenuTrigger
@@ -43,17 +43,49 @@ export function MegaMenu({ className }: MegaMenuProps) {
       ))}
       <Link
         href="/about"
-        className="rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-ink-900"
+        className="group rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-bloom-600"
       >
-        {t("nav.ourStory")}
+        <AnimatedLabel>{t("nav.ourStory")}</AnimatedLabel>
       </Link>
       <Link
         href="/contact"
-        className="rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-ink-900"
+        className="group rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-bloom-600"
       >
-        {t("nav.contact")}
+        <AnimatedLabel>{t("nav.contact")}</AnimatedLabel>
       </Link>
     </nav>
+  );
+}
+
+/**
+ * Nav-link label: on hover the text lifts slightly and a hairline underline
+ * expands outward from its center. `active` drives the same state
+ * imperatively for the categories trigger, whose "hover" is really the
+ * mega-menu panel's open state (tracked in JS, not CSS :hover).
+ */
+function AnimatedLabel({
+  children,
+  active,
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "relative inline-block transition-transform duration-300 ease-out-soft",
+        active ? "-translate-y-0.5" : "group-hover:-translate-y-0.5"
+      )}
+    >
+      {children}
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-x-0 -bottom-1 h-px origin-center bg-bloom-600 transition-transform duration-300 ease-out-soft",
+          active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+        )}
+      />
+    </span>
   );
 }
 
@@ -73,11 +105,13 @@ function MegaMenuTrigger({
         type="button"
         className={cn(
           "inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-          isActive ? "text-bloom-700" : "text-ink-700 hover:text-ink-900"
+          isActive ? "text-bloom-600" : "text-ink-700 hover:text-bloom-600"
         )}
         aria-expanded={isActive}
       >
-        {group.id === "shop" ? t("nav.categories") : group.label}
+        <AnimatedLabel active={isActive}>
+          {group.id === "shop" ? t("nav.categories") : group.label}
+        </AnimatedLabel>
         <ChevronDown
           size={14}
           className={cn("transition-transform", isActive && "rotate-180")}

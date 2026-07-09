@@ -46,7 +46,7 @@ export function WishlistToggle({
       variant="subtle"
       size={size}
       className={cn(
-        "bg-white/90 backdrop-blur-sm hover:bg-white",
+        "bg-white/90 text-ink-900 backdrop-blur-sm transition-colors hover:bg-bloom-600 hover:text-white",
         inWishlist && "text-bloom-700",
         className
       )}

@@ -9,9 +9,10 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantMap = {
-  ghost: "text-ink-700 hover:bg-cream-100",
-  subtle: "bg-cream-100 text-ink-900 hover:bg-cream-200",
-  outline: "border border-ink-200 text-ink-700 hover:bg-cream-100",
+  ghost: "text-ink-700 hover:bg-bloom-600 hover:text-white",
+  subtle: "bg-ink-50 text-ink-900 hover:bg-bloom-600 hover:text-white",
+  outline:
+    "border border-ink-200 text-ink-700 hover:border-bloom-600 hover:bg-bloom-600 hover:text-white",
 } as const;
 
 const sizeMap = {

@@ -67,9 +67,20 @@ export function DataTable<T>({
         </div>
       ) : null}
 
+      {/* Clips the table to the card's rounded corners without clipping the
+          toolbar above it — the toolbar can hold a dropdown whose panel needs
+          to overflow past the card's bounds. Only rounds the edges this
+          region actually touches (no toolbar above / no footer below). */}
+      <div
+        className={cn(
+          "overflow-hidden",
+          !toolbar && "rounded-t-2xl",
+          !footer && "rounded-b-2xl"
+        )}
+      >
       <div className="overflow-x-auto">
         <table className="w-full min-w-160 text-start text-sm">
-          <thead className="bg-cream-50 text-xs uppercase tracking-wider text-ink-500">
+          <thead className="bg-bloom-100 text-xs uppercase tracking-wider text-bloom-800">
             <tr>
               {dragEnabled ? <th className="w-10 px-2 py-3" aria-hidden /> : null}
               {columns.map((col) => (
@@ -191,7 +202,7 @@ export function DataTable<T>({
                     onClick={interactive ? () => onRowClick?.(row) : undefined}
                     className={cn(
                       "border-t border-ink-100 transition-colors",
-                      interactive && "cursor-pointer hover:bg-cream-50"
+                      interactive && "cursor-pointer hover:bg-bloom-50"
                     )}
                   >
                     {columns.map((col) => (
@@ -213,6 +224,7 @@ export function DataTable<T>({
             </m.tbody>
           )}
         </table>
+      </div>
       </div>
 
       {footer ? (
