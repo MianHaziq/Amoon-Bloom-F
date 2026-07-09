@@ -8,6 +8,7 @@ import { Badge, Drawer } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Pagination } from "@/components/admin/Pagination";
+import { Select } from "@/components/admin/Select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { formatDate } from "@/lib/format";
 import { SearchIcon } from "@/components/icons";
@@ -111,21 +112,21 @@ export function ContactAdminPage() {
                 className="flex-1 bg-transparent text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
               />
             </div>
-            <select
+            <Select
               value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as ContactStatus | "ALL");
+              onChange={(v) => {
+                setStatus(v as ContactStatus | "ALL");
                 setPage(1);
               }}
-              className="rounded-lg border border-ink-200 bg-white px-3 py-1.5 text-sm"
-            >
-              <option value="ALL">{t("admin.contactPage.allStatusesOption")}</option>
-              {CONTACT_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {t(CONTACT_STATUS_LABEL_KEY[s])}
-                </option>
-              ))}
-            </select>
+              aria-label={t("admin.contactPage.allStatusesOption")}
+              options={[
+                { value: "ALL", label: t("admin.contactPage.allStatusesOption") },
+                ...CONTACT_STATUSES.map((s) => ({
+                  value: s,
+                  label: t(CONTACT_STATUS_LABEL_KEY[s]),
+                })),
+              ]}
+            />
           </div>
         }
         footer={

@@ -6,6 +6,7 @@ import { analyticsApi } from "@/features/analytics/api/analytics.api";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { PageHeader } from "@/components/admin/PageHeader";
+import { Select } from "@/components/admin/Select";
 import { Skeleton } from "@/components/ui/Loader";
 import { ApiError } from "@/services/http";
 import { formatCurrency } from "@/lib/format";
@@ -77,18 +78,19 @@ export function AnalyticsAdminPage() {
         description={t("admin.analyticsPage.description")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <select
+            <Select
               value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              className="rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs text-ink-900 focus:border-bloom-500 focus:outline-none"
-            >
-              <option value="ALL">{t("admin.analyticsPage.allRegionsOption")}</option>
-              {(regionsQuery.data ?? []).map((r) => (
-                <option key={r.id} value={r.code}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+              onChange={setRegion}
+              triggerClassName="text-xs py-1.5"
+              aria-label={t("admin.analyticsPage.allRegionsOption")}
+              options={[
+                { value: "ALL", label: t("admin.analyticsPage.allRegionsOption") },
+                ...(regionsQuery.data ?? []).map((r) => ({
+                  value: r.code,
+                  label: r.name,
+                })),
+              ]}
+            />
             <div className="flex max-w-full overflow-x-auto rounded-full border border-ink-200 bg-white p-1 text-xs">
               {PRESETS.map((p) => (
                 <button

@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Input } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { RegionPicker } from "@/components/admin/RegionPicker";
+import { Select } from "@/components/admin/Select";
 import { SortableList, SortableItem } from "@/components/admin/Sortable";
 import {
   GripVerticalIcon,
@@ -161,13 +162,22 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
           <p className="mb-3 text-xs text-ink-500">
             {t("admin.sectionForm.visibilityHint")}
           </p>
-          <select
-            {...register("status")}
-            className="block w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
-          >
-            <option value="PUBLISHED">{t("admin.sectionForm.statusPublished")}</option>
-            <option value="DRAFT">{t("admin.sectionForm.statusDraft")}</option>
-          </select>
+          <Controller
+            control={control}
+            name="status"
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onChange={field.onChange}
+                triggerClassName="w-full rounded-lg py-2 justify-between"
+                aria-label={t("admin.sectionForm.visibilityHeading")}
+                options={[
+                  { value: "PUBLISHED", label: t("admin.sectionForm.statusPublished") },
+                  { value: "DRAFT", label: t("admin.sectionForm.statusDraft") },
+                ]}
+              />
+            )}
+          />
 
           <label className="mb-1.5 mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
             {t("admin.sectionForm.sortOrderLabel")}

@@ -89,14 +89,13 @@ export async function Footer() {
       {/* Link grid */}
       <Container className="grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <Link href={ROUTES.home} className="inline-flex items-center gap-3">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-cream-50 font-display text-base font-semibold tracking-wide text-bloom-700">
-              A
-            </span>
-            <span className="font-display text-2xl font-medium tracking-tight">
-              <span className="text-cream-50">Amoonis</span>{" "}
-              <span className="text-bloom-300">Boutique</span>
-            </span>
+          <Link href={ROUTES.home} className="inline-flex items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.svg"
+              alt={siteConfig.name}
+              className="h-9 w-auto brightness-0 invert sm:h-10"
+            />
           </Link>
           <p className="mt-4 max-w-sm text-sm text-cream-100/70">
             {t("footer.brandDesc", { country: regionCopy.country })}

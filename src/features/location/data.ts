@@ -11,7 +11,10 @@ export const COUNTRIES = [
     regionCode: "UAE",
     name: "United Arab Emirates",
     nameAr: "الإمارات العربية المتحدة",
-    flag: "🇦🇪",
+    // ISO 3166-1 alpha-2 — looks up the flag SVG (country-flag-icons) in the
+    // location picker. More reliable than flag emoji, which render as bare
+    // "AE"/"SA" text on many Windows setups.
+    iso2: "AE",
     currency: "AED",
     locale: "en-AE",
     cities: ["Dubai", "Abu Dhabi", "Sharjah"],
@@ -23,7 +26,7 @@ export const COUNTRIES = [
     regionCode: "SA",
     name: "Saudi Arabia",
     nameAr: "المملكة العربية السعودية",
-    flag: "🇸🇦",
+    iso2: "SA",
     currency: "SAR",
     locale: "en-SA",
     cities: ["Riyadh", "Jeddah", "Dammam"],

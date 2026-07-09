@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button, Input, Textarea } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { Select } from "@/components/admin/Select";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { notificationsApi } from "@/features/notifications/api/notifications.api";
 import { queryKeys } from "@/services/queryKeys";
@@ -43,6 +44,7 @@ export function NotificationsBroadcastPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -142,33 +144,46 @@ export function NotificationsBroadcastPage() {
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
                 {t("admin.notificationsPage.typeLabel")}
               </label>
-              <select
-                {...register("kind")}
-                className="block w-full rounded-2xl border border-ink-200 bg-white px-3 py-3 text-base text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-4 focus:ring-bloom-100"
-              >
-                <option value="announcement">
-                  {t("admin.notificationsPage.typeAnnouncement")}
-                </option>
-                <option value="promotion">
-                  {t("admin.notificationsPage.typePromotion")}
-                </option>
-              </select>
+              <Controller
+                control={control}
+                name="kind"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onChange={field.onChange}
+                    triggerClassName="w-full rounded-2xl py-3 justify-between"
+                    aria-label={t("admin.notificationsPage.typeLabel")}
+                    options={[
+                      { value: "announcement", label: t("admin.notificationsPage.typeAnnouncement") },
+                      { value: "promotion", label: t("admin.notificationsPage.typePromotion") },
+                    ]}
+                  />
+                )}
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
                 {t("admin.notificationsPage.regionFieldLabel")}
               </label>
-              <select
-                {...register("regionId")}
-                className="block w-full rounded-2xl border border-ink-200 bg-white px-3 py-3 text-base text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-4 focus:ring-bloom-100"
-              >
-                <option value="">{t("admin.notificationsPage.allRegionsOption")}</option>
-                {regionsQuery.data?.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name} ({r.code})
-                  </option>
-                ))}
-              </select>
+              <Controller
+                control={control}
+                name="regionId"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onChange={field.onChange}
+                    triggerClassName="w-full rounded-2xl py-3 justify-between"
+                    aria-label={t("admin.notificationsPage.regionFieldLabel")}
+                    options={[
+                      { value: "", label: t("admin.notificationsPage.allRegionsOption") },
+                      ...(regionsQuery.data ?? []).map((r) => ({
+                        value: r.id,
+                        label: `${r.name} (${r.code})`,
+                      })),
+                    ]}
+                  />
+                )}
+              />
             </div>
           </div>
           <p className="mt-3 text-xs text-ink-500">

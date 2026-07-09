@@ -8,6 +8,7 @@ import {
   SearchIcon,
   BagIcon,
   HeartIcon,
+  UserIcon,
   MenuIcon,
 } from "@/components/icons";
 import { AnnouncementBar } from "./AnnouncementBar";
@@ -114,16 +115,15 @@ export function Header() {
           {/* Logo */}
           <Link
             href={ROUTES.home}
-            className="flex shrink-0 items-center gap-2"
+            className="flex shrink-0 items-center"
             aria-label={`${siteConfig.name} — home`}
           >
-            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bloom-500 font-display text-sm font-medium tracking-wide text-white shadow-(--shadow-soft) sm:h-9 sm:w-9">
-              A
-            </span>
-            <span className="font-display text-base font-medium leading-none tracking-tight text-ink-900 sm:text-xl lg:text-2xl">
-              <span>Amoonis</span>{" "}
-              <span className="text-bloom-600">Boutique</span>
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.svg"
+              alt={siteConfig.name}
+              className="h-7 w-auto sm:h-8 lg:h-9"
+            />
           </Link>
 
           {/* Search — prominent on the live site. min-w-0 lets this flex item
@@ -147,32 +147,17 @@ export function Header() {
             </label>
           </form>
 
-          {/* Account link (desktop) */}
-          <nav className="hidden items-center gap-4 lg:flex">
-            {user ? (
-              <Link
-                href={ROUTES.account}
-                className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700 transition-colors hover:text-ink-900"
-              >
-                {user.firstName ? t("nav.greeting", { name: user.firstName }) : t("nav.myAccount")}
-              </Link>
-            ) : (
-              <Link
-                href={ROUTES.login}
-                className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700 transition-colors hover:text-ink-900"
-              >
-                {t("nav.login")}
-              </Link>
-            )}
-            {isStaff ? (
+          {/* Staff-only utility link (desktop) */}
+          {isStaff ? (
+            <nav className="hidden items-center lg:flex">
               <Link
                 href={ROUTES.admin}
                 className="inline-flex h-8 items-center rounded-full bg-ink-900 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-ink-800"
               >
                 {t("nav.adminPanel")}
               </Link>
-            ) : null}
-          </nav>
+            </nav>
+          ) : null}
 
           {/* Actions */}
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
@@ -188,6 +173,13 @@ export function Header() {
             </IconButton>
             <NotificationBell className="hidden sm:block" />
             <Link
+              href={user ? ROUTES.account : ROUTES.login}
+              aria-label={user ? t("nav.myAccount") : t("common.signIn")}
+              className="relative hidden h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all hover:bg-ink-900 hover:text-white sm:inline-flex"
+            >
+              <UserIcon size={20} />
+            </Link>
+            <Link
               href={ROUTES.wishlist}
               aria-label={`${t("nav.wishlist")}, ${tc(wishlistCount, "units.itemOne", "units.itemOther")}`}
               className="relative hidden h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all hover:bg-ink-900 hover:text-white sm:inline-flex"
@@ -202,14 +194,15 @@ export function Header() {
             <button
               type="button"
               onClick={() => dispatch(toggleCartDrawer(true))}
-              className="relative inline-flex h-10 items-center gap-2 rounded-full bg-ink-900 ps-3 pe-4 text-sm font-medium text-white transition-colors hover:bg-ink-800"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink-900 text-white transition-colors hover:bg-ink-800"
               aria-label={`${t("nav.cart")}, ${tc(itemCount, "units.itemOne", "units.itemOther")}`}
             >
-              <BagIcon size={18} />
-              <span className="hidden sm:inline">{t("nav.cart")}</span>
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white">
-                {itemCount}
-              </span>
+              <BagIcon size={20} />
+              {itemCount > 0 ? (
+                <span className="absolute -inset-e-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white ring-2 ring-cream-50">
+                  {itemCount}
+                </span>
+              ) : null}
             </button>
           </div>
         </Container>

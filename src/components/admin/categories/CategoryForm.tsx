@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Button, Input, Textarea } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { RegionPicker } from "@/components/admin/RegionPicker";
+import { Select } from "@/components/admin/Select";
 import { useT } from "@/i18n/useT";
 import type {
   ApiCategory,
@@ -122,13 +123,22 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
           <p className="mb-3 text-xs text-ink-500">
             Published categories appear on the shop. Draft keeps them hidden.
           </p>
-          <select
-            {...register("status")}
-            className="block w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
-          >
-            <option value="PUBLISHED">Published — visible on the shop</option>
-            <option value="DRAFT">Draft — hidden from customers</option>
-          </select>
+          <Controller
+            control={control}
+            name="status"
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onChange={field.onChange}
+                triggerClassName="w-full rounded-lg py-2 justify-between"
+                aria-label="Visibility"
+                options={[
+                  { value: "PUBLISHED", label: "Published — visible on the shop" },
+                  { value: "DRAFT", label: "Draft — hidden from customers" },
+                ]}
+              />
+            )}
+          />
         </section>
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">

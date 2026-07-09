@@ -19,6 +19,7 @@ import { queryKeys } from "@/services/queryKeys";
 import { Button, Input, Textarea } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { RegionPicker } from "@/components/admin/RegionPicker";
+import { Select } from "@/components/admin/Select";
 import { SortableList, SortableItem } from "@/components/admin/Sortable";
 import {
   PlusIcon,
@@ -398,14 +399,14 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                 </div>
                 <Textarea
                   label={t("admin.productForm.bodyEn")}
-                  rows={3}
+                  rows={5}
                   containerClassName="mt-3"
                   error={errors.descriptions?.[index]?.description?.message}
                   {...register(`descriptions.${index}.description`)}
                 />
                 <Textarea
                   label={t("admin.productForm.bodyAr")}
-                  rows={3}
+                  rows={5}
                   containerClassName="mt-3"
                   dir="rtl"
                   {...register(`descriptions.${index}.description_ar`)}
@@ -493,13 +494,22 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           title={t("admin.productForm.visibilityHeading")}
           description={t("admin.productForm.visibilityDescription")}
         >
-          <select
-            {...register("status")}
-            className="block w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
-          >
-            <option value="PUBLISHED">{t("admin.productForm.statusPublished")}</option>
-            <option value="DRAFT">{t("admin.productForm.statusDraft")}</option>
-          </select>
+          <Controller
+            control={control}
+            name="status"
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onChange={field.onChange}
+                triggerClassName="w-full rounded-lg py-2 justify-between"
+                aria-label={t("admin.productForm.visibilityHeading")}
+                options={[
+                  { value: "PUBLISHED", label: t("admin.productForm.statusPublished") },
+                  { value: "DRAFT", label: t("admin.productForm.statusDraft") },
+                ]}
+              />
+            )}
+          />
         </Card>
 
         <Card title="Regions">
@@ -513,19 +523,25 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         </Card>
 
         <Card title={t("admin.productForm.categoryHeading")}>
-          <select
-            {...register("categoryId", {
-              setValueAs: (v) => (v === "" ? null : v),
-            })}
-            className="block w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
-          >
-            <option value="">{t("admin.productForm.uncategorizedOption")}</option>
-            {categoriesQuery.data?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
-              </option>
-            ))}
-          </select>
+          <Controller
+            control={control}
+            name="categoryId"
+            render={({ field }) => (
+              <Select
+                value={field.value ?? ""}
+                onChange={(v) => field.onChange(v === "" ? null : v)}
+                triggerClassName="w-full rounded-lg py-2 justify-between"
+                aria-label={t("admin.productForm.categoryHeading")}
+                options={[
+                  { value: "", label: t("admin.productForm.uncategorizedOption") },
+                  ...(categoriesQuery.data ?? []).map((c) => ({
+                    value: c.id,
+                    label: c.title,
+                  })),
+                ]}
+              />
+            )}
+          />
         </Card>
 
         <Card

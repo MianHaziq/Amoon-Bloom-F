@@ -7,6 +7,7 @@ import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Input, Textarea } from "@/components/ui";
 import { RegionPicker } from "@/components/admin/RegionPicker";
+import { Select } from "@/components/admin/Select";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { productsApi } from "@/features/products/api/products.api";
 import { queryKeys } from "@/services/queryKeys";
@@ -227,13 +228,22 @@ export function PromoCodeForm({
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
                 {t("admin.promoCodeForm.typeLabel")}
               </label>
-              <select
-                {...register("discountType")}
-                className="block w-full rounded-2xl border border-ink-200 bg-white px-3 py-3 text-base text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-4 focus:ring-bloom-100"
-              >
-                <option value="PERCENTAGE">{t("admin.promoCodeForm.typePercentage")}</option>
-                <option value="FIXED">{t("admin.promoCodeForm.typeFixed")}</option>
-              </select>
+              <Controller
+                control={control}
+                name="discountType"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onChange={field.onChange}
+                    triggerClassName="w-full rounded-2xl py-3 justify-between"
+                    aria-label={t("admin.promoCodeForm.typeLabel")}
+                    options={[
+                      { value: "PERCENTAGE", label: t("admin.promoCodeForm.typePercentage") },
+                      { value: "FIXED", label: t("admin.promoCodeForm.typeFixed") },
+                    ]}
+                  />
+                )}
+              />
             </div>
             <Input
               label={
@@ -262,14 +272,24 @@ export function PromoCodeForm({
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
           <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.promoCodeForm.scopeHeading")}</h3>
-          <select
-            {...register("appliesTo")}
-            className="mb-4 block w-full rounded-2xl border border-ink-200 bg-white px-3 py-3 text-base text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-4 focus:ring-bloom-100"
-          >
-            <option value="ALL_PRODUCTS">{t("admin.promoCodeForm.scopeAllProducts")}</option>
-            <option value="SPECIFIC_PRODUCTS">{t("admin.promoCodeForm.scopeSpecificProducts")}</option>
-            <option value="SPECIFIC_CATEGORIES">{t("admin.promoCodeForm.scopeSpecificCategories")}</option>
-          </select>
+          <Controller
+            control={control}
+            name="appliesTo"
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onChange={field.onChange}
+                className="mb-4"
+                triggerClassName="w-full rounded-2xl py-3 justify-between"
+                aria-label={t("admin.promoCodeForm.scopeHeading")}
+                options={[
+                  { value: "ALL_PRODUCTS", label: t("admin.promoCodeForm.scopeAllProducts") },
+                  { value: "SPECIFIC_PRODUCTS", label: t("admin.promoCodeForm.scopeSpecificProducts") },
+                  { value: "SPECIFIC_CATEGORIES", label: t("admin.promoCodeForm.scopeSpecificCategories") },
+                ]}
+              />
+            )}
+          />
 
           {appliesTo === "SPECIFIC_PRODUCTS" ? (
             <div className="grid max-h-72 grid-cols-1 gap-1 overflow-y-auto rounded-xl border border-ink-100 bg-cream-50 p-3 sm:grid-cols-2">
