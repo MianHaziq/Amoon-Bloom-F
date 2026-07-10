@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input } from "@/components/ui";
-import { ArrowRight, MailIcon } from "@/components/icons";
+import { ArrowRight, EyeIcon, EyeOffIcon, MailIcon } from "@/components/icons";
 import { makeLoginSchema, type LoginInput } from "../schemas";
 import { useAuth } from "../hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
@@ -23,6 +23,7 @@ export function LoginForm() {
   const next = search.get("next");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const schema = useMemo(() => makeLoginSchema(t), [t]);
   const {
     register,
@@ -85,10 +86,20 @@ export function LoginForm() {
       />
       <Input
         label={t("auth.password")}
-        type="password"
+        type={showPassword ? "text" : "password"}
         autoComplete="current-password"
         placeholder="••••••••"
         error={errors.password?.message}
+        trailingIcon={
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="flex items-center text-ink-400 transition-colors hover:text-ink-700"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+          </button>
+        }
         {...register("password")}
       />
 

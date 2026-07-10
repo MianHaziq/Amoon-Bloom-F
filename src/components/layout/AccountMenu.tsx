@@ -43,13 +43,6 @@ export function AccountMenu({ className }: { className?: string }) {
     s.cart.items.reduce((sum, i) => sum + i.quantity, 0)
   );
 
-  const initials = (() => {
-    const f = user?.firstName?.[0] ?? user?.name?.[0] ?? "";
-    const l = user?.lastName?.[0] ?? "";
-    const combined = `${f}${l}`.trim();
-    return combined ? combined.toUpperCase() : null;
-  })();
-
   const displayName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     user?.name ||
@@ -61,7 +54,7 @@ export function AccountMenu({ className }: { className?: string }) {
   };
 
   return (
-    <Menu className={className}>
+    <Menu className={className} openOnHover>
       <MenuTrigger
         label={user ? t("nav.myAccount") : t("common.signIn")}
         className={cn(
@@ -71,16 +64,7 @@ export function AccountMenu({ className }: { className?: string }) {
           "aria-expanded:bg-ink-900 aria-expanded:text-white"
         )}
       >
-        {user && initials ? (
-          <span
-            aria-hidden
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-bloom-100 text-[11px] font-semibold text-bloom-700 transition-colors group-hover:bg-white/15 group-hover:text-white group-aria-expanded:bg-white/15 group-aria-expanded:text-white"
-          >
-            {initials}
-          </span>
-        ) : (
-          <UserIcon size={20} />
-        )}
+        <UserIcon size={20} />
       </MenuTrigger>
 
       <MenuContent align="end">

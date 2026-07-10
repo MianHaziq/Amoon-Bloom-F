@@ -5,19 +5,20 @@ import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setLocale, type Locale } from "@/store/slices/ui.slice";
 import { readLocaleCookie, writeLocaleCookie } from "@/i18n";
-import { cn } from "@/lib/cn";
 import { useT } from "@/i18n/useT";
+import {
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
+} from "@/components/ui";
+import { CheckIcon, ChevronDown, GlobeIcon } from "@/components/icons";
 
-const LOCALES: { value: Locale; label: string }[] = [
-  { value: "en", label: "EN" },
-  { value: "ar", label: "AR" },
+const LOCALES: { value: Locale; nativeLabel: string }[] = [
+  { value: "en", nativeLabel: "English" },
+  { value: "ar", nativeLabel: "العربية" },
 ];
 
-/**
- * Locale toggle. Stores the choice in redux and reflects `dir` + `lang` on
- * the document root so future RTL strings flow naturally. We keep the toggle
- * lightweight here — actual translations land via a separate i18n layer.
- */
 export function LocaleToggle({ className }: { className?: string }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -28,13 +29,9 @@ export function LocaleToggle({ className }: { className?: string }) {
     if (next === locale) return;
     dispatch(setLocale(next));
     writeLocaleCookie(next);
-    // Re-render server components (catalog content + SSR copy) with the new
-    // locale cookie so the whole page switches language immediately.
     router.refresh();
   };
 
-  // Hydrate the store from the cookie on first mount so the client matches
-  // whatever the server rendered (dir/lang).
   useEffect(() => {
     const fromCookie = readLocaleCookie();
     if (fromCookie && fromCookie !== locale) dispatch(setLocale(fromCookie));
@@ -48,34 +45,41 @@ export function LocaleToggle({ className }: { className?: string }) {
     writeLocaleCookie(locale);
   }, [locale]);
 
+  const currentLabel = locale === "ar" ? "العربية" : "English";
+
   return (
-    <div
-      role="group"
-      aria-label={t("common.language")}
-      className={cn(
-        "inline-flex items-center rounded-full bg-cream-100 p-0.5 text-xs font-semibold",
-        className
-      )}
-    >
-      {LOCALES.map((opt) => {
-        const active = locale === opt.value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => choose(opt.value)}
-            aria-pressed={active}
-            className={cn(
-              "rounded-full px-3 py-1.5 transition-all duration-200",
-              active
-                ? "bg-white text-ink-900 shadow-(--shadow-soft)"
-                : "text-ink-500 hover:text-ink-900"
-            )}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
+    <Menu className={className} openOnHover>
+      <MenuTrigger
+        label={t("common.language")}
+        className="group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-ink-700 transition-all duration-200 hover:bg-ink-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50 aria-expanded:bg-ink-900 aria-expanded:text-white"
+      >
+        <GlobeIcon size={18} className="shrink-0" />
+        <span>{currentLabel}</span>
+        <ChevronDown
+          size={12}
+          className="shrink-0 text-ink-400 transition-transform duration-200 group-aria-expanded:rotate-180"
+        />
+      </MenuTrigger>
+
+      <MenuContent align="end" className="min-w-36">
+        {LOCALES.map((opt) => {
+          const active = locale === opt.value;
+          return (
+            <MenuItem
+              key={opt.value}
+              onSelect={() => choose(opt.value)}
+              trailing={
+                active ? (
+                  <CheckIcon size={14} className="text-bloom-600" />
+                ) : undefined
+              }
+              className={active ? "font-semibold text-ink-900" : undefined}
+            >
+              {opt.nativeLabel}
+            </MenuItem>
+          );
+        })}
+      </MenuContent>
+    </Menu>
   );
 }

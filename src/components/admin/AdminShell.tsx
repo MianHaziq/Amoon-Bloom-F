@@ -78,11 +78,16 @@ export function AdminShell({ children, title }: AdminShellProps) {
       router.replace(SIGN_IN_REDIRECT);
       return;
     }
+    // Non-admin/manager user — bounce to storefront immediately.
     const role = reduxUser?.role;
     if (reduxUser && role !== "ADMIN" && role !== "MANAGER") {
       router.replace("/");
     }
   }, [hydrated, token, profileQuery.isError, profileQuery.isSuccess, profileQuery.data, reduxUser, dispatch, router]);
+
+  // Derived: we know for certain the user is not staff (role resolved, not admin/manager).
+  const isDefinitelyUnauthorized =
+    hydrated && !!reduxUser && reduxUser.role !== "ADMIN" && reduxUser.role !== "MANAGER";
 
   const handleOpenMobileNav = useCallback(() => setMobileNavOpen(true), []);
   const handleCloseMobileNav = useCallback(() => setMobileNavOpen(false), []);
@@ -91,6 +96,10 @@ export function AdminShell({ children, title }: AdminShellProps) {
   const isLoading =
     !hydrated || (!reduxUser && (profileQuery.isPending || profileQuery.isFetching));
   const isAuthorized = reduxUser?.role === "ADMIN" || reduxUser?.role === "MANAGER";
+
+  // Known non-admin: return null immediately — the redirect effect fires in parallel.
+  // Prevents admin UI from ever rendering for unauthorized users.
+  if (isDefinitelyUnauthorized) return null;
 
   if (isLoading || !isAuthorized) {
     return (

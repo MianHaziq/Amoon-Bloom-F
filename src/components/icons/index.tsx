@@ -339,6 +339,14 @@ export const EyeIcon = ({ size, ...rest }: IconProps) => (
   </svg>
 );
 
+export const EyeOffIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="M17.9 17.9A18 18 0 0 1 12 19C5.5 19 2 12 2 12a17.8 17.8 0 0 1 4.1-5.9M9.9 5.2A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17.8 17.8 0 0 1-2.4 3.5" />
+    <path d="M14.1 14.1A3 3 0 0 1 9.9 9.9" />
+    <path d="M2 2l20 20" />
+  </svg>
+);
+
 export const FilterIcon = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <path d="M3 5h18l-7 9v6l-4-2v-4L3 5Z" />

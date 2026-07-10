@@ -186,17 +186,21 @@ export function Header() {
                 </span>
               ) : null}
             </Link>
-            {/* Cart — sits immediately before the profile control. Badge slot is
-                always present in markup so a count appears the instant it's > 0. */}
+            {/* Cart — sits immediately before the profile control. */}
             <button
               type="button"
               onClick={() => dispatch(toggleCartDrawer(true))}
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink-900 text-white transition-all duration-200 hover:bg-ink-800 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50"
+              className={cn(
+                "relative inline-flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50",
+                itemCount > 0
+                  ? "bg-bloom-50 text-bloom-700 hover:bg-bloom-100"
+                  : "text-ink-700 hover:bg-ink-900 hover:text-white"
+              )}
               aria-label={`${t("nav.cart")}, ${tc(itemCount, "units.itemOne", "units.itemOther")}`}
             >
               <BagIcon size={20} />
               {itemCount > 0 ? (
-                <span className="absolute -inset-e-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white ring-2 ring-cream-50">
+                <span className="absolute -right-0.5 -top-0.5 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-bloom-500 px-1 text-[10px] font-bold tabular-nums text-white ring-2 ring-cream-50">
                   {itemCount > 99 ? "99+" : itemCount}
                 </span>
               ) : null}

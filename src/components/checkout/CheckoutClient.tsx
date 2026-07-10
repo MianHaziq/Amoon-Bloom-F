@@ -584,8 +584,15 @@ function AddressStep({
           <Input
             label={t("checkout.phone")}
             type="tel"
+            inputMode="numeric"
             autoComplete="tel"
             error={newAddrErrors.phone?.message}
+            onKeyDown={(e) => {
+              const allowed = ["Backspace","Delete","Tab","Escape","Enter","ArrowLeft","ArrowRight","Home","End"];
+              if (!allowed.includes(e.key) && !/^[0-9+\s()\-]$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+              }
+            }}
             {...regNewAddr("phone")}
           />
           {/* Email — guests only; optional but enables receipt + order linking. */}

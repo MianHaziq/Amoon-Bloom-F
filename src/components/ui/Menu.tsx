@@ -79,9 +79,12 @@ function focusItem(panel: HTMLElement | null, index: number) {
 export function Menu({
   children,
   className,
+  openOnHover = false,
 }: {
   children: ReactNode;
   className?: string;
+  /** When true the menu opens on mouse-enter and closes on mouse-leave. */
+  openOnHover?: boolean;
 }) {
   const [open, setOpenState] = useState(false);
   const [openedByKeyboard, setOpenedByKeyboard] = useState(false);
@@ -139,7 +142,12 @@ export function Menu({
         menuId,
       }}
     >
-      <div ref={rootRef} className={cn("relative", className)}>
+      <div
+        ref={rootRef}
+        className={cn("relative", className)}
+        onMouseEnter={openOnHover ? () => setOpen(true) : undefined}
+        onMouseLeave={openOnHover ? () => setOpen(false) : undefined}
+      >
         {children}
       </div>
     </MenuContext.Provider>

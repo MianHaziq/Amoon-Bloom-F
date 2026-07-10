@@ -183,8 +183,15 @@ export function AccountProfile() {
           <Input
             label={t("checkout.phone")}
             type="tel"
+            inputMode="numeric"
             placeholder="+971 50 000 0000"
             containerClassName="sm:col-span-2"
+            onKeyDown={(e) => {
+              const allowed = ["Backspace","Delete","Tab","Escape","Enter","ArrowLeft","ArrowRight","Home","End"];
+              if (!allowed.includes(e.key) && !/^[0-9+\s()\-]$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+              }
+            }}
             {...regProfile("phone")}
           />
           <div className="sm:col-span-2 flex justify-end">

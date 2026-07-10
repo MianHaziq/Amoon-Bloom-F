@@ -73,7 +73,7 @@ export const queryKeys = {
 
   banners: {
     all: ["banners"] as const,
-    list: () => [...queryKeys.banners.all, "list"] as const,
+    list: (params?: unknown) => [...queryKeys.banners.all, "list", params ?? null] as const,
   },
 
   contact: {

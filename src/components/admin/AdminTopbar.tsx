@@ -37,12 +37,6 @@ export function AdminTopbar({ title, onOpenMobileNav }: AdminTopbarProps) {
   const user = useAppSelector((s) => s.auth.user);
   const isAdmin = user?.role === "ADMIN";
 
-  const initials = (() => {
-    const f = user?.firstName?.[0] ?? user?.name?.[0] ?? "A";
-    const l = user?.lastName?.[0] ?? "";
-    return `${f}${l}`.toUpperCase();
-  })();
-
   const displayName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     user?.name ||
@@ -83,29 +77,12 @@ export function AdminTopbar({ title, onOpenMobileNav }: AdminTopbarProps) {
         <NotificationBell />
         <LocaleToggle className="hidden sm:inline-flex" />
 
-        <Menu>
+        <Menu openOnHover>
           <MenuTrigger
             label={t("admin.myProfile")}
-            className="group flex items-center gap-2 rounded-full border border-ink-100 bg-white p-1 pe-2.5 text-sm transition-all duration-200 hover:border-ink-200 hover:bg-ink-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50 aria-expanded:border-ink-200 aria-expanded:bg-ink-50"
+            className="group inline-flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all duration-200 hover:bg-ink-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50 aria-expanded:bg-ink-900 aria-expanded:text-white"
           >
-            <span
-              aria-hidden
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-bloom-100 text-[11px] font-semibold text-bloom-700"
-            >
-              {initials}
-            </span>
-            <span className="hidden text-start sm:block">
-              <span className="block text-xs font-semibold leading-tight text-ink-900">
-                {user?.firstName || user?.name || t("admin.admin")}
-              </span>
-              <span className="block text-[10px] uppercase tracking-wider text-ink-400">
-                {user?.role ?? t("admin.admin")}
-              </span>
-            </span>
-            <ChevronDown
-              size={16}
-              className="hidden text-ink-400 transition-transform duration-200 group-aria-expanded:rotate-180 sm:block"
-            />
+            <UserIcon size={20} />
           </MenuTrigger>
 
           <MenuContent align="end">

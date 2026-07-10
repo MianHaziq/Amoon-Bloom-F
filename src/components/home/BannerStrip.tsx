@@ -1,15 +1,17 @@
 import Image from "next/image";
 import { Container } from "@/components/ui";
-import { bannersApi } from "@/features/banners/api/banners.api";
+import { getCachedBanners } from "@/services/catalogCache";
+import { getServerRegion } from "@/services/serverRegion";
 
 /**
- * Server component — pulls promotional banners from the backend and renders
+ * Server component — pulls promotional MOBILE banners from the backend and renders
  * a horizontal scroll-snap strip. Mirrors the mobile app's banner carousel
  * concept (spec §3.5). Returns `null` when there are no banners so the home
  * page degrades gracefully and we don't show an empty band.
  */
 export async function BannerStrip() {
-  const banners = await bannersApi.list().catch(() => []);
+  const region = await getServerRegion();
+  const banners = await getCachedBanners(region, "MOBILE").catch(() => []);
   if (banners.length === 0) return null;
 
   const sorted = [...banners].sort((a, b) => a.sortOrder - b.sortOrder);
