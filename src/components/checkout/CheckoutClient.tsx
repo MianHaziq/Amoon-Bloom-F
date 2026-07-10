@@ -31,7 +31,11 @@ import { promoCodesApi } from "@/features/promo-codes/api/promo-codes.api";
 import { queryKeys } from "@/services/queryKeys";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { getCountry } from "@/features/location/data";
 import { ROUTES } from "@/constants/routes";
+import { STORAGE_KEYS } from "@/constants/storage-keys";
+import { storage } from "@/lib/storage";
+import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
 import { formatCurrency } from "@/lib/format";
@@ -61,6 +65,13 @@ const makeNewAddressSchema = (t: TranslateFn) =>
     state: z.string().optional(),
     postalCode: z.string().optional(),
     country: z.string().min(2, t("validation.required")),
+    // Guests only (optional): enables the receipt email + links the order on
+    // sign-up. Empty string is allowed; a non-empty value must be a valid email.
+    email: z
+      .string()
+      .email(t("validation.email"))
+      .optional()
+      .or(z.literal("")),
   });
 
 type NewAddressValues = z.infer<ReturnType<typeof makeNewAddressSchema>>;
@@ -71,8 +82,28 @@ export function CheckoutClient() {
   const queryClient = useQueryClient();
   const cart = useCart();
   const user = useAppSelector((s) => s.auth.user);
-  const { currency, locale, countryName } = useCurrency();
-  const { t, tc } = useT();
+  const isAuthed = useAppSelector((s) => s.auth.status === "authenticated");
+  const hydrated = useIsHydrated();
+  // A returning customer has a token in storage but auth may still be hydrating
+  // (AuthHydrator re-fetches the profile on load). Hold the checkout until that
+  // resolves so we don't flash the guest form at a logged-in user. Guests (no
+  // token) fall straight through to the guest flow.
+  const authHydrating =
+    hydrated && !isAuthed && Boolean(storage.get<string>(STORAGE_KEYS.authToken));
+  const { currency, locale, countryName, countryCode } = useCurrency();
+  const { t, tc, locale: uiLocale } = useT();
+
+  // Supported delivery cities for the current market — the city field is a
+  // dropdown with the market's default pre-selected.
+  const country = getCountry(countryCode);
+  const cityOptions = useMemo(
+    () =>
+      country.cities.map((value, i) => ({
+        value,
+        label: uiLocale === "ar" ? country.citiesAr[i] ?? value : value,
+      })),
+    [country, uiLocale]
+  );
 
   const newAddressSchema = useMemo(() => makeNewAddressSchema(t), [t]);
 
@@ -87,12 +118,16 @@ export function CheckoutClient() {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Saved addresses are an authenticated-only feature (GET /user/addresses).
+  // Guests always use the inline form.
   const addressesQuery = useQuery({
     queryKey: queryKeys.addresses.list(),
     queryFn: () => addressesApi.list(),
+    enabled: isAuthed,
   });
 
   const defaultAddressId: string | "new" | null = (() => {
+    if (!isAuthed) return "new";
     if (!addressesQuery.data) return null;
     if (addressesQuery.data.length === 0) return "new";
     const def =
@@ -100,7 +135,10 @@ export function CheckoutClient() {
     return def.id;
   })();
 
-  const selectedAddressId = explicitSelection ?? defaultAddressId;
+  // Guests can only ever use the inline "new address" form.
+  const selectedAddressId = isAuthed
+    ? explicitSelection ?? defaultAddressId
+    : "new";
   const selectedAddress =
     addressesQuery.data?.find((a) => a.id === selectedAddressId) ?? null;
 
@@ -118,10 +156,12 @@ export function CheckoutClient() {
       phone: user?.phone ?? "",
       streetAddress: "",
       apartment: "",
-      city: user?.addressCity ?? "",
+      // Pre-select the market's default supported city (changeable in the form).
+      city: user?.addressCity || country.defaultCity,
       state: "",
       postalCode: "",
       country: user?.addressCountry ?? countryName,
+      email: user?.email ?? "",
     },
   });
 
@@ -192,32 +232,65 @@ export function CheckoutClient() {
         throw new Error(t("checkout.chooseAddress"));
       }
 
-      await syncCart();
+      const shippingAddress = inlineAddress
+        ? {
+            fullName: inlineAddress.fullName,
+            phone: inlineAddress.phone,
+            streetAddress: inlineAddress.streetAddress,
+            apartment: inlineAddress.apartment || null,
+            city: inlineAddress.city,
+            state: inlineAddress.state || null,
+            postalCode: inlineAddress.postalCode || null,
+            country: inlineAddress.country,
+          }
+        : undefined;
 
+      if (!isAuthed) {
+        // Guest: no server cart — send the local cart items inline. COD only.
+        if (cart.items.length === 0) throw new Error(t("checkout.cartEmptyError"));
+        return ordersApi.guestCheckout({
+          items: cart.items.map((i) => ({
+            productId: i.productId,
+            quantity: i.quantity,
+            message: i.message ?? null,
+          })),
+          // Guests always fill the inline form, so shippingAddress is defined.
+          shippingAddress: shippingAddress!,
+          email: inlineAddress?.email?.trim() || undefined,
+          orderMessage: orderMessage.trim() || undefined,
+          promoCode: promoResult ? promoCode.trim() : undefined,
+        });
+      }
+
+      // Authenticated: mirror the local cart to the server cart, then check out.
+      await syncCart();
       return ordersApi.checkout({
         addressId: resolvedAddressId,
-        shippingAddress: inlineAddress
-          ? {
-              fullName: inlineAddress.fullName,
-              phone: inlineAddress.phone,
-              streetAddress: inlineAddress.streetAddress,
-              apartment: inlineAddress.apartment || null,
-              city: inlineAddress.city,
-              state: inlineAddress.state || null,
-              postalCode: inlineAddress.postalCode || null,
-              country: inlineAddress.country,
-            }
-          : undefined,
+        shippingAddress,
         paymentMethod: "COD",
         promoCode: promoResult ? promoCode.trim() : undefined,
       });
     },
     onSuccess: (order) => {
       cart.clear();
+      queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
+
+      if (!isAuthed) {
+        // Stash the returned order so the public success page can render it
+        // without an authenticated GET /orders/:id, then show the guest
+        // thank-you + account-creation experience.
+        try {
+          sessionStorage.setItem(STORAGE_KEYS.guestOrder, JSON.stringify(order));
+        } catch {
+          /* sessionStorage unavailable — the success page falls back gracefully */
+        }
+        router.push(`${ROUTES.orderSuccess}?guest=1`);
+        return;
+      }
+
       // Seed the cache so the confirmation/receipt page paints instantly from
       // the order we just received instead of refetching (or showing nothing).
       queryClient.setQueryData(queryKeys.orders.detail(order.id), order);
-      queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
       router.push(`${ROUTES.orderSuccess}?id=${order.id}`);
     },
@@ -257,6 +330,15 @@ export function CheckoutClient() {
     setSubmitError(null);
     placeOrderMutation.mutate();
   };
+
+  // Hold while a returning customer's session is still hydrating.
+  if (authHydrating) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   // Empty cart guard
   if (cart.items.length === 0 && step !== "confirmation") {
@@ -321,12 +403,14 @@ export function CheckoutClient() {
               >
                 {step === "address" && (
                   <AddressStep
+                    isAuthed={isAuthed}
                     addresses={addressesQuery.data}
-                    isLoading={addressesQuery.isPending}
+                    isLoading={isAuthed && addressesQuery.isPending}
                     selectedAddressId={selectedAddressId}
                     onSelect={setExplicitSelection}
                     regNewAddr={regNewAddr}
                     newAddrErrors={newAddrErrors}
+                    cityOptions={cityOptions}
                     submitError={submitError}
                     onContinue={goToPayment}
                   />
@@ -390,7 +474,13 @@ export function CheckoutClient() {
 
 // ---- Step 1: Address --------------------------------------------------------
 
+interface CityOption {
+  value: string;
+  label: string;
+}
+
 interface AddressStepProps {
+  isAuthed: boolean;
   addresses: ApiAddress[] | undefined;
   isLoading: boolean;
   selectedAddressId: string | "new" | null;
@@ -401,17 +491,20 @@ interface AddressStepProps {
   newAddrErrors: ReturnType<
     typeof useForm<NewAddressValues>
   >["formState"]["errors"];
+  cityOptions: CityOption[];
   submitError: string | null;
   onContinue: () => void;
 }
 
 function AddressStep({
+  isAuthed,
   addresses,
   isLoading,
   selectedAddressId,
   onSelect,
   regNewAddr,
   newAddrErrors,
+  cityOptions,
   submitError,
   onContinue,
 }: AddressStepProps) {
@@ -420,93 +513,152 @@ function AddressStep({
     <Card variant="flat" padding="lg" className="flex flex-col gap-5">
       <header>
         <h2 className="font-display text-2xl text-ink-900">
-          {t("checkout.deliveryHeading")}
+          {isAuthed
+            ? t("checkout.deliveryHeading")
+            : t("checkout.guestDeliveryHeading")}
         </h2>
         <p className="mt-1 text-sm text-ink-500">
-          {t("checkout.deliverySubtitle")}
+          {isAuthed
+            ? t("checkout.deliverySubtitle")
+            : t("checkout.guestDeliverySubtitle")}
         </p>
       </header>
 
-      {isLoading ? (
-        <div className="flex justify-center py-6">
-          <Spinner />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {addresses?.map((a) => (
-            <AddressOption
-              key={a.id}
-              address={a}
-              selected={selectedAddressId === a.id}
-              onSelect={() => onSelect(a.id)}
-            />
-          ))}
-          <button
-            type="button"
-            onClick={() => onSelect("new")}
-            className={
-              "flex items-start gap-3 rounded-2xl border p-4 text-start transition-colors " +
-              (selectedAddressId === "new"
-                ? "border-bloom-500 bg-bloom-50"
-                : "border-ink-200 hover:border-ink-300")
-            }
-          >
-            <span
+      {/* Saved addresses + "new address" chooser — authenticated customers only. */}
+      {isAuthed ? (
+        isLoading ? (
+          <div className="flex justify-center py-6">
+            <Spinner />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {addresses?.map((a) => (
+              <AddressOption
+                key={a.id}
+                address={a}
+                selected={selectedAddressId === a.id}
+                onSelect={() => onSelect(a.id)}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={() => onSelect("new")}
               className={
-                "mt-1 inline-flex h-4 w-4 items-center justify-center rounded-full border " +
+                "flex items-start gap-3 rounded-2xl border p-4 text-start transition-colors " +
                 (selectedAddressId === "new"
-                  ? "border-bloom-600 bg-bloom-600 text-white"
-                  : "border-ink-300")
+                  ? "border-bloom-500 bg-bloom-50"
+                  : "border-ink-200 hover:border-ink-300")
               }
             >
-              {selectedAddressId === "new" ? <CheckIcon size={10} /> : null}
-            </span>
-            <span>
-              <span className="block font-medium text-ink-900">
-                {t("address.newAddress")}
+              <span
+                className={
+                  "mt-1 inline-flex h-4 w-4 items-center justify-center rounded-full border " +
+                  (selectedAddressId === "new"
+                    ? "border-bloom-600 bg-bloom-600 text-white"
+                    : "border-ink-300")
+                }
+              >
+                {selectedAddressId === "new" ? <CheckIcon size={10} /> : null}
               </span>
-              <span className="block text-xs text-ink-500">
-                {t("address.newAddressHint")}
+              <span>
+                <span className="block font-medium text-ink-900">
+                  {t("address.newAddress")}
+                </span>
+                <span className="block text-xs text-ink-500">
+                  {t("address.newAddressHint")}
+                </span>
               </span>
-            </span>
-          </button>
-        </div>
-      )}
+            </button>
+          </div>
+        )
+      ) : null}
 
       {selectedAddressId === "new" ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
             label={t("checkout.fullName")}
+            autoComplete="name"
             error={newAddrErrors.fullName?.message}
             {...regNewAddr("fullName")}
           />
           <Input
             label={t("checkout.phone")}
             type="tel"
+            autoComplete="tel"
             error={newAddrErrors.phone?.message}
             {...regNewAddr("phone")}
           />
+          {/* Email — guests only; optional but enables receipt + order linking. */}
+          {!isAuthed ? (
+            <Input
+              label={t("checkout.emailOptional")}
+              type="email"
+              autoComplete="email"
+              hint={t("checkout.emailHint")}
+              error={newAddrErrors.email?.message}
+              containerClassName="sm:col-span-2"
+              {...regNewAddr("email")}
+            />
+          ) : null}
           <Input
             label={t("checkout.streetAddress")}
+            autoComplete="address-line1"
             error={newAddrErrors.streetAddress?.message}
             containerClassName="sm:col-span-2"
             {...regNewAddr("streetAddress")}
           />
-          <Input label={t("checkout.apartment")} {...regNewAddr("apartment")} />
           <Input
-            label={t("checkout.city")}
-            error={newAddrErrors.city?.message}
-            {...regNewAddr("city")}
+            label={t("checkout.apartment")}
+            autoComplete="address-line2"
+            {...regNewAddr("apartment")}
           />
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="checkout-city"
+              className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500"
+            >
+              {t("checkout.city")}
+            </label>
+            <select
+              id="checkout-city"
+              className="h-12 rounded-2xl border border-ink-200 bg-white px-4 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-4 focus:ring-bloom-100"
+              {...regNewAddr("city")}
+            >
+              {cityOptions.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            {newAddrErrors.city?.message ? (
+              <p className="text-xs text-bloom-700">
+                {newAddrErrors.city.message}
+              </p>
+            ) : null}
+          </div>
           <Input label={t("address.stateRegion")} {...regNewAddr("state")} />
           <Input label={t("address.postalCode")} {...regNewAddr("postalCode")} />
           <Input
             label={t("checkout.country")}
+            autoComplete="country-name"
             error={newAddrErrors.country?.message}
             containerClassName="sm:col-span-2"
             {...regNewAddr("country")}
           />
         </div>
+      ) : null}
+
+      {/* Offer sign-in to guests — optional, never blocks checkout. */}
+      {!isAuthed ? (
+        <p className="text-sm text-ink-500">
+          {t("checkout.haveAccount")}{" "}
+          <Link
+            href={`${ROUTES.login}?next=${encodeURIComponent(ROUTES.checkout)}`}
+            className="font-medium text-bloom-700 underline underline-offset-2 hover:text-bloom-800"
+          >
+            {t("checkout.signInToCheckout")}
+          </Link>
+        </p>
       ) : null}
 
       {submitError ? (

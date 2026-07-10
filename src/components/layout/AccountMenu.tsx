@@ -17,6 +17,7 @@ import {
   LogoutIcon,
   LoginIcon,
   UserPlusIcon,
+  ShieldIcon,
 } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 import { useAppSelector } from "@/store";
@@ -36,6 +37,7 @@ export function AccountMenu({ className }: { className?: string }) {
   const { signOut } = useAuth();
   const { t } = useT();
   const user = useAppSelector((s) => s.auth.user);
+  const isStaff = user?.role === "ADMIN" || user?.role === "MANAGER";
   const wishlistCount = useAppSelector((s) => s.wishlist.items.length);
   const itemCount = useAppSelector((s) =>
     s.cart.items.reduce((sum, i) => sum + i.quantity, 0)
@@ -86,6 +88,16 @@ export function AccountMenu({ className }: { className?: string }) {
           <>
             <MenuHeader title={displayName} subtitle={user.email} />
             <MenuSeparator />
+            {/* Staff jump to the admin panel — always available here, on every
+                screen size, so admins never lose their way back in. */}
+            {isStaff ? (
+              <>
+                <MenuItem href={ROUTES.admin} icon={<ShieldIcon size={18} />}>
+                  {t("nav.adminPanel")}
+                </MenuItem>
+                <MenuSeparator />
+              </>
+            ) : null}
             <MenuItem href={ROUTES.account} icon={<UserIcon size={18} />}>
               {t("nav.myAccount")}
             </MenuItem>

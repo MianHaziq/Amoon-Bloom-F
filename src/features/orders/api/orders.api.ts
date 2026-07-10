@@ -3,6 +3,7 @@ import type { ApiResponse, PaginatedResponse } from "@/types";
 import type {
   ApiAdminOrderHistoryParams,
   ApiCheckoutInput,
+  ApiGuestCheckoutInput,
   ApiOrder,
   ApiOrderHistoryParams,
   ApiOrderListRow,
@@ -15,6 +16,17 @@ export const ordersApi = {
   async checkout(payload: ApiCheckoutInput): Promise<ApiOrder> {
     const { data } = await http.post<ApiResponse<ApiOrder>>(
       "/orders/checkout",
+      payload
+    );
+    return data.data;
+  },
+
+  // --- Guest (no authentication) ---
+  // Items travel in the body (guests have no server cart); recipient identity
+  // comes from shippingAddress + optional email. Payment is always COD.
+  async guestCheckout(payload: ApiGuestCheckoutInput): Promise<ApiOrder> {
+    const { data } = await http.post<ApiResponse<ApiOrder>>(
+      "/orders/guest-checkout",
       payload
     );
     return data.data;

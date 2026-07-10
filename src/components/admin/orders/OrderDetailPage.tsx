@@ -190,8 +190,14 @@ export function OrderDetailPage({ id }: { id: string }) {
               <div className="text-sm text-ink-700">
                 <p className="font-medium text-ink-900">
                   {order.shippingAddress.fullName}
+                  {!order.userId ? (
+                    <span className="ms-2 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-ink-600">
+                      {t("admin.ordersPage.guest")}
+                    </span>
+                  ) : null}
                 </p>
                 <p>{order.shippingAddress.phone}</p>
+                {order.guestEmail ? <p>{order.guestEmail}</p> : null}
                 <p className="mt-2">
                   {order.shippingAddress.streetAddress}
                   {order.shippingAddress.apartment

@@ -23,12 +23,26 @@ import type { ApiOrderListRow, OrderStatus } from "@/features/orders/types";
 const PAGE_SIZE = 20;
 
 function customerName(o: ApiOrderListRow): string {
-  if (!o.user) return "";
-  return [o.user.firstName, o.user.lastName].filter(Boolean).join(" ");
+  if (o.user) {
+    const composed = [o.user.firstName, o.user.lastName]
+      .filter(Boolean)
+      .join(" ");
+    return o.user.fullName || composed || "";
+  }
+  // Guest order — no linked account; use the contact snapshot.
+  return o.guestName || "";
+}
+
+function customerEmail(o: ApiOrderListRow): string | null {
+  return o.user?.email || o.guestEmail || null;
 }
 
 function customerLabel(o: ApiOrderListRow): string {
-  return customerName(o) || o.user?.email || "—";
+  return customerName(o) || customerEmail(o) || "—";
+}
+
+function isGuestOrder(o: ApiOrderListRow): boolean {
+  return !o.user;
 }
 
 function lineItemCount(o: ApiOrderListRow): number {
@@ -76,9 +90,14 @@ export function OrdersAdminPage() {
       header: t("admin.ordersPage.columnCustomer"),
       cell: (o) => (
         <div className="max-w-56">
-          <p className="truncate text-ink-900">{customerLabel(o)}</p>
-          {customerName(o) && o.user?.email ? (
-            <p className="truncate text-xs text-ink-500">{o.user.email}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-ink-900">{customerLabel(o)}</p>
+            {isGuestOrder(o) ? (
+              <Badge tone="neutral">{t("admin.ordersPage.guest")}</Badge>
+            ) : null}
+          </div>
+          {customerName(o) && customerEmail(o) ? (
+            <p className="truncate text-xs text-ink-500">{customerEmail(o)}</p>
           ) : null}
         </div>
       ),

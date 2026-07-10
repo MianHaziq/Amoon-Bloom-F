@@ -65,8 +65,10 @@ export interface ApiOrderItem {
 export interface ApiOrderListUser {
   id: string;
   email: string;
-  firstName: string | null;
-  lastName: string | null;
+  /** Backend sends a single fullName; first/last are mirrored by the auth adapter. */
+  fullName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
 }
 
 /**
@@ -78,7 +80,12 @@ export interface ApiOrder {
   id: string;
   /** Human-friendly sequential order number (e.g. 1004). */
   orderNumber: number | null;
-  userId: string;
+  /** Null for guest (unauthenticated) orders until linked to an account. */
+  userId: string | null;
+  /** Guest contact snapshot — present only on guest orders (userId null). */
+  guestName?: string | null;
+  guestPhone?: string | null;
+  guestEmail?: string | null;
   orderMessage: string | null;
   totalAmount: number;
   discountAmount: number | null;
@@ -111,8 +118,13 @@ export interface ApiOrderListRegion {
 export interface ApiOrderListRow {
   id: string;
   orderNumber: number | null;
-  userId: string;
+  /** Null for guest orders. */
+  userId: string | null;
   user?: ApiOrderListUser;
+  /** Guest contact snapshot — present only on guest orders (no linked user). */
+  guestName?: string | null;
+  guestPhone?: string | null;
+  guestEmail?: string | null;
   orderMessage: string | null;
   totalAmount: number;
   /** Currency the order was totaled in (e.g. "AED", "SAR"). Defaults to AED for legacy orders. */
@@ -146,6 +158,22 @@ export interface ApiCheckoutInput {
   addressId?: string;
   shippingAddress?: OrderShippingAddress;
   paymentMethod?: PaymentMethod;
+  promoCode?: string;
+}
+
+export interface ApiGuestCheckoutItem {
+  productId: string;
+  quantity: number;
+  message?: string | null;
+}
+
+/** Body for `POST /orders/guest-checkout` (unauthenticated). */
+export interface ApiGuestCheckoutInput {
+  items: ApiGuestCheckoutItem[];
+  shippingAddress: OrderShippingAddress;
+  /** Optional — enables the confirmation email and links the order on sign-up. */
+  email?: string;
+  orderMessage?: string;
   promoCode?: string;
 }
 
