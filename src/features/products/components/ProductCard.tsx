@@ -121,13 +121,26 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
           <WishlistToggle product={product} size="md" stopPropagation />
         </div>
 
-        {/* Quick add — always visible on touch; hover-reveal on desktop (lg+) */}
-        <div className="absolute inset-x-2.5 bottom-2.5 translate-y-0 opacity-100 transition-all duration-300 sm:inset-x-3 sm:bottom-3 lg:pointer-events-none lg:translate-y-2 lg:opacity-0 lg:group-hover:pointer-events-auto lg:group-hover:translate-y-0 lg:group-hover:opacity-100">
+        {/* Quick add — mobile: floating icon circle (bottom-right corner) */}
+        <div className="absolute bottom-2.5 inset-e-2.5 lg:hidden">
           <button
             type="button"
             onClick={handleAdd}
             disabled={!product.inStock}
-            className="pointer-events-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink-900/95 px-4 py-2.5 text-xs font-medium text-white shadow-(--shadow-soft) backdrop-blur-sm transition-[background-color,transform] duration-200 hover:bg-ink-800 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+            aria-label={product.inStock ? t("common.quickAdd") : t("common.soldOut")}
+            className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-ink-900 shadow-md backdrop-blur-sm transition-all duration-200 hover:bg-white hover:shadow-lg active:scale-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <BagIcon size={15} />
+          </button>
+        </div>
+
+        {/* Quick add — desktop: full-width bar, hover-reveal */}
+        <div className="absolute inset-x-3 bottom-3 hidden pointer-events-none translate-y-2 opacity-0 transition-all duration-300 lg:block lg:group-hover:pointer-events-auto lg:group-hover:translate-y-0 lg:group-hover:opacity-100">
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={!product.inStock}
+            className="pointer-events-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink-900/95 px-4 py-2.5 text-sm font-medium text-white shadow-(--shadow-soft) backdrop-blur-sm transition-[background-color,transform] duration-200 hover:bg-ink-800 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <BagIcon size={16} />
             {product.inStock ? t("common.quickAdd") : t("common.soldOut")}

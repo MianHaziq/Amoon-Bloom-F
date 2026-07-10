@@ -17,6 +17,8 @@ interface DrawerProps {
   children: ReactNode;
   title?: ReactNode;
   description?: ReactNode;
+  /** Renders outside the scroll area, pinned to the drawer's bottom edge. */
+  footer?: ReactNode;
   className?: string;
   width?: string;
 }
@@ -28,6 +30,7 @@ export function Drawer({
   children,
   title,
   description,
+  footer,
   className,
   width = "max-w-md",
 }: DrawerProps) {
@@ -116,6 +119,11 @@ export function Drawer({
               </header>
             )}
             <div className="flex-1 overflow-y-auto">{children}</div>
+            {footer && (
+              <div className="shrink-0 border-t border-ink-100 p-4">
+                {footer}
+              </div>
+            )}
           </m.aside>
         </div>
       )}

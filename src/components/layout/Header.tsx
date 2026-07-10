@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AE, SA } from "country-flag-icons/react/3x2";
 import { Container, IconButton } from "@/components/ui";
 import {
   SearchIcon,
   BagIcon,
   HeartIcon,
   MenuIcon,
+  ChevronDown,
 } from "@/components/icons";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { MegaMenu } from "./MegaMenu";
@@ -17,6 +19,7 @@ import { LocaleToggle } from "./LocaleToggle";
 import { AccountMenu } from "./AccountMenu";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { DeliverToPill } from "@/features/location/components/DeliverToPill";
+import { LocationSheet } from "@/features/location/components/LocationSheet";
 import { ROUTES } from "@/constants/routes";
 import { siteConfig } from "@/config/site";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -24,34 +27,42 @@ import { toggleCartDrawer, toggleMobileNav } from "@/store/slices/ui.slice";
 import { cn } from "@/lib/cn";
 import { useT } from "@/i18n/useT";
 
+const FLAGS = { UAE: AE, SAUDI_ARABIA: SA } as const;
+
 export function Header() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { t, tc } = useT();
   const [query, setQuery] = useState("");
+  const [locationOpen, setLocationOpen] = useState(false);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const term = query.trim();
     router.push(term ? `${ROUTES.shop}?q=${encodeURIComponent(term)}` : ROUTES.shop);
   };
+
   const itemCount = useAppSelector((s) =>
     s.cart.items.reduce((sum, i) => sum + i.quantity, 0)
   );
   const wishlistCount = useAppSelector((s) => s.wishlist.items.length);
   const user = useAppSelector((s) => s.auth.user);
   const isStaff = user?.role === "ADMIN" || user?.role === "MANAGER";
+  const country = useAppSelector((s) => s.location.country);
+  const city = useAppSelector((s) => s.location.city);
+  const FlagIcon = FLAGS[country] ?? AE;
+
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    const REVEAL_ZONE = 96; // always visible until scrolled past this
-    const HIDE_AFTER = 28; // px of sustained downward travel before hiding
-    const SHOW_AFTER = 8; // px of sustained upward travel before revealing
+    const REVEAL_ZONE = 96;
+    const HIDE_AFTER = 28;
+    const SHOW_AFTER = 8;
 
     let lastY = window.scrollY;
     let dir: "up" | "down" | null = null;
-    let travel = 0; // accumulated distance in the current direction
+    let travel = 0;
     let ticking = false;
 
     const evaluate = () => {
@@ -65,9 +76,6 @@ export function Header() {
         dir = newDir;
       }
 
-      // Hysteresis: a scroll direction must persist for a few pixels before
-      // it flips the header state. Prevents flicker from trackpad momentum
-      // jitter, which reports tiny alternating deltas frame to frame.
       if (y <= REVEAL_ZONE) setHidden(false);
       else if (dir === "down" && travel > HIDE_AFTER) setHidden(true);
       else if (dir === "up" && travel > SHOW_AFTER) setHidden(false);
@@ -87,51 +95,120 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const cartLabel = `${t("nav.cart")}, ${tc(itemCount, "units.itemOne", "units.itemOther")}`;
+  const wishlistLabel = `${t("nav.wishlist")}, ${tc(wishlistCount, "units.itemOne", "units.itemOther")}`;
+
+  const cartBadge = itemCount > 0 && (
+    <span className="absolute -right-0.5 -top-0.5 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-bloom-500 px-1 text-[10px] font-bold tabular-nums text-white ring-2 ring-cream-50">
+      {itemCount > 99 ? "99+" : itemCount}
+    </span>
+  );
+
   return (
     <>
       <header
         className={cn(
-          "sticky top-0 z-40 transform-gpu will-change-transform transition-[transform,translate,background-color,border-color,box-shadow] duration-300 ease-out-soft",
+          "sticky top-0 z-40 transform-gpu will-change-transform transition-[transform,background-color,border-color,box-shadow] duration-300 ease-out-soft",
           hidden ? "-translate-y-full" : "translate-y-0",
           scrolled
             ? "border-b border-ink-100 bg-cream-50/95 shadow-(--shadow-soft) backdrop-blur-md"
             : "border-b border-transparent bg-cream-50"
         )}
       >
-        <AnnouncementBar />
+        {/* Announcement bar — desktop only */}
+        <div className="hidden md:block">
+          <AnnouncementBar />
+        </div>
 
-        {/* Top utility row — search + utility nav (BloomingBox-inspired) */}
-        <Container className="flex h-16 items-center gap-2.5 sm:gap-4 lg:h-20">
-          {/* Mobile menu trigger */}
-          <IconButton
-            label={t("nav.openMenu")}
-            variant="ghost"
-            className="lg:hidden"
-            onClick={() => dispatch(toggleMobileNav(true))}
-          >
-            <MenuIcon size={22} />
-          </IconButton>
+        {/* ── Mobile header (< lg): two rows ── */}
+        <div className="lg:hidden">
+          {/* Row 1: Logo + delivery location */}
+          <Container className="flex h-14 items-center justify-between">
+            <Link
+              href={ROUTES.home}
+              className="flex shrink-0 items-center"
+              aria-label={`${siteConfig.name} — home`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.svg" alt={siteConfig.name} className="h-7 w-auto" />
+            </Link>
 
-          {/* Logo */}
+            <button
+              type="button"
+              onClick={() => setLocationOpen(true)}
+              className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors active:bg-ink-50"
+              aria-label={`${t("nav.deliverTo")} ${city}`}
+            >
+              <div className="text-end">
+                <p className="text-[10px] font-medium text-ink-400">
+                  {t("nav.deliverTo")}
+                </p>
+                <p className="flex items-center justify-end gap-1 text-sm font-semibold text-bloom-700">
+                  {city}
+                  <ChevronDown size={12} />
+                </p>
+              </div>
+              <span className="inline-flex h-9 w-9 shrink-0 overflow-hidden rounded-full shadow-sm ring-2 ring-ink-100">
+                <FlagIcon className="h-full w-full object-cover" title={country} />
+              </span>
+            </button>
+          </Container>
+
+          {/* Row 2: Hamburger + icon cluster */}
+          <div className="border-t border-ink-100">
+            <Container className="flex h-12 items-center justify-between">
+              <IconButton
+                label={t("nav.openMenu")}
+                variant="ghost"
+                onClick={() => dispatch(toggleMobileNav(true))}
+              >
+                <MenuIcon size={22} />
+              </IconButton>
+
+              <div className="flex items-center gap-0.5">
+                <IconButton
+                  label={t("common.search")}
+                  variant="ghost"
+                  onClick={() => router.push(ROUTES.shop)}
+                >
+                  <SearchIcon size={20} />
+                </IconButton>
+
+                <button
+                  type="button"
+                  onClick={() => dispatch(toggleCartDrawer(true))}
+                  className={cn(
+                    "relative inline-flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50",
+                    itemCount > 0
+                      ? "bg-bloom-50 text-bloom-700 hover:bg-bloom-100"
+                      : "text-ink-700 hover:bg-ink-900 hover:text-white"
+                  )}
+                  aria-label={cartLabel}
+                >
+                  <BagIcon size={20} />
+                  {cartBadge}
+                </button>
+
+                <AccountMenu />
+              </div>
+            </Container>
+          </div>
+        </div>
+
+        {/* ── Desktop header (lg+): single row ── */}
+        <Container className="hidden h-20 items-center gap-4 lg:flex">
           <Link
             href={ROUTES.home}
             className="flex shrink-0 items-center"
             aria-label={`${siteConfig.name} — home`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.svg"
-              alt={siteConfig.name}
-              className="h-7 w-auto sm:h-8 lg:h-9"
-            />
+            <img src="/logo.svg" alt={siteConfig.name} className="h-9 w-auto" />
           </Link>
 
-          {/* Search — prominent on the live site. min-w-0 lets this flex item
-              shrink below the input's intrinsic width so it never forces
-              horizontal overflow at tablet widths. */}
           <form
             role="search"
-            className="hidden min-w-0 flex-1 md:block"
+            className="min-w-0 flex-1"
             onSubmit={submitSearch}
           >
             <label className="group flex h-11 items-center gap-3 rounded-full border border-ink-200 bg-white px-4 transition-all focus-within:border-bloom-400 focus-within:ring-4 focus-within:ring-bloom-100">
@@ -147,9 +224,8 @@ export function Header() {
             </label>
           </form>
 
-          {/* Staff-only utility link (desktop) */}
           {isStaff ? (
-            <nav className="hidden items-center lg:flex">
+            <nav className="flex items-center">
               <Link
                 href={ROUTES.admin}
                 className="inline-flex h-8 items-center rounded-full bg-ink-900 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-ink-800"
@@ -159,25 +235,14 @@ export function Header() {
             </nav>
           ) : null}
 
-          {/* Actions — utilities, then a balanced icon cluster.
-              Order (leading→trailing): wishlist · cart · profile.
-              Profile sits at the far edge; cart immediately precedes it. */}
-          <div className="ml-auto flex items-center gap-1 sm:gap-1.5 lg:ml-0">
-            <DeliverToPill className="hidden lg:inline-flex" />
-            <LocaleToggle className="me-1 hidden md:inline-flex" />
-            <IconButton
-              label={t("common.search")}
-              variant="ghost"
-              className="md:hidden"
-              onClick={() => router.push(ROUTES.shop)}
-            >
-              <SearchIcon size={20} />
-            </IconButton>
-            <NotificationBell className="hidden sm:block" />
+          <div className="ml-auto flex items-center gap-1.5">
+            <DeliverToPill />
+            <LocaleToggle className="me-1" />
+            <NotificationBell />
             <Link
               href={ROUTES.wishlist}
-              aria-label={`${t("nav.wishlist")}, ${tc(wishlistCount, "units.itemOne", "units.itemOther")}`}
-              className="relative hidden h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all duration-200 hover:bg-ink-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50 sm:inline-flex"
+              aria-label={wishlistLabel}
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all duration-200 hover:bg-ink-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50"
             >
               <HeartIcon size={20} />
               {wishlistCount > 0 ? (
@@ -186,7 +251,6 @@ export function Header() {
                 </span>
               ) : null}
             </Link>
-            {/* Cart — sits immediately before the profile control. */}
             <button
               type="button"
               onClick={() => dispatch(toggleCartDrawer(true))}
@@ -196,28 +260,26 @@ export function Header() {
                   ? "bg-bloom-50 text-bloom-700 hover:bg-bloom-100"
                   : "text-ink-700 hover:bg-ink-900 hover:text-white"
               )}
-              aria-label={`${t("nav.cart")}, ${tc(itemCount, "units.itemOne", "units.itemOther")}`}
+              aria-label={cartLabel}
             >
               <BagIcon size={20} />
-              {itemCount > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-bloom-500 px-1 text-[10px] font-bold tabular-nums text-white ring-2 ring-cream-50">
-                  {itemCount > 99 ? "99+" : itemCount}
-                </span>
-              ) : null}
+              {cartBadge}
             </button>
-            {/* Profile — far-right anchor of the header. */}
-            <AccountMenu className="hidden sm:block" />
+            <AccountMenu />
           </div>
         </Container>
 
-        {/* Category nav (mega menu) */}
+        {/* Category nav — desktop only */}
         <div className="hidden border-t border-ink-100 lg:block">
           <Container>
             <MegaMenu className="-mx-4" />
           </Container>
         </div>
       </header>
+
       <MobileNav />
+      {/* Mobile location picker — triggered by row 1 button */}
+      <LocationSheet open={locationOpen} onClose={() => setLocationOpen(false)} />
     </>
   );
 }

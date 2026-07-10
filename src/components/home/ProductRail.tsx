@@ -51,7 +51,7 @@ export function ProductRail({
           }
         />
       </Reveal>
-      <div className="mt-12">
+      <div className="mt-8">
         <ProductGrid products={products} columns={4} />
       </div>
     </Section>

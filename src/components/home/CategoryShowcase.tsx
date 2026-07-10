@@ -45,24 +45,32 @@ export async function CategoryShowcase() {
 
   return (
     <Section spacing="lg" tone="cream">
-      <Reveal>
-        <SectionHeader
-          eyebrow={t(locale, "home.categoriesEyebrow")}
-          title={t(locale, "home.categoriesTitle")}
-          description={t(locale, "home.categoriesDesc", { city: regionCopy.city })}
-          action={
-            <Link href={ROUTES.shop} className="contents">
-              <Button
-                variant="ghost"
-                trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
-              >
-                {t(locale, "home.browseAll")}
-              </Button>
-            </Link>
-          }
-        />
-      </Reveal>
-      <StaggerGroup className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4 lg:gap-6">
+      {/* Mobile: heading that matches the product section title style */}
+      <h2 className="mb-5 font-display text-2xl font-medium text-ink-900 md:hidden">
+        {t(locale, "nav.collections")}
+      </h2>
+
+      {/* Desktop: full header with eyebrow, title, description */}
+      <div className="hidden md:block">
+        <Reveal>
+          <SectionHeader
+            eyebrow={t(locale, "home.categoriesEyebrow")}
+            title={t(locale, "home.categoriesTitle")}
+            description={t(locale, "home.categoriesDesc", { city: regionCopy.city })}
+            action={
+              <Link href={ROUTES.shop} className="contents">
+                <Button
+                  variant="ghost"
+                  trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
+                >
+                  {t(locale, "home.browseAll")}
+                </Button>
+              </Link>
+            }
+          />
+        </Reveal>
+      </div>
+      <StaggerGroup className="mt-4 grid grid-cols-2 gap-4 md:mt-10 md:grid-cols-4 lg:gap-6">
         {cards.map(({ cat, fallbackImage }, i) => (
           <StaggerItem key={cat.id}>
             <CategoryCard
@@ -73,6 +81,17 @@ export async function CategoryShowcase() {
           </StaggerItem>
         ))}
       </StaggerGroup>
+      {/* Mobile: simple browse button below the grid */}
+      <div className="mt-6 flex justify-center md:hidden">
+        <Link href={ROUTES.shop} className="contents">
+          <Button
+            variant="ghost"
+            trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
+          >
+            {t(locale, "home.browseAll")}
+          </Button>
+        </Link>
+      </div>
     </Section>
   );
 }

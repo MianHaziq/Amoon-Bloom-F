@@ -13,8 +13,15 @@ import {
 } from "@/features/products/facets";
 import { productsApi } from "@/features/products/api/products.api";
 import { toUiProducts } from "@/features/products/adapters";
-import { Drawer, Button } from "@/components/ui";
-import { FilterIcon, CloseIcon } from "@/components/icons";
+import {
+  Drawer,
+  Button,
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
+} from "@/components/ui";
+import { FilterIcon, CloseIcon, ChevronDown, CheckIcon, ArrowRight } from "@/components/icons";
 import { baseTransition } from "@/lib/motion";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/format";
@@ -240,38 +247,31 @@ export function ShopPLP({
         </p>
 
         <div className="flex items-center gap-2.5">
-          {/* Sort — always visible (matches the reference top-right control) */}
-          <div className="relative flex-1 sm:flex-none">
-            <select
-              aria-label={t("shop.sortBy")}
-              value={filter.sort ?? "featured"}
-              onChange={(e) =>
-                setFilterSafe({
-                  ...filter,
-                  sort: e.target.value as ProductFilter["sort"],
-                })
-              }
-              className="min-h-10 w-full appearance-none rounded-full border border-ink-200 bg-white ps-4 pe-9 text-sm font-medium text-ink-900 transition-colors hover:bg-cream-50 focus:border-bloom-400 focus:outline-none focus:ring-4 focus:ring-bloom-100 sm:w-auto"
+          {/* Sort — custom Menu dropdown */}
+          <Menu className="flex-1 sm:flex-none" openOnHover>
+            <MenuTrigger
+              label={t("shop.sortBy")}
+              className="group inline-flex min-h-10 w-full items-center justify-between gap-2 rounded-full border border-ink-200 bg-white ps-4 pe-3 text-sm font-medium text-ink-900 transition-colors hover:bg-cream-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-400 sm:w-auto sm:justify-start"
             >
-              {SORTS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {t(opt.labelKey)}
-                </option>
-              ))}
-            </select>
-            <svg
-              viewBox="0 0 24 24"
-              className="pointer-events-none absolute inset-e-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </div>
+              <span>{t(SORTS.find((s) => s.value === (filter.sort ?? "featured"))?.labelKey ?? "shop.sortFeatured")}</span>
+              <ChevronDown size={15} className="shrink-0 text-ink-400 transition-transform duration-200 group-aria-expanded:rotate-180" />
+            </MenuTrigger>
+            <MenuContent align="start" className="min-w-48">
+              {SORTS.map((opt) => {
+                const active = (filter.sort ?? "featured") === opt.value;
+                return (
+                  <MenuItem
+                    key={opt.value}
+                    onSelect={() => setFilterSafe({ ...filter, sort: opt.value })}
+                    trailing={active ? <CheckIcon size={14} className="text-bloom-600" /> : undefined}
+                    className={active ? "font-semibold text-ink-900" : undefined}
+                  >
+                    {t(opt.labelKey)}
+                  </MenuItem>
+                );
+              })}
+            </MenuContent>
+          </Menu>
 
           {/* Mobile filter trigger (sidebar is desktop-only) */}
           {!lockedCategorySlug && (
@@ -391,23 +391,37 @@ export function ShopPLP({
             </m.div>
           </AnimatePresence>
 
-          {/* Load more — fetches the next page of the current source. */}
+          {/* See more — progress bar + arrow link */}
           {!isPending && hasNextPage && (
-            <div className="mt-12 flex flex-col items-center gap-3">
+            <div className="mt-14 flex flex-col items-center gap-4">
+              {/* Progress bar */}
+              <div className="relative h-0.5 w-32 overflow-hidden rounded-full bg-ink-100">
+                <div
+                  className="absolute inset-y-0 inset-s-0 rounded-full bg-bloom-400 transition-all duration-500"
+                  style={{ width: `${Math.round((loaded.length / Math.max(sourceTotal, 1)) * 100)}%` }}
+                />
+              </div>
               <p className="text-xs text-ink-400">
                 {t("shop.showing", {
                   shown: String(loaded.length),
                   total: String(sourceTotal),
                 })}
               </p>
-              <Button
-                variant="outline"
-                size="lg"
+              <button
+                type="button"
                 onClick={() => fetchNextPage()}
-                isLoading={isFetchingNextPage}
+                disabled={isFetchingNextPage}
+                className="inline-flex items-center gap-2 text-sm font-medium text-ink-700 transition-colors hover:text-bloom-600 disabled:opacity-40"
               >
-                {t("shop.loadMore")}
-              </Button>
+                {isFetchingNextPage ? (
+                  <span className="text-ink-400">{t("shop.loadMore")}…</span>
+                ) : (
+                  <>
+                    {t("shop.loadMore")}
+                    <ArrowRight size={15} className="rtl:-scale-x-100" />
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>
@@ -420,12 +434,14 @@ export function ShopPLP({
           onClose={() => setFiltersOpen(false)}
           side="left"
           title={t("shop.filters")}
-        >
-          <div className="flex flex-col gap-6">
-            {sidebar}
+          footer={
             <Button fullWidth size="lg" onClick={() => setFiltersOpen(false)}>
               {`${t("shop.showResults")} ${tc(filtered.length, "units.resultOne", "units.resultOther")}`}
             </Button>
+          }
+        >
+          <div className="px-6 py-5">
+            {sidebar}
           </div>
         </Drawer>
       )}

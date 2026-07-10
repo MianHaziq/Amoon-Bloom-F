@@ -12,6 +12,7 @@ import { tapScale, popFeedback } from "@/lib/motion";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setLocation } from "@/store/slices/location.slice";
 import { COUNTRIES, type CountryCode, getCountry } from "@/features/location/data";
+import { profileApi } from "@/features/auth/api/profile.api";
 import { useT } from "@/i18n/useT";
 
 interface LocationSheetProps {
@@ -107,6 +108,7 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
   const queryClient = useQueryClient();
   const { t } = useT();
   const current = useAppSelector((s) => s.location);
+  const user = useAppSelector((s) => s.auth.user);
   const [country, setSelectedCountry] = useState<CountryCode>(current.country);
   const [city, setSelectedCity] = useState<string>(current.city);
   const def = getCountry(country);
@@ -117,6 +119,11 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
       : def.defaultCity;
     const countryChanged = country !== current.country;
     dispatch(setLocation({ country, city: finalCity }));
+    if (user) {
+      profileApi
+        .setAddress({ addressCountry: country, addressCity: finalCity })
+        .catch(() => {});
+    }
     onClose();
     if (countryChanged) {
       // Region (and therefore catalog visibility + currency) changed — refresh

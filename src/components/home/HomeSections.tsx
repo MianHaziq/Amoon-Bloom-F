@@ -13,7 +13,7 @@ import { localized, t } from "@/i18n";
 
 // Generous cap so admins can add several rails; guards against a runaway home.
 const MAX_SECTIONS = 8;
-const PRODUCTS_PER_SECTION = 8;
+const PRODUCTS_PER_SECTION = 6;
 
 /**
  * Home product rails, driven entirely by admin-managed Sections (e.g. "Best
@@ -40,7 +40,7 @@ export async function HomeSections() {
       data: [],
       meta: {},
     }));
-    const products = toUiProducts(page.data, { locale }).slice(0, 8);
+    const products = toUiProducts(page.data, { locale }).slice(0, 6);
     return (
       <ProductRail
         locale={locale}
@@ -69,7 +69,6 @@ export async function HomeSections() {
           >
             <Reveal>
               <SectionHeader
-                eyebrow={t(locale, "home.curatedEdit")}
                 title={localized(section.title, section.title_ar, locale)}
                 action={
                   <Link href={ROUTES.shop} className="contents">
@@ -85,7 +84,7 @@ export async function HomeSections() {
                 }
               />
             </Reveal>
-            <div className="mt-12">
+            <div className="mt-8">
               <ProductGrid products={products} columns={4} />
             </div>
           </Section>

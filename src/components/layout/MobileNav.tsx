@@ -9,16 +9,36 @@ import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { toggleMobileNav } from "@/store/slices/ui.slice";
 import { useT } from "@/i18n/useT";
-import { LocaleToggle } from "./LocaleToggle";
+import { setLocale, type Locale } from "@/store/slices/ui.slice";
+import { writeLocaleCookie } from "@/i18n";
+import { GlobeIcon } from "@/components/icons";
 import { DeliverToPill } from "@/features/location/components/DeliverToPill";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/cn";
+
+const LOCALES: { value: Locale; nativeLabel: string; label: string }[] = [
+  { value: "en", nativeLabel: "English", label: "EN" },
+  { value: "ar", nativeLabel: "العربية", label: "AR" },
+];
 
 export function MobileNav() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { t } = useT();
   const open = useAppSelector((s) => s.ui.isMobileNavOpen);
+  const locale = useAppSelector((s) => s.ui.locale);
   const user = useAppSelector((s) => s.auth.user);
   const isStaff = user?.role === "ADMIN" || user?.role === "MANAGER";
   const { groups: categoryGroups } = useCategories();
+
+  const chooseLocale = (next: Locale) => {
+    if (next === locale) return;
+    dispatch(setLocale(next));
+    writeLocaleCookie(next);
+    document.documentElement.lang = next;
+    document.documentElement.dir = next === "ar" ? "rtl" : "ltr";
+    router.refresh();
+  };
 
   // Close drawer on navigation
   useEffect(() => {
@@ -100,14 +120,34 @@ export function MobileNav() {
           ))}
         </div>
 
-        {/* Preferences — language + delivery region are otherwise header-only
-            (hidden on mobile), so surface them here for phone users. */}
-        <div className="mt-2 flex flex-col gap-3 border-t border-ink-100 pt-4">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-sm font-medium text-ink-700">
+        {/* Preferences */}
+        <div className="mt-2 flex flex-col gap-4 border-t border-ink-100 pt-4">
+          {/* Language — two large tappable buttons (Shopify / ASOS style) */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+              <GlobeIcon size={13} />
               {t("common.language")}
-            </span>
-            <LocaleToggle />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {LOCALES.map((opt) => {
+                const active = locale === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => chooseLocale(opt.value)}
+                    className={cn(
+                      "rounded-xl border py-3 text-sm font-medium transition-colors",
+                      active
+                        ? "border-bloom-300 bg-bloom-50 text-bloom-700"
+                        : "border-ink-200 text-ink-600 hover:border-ink-300 hover:bg-cream-50"
+                    )}
+                  >
+                    {opt.nativeLabel}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm font-medium text-ink-700">
