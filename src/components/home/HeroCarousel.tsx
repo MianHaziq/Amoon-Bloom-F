@@ -88,6 +88,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
   if (total === 0) return null;
 
   return (
+    <div className="relative">
     <section
       aria-roledescription="carousel"
       aria-label={t("hero.carouselLabel")}
@@ -205,7 +206,17 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
         </div>
 
         {hasMultiple && (
-          <div className="flex items-center justify-between gap-6">
+          <div className="flex items-center justify-end gap-4">
+            <div className="hidden items-center gap-3 text-xs font-semibold tracking-[0.18em] text-white/85 uppercase sm:flex">
+              <span className="tabular-nums">
+                {String(active + 1).padStart(2, "0")}
+              </span>
+              <span className="h-px w-8 bg-white/40" />
+              <span className="tabular-nums text-white/55">
+                {String(total).padStart(2, "0")}
+              </span>
+            </div>
+
             <div className="flex items-center gap-2 sm:gap-3">
               {slides.map((s, i) => {
                 const isActive = i === active;
@@ -226,20 +237,22 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
                 );
               })}
             </div>
-
-            <div className="hidden items-center gap-3 text-xs font-semibold tracking-[0.18em] text-white/85 uppercase sm:flex">
-              <span className="tabular-nums">
-                {String(active + 1).padStart(2, "0")}
-              </span>
-              <span className="h-px w-8 bg-white/40" />
-              <span className="tabular-nums text-white/55">
-                {String(total).padStart(2, "0")}
-              </span>
-            </div>
           </div>
         )}
       </div>
     </section>
+
+    {/* Mobile shop button — sits at the bottom-left of the carousel, half
+        inside the image and half below it. Must live outside the overflow-hidden
+        <section> so it isn't clipped at the rounded edge. */}
+    <Link
+      href={ROUTES.shop}
+      className="absolute bottom-0 inset-s-5 z-20 translate-y-1/2 inline-flex items-center gap-2.5 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-bloom-700 shadow-xl ring-4 ring-cream-50 transition-colors hover:bg-cream-50 active:scale-95 sm:hidden"
+    >
+      {t("hero.ctaPrimary")}
+      <ArrowRight size={14} className="rtl:-scale-x-100" />
+    </Link>
+    </div>
   );
 }
 
