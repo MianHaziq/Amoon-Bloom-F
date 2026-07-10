@@ -1,13 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useAppSelector } from "@/store";
-import { LogoutIcon, MenuIcon, UserIcon } from "@/components/icons";
+import {
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuHeader,
+  MenuItem,
+  MenuSeparator,
+} from "@/components/ui";
+import {
+  ChevronDown,
+  LogoutIcon,
+  MenuIcon,
+  SettingsIcon,
+  StoreIcon,
+  UserIcon,
+} from "@/components/icons";
 import { LocaleToggle } from "@/components/layout/LocaleToggle";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useAppSelector } from "@/store";
+import { siteConfig } from "@/config/site";
 import { useT } from "@/i18n/useT";
 
 interface AdminTopbarProps {
@@ -20,23 +35,18 @@ export function AdminTopbar({ title, onOpenMobileNav }: AdminTopbarProps) {
   const router = useRouter();
   const { t } = useT();
   const user = useAppSelector((s) => s.auth.user);
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (!menuRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
+  const isAdmin = user?.role === "ADMIN";
 
   const initials = (() => {
     const f = user?.firstName?.[0] ?? user?.name?.[0] ?? "A";
     const l = user?.lastName?.[0] ?? "";
     return `${f}${l}`.toUpperCase();
   })();
+
+  const displayName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+    user?.name ||
+    t("admin.admin");
 
   const handleLogout = () => {
     signOut();
@@ -48,63 +58,80 @@ export function AdminTopbar({ title, onOpenMobileNav }: AdminTopbarProps) {
       <button
         type="button"
         onClick={onOpenMobileNav}
-        className="rounded-md p-2 text-ink-700 transition-colors hover:bg-ink-50 lg:hidden"
-        aria-label="Open admin navigation"
+        className="rounded-lg p-2 text-ink-700 transition-colors hover:bg-ink-50 lg:hidden"
+        aria-label={t("nav.openMenu")}
       >
         <MenuIcon size={20} />
       </button>
 
-      <h1 className="font-display text-xl text-ink-900">
+      {/* Brand logo — visible on mobile where the sidebar (and its logo) is
+          hidden, so the admin stays branded everywhere. */}
+      <Link
+        href="/admin"
+        aria-label={`${siteConfig.name} — ${t("admin.admin")}`}
+        className="flex shrink-0 items-center lg:hidden"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.svg" alt={siteConfig.name} className="h-7 w-auto" />
+      </Link>
+
+      <h1 className="hidden font-display text-xl text-ink-900 lg:block">
         {title ?? t("admin.admin")}
       </h1>
 
-      <div className="ms-auto flex items-center gap-2" ref={menuRef}>
+      <div className="ms-auto flex items-center gap-1.5 sm:gap-2">
         <NotificationBell />
         <LocaleToggle className="hidden sm:inline-flex" />
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-2 rounded-full border border-ink-100 bg-white px-2 py-1 pe-3 text-sm transition-colors hover:bg-ink-50"
-        >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-bloom-100 text-[11px] font-semibold text-bloom-700">
-            {initials}
-          </span>
-          <span className="hidden text-start sm:block">
-            <span className="block text-xs font-medium leading-tight text-ink-900">
-              {user?.firstName || user?.name || t("admin.admin")}
-            </span>
-            <span className="block text-[10px] uppercase tracking-wider text-ink-400">
-              {user?.role ?? t("admin.admin")}
-            </span>
-          </span>
-        </button>
 
-        {open ? (
-          <div className="absolute inset-e-4 top-14 w-56 overflow-hidden rounded-xl border border-ink-100 bg-white shadow-(--shadow-lift) sm:inset-e-6">
-            <div className="border-b border-ink-100 px-4 py-3">
-              <p className="text-sm font-medium text-ink-900">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="truncate text-xs text-ink-500">{user?.email}</p>
-            </div>
-            <Link
-              href="/account"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink-700 transition-colors hover:bg-ink-50"
+        <Menu>
+          <MenuTrigger
+            label={t("admin.myProfile")}
+            className="group flex items-center gap-2 rounded-full border border-ink-100 bg-white p-1 pe-2.5 text-sm transition-all duration-200 hover:border-ink-200 hover:bg-ink-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50 aria-expanded:border-ink-200 aria-expanded:bg-ink-50"
+          >
+            <span
+              aria-hidden
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-bloom-100 text-[11px] font-semibold text-bloom-700"
             >
-              <UserIcon size={16} />
-              <span>{t("admin.myProfile")}</span>
-            </Link>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex w-full items-center gap-2 border-t border-ink-100 px-4 py-2.5 text-start text-sm text-bloom-700 transition-colors hover:bg-bloom-50"
+              {initials}
+            </span>
+            <span className="hidden text-start sm:block">
+              <span className="block text-xs font-semibold leading-tight text-ink-900">
+                {user?.firstName || user?.name || t("admin.admin")}
+              </span>
+              <span className="block text-[10px] uppercase tracking-wider text-ink-400">
+                {user?.role ?? t("admin.admin")}
+              </span>
+            </span>
+            <ChevronDown
+              size={16}
+              className="hidden text-ink-400 transition-transform duration-200 group-aria-expanded:rotate-180 sm:block"
+            />
+          </MenuTrigger>
+
+          <MenuContent align="end">
+            <MenuHeader title={displayName} subtitle={user?.email} />
+            <MenuSeparator />
+            <MenuItem href="/account" icon={<UserIcon size={18} />}>
+              {t("admin.myProfile")}
+            </MenuItem>
+            {isAdmin ? (
+              <MenuItem href="/admin/settings" icon={<SettingsIcon size={18} />}>
+                {t("admin.settings")}
+              </MenuItem>
+            ) : null}
+            <MenuItem href="/" icon={<StoreIcon size={18} />}>
+              {t("admin.backToStore")}
+            </MenuItem>
+            <MenuSeparator />
+            <MenuItem
+              onSelect={handleLogout}
+              icon={<LogoutIcon size={18} />}
+              tone="danger"
             >
-              <LogoutIcon size={16} />
-              <span>{t("admin.signOut")}</span>
-            </button>
-          </div>
-        ) : null}
+              {t("admin.signOut")}
+            </MenuItem>
+          </MenuContent>
+        </Menu>
       </div>
     </header>
   );

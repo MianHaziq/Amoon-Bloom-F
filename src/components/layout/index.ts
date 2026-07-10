@@ -4,3 +4,4 @@ export { AnnouncementBar } from "./AnnouncementBar";
 export { MegaMenu } from "./MegaMenu";
 export { MobileNav } from "./MobileNav";
 export { LocaleToggle } from "./LocaleToggle";
+export { AccountMenu } from "./AccountMenu";

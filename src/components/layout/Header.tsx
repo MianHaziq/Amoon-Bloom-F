@@ -8,13 +8,13 @@ import {
   SearchIcon,
   BagIcon,
   HeartIcon,
-  UserIcon,
   MenuIcon,
 } from "@/components/icons";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { MegaMenu } from "./MegaMenu";
 import { MobileNav } from "./MobileNav";
 import { LocaleToggle } from "./LocaleToggle";
+import { AccountMenu } from "./AccountMenu";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { DeliverToPill } from "@/features/location/components/DeliverToPill";
 import { ROUTES } from "@/constants/routes";
@@ -159,10 +159,12 @@ export function Header() {
             </nav>
           ) : null}
 
-          {/* Actions */}
-          <div className="ml-auto flex items-center gap-2 lg:ml-0">
+          {/* Actions — utilities, then a balanced icon cluster.
+              Order (leading→trailing): wishlist · cart · profile.
+              Profile sits at the far edge; cart immediately precedes it. */}
+          <div className="ml-auto flex items-center gap-1 sm:gap-1.5 lg:ml-0">
             <DeliverToPill className="hidden lg:inline-flex" />
-            <LocaleToggle className="hidden md:inline-flex" />
+            <LocaleToggle className="me-1 hidden md:inline-flex" />
             <IconButton
               label={t("common.search")}
               variant="ghost"
@@ -173,37 +175,34 @@ export function Header() {
             </IconButton>
             <NotificationBell className="hidden sm:block" />
             <Link
-              href={user ? ROUTES.account : ROUTES.login}
-              aria-label={user ? t("nav.myAccount") : t("common.signIn")}
-              className="relative hidden h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all hover:bg-ink-900 hover:text-white sm:inline-flex"
-            >
-              <UserIcon size={20} />
-            </Link>
-            <Link
               href={ROUTES.wishlist}
               aria-label={`${t("nav.wishlist")}, ${tc(wishlistCount, "units.itemOne", "units.itemOther")}`}
-              className="relative hidden h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all hover:bg-ink-900 hover:text-white sm:inline-flex"
+              className="relative hidden h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all duration-200 hover:bg-ink-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50 sm:inline-flex"
             >
               <HeartIcon size={20} />
               {wishlistCount > 0 ? (
-                <span className="absolute -inset-e-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white">
+                <span className="absolute -inset-e-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white ring-2 ring-cream-50">
                   {wishlistCount}
                 </span>
               ) : null}
             </Link>
+            {/* Cart — sits immediately before the profile control. Badge slot is
+                always present in markup so a count appears the instant it's > 0. */}
             <button
               type="button"
               onClick={() => dispatch(toggleCartDrawer(true))}
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink-900 text-white transition-colors hover:bg-ink-800"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink-900 text-white transition-all duration-200 hover:bg-ink-800 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50"
               aria-label={`${t("nav.cart")}, ${tc(itemCount, "units.itemOne", "units.itemOther")}`}
             >
               <BagIcon size={20} />
               {itemCount > 0 ? (
                 <span className="absolute -inset-e-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-bloom-500 px-1.5 text-xs font-semibold tabular-nums text-white ring-2 ring-cream-50">
-                  {itemCount}
+                  {itemCount > 99 ? "99+" : itemCount}
                 </span>
               ) : null}
             </button>
+            {/* Profile — far-right anchor of the header. */}
+            <AccountMenu className="hidden sm:block" />
           </div>
         </Container>
 

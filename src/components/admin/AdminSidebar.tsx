@@ -55,11 +55,17 @@ export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
       )}
       aria-label="Admin navigation"
     >
-      <div className="flex h-16 items-center gap-2 border-b border-ink-100 px-6">
-        <span className="font-display text-lg tracking-tight text-ink-900">
-          {siteConfig.name}
-        </span>
-        <span className="rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-bloom-700">
+      <div className="flex h-16 items-center gap-2.5 border-b border-ink-100 px-6">
+        <Link
+          href="/admin"
+          aria-label={`${siteConfig.name} — ${t("admin.admin")}`}
+          className="flex items-center"
+          onClick={onNavigate}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt={siteConfig.name} className="h-8 w-auto" />
+        </Link>
+        <span className="rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-bloom-700">
           {t("admin.admin")}
         </span>
       </div>

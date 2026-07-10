@@ -52,6 +52,41 @@ export const MenuIcon = ({ size, ...rest }: IconProps) => (
   </svg>
 );
 
+/** Boxed package — the "my orders" affordance. */
+export const PackageIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
+    <path d="m3 8 9 5 9-5M12 13v8" />
+    <path d="M16.5 5.5 7.5 10.5" />
+  </svg>
+);
+
+/** Enter/arrow-into-door — the "sign in" affordance. */
+export const LoginIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+    <path d="m10 17 5-5-5-5M15 12H3" />
+  </svg>
+);
+
+/** Person with a plus — the "create account" affordance. */
+export const UserPlusIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M3 21a6 6 0 0 1 12 0" />
+    <path d="M19 8v6M22 11h-6" />
+  </svg>
+);
+
+/** Storefront awning — the "back to store" affordance. */
+export const StoreIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9Z" />
+    <path d="M3 9l1.5-5h15L21 9a2.5 2.5 0 0 1-4.5 1.5 2.5 2.5 0 0 1-4.5 0 2.5 2.5 0 0 1-4.5 0A2.5 2.5 0 0 1 3 9Z" />
+    <path d="M9 20v-5h6v5" />
+  </svg>
+);
+
 export const CloseIcon = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <path d="M6 6 18 18M18 6 6 18" />

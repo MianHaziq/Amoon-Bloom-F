@@ -11,6 +11,14 @@ export { Textarea } from "./Textarea";
 export type { TextareaProps } from "./Textarea";
 export { Modal } from "./Modal";
 export { Drawer } from "./Drawer";
+export {
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuHeader,
+  MenuItem,
+  MenuSeparator,
+} from "./Menu";
 export { Spinner, Skeleton, PageLoader } from "./Loader";
 export { ToastViewport } from "./Toast";
 export { Divider } from "./Divider";
