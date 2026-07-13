@@ -272,6 +272,9 @@ export const messages = {
       city: "City",
       country: "Country",
       promoCode: "Promo code",
+      vatEstimateNote: "Tax may apply to some items — confirmed once you place your order.",
+      locationLockedHint:
+        "City and country follow your delivery region — change it from “Deliver to” in the header.",
       deliveryHeading: "Delivery",
       deliverySubtitle: "Choose a saved address or add a new one.",
       continueToPayment: "Continue to payment",
@@ -383,6 +386,8 @@ export const messages = {
       loginCta: "Log in",
       guestLinkHint:
         "Sign up with the same email to link this order to your new account.",
+      vatLabel: "VAT ({rate}%)",
+      vatIncludedLabel: "Includes VAT ({rate}%)",
     },
     orderStatus: {
       PENDING: "Pending",
@@ -589,6 +594,7 @@ export const messages = {
       collaborations: "Collaborations",
       orders: "Orders",
       promoCodes: "Promo codes",
+      tax: "Tax (VAT)",
       users: "Users",
       regions: "Regions",
       notifications: "Notifications",
@@ -859,6 +865,19 @@ export const messages = {
         columnRegion: "Region",
         allRegionsOption: "All regions",
         guest: "Guest",
+        exportButton: "Export",
+        exportExcel: "Export as Excel",
+        exportPdf: "Export as PDF",
+        exportCsv: "Export as CSV",
+        exportDialogDescription: "Choose a date range and filters, then download the report.",
+        exportDateRequired: "Please choose a start and end date.",
+        exportSuccess: "Export downloaded",
+        exportError: "Could not export orders",
+        startDate: "Start date & time",
+        endDate: "End date & time",
+        paymentStatus: "Payment status",
+        dateRangeHeading: "Date range",
+        exportFormatHeading: "Choose a format",
       },
       orderDetailPage: {
         titleTemplate: "Order {id}",
@@ -1002,6 +1021,31 @@ export const messages = {
         accountAgeWindowHint:
           "Only accounts created within this many days can redeem.",
       },
+      vatPage: {
+        title: "Tax (VAT)",
+        description:
+          "Set a VAT rate per region — each region (e.g. UAE, Saudi Arabia) can have its own rate, inclusive/exclusive setting, and scope.",
+        regionTabsLabel: "Region",
+        off: "Off",
+        rateHeading: "Rate",
+        enabledLabel: "VAT enabled",
+        rateLabel: "VAT rate (%)",
+        rateHint: "0–100, e.g. 5 for UAE or 15 for Saudi Arabia.",
+        rateInvalid: "Enter a rate between 0 and 100",
+        inclusiveLabel: "Price display",
+        inclusiveHint: "Prices already include VAT (nothing added at checkout)",
+        previewExclusive:
+          "Example: a {amount} item becomes {total} at checkout ({rate}% VAT of {added} added).",
+        previewInclusive:
+          "Example: a {amount} item stays {amount} at checkout — {extracted} of that is VAT ({rate}%), extracted for reporting only.",
+        scopeHeading: "Applies to",
+        regionHint: "Changes here only affect orders placed in this region.",
+        lastUpdated: "Last updated",
+        save: "Save VAT settings",
+        saved: "VAT settings saved",
+        saveError: "Could not save VAT settings",
+        noRegions: "No regions configured yet. Add a region first.",
+      },
       bannersPage: {
         title: "Homepage banners",
         description:
@@ -1128,6 +1172,12 @@ export const messages = {
         ordersCount: "{count} orders",
         revenueByCategoryHeading: "Revenue by category",
         noCategorySales: "No category sales yet.",
+        exportButton: "Export",
+        exportExcel: "Export as Excel",
+        exportPdf: "Export as PDF",
+        exportCsv: "Export as CSV",
+        exportSuccess: "Export downloaded",
+        exportError: "Could not export analytics",
       },
       contactPage: {
         title: "Contact messages",
@@ -1477,6 +1527,9 @@ export const messages = {
       city: "المدينة",
       country: "الدولة",
       promoCode: "رمز الخصم",
+      vatEstimateNote: "قد تُضاف ضريبة على بعض العناصر — يتم تأكيدها عند إتمام الطلب.",
+      locationLockedHint:
+        "المدينة والدولة تتبعان منطقة التوصيل الخاصة بك — لتغييرها استخدم «التوصيل إلى» في الأعلى.",
       deliveryHeading: "التوصيل",
       deliverySubtitle: "اختر عنوانًا محفوظًا أو أضف عنوانًا جديدًا.",
       continueToPayment: "متابعة إلى الدفع",
@@ -1588,6 +1641,8 @@ export const messages = {
       loginCta: "تسجيل الدخول",
       guestLinkHint:
         "سجّل بنفس البريد الإلكتروني لربط هذا الطلب بحسابك الجديد.",
+      vatLabel: "ضريبة القيمة المضافة ({rate}%)",
+      vatIncludedLabel: "شامل ضريبة القيمة المضافة ({rate}%)",
     },
     orderStatus: {
       PENDING: "قيد الانتظار",
@@ -1794,6 +1849,7 @@ export const messages = {
       collaborations: "التعاونات",
       orders: "الطلبات",
       promoCodes: "أكواد الخصم",
+      tax: "الضريبة (VAT)",
       users: "المستخدمون",
       regions: "المناطق",
       notifications: "الإشعارات",
@@ -2058,6 +2114,19 @@ export const messages = {
         columnRegion: "المنطقة",
         allRegionsOption: "كل المناطق",
         guest: "زائر",
+        exportButton: "تصدير",
+        exportExcel: "تصدير كملف إكسل",
+        exportPdf: "تصدير كملف PDF",
+        exportCsv: "تصدير كملف CSV",
+        exportDialogDescription: "اختر نطاق التاريخ والفلاتر، ثم نزّل التقرير.",
+        exportDateRequired: "يرجى اختيار تاريخ البداية والنهاية.",
+        exportSuccess: "تم تنزيل التصدير",
+        exportError: "تعذّر تصدير الطلبات",
+        startDate: "تاريخ ووقت البداية",
+        endDate: "تاريخ ووقت النهاية",
+        paymentStatus: "حالة الدفع",
+        dateRangeHeading: "نطاق التاريخ",
+        exportFormatHeading: "اختر الصيغة",
       },
       orderDetailPage: {
         titleTemplate: "الطلب {id}",
@@ -2201,6 +2270,31 @@ export const messages = {
         accountAgeWindowHint:
           "يمكن للحسابات التي أُنشئت خلال هذه المدة فقط استخدام الكود.",
       },
+      vatPage: {
+        title: "الضريبة (VAT)",
+        description:
+          "حدّد نسبة الضريبة لكل منطقة — يمكن لكل منطقة (مثل الإمارات، السعودية) أن تملك نسبتها الخاصة، وإعداد الشمول/عدم الشمول، والنطاق.",
+        regionTabsLabel: "المنطقة",
+        off: "متوقفة",
+        rateHeading: "النسبة",
+        enabledLabel: "الضريبة مفعّلة",
+        rateLabel: "نسبة الضريبة (%)",
+        rateHint: "من 0 إلى 100، مثل 5 للإمارات أو 15 للسعودية.",
+        rateInvalid: "أدخل نسبة بين 0 و 100",
+        inclusiveLabel: "طريقة عرض السعر",
+        inclusiveHint: "السعر يشمل الضريبة مسبقًا (لا تُضاف عند الدفع)",
+        previewExclusive:
+          "مثال: منتج بسعر {amount} يصبح {total} عند الدفع (تمت إضافة {added} كضريبة بنسبة {rate}%).",
+        previewInclusive:
+          "مثال: منتج بسعر {amount} يبقى {amount} عند الدفع — منها {extracted} ضريبة ({rate}%)، وتُستخرج فقط لأغراض التقارير.",
+        scopeHeading: "تنطبق على",
+        regionHint: "التغييرات هنا تؤثر فقط على الطلبات في هذه المنطقة.",
+        lastUpdated: "آخر تحديث",
+        save: "حفظ إعدادات الضريبة",
+        saved: "تم حفظ إعدادات الضريبة",
+        saveError: "تعذّر حفظ إعدادات الضريبة",
+        noRegions: "لا توجد مناطق مُعرّفة بعد. أضف منطقة أولًا.",
+      },
       bannersPage: {
         title: "بانرات الصفحة الرئيسية",
         description:
@@ -2326,6 +2420,12 @@ export const messages = {
         ordersCount: "{count} طلب",
         revenueByCategoryHeading: "الإيرادات حسب الفئة",
         noCategorySales: "لا توجد مبيعات لأي فئة بعد.",
+        exportButton: "تصدير",
+        exportExcel: "تصدير كملف إكسل",
+        exportPdf: "تصدير كملف PDF",
+        exportCsv: "تصدير كملف CSV",
+        exportSuccess: "تم تنزيل التصدير",
+        exportError: "تعذّر تصدير التحليلات",
       },
       contactPage: {
         title: "رسائل التواصل",

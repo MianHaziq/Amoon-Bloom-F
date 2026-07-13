@@ -119,3 +119,8 @@ export interface ApiAnalyticsDailySales {
   summary: ApiAnalyticsDailySalesSummary;
   points: ApiAnalyticsDailyPoint[];
 }
+
+/** Params for `GET /admin/analytics/export` (admin/manager, ANALYTICS permission). */
+export interface ApiAnalyticsExportParams extends AnalyticsRangeParams {
+  format: "xlsx" | "pdf" | "csv";
+}

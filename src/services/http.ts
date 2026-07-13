@@ -91,7 +91,21 @@ function createHttpClient(): AxiosInstance {
 
   instance.interceptors.response.use(
     (response) => response,
-    (error: AxiosError<ApiErrorPayload>) => {
+    async (error: AxiosError<ApiErrorPayload>) => {
+      // A `responseType: "blob"` request (file downloads) gets its error body
+      // back as a Blob too, not parsed JSON — deriveMessage would otherwise
+      // silently lose the backend's specific message (e.g. "narrow the date
+      // range") behind a generic status-code fallback. Parse it back to JSON
+      // first so blob-download errors surface exactly like any other request.
+      if (error.response?.data instanceof Blob && error.response.data.type.includes("json")) {
+        try {
+          const text = await error.response.data.text();
+          error.response.data = JSON.parse(text) as ApiErrorPayload;
+        } catch {
+          // Malformed/non-JSON blob body — fall through to the generic message.
+        }
+      }
+
       const status = error.response?.status ?? 0;
       const message = deriveMessage(error);
       const payload: ApiErrorPayload = {

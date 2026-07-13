@@ -123,6 +123,13 @@ export const queryKeys = {
     list: () => [...queryKeys.regions.all, "list"] as const,
   },
 
+  vat: {
+    all: ["vat"] as const,
+    list: () => [...queryKeys.vat.all, "list"] as const,
+    detail: (regionId: string) => [...queryKeys.vat.all, "detail", regionId] as const,
+    public: () => [...queryKeys.vat.all, "public"] as const,
+  },
+
   jobs: {
     all: ["jobs"] as const,
   },

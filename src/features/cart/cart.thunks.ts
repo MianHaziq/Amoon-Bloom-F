@@ -67,12 +67,20 @@ async function handleServerError(
 }
 
 export const addToCart =
-  (product: Product, quantity = 1): AppThunk<Promise<CartMutationResult>> =>
+  (
+    product: Product,
+    quantity = 1,
+    selectedOptions?: Record<string, string> | null
+  ): AppThunk<Promise<CartMutationResult>> =>
   async (dispatch, getState) => {
-    dispatch(addItem({ product, quantity }));
+    dispatch(addItem({ product, quantity, selectedOptions }));
     if (!isAuthed(getState)) return { ok: true };
     try {
-      const server = await cartApi.add({ productId: product.id, quantity });
+      const server = await cartApi.add({
+        productId: product.id,
+        quantity,
+        selectedOptions,
+      });
       dispatch(setItems(apiCartToCartItems(server)));
       return { ok: true };
     } catch (err) {

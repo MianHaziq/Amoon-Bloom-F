@@ -11,6 +11,8 @@ export interface CartItem {
   quantity: number;
   /** Optional per-item note (gift message / engraving). Mirrors the server cart. */
   message?: string | null;
+  /** Chosen variant, e.g. {"Colour":"Pink"} — keyed by the option group title. */
+  selectedOptions?: Record<string, string> | null;
 }
 
 export interface CartState {
@@ -25,12 +27,20 @@ const cartSlice = createSlice({
   reducers: {
     addItem(
       state,
-      action: PayloadAction<{ product: Product; quantity?: number }>
+      action: PayloadAction<{
+        product: Product;
+        quantity?: number;
+        selectedOptions?: Record<string, string> | null;
+      }>
     ) {
-      const { product, quantity = 1 } = action.payload;
+      const { product, quantity = 1, selectedOptions } = action.payload;
       const existing = state.items.find((i) => i.productId === product.id);
       if (existing) {
         existing.quantity += quantity;
+        // Cart lines are still one-per-product, not variant-aware — adding a
+        // different variant of an already-cart'd product overwrites the
+        // selection on that single line (last wins), mirroring the backend.
+        if (selectedOptions !== undefined) existing.selectedOptions = selectedOptions;
         return;
       }
       state.items.push({
@@ -41,6 +51,7 @@ const cartSlice = createSlice({
         unitPrice: product.price.amount,
         currency: product.price.currency,
         quantity,
+        selectedOptions: selectedOptions ?? null,
       });
     },
     updateQuantity(

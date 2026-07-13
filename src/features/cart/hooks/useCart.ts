@@ -45,8 +45,11 @@ export function useCart() {
   return {
     items,
     ...totals,
-    add: (product: Product, quantity = 1) =>
-      dispatch(addToCart(product, quantity)),
+    add: (
+      product: Product,
+      quantity = 1,
+      selectedOptions?: Record<string, string> | null
+    ) => dispatch(addToCart(product, quantity, selectedOptions)),
     remove: (productId: string) => dispatch(removeFromCart(productId)),
     setQuantity: (productId: string, quantity: number) =>
       dispatch(setCartQuantity(productId, quantity)),

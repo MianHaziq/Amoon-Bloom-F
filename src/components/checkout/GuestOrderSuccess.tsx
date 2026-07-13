@@ -54,8 +54,12 @@ export function GuestOrderSuccess() {
 
   const money = (n: number) => formatCurrency(n, currency, locale);
   const subtotal =
-    order?.items.reduce((s, i) => s + i.price * i.quantity, 0) ?? 0;
+    order?.subtotalAmount ??
+    order?.items.reduce((s, i) => s + i.price * i.quantity, 0) ??
+    0;
   const discount = order?.discountAmount ?? 0;
+  const vatAmount = order?.vatAmount ?? order?.taxAmount ?? 0;
+  const showVat = order != null && order.vatRatePercent != null && vatAmount > 0;
 
   return (
     <Container className="max-w-3xl py-12 sm:py-16">
@@ -187,6 +191,18 @@ export function GuestOrderSuccess() {
                     </span>
                     <span className="tabular-nums font-medium text-bloom-700">
                       − {money(discount)}
+                    </span>
+                  </div>
+                ) : null}
+                {showVat ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-ink-600">
+                      {order!.vatInclusive
+                        ? t("order.vatIncludedLabel", { rate: order!.vatRatePercent! })
+                        : t("order.vatLabel", { rate: order!.vatRatePercent! })}
+                    </span>
+                    <span className="tabular-nums text-ink-900">
+                      {order!.vatInclusive ? money(vatAmount) : `+ ${money(vatAmount)}`}
                     </span>
                   </div>
                 ) : null}

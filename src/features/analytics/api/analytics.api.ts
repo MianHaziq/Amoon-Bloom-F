@@ -1,9 +1,11 @@
 import { http } from "@/services/http";
+import { filenameFromContentDisposition } from "@/lib/download";
 import type { ApiResponse } from "@/types";
 import type {
   AnalyticsRangeParams,
   ApiAnalyticsCategoryRevenue,
   ApiAnalyticsDailySales,
+  ApiAnalyticsExportParams,
   ApiAnalyticsPreset,
   ApiAnalyticsRevenue,
 } from "../types";
@@ -42,5 +44,23 @@ export const analyticsApi = {
       { params }
     );
     return data.data;
+  },
+
+  // Streams the Excel/PDF report directly as the response body. Returns the
+  // server's own filename (from Content-Disposition) alongside the blob.
+  async exportFile(
+    params: ApiAnalyticsExportParams
+  ): Promise<{ blob: Blob; filename: string }> {
+    const response = await http.get<Blob>("/admin/analytics/export", {
+      params,
+      responseType: "blob",
+    });
+    return {
+      blob: response.data,
+      filename: filenameFromContentDisposition(
+        response.headers["content-disposition"],
+        `analytics-export.${params.format}`
+      ),
+    };
   },
 };

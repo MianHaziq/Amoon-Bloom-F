@@ -58,7 +58,10 @@ export function OrderDetailPage({ id }: { id: string }) {
   }
 
   const order = orderQuery.data;
-  const itemsTotal = order.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const itemsTotal =
+    order.subtotalAmount ?? order.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const vatAmount = order.vatAmount ?? order.taxAmount ?? 0;
+  const showVat = order.vatRatePercent != null && vatAmount > 0;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -135,6 +138,19 @@ export function OrderDetailPage({ id }: { id: string }) {
                     ) : null}
                   </dt>
                   <dd>−{formatCurrency(order.discountAmount)}</dd>
+                </div>
+              ) : null}
+              {showVat ? (
+                <div className="flex justify-between text-ink-500">
+                  <dt>
+                    {order.vatInclusive
+                      ? t("order.vatIncludedLabel", { rate: order.vatRatePercent! })
+                      : t("order.vatLabel", { rate: order.vatRatePercent! })}
+                  </dt>
+                  <dd>
+                    {order.vatInclusive ? "" : "+ "}
+                    {formatCurrency(vatAmount)}
+                  </dd>
                 </div>
               ) : null}
               <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">

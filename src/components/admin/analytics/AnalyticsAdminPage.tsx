@@ -1,13 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "@/features/analytics/api/analytics.api";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Select } from "@/components/admin/Select";
-import { Skeleton } from "@/components/ui/Loader";
+import { Skeleton, Spinner } from "@/components/ui/Loader";
+import { Menu, MenuTrigger, MenuContent, MenuItem } from "@/components/ui";
+import { DownloadIcon, ChevronDownIcon } from "@/components/icons";
+import { downloadBlob } from "@/lib/download";
+import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
 import { formatCurrency } from "@/lib/format";
 import { useT } from "@/i18n/useT";
@@ -25,9 +29,20 @@ type Preset = typeof PRESETS[number]["value"];
 
 export function AnalyticsAdminPage() {
   const { t } = useT();
+  const toast = useToast();
   const [preset, setPreset] = useState<Preset>("month");
   const [region, setRegion] = useState<string>("ALL");
   const regionParam = region === "ALL" ? {} : { region };
+
+  const exportMutation = useMutation({
+    mutationFn: (format: "xlsx" | "pdf" | "csv") =>
+      analyticsApi.exportFile({ preset, ...regionParam, format }),
+    onSuccess: ({ blob, filename }) => {
+      downloadBlob(blob, filename);
+      toast.success({ title: t("admin.analyticsPage.exportSuccess") });
+    },
+    onError: (err) => toast.fromError(t("admin.analyticsPage.exportError"), err),
+  });
 
   const regionsQuery = useQuery({
     queryKey: queryKeys.regions.list(),
@@ -108,6 +123,47 @@ export function AnalyticsAdminPage() {
                 </button>
               ))}
             </div>
+            <Menu>
+              {/* MenuTrigger already renders a <button> — its child must not be
+                  one too (invalid nested-button HTML), so this mirrors
+                  Button's outline/sm look as a plain span instead of using
+                  <Button> directly. */}
+              <MenuTrigger
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-ink-200 bg-transparent px-4 text-sm font-medium tracking-tight text-ink-900 transition-all hover:border-ink-300 hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-60"
+                label={t("admin.analyticsPage.exportButton")}
+              >
+                {exportMutation.isPending ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <DownloadIcon size={16} />
+                )}
+                <span>{t("admin.analyticsPage.exportButton")}</span>
+                <ChevronDownIcon size={14} />
+              </MenuTrigger>
+              <MenuContent align="end">
+                <MenuItem
+                  icon={<DownloadIcon size={16} />}
+                  disabled={exportMutation.isPending}
+                  onSelect={() => exportMutation.mutate("xlsx")}
+                >
+                  {t("admin.analyticsPage.exportExcel")}
+                </MenuItem>
+                <MenuItem
+                  icon={<DownloadIcon size={16} />}
+                  disabled={exportMutation.isPending}
+                  onSelect={() => exportMutation.mutate("pdf")}
+                >
+                  {t("admin.analyticsPage.exportPdf")}
+                </MenuItem>
+                <MenuItem
+                  icon={<DownloadIcon size={16} />}
+                  disabled={exportMutation.isPending}
+                  onSelect={() => exportMutation.mutate("csv")}
+                >
+                  {t("admin.analyticsPage.exportCsv")}
+                </MenuItem>
+              </MenuContent>
+            </Menu>
           </div>
         }
       />

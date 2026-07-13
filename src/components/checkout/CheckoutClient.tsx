@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { m, AnimatePresence } from "motion/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,6 +28,7 @@ import { cartApi } from "@/features/cart/api/cart.api";
 import { addressesApi } from "@/features/addresses/api/addresses.api";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { promoCodesApi } from "@/features/promo-codes/api/promo-codes.api";
+import { vatApi } from "@/features/vat/api/vat.api";
 import { queryKeys } from "@/services/queryKeys";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
@@ -54,6 +55,10 @@ type TranslateFn = (
   key: MessageKey,
   vars?: Record<string, string | number>
 ) => string;
+
+function round2(n: number) {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
 
 const makeNewAddressSchema = (t: TranslateFn) =>
   z.object({
@@ -91,10 +96,15 @@ export function CheckoutClient() {
   const authHydrating =
     hydrated && !isAuthed && Boolean(storage.get<string>(STORAGE_KEYS.authToken));
   const { currency, locale, countryName, countryCode } = useCurrency();
+  // The delivery region is chosen once, in the header's "Deliver to" picker
+  // (LocationSheet), and lives here in redux. The checkout address form must
+  // never diverge from it — country/city below are display-only here and
+  // sync automatically whenever the header selection changes.
+  const deliveryCity = useAppSelector((s) => s.location.city);
   const { t, tc, locale: uiLocale } = useT();
 
-  // Supported delivery cities for the current market — the city field is a
-  // dropdown with the market's default pre-selected.
+  // Supported delivery cities for the current market — shown for reference;
+  // the actual city is locked to the header's selection (see deliveryCity).
   const country = getCountry(countryCode);
   const cityOptions = useMemo(
     () =>
@@ -147,6 +157,7 @@ export function CheckoutClient() {
     formState: { errors: newAddrErrors },
     getValues: getNewAddrValues,
     trigger: triggerNewAddr,
+    setValue: setNewAddrValue,
   } = useForm<NewAddressValues>({
     resolver: zodResolver(newAddressSchema),
     defaultValues: {
@@ -156,14 +167,23 @@ export function CheckoutClient() {
       phone: user?.phone ?? "",
       streetAddress: "",
       apartment: "",
-      // Pre-select the market's default supported city (changeable in the form).
-      city: user?.addressCity || country.defaultCity,
+      city: deliveryCity,
       state: "",
       postalCode: "",
-      country: user?.addressCountry ?? countryName,
+      country: countryName,
       email: user?.email ?? "",
     },
   });
+
+  // Keep the form's city/country in lockstep with the header's delivery
+  // region. defaultValues above only apply on mount, so without this a
+  // region switch after the form has rendered would leave these two fields
+  // stuck on the stale country/city (they're read-only in the UI precisely
+  // because they're meant to always mirror the header, never diverge from it).
+  useEffect(() => {
+    setNewAddrValue("country", countryName);
+    setNewAddrValue("city", deliveryCity);
+  }, [countryName, deliveryCity, setNewAddrValue]);
 
   const validatePromo = useMutation({
     mutationFn: (code: string) =>
@@ -198,10 +218,32 @@ export function CheckoutClient() {
 
   const subtotal = cart.subtotal;
   const discount = promoResult?.discountAmount ?? 0;
-  // Backend charges no shipping; order total = items − discount. Keep the
-  // displayed total identical to what the backend will record.
+  // Backend charges no shipping; order total = items − discount (+ VAT below).
   const shipping = 0;
-  const total = Math.max(0, subtotal - discount);
+
+  // VAT preview for the current region. The public endpoint intentionally omits the
+  // SPECIFIC_PRODUCTS/SPECIFIC_CATEGORIES scope lists (that's catalog-scoping data, not
+  // something the storefront needs), so an exact preview is only possible for ALL_PRODUCTS —
+  // the common case. For a scoped config we show a disclaimer instead of guessing a number;
+  // the order response after placing it always has the server-trusted, exact breakdown.
+  const vatQuery = useQuery({
+    queryKey: queryKeys.vat.public(),
+    queryFn: () => vatApi.getPublic(),
+    staleTime: 5 * 60_000,
+  });
+  const vatConfig = vatQuery.data;
+  const vatKnownScope = vatConfig?.appliesTo === "ALL_PRODUCTS";
+  const vatActive = Boolean(vatConfig?.enabled && vatConfig.ratePercent > 0);
+  const taxableNet = Math.max(0, subtotal - discount);
+  const vatAmount =
+    vatActive && vatKnownScope
+      ? vatConfig!.inclusive
+        ? round2(taxableNet - taxableNet / (1 + vatConfig!.ratePercent / 100))
+        : round2(taxableNet * (vatConfig!.ratePercent / 100))
+      : 0;
+  const vatAdds = vatActive && vatKnownScope && !vatConfig!.inclusive && vatAmount > 0;
+  const vatUncertain = vatActive && !vatKnownScope;
+  const total = taxableNet + (vatAdds ? vatAmount : 0);
 
   const syncCart = async () => {
     if (cart.items.length === 0) throw new Error(t("checkout.cartEmptyError"));
@@ -253,6 +295,7 @@ export function CheckoutClient() {
             productId: i.productId,
             quantity: i.quantity,
             message: i.message ?? null,
+            selectedOptions: i.selectedOptions ?? undefined,
           })),
           // Guests always fill the inline form, so shippingAddress is defined.
           shippingAddress: shippingAddress!,
@@ -452,6 +495,11 @@ export function CheckoutClient() {
             shipping={shipping}
             discount={discount}
             total={total}
+            vatAmount={vatAmount}
+            vatRatePercent={vatConfig?.ratePercent ?? null}
+            vatInclusive={Boolean(vatConfig?.inclusive)}
+            vatAdds={vatAdds}
+            vatUncertain={vatUncertain}
             promoCode={promoCode}
             setPromoCode={setPromoCode}
             promoResult={promoResult}
@@ -626,9 +674,14 @@ function AddressStep({
             >
               {t("checkout.city")}
             </label>
+            {/* City/country are set from the header's "Deliver to" picker, not
+                edited here — locking them keeps the address, catalog region,
+                and totals (VAT, currency) all pointed at the same place. */}
             <select
               id="checkout-city"
-              className="h-12 rounded-2xl border border-ink-200 bg-white px-4 text-sm text-ink-900 focus:border-bloom-500 focus:outline-none focus:ring-4 focus:ring-bloom-100"
+              disabled
+              aria-readonly="true"
+              className="h-12 cursor-not-allowed rounded-2xl border border-ink-200 bg-ink-50 px-4 text-sm text-ink-500 focus:outline-none"
               {...regNewAddr("city")}
             >
               {cityOptions.map((c) => (
@@ -648,10 +701,15 @@ function AddressStep({
           <Input
             label={t("checkout.country")}
             autoComplete="country-name"
+            readOnly
+            aria-readonly="true"
             error={newAddrErrors.country?.message}
             containerClassName="sm:col-span-2"
             {...regNewAddr("country")}
           />
+          <p className="-mt-1 text-xs text-ink-400 sm:col-span-2">
+            {t("checkout.locationLockedHint")}
+          </p>
         </div>
       ) : null}
 
@@ -996,6 +1054,14 @@ interface CheckoutSummaryProps {
   shipping: number;
   discount: number;
   total: number;
+  /** Estimated VAT for the ALL_PRODUCTS case; 0 when disabled, inclusive, or scope is unknown. */
+  vatAmount: number;
+  vatRatePercent: number | null;
+  vatInclusive: boolean;
+  /** True when vatAmount is added on top of the total (exclusive VAT). */
+  vatAdds: boolean;
+  /** True when VAT is enabled but scoped to specific products/categories — can't preview exactly. */
+  vatUncertain: boolean;
   promoCode: string;
   setPromoCode: (v: string) => void;
   promoResult: ApiPromoValidationResult | null;
@@ -1010,6 +1076,11 @@ function CheckoutSummary({
   shipping,
   discount,
   total,
+  vatAmount,
+  vatRatePercent,
+  vatInclusive,
+  vatAdds,
+  vatUncertain,
   promoCode,
   setPromoCode,
   promoResult,
@@ -1070,6 +1141,19 @@ function CheckoutSummary({
               <span>−{formatCurrency(discount, currency, locale)}</span>
             </div>
           ) : null}
+          {vatRatePercent != null && vatAmount > 0 ? (
+            <div className="flex justify-between text-ink-500">
+              <span>
+                {vatInclusive
+                  ? t("order.vatIncludedLabel", { rate: vatRatePercent })
+                  : t("order.vatLabel", { rate: vatRatePercent })}
+              </span>
+              <span>
+                {vatAdds ? "+ " : ""}
+                {formatCurrency(vatAmount, currency, locale)}
+              </span>
+            </div>
+          ) : null}
           <div className="flex justify-between text-ink-500">
             <span>{t("common.delivery")}</span>
             <span>
@@ -1082,6 +1166,9 @@ function CheckoutSummary({
             <span>{t("common.total")}</span>
             <span>{formatCurrency(total, currency, locale)}</span>
           </div>
+          {vatUncertain ? (
+            <p className="text-xs text-ink-400">{t("checkout.vatEstimateNote")}</p>
+          ) : null}
         </div>
       </Card>
 

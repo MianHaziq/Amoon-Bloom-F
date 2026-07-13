@@ -325,6 +325,15 @@ export const LogoutIcon = ({ size, ...rest }: IconProps) => (
   </svg>
 );
 
+/** Percent sign — tax / VAT rate affordance. */
+export const PercentIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="M19 5 5 19" />
+    <circle cx="6.5" cy="6.5" r="2.5" />
+    <circle cx="17.5" cy="17.5" r="2.5" />
+  </svg>
+);
+
 export const PencilIcon = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <path d="M12 20h9" />
@@ -365,5 +374,33 @@ export const BellIcon = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z" />
     <path d="M10 19a2 2 0 0 0 4 0" />
+  </svg>
+);
+
+export const DownloadIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="M12 4v11" />
+    <path d="m7.5 11 4.5 4.5 4.5-4.5" />
+    <path d="M5 19h14" />
+  </svg>
+);
+
+export const ChevronDownIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
+export const CalendarIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4" />
+  </svg>
+);
+
+export const SpreadsheetIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M3 10h18M9 10v10" />
   </svg>
 );

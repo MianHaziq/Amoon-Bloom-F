@@ -26,6 +26,7 @@ export function apiCartToCartItems(cart: ApiCart): CartItem[] {
       currency: "",
       quantity: it.quantity,
       message: it.message,
+      selectedOptions: it.selectedOptions ?? null,
     };
   });
 }

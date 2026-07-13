@@ -26,6 +26,7 @@ const LABEL_KEY: Record<string, MessageKey> = {
   Collaborations: "admin.collaborations",
   Orders: "admin.orders",
   "Promo codes": "admin.promoCodes",
+  "Tax (VAT)": "admin.tax",
   Users: "admin.users",
   Regions: "admin.regions",
   Notifications: "admin.notifications",

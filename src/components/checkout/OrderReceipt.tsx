@@ -107,8 +107,11 @@ function Receipt({
   money: (n: number) => string;
 }) {
   const { t, locale } = useT();
-  const subtotal = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const subtotal =
+    order.subtotalAmount ?? order.items.reduce((s, i) => s + i.price * i.quantity, 0);
   const discount = order.discountAmount ?? 0;
+  const vatAmount = order.vatAmount ?? order.taxAmount ?? 0;
+  const showVat = order.vatRatePercent != null && vatAmount > 0;
   const stepIndex = STEPS.findIndex((s) => s.key === order.status);
   const cancelled = order.status === "CANCELLED";
 
@@ -240,6 +243,19 @@ function Receipt({
               accent
             />
           )}
+          {showVat ? (
+            order.vatInclusive ? (
+              <Row
+                label={t("order.vatIncludedLabel", { rate: order.vatRatePercent! })}
+                value={money(vatAmount)}
+              />
+            ) : (
+              <Row
+                label={t("order.vatLabel", { rate: order.vatRatePercent! })}
+                value={`+ ${money(vatAmount)}`}
+              />
+            )
+          ) : null}
           <Row label={t("common.delivery")} value={t("common.free")} />
           <div className="mt-1.5 flex items-center justify-between border-t border-ink-100 pt-3">
             <span className="font-display text-lg text-ink-900">{t("common.total")}</span>

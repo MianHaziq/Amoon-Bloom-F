@@ -48,7 +48,11 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
     // Only confirm (toast + open drawer + "Added ✓") once the mutation succeeds.
     // For signed-in users the server enforces stock and the thunk toasts the
     // reason on rejection; guests always succeed locally.
-    const res = await add(product, qty);
+    const res = await add(
+      product,
+      qty,
+      Object.keys(selected).length > 0 ? selected : null
+    );
     if (!res.ok) return;
     dispatch(
       pushToast({

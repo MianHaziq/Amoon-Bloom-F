@@ -12,6 +12,7 @@ import {
   ChartIcon,
   GlobeIcon,
   BellIcon,
+  PercentIcon,
 } from "@/components/icons";
 import type { ManagerPermission } from "@/features/users/types";
 import type { ComponentType, SVGProps } from "react";
@@ -92,6 +93,12 @@ export const adminNav: AdminNavGroup[] = [
         href: "/admin/promo-codes",
         icon: TicketIcon,
         permission: "PROMO_CODES",
+      },
+      {
+        label: "Tax (VAT)",
+        href: "/admin/tax",
+        icon: PercentIcon,
+        permission: "SETTINGS",
       },
     ],
   },

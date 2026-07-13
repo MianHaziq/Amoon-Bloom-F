@@ -60,6 +60,11 @@ export interface ApiOrderItem {
   quantity: number;
   perProductMessage: string | null;
   price: number;
+  /** Chosen variant, e.g. {"Colour":"Pink"}. Null for orders placed before this was captured. */
+  selectedOptions?: Record<string, string> | null;
+  /** This line's VAT rate/amount, snapshotted at order time. 0 when the line wasn't taxable. */
+  vatRatePercent?: number;
+  vatAmount?: number;
 }
 
 export interface ApiOrderListUser {
@@ -89,6 +94,16 @@ export interface ApiOrder {
   orderMessage: string | null;
   totalAmount: number;
   discountAmount: number | null;
+  /** Pre-VAT, pre-discount line sum. Null for legacy orders placed before VAT. */
+  subtotalAmount?: number | null;
+  /** Total VAT — included in totalAmount for exclusive VAT, extracted (informational) for inclusive VAT. 0 when no VAT applied. */
+  taxAmount?: number;
+  /** Alias of taxAmount — kept for readability at call sites. */
+  vatAmount?: number;
+  /** The rate applied at order time, e.g. 5 for 5%. Null when no VAT applied. */
+  vatRatePercent?: number | null;
+  /** True when the VAT was already included in the catalogue price (nothing added at checkout). */
+  vatInclusive?: boolean;
   appliedPromoCode: string | null;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
@@ -127,6 +142,11 @@ export interface ApiOrderListRow {
   guestEmail?: string | null;
   orderMessage: string | null;
   totalAmount: number;
+  subtotalAmount?: number | null;
+  taxAmount?: number;
+  vatAmount?: number;
+  vatRatePercent?: number | null;
+  vatInclusive?: boolean;
   /** Currency the order was totaled in (e.g. "AED", "SAR"). Defaults to AED for legacy orders. */
   currency?: string;
   /** Region the order was placed in. */
@@ -165,6 +185,7 @@ export interface ApiGuestCheckoutItem {
   productId: string;
   quantity: number;
   message?: string | null;
+  selectedOptions?: Record<string, string> | null;
 }
 
 /** Body for `POST /orders/guest-checkout` (unauthenticated). */
@@ -190,4 +211,14 @@ export interface ApiAdminOrderHistoryParams extends ApiOrderHistoryParams {
   dateFrom?: string;
   dateTo?: string;
   includeItems?: boolean;
+}
+
+/** Params for `GET /orders/export` (admin/manager, ORDERS permission). */
+export interface ApiOrderExportParams {
+  dateFrom: string;
+  dateTo: string;
+  status?: OrderStatus;
+  paymentStatus?: PaymentStatus;
+  region?: string;
+  format: "xlsx" | "pdf" | "csv";
 }

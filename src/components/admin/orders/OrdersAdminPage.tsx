@@ -6,11 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
-import { Badge } from "@/components/ui";
+import { Badge, Button } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Pagination } from "@/components/admin/Pagination";
 import { Select } from "@/components/admin/Select";
+import { DownloadIcon } from "@/components/icons";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 import {
@@ -18,6 +19,7 @@ import {
   ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
 } from "./orderStatus";
+import { OrderExportDialog } from "./OrderExportDialog";
 import type { ApiOrderListRow, OrderStatus } from "@/features/orders/types";
 
 const PAGE_SIZE = 20;
@@ -57,6 +59,7 @@ export function OrdersAdminPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<OrderStatus | "ALL">("ALL");
   const [region, setRegion] = useState<string>("ALL");
+  const [exportOpen, setExportOpen] = useState(false);
   const router = useRouter();
   const { t } = useT();
 
@@ -148,6 +151,23 @@ export function OrdersAdminPage() {
       <PageHeader
         title={t("admin.ordersPage.title")}
         description={t("admin.ordersPage.description")}
+        actions={
+          <Button
+            variant="outline"
+            leadingIcon={<DownloadIcon size={16} />}
+            onClick={() => setExportOpen(true)}
+          >
+            {t("admin.ordersPage.exportButton")}
+          </Button>
+        }
+      />
+
+      <OrderExportDialog
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        initialStatus={status}
+        initialRegion={region}
+        regionOptions={(regionsQuery.data ?? []).map((r) => ({ value: r.code, label: r.name }))}
       />
 
       <DataTable

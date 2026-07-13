@@ -1,10 +1,12 @@
 import { http } from "@/services/http";
+import { filenameFromContentDisposition } from "@/lib/download";
 import type { ApiResponse, PaginatedResponse } from "@/types";
 import type {
   ApiAdminOrderHistoryParams,
   ApiCheckoutInput,
   ApiGuestCheckoutInput,
   ApiOrder,
+  ApiOrderExportParams,
   ApiOrderHistoryParams,
   ApiOrderListRow,
   ApiOrderStatusLite,
@@ -83,5 +85,24 @@ export const ordersApi = {
       { status }
     );
     return data.data;
+  },
+
+  // Streams the Excel/PDF report directly as the response body. Returns the
+  // server's own filename (from Content-Disposition) alongside the blob so
+  // callers don't need to invent one — pairs with lib/download.ts.
+  async exportFile(
+    params: ApiOrderExportParams
+  ): Promise<{ blob: Blob; filename: string }> {
+    const response = await http.get<Blob>("/orders/export", {
+      params,
+      responseType: "blob",
+    });
+    return {
+      blob: response.data,
+      filename: filenameFromContentDisposition(
+        response.headers["content-disposition"],
+        `orders-export.${params.format}`
+      ),
+    };
   },
 };
