@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { m } from "motion/react";
-import { Container, Button } from "@/components/ui";
+import { Container, Button, CurrencyAmount } from "@/components/ui";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
 import {
   CheckCircleIcon,
@@ -169,7 +169,11 @@ export function GuestOrderSuccess() {
                       </p>
                     </div>
                     <p className="shrink-0 text-sm font-medium tabular-nums text-ink-900">
-                      {money(item.price * item.quantity)}
+                      <CurrencyAmount
+                        amount={item.price * item.quantity}
+                        currency={currency}
+                        locale={locale}
+                      />
                     </p>
                   </li>
                 ))}
@@ -179,7 +183,7 @@ export function GuestOrderSuccess() {
                 <div className="flex items-center justify-between">
                   <span className="text-ink-600">{t("common.subtotal")}</span>
                   <span className="tabular-nums text-ink-900">
-                    {money(subtotal)}
+                    <CurrencyAmount amount={subtotal} currency={currency} locale={locale} />
                   </span>
                 </div>
                 {discount > 0 ? (
@@ -190,7 +194,8 @@ export function GuestOrderSuccess() {
                         : t("common.discount")}
                     </span>
                     <span className="tabular-nums font-medium text-bloom-700">
-                      − {money(discount)}
+                      −{" "}
+                      <CurrencyAmount amount={discount} currency={currency} locale={locale} />
                     </span>
                   </div>
                 ) : null}
@@ -202,7 +207,8 @@ export function GuestOrderSuccess() {
                         : t("order.vatLabel", { rate: order!.vatRatePercent! })}
                     </span>
                     <span className="tabular-nums text-ink-900">
-                      {order!.vatInclusive ? money(vatAmount) : `+ ${money(vatAmount)}`}
+                      {!order!.vatInclusive && "+ "}
+                      <CurrencyAmount amount={vatAmount} currency={currency} locale={locale} />
                     </span>
                   </div>
                 ) : null}
@@ -217,7 +223,7 @@ export function GuestOrderSuccess() {
                     {t("common.total")}
                   </span>
                   <span className="font-display text-xl font-medium tabular-nums text-ink-900">
-                    {money(order.totalAmount)}
+                    <CurrencyAmount amount={order.totalAmount} currency={currency} locale={locale} />
                   </span>
                 </div>
               </div>

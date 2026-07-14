@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, ArrowRight } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
@@ -18,12 +19,24 @@ export function MegaMenu({ className }: MegaMenuProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const { groups } = useCategories();
   const { t } = useT();
+  const pathname = usePathname();
+  const isHomeActive = pathname === ROUTES.home;
 
   return (
     <nav
       className={cn("relative flex items-center gap-1", className)}
       onMouseLeave={() => setActiveId(null)}
     >
+      <Link
+        href={ROUTES.home}
+        onMouseEnter={() => setActiveId(null)}
+        className={cn(
+          "group rounded-full px-4 py-2 text-sm font-medium transition-colors",
+          isHomeActive ? "text-bloom-600" : "text-ink-700 hover:text-bloom-600"
+        )}
+      >
+        <AnimatedLabel active={isHomeActive}>{t("common.home")}</AnimatedLabel>
+      </Link>
       {/* Standalone Shop link — goes straight to the full catalogue, separate
           from the categories dropdown beside it. */}
       <Link

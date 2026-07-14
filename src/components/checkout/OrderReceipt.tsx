@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { m } from "motion/react";
-import { Container, Button } from "@/components/ui";
+import { Container, Button, CurrencyAmount } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Loader";
 import { CheckCircleIcon, ArrowRight, TruckIcon } from "@/components/icons";
 import { staggerContainer, staggerItem } from "@/lib/motion";
@@ -107,6 +108,7 @@ function Receipt({
   money: (n: number) => string;
 }) {
   const { t, locale } = useT();
+  const { currency } = useCurrency();
   const subtotal =
     order.subtotalAmount ?? order.items.reduce((s, i) => s + i.price * i.quantity, 0);
   const discount = order.discountAmount ?? 0;
@@ -224,14 +226,21 @@ function Receipt({
                 <p className="text-xs text-ink-500">{t("common.qty")} {item.quantity}</p>
               </div>
               <p className="shrink-0 text-sm font-medium tabular-nums text-ink-900">
-                {money(item.price * item.quantity)}
+                <CurrencyAmount
+                  amount={item.price * item.quantity}
+                  currency={currency}
+                  locale={locale}
+                />
               </p>
             </li>
           ))}
         </ul>
 
         <div className="mt-4 flex flex-col gap-1.5 border-t border-ink-100 pt-4 text-sm">
-          <Row label={t("common.subtotal")} value={money(subtotal)} />
+          <Row
+            label={t("common.subtotal")}
+            value={<CurrencyAmount amount={subtotal} currency={currency} locale={locale} />}
+          />
           {discount > 0 && (
             <Row
               label={
@@ -239,7 +248,11 @@ function Receipt({
                   ? `${t("common.discount")} (${order.appliedPromoCode})`
                   : t("common.discount")
               }
-              value={`− ${money(discount)}`}
+              value={
+                <>
+                  − <CurrencyAmount amount={discount} currency={currency} locale={locale} />
+                </>
+              }
               accent
             />
           )}
@@ -247,12 +260,16 @@ function Receipt({
             order.vatInclusive ? (
               <Row
                 label={t("order.vatIncludedLabel", { rate: order.vatRatePercent! })}
-                value={money(vatAmount)}
+                value={<CurrencyAmount amount={vatAmount} currency={currency} locale={locale} />}
               />
             ) : (
               <Row
                 label={t("order.vatLabel", { rate: order.vatRatePercent! })}
-                value={`+ ${money(vatAmount)}`}
+                value={
+                  <>
+                    + <CurrencyAmount amount={vatAmount} currency={currency} locale={locale} />
+                  </>
+                }
               />
             )
           ) : null}
@@ -260,7 +277,7 @@ function Receipt({
           <div className="mt-1.5 flex items-center justify-between border-t border-ink-100 pt-3">
             <span className="font-display text-lg text-ink-900">{t("common.total")}</span>
             <span className="font-display text-xl font-medium tabular-nums text-ink-900">
-              {money(order.totalAmount)}
+              <CurrencyAmount amount={order.totalAmount} currency={currency} locale={locale} />
             </span>
           </div>
         </div>
@@ -304,7 +321,7 @@ function Row({
   accent,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   accent?: boolean;
 }) {
   return (

@@ -3,16 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { Badge } from "@/components/ui";
+import { Badge, CurrencyAmount } from "@/components/ui";
 import { BagIcon, StarIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
-import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useAppDispatch } from "@/store";
 import { addToCart } from "@/features/cart/cart.thunks";
 import { pushToast } from "@/store/slices/ui.slice";
 import { WishlistToggle } from "@/features/wishlist/components/WishlistToggle";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { useShowVatInclusive } from "@/features/vat/hooks/useShowVatInclusive";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n";
 import { productColorSwatches } from "../facets";
@@ -44,6 +44,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     product.compareAtPrice &&
     product.compareAtPrice.amount > product.price.amount;
   const colors = productColorSwatches(product);
+  const showVatInclusive = useShowVatInclusive();
 
   // Colour-variant image swap: hovering a dot previews its image, clicking pins
   // it — all in-place, no navigation. Falls back to the default primary image.
@@ -164,17 +165,19 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
         </Link>
         <div className="mt-1 flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
-            <span className="text-base font-semibold text-ink-900">
-              {formatCurrency(product.price.amount, currency, locale)}
-            </span>
+            <CurrencyAmount
+              amount={product.price.amount}
+              currency={currency}
+              locale={locale}
+              className="text-base font-semibold text-bloom-700"
+            />
             {hasDiscount && product.compareAtPrice && (
-              <span className="text-xs text-ink-400 line-through">
-                {formatCurrency(
-                  product.compareAtPrice.amount,
-                  currency,
-                  locale
-                )}
-              </span>
+              <CurrencyAmount
+                amount={product.compareAtPrice.amount}
+                currency={currency}
+                locale={locale}
+                className="text-xs text-ink-400 line-through"
+              />
             )}
           </div>
 
@@ -230,6 +233,11 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
             </span>
           ) : null}
         </div>
+        {showVatInclusive && (
+          <p className="text-xs font-medium text-bloom-600">
+            {t("product.vatInclusive")}
+          </p>
+        )}
       </div>
     </article>
   );

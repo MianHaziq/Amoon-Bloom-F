@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { m, AnimatePresence } from "motion/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import {
 } from "@/features/products/facets";
 import { productsApi } from "@/features/products/api/products.api";
 import { toUiProducts } from "@/features/products/adapters";
+import { BEST_SELLING_FILTER_VALUE } from "@/features/products/facets";
 import {
   Drawer,
   Button,
@@ -20,11 +21,11 @@ import {
   MenuTrigger,
   MenuContent,
   MenuItem,
+  CurrencyAmount,
 } from "@/components/ui";
 import { FilterIcon, CloseIcon, ChevronDown, CheckIcon, ArrowRight } from "@/components/icons";
 import { baseTransition } from "@/lib/motion";
 import { cn } from "@/lib/cn";
-import { formatCurrency } from "@/lib/format";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import type { ProductFilter } from "@/features/products/types";
 import type { ApiProduct } from "@/features/products/api-types";
@@ -61,7 +62,7 @@ function FilterChip({
   label,
   onRemove,
 }: {
-  label: string;
+  label: ReactNode;
   onRemove: () => void;
 }) {
   return (
@@ -131,6 +132,8 @@ export function ShopPLP({
     queryFn: ({ pageParam }): Promise<PaginatedResponse<ApiProduct>> => {
       const params = { page: pageParam, limit: pageSize };
       if (rawQ) return productsApi.search(rawQ, params);
+      if (activeCategory === BEST_SELLING_FILTER_VALUE)
+        return productsApi.bestSellers(params);
       if (activeCategory)
         return productsApi.listByCategory(activeCategory, params);
       return productsApi.list(params);
@@ -220,9 +223,12 @@ export function ShopPLP({
   }, [loaded, filter]);
 
   // Category slug → title, for the active-filter chip label.
-  const categoryTitle = filter.category
-    ? categories.find((c) => c.slug === filter.category)?.title ?? filter.category
-    : undefined;
+  const categoryTitle =
+    filter.category === BEST_SELLING_FILTER_VALUE
+      ? t("shop.bestSelling")
+      : filter.category
+        ? categories.find((c) => c.slug === filter.category)?.title ?? filter.category
+        : undefined;
 
   const filterKey = `${activeCategory ?? "all"}|${filter.sort ?? "featured"}|${filter.inStock ? 1 : 0}|${filter.minPrice ?? ""}|${filter.maxPrice ?? ""}|${selectedColors.join(",")}|${q}`;
 
@@ -301,7 +307,21 @@ export function ShopPLP({
           )}
           {priceTouched && priceBounds && (
             <FilterChip
-              label={`${formatCurrency(filter.minPrice ?? priceBounds.min, currency, locale)} – ${formatCurrency(filter.maxPrice ?? priceBounds.max, currency, locale)}`}
+              label={
+                <>
+                  <CurrencyAmount
+                    amount={filter.minPrice ?? priceBounds.min}
+                    currency={currency}
+                    locale={locale}
+                  />
+                  {" – "}
+                  <CurrencyAmount
+                    amount={filter.maxPrice ?? priceBounds.max}
+                    currency={currency}
+                    locale={locale}
+                  />
+                </>
+              }
               onRemove={() =>
                 setFilterSafe({
                   ...filter,

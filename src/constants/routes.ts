@@ -19,6 +19,10 @@ export const ROUTES = {
   contact: "/contact",
   branches: "/branches",
   privacy: "/privacy",
+  terms: "/terms",
+  refundPolicy: "/refund-policy",
+  productDisclaimer: "/product-disclaimer",
+  shippingPolicy: "/shipping-policy",
   admin: "/admin",
 } as const;
 

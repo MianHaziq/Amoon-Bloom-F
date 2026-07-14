@@ -3,11 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { m } from "motion/react";
-import { IconButton } from "@/components/ui";
+import { IconButton, CurrencyAmount } from "@/components/ui";
 import { TrashIcon } from "@/components/icons";
 import { listItem, microTransition } from "@/lib/motion";
 import { QuantitySelector } from "@/features/products/components/QuantitySelector";
-import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useAppDispatch } from "@/store";
@@ -78,11 +77,16 @@ export function CartLineItem({
             transition={microTransition}
             className="shrink-0 text-sm font-semibold tabular-nums text-ink-900"
           >
-            {formatCurrency(item.unitPrice * item.quantity, currency, locale)}
+            <CurrencyAmount
+              amount={item.unitPrice * item.quantity}
+              currency={currency}
+              locale={locale}
+            />
           </m.p>
         </div>
         <p className="mt-1 text-xs text-ink-500">
-          {formatCurrency(item.unitPrice, currency, locale)} {t("cart.each")}
+          <CurrencyAmount amount={item.unitPrice} currency={currency} locale={locale} />{" "}
+          {t("cart.each")}
         </p>
         <div className="mt-auto flex items-center justify-between pt-3">
           <QuantitySelector

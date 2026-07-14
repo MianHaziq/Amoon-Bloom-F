@@ -26,6 +26,15 @@ export const SearchIcon = ({ size, ...rest }: IconProps) => (
   </svg>
 );
 
+/** Magnifying glass with a plus — the "hover/tap to zoom" affordance (distinct from SearchIcon). */
+export const ZoomInIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M11 8v6M8 11h6" />
+    <path d="m20 20-3.5-3.5" />
+  </svg>
+);
+
 export const BagIcon = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z" />
@@ -96,6 +105,12 @@ export const CloseIcon = ({ size, ...rest }: IconProps) => (
 export const ChevronRight = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <path d="m9 6 6 6-6 6" />
+  </svg>
+);
+
+export const ChevronLeft = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <path d="m15 6-6 6 6 6" />
   </svg>
 );
 
@@ -170,25 +185,70 @@ export const StarIcon = ({ size, ...rest }: IconProps) => (
   </svg>
 );
 
-export const InstagramIcon = ({ size, ...rest }: IconProps) => (
-  <svg {...base(size)} {...rest}>
-    <rect x="3" y="3" width="18" height="18" rx="5" />
-    <circle cx="12" cy="12" r="4" />
-    <circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" />
+/** Official brand glyphs below (filled), not the generic stroke set — needed for recognisability. */
+export const InstagramIcon = ({ size = 20, ...rest }: IconProps) => (
+  <svg
+    width={(size * 448) / 512}
+    height={size}
+    viewBox="0 0 448 512"
+    fill="currentColor"
+    aria-hidden="true"
+    {...rest}
+  >
+    <path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z" />
   </svg>
 );
 
-export const TikTokIcon = ({ size, ...rest }: IconProps) => (
-  <svg {...base(size)} {...rest}>
-    <path d="M14 4v9.5a3.5 3.5 0 1 1-3.5-3.5" />
-    <path d="M14 4c0 2.5 2 4.5 4.5 4.5" />
+export const TikTokIcon = ({ size = 20, ...rest }: IconProps) => (
+  <svg
+    width={(size * 448) / 512}
+    height={size}
+    viewBox="0 0 448 512"
+    fill="currentColor"
+    aria-hidden="true"
+    {...rest}
+  >
+    <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z" />
   </svg>
 );
 
-export const WhatsAppIcon = ({ size, ...rest }: IconProps) => (
-  <svg {...base(size)} {...rest}>
-    <path d="M21 12a9 9 0 0 1-13.7 7.7L3 21l1.4-4.2A9 9 0 1 1 21 12Z" />
-    <path d="M9 9.5c0-.5.4-1 1-1h.6c.3 0 .6.2.7.5l.5 1.4-1 .8a5.5 5.5 0 0 0 2.5 2.5l.8-1 1.4.5c.3.1.5.4.5.7v.6c0 .6-.5 1-1 1A6.5 6.5 0 0 1 9 9.5Z" />
+export const FacebookIcon = ({ size = 20, ...rest }: IconProps) => (
+  <svg
+    width={(size * 320) / 512}
+    height={size}
+    viewBox="0 0 320 512"
+    fill="currentColor"
+    aria-hidden="true"
+    {...rest}
+  >
+    <path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z" />
+  </svg>
+);
+
+export const ThreadsIcon = ({ size = 20, ...rest }: IconProps) => (
+  <svg
+    width={(size * 448) / 512}
+    height={size}
+    viewBox="0 0 448 512"
+    fill="currentColor"
+    aria-hidden="true"
+    {...rest}
+  >
+    <path d="M331.5 235.7c2.2 .9 4.2 1.9 6.3 2.8c29.2 14.1 50.6 35.2 61.8 61.4c15.7 36.5 17.2 95.8-30.3 143.2c-36.2 36.2-80.3 52.5-142.6 53h-.3c-70.2-.5-124.1-24.1-160.4-70.2c-32.3-41-49-97.7-49.7-168.5V257v-.2c.7-70.8 17.4-127.5 49.7-168.5C102.4 42.1 156.3 18.5 226.5 18h.3c70.3 .5 124.9 24 162.3 69.9c18.4 22.7 32 50 40.6 81.7l-40.4 10.8c-7.1-25.8-17.8-47.8-32.2-65.4c-29.2-35.8-73-54.2-130.5-54.6c-57 .5-100.1 18.8-128.2 54.4C69.9 146.9 56.2 196.8 55.7 257c.5 60.2 14.2 110.1 40.7 143.3c28 35.6 71.2 53.9 128.2 54.4c51.4-.4 85.4-12.6 113.7-40.9c32.3-32.2 31.7-71.8 21.4-95.9c-6.1-14.2-17.1-26-31.9-34.9c-3.7 26.9-11.8 48.3-24.7 64.8c-17.1 21.8-41.4 33.6-72.7 35.3c-23.6 1.3-46.3-4.4-63.9-16c-20.8-13.8-33-34.8-34.3-59.3c-2.5-48.3 35.7-83 95.2-86.4c21.1-1.2 40.9-.3 59.2 2.8c-2.4-14.8-7.3-26.6-14.6-35.2c-10-11.7-25.6-17.7-46.2-17.8H215c-16.6 0-39 4.6-53.3 26.3l-34.4-23.6c19.2-29.1 50.3-45.1 87.8-45.1h.8c62.6 .4 99.9 39.5 103.7 107.7l-.2 .2zm-156 68.8c1.3 25.1 28.4 36.8 54.6 35.3c25.6-1.4 54.6-11.4 59.5-73.2c-13.2-2.9-27.8-4.4-43.4-4.4c-4.8 0-9.6 .1-14.4 .4c-42.9 2.4-57.2 23.2-56.2 41.9z" />
+  </svg>
+);
+
+/** Official WhatsApp glyph (filled), not the generic stroke set — needed for brand recognisability. */
+export const WhatsAppIcon = ({ size = 20, ...rest }: IconProps) => (
+  <svg
+    width={(size * 448) / 512}
+    height={size}
+    viewBox="0 0 448 512"
+    fill="currentColor"
+    aria-hidden="true"
+    {...rest}
+  >
+    <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z" />
   </svg>
 );
 
@@ -402,5 +462,52 @@ export const SpreadsheetIcon = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <rect x="3" y="4" width="18" height="16" rx="2" />
     <path d="M3 10h18M9 10v10" />
+  </svg>
+);
+
+/**
+ * Currency signs — filled glyph marks (not stroke icons), traced directly from
+ * official sources so they render pixel-accurately rather than approximating
+ * or depending on OS/browser Unicode font support (neither sign has shipped
+ * in any system font as of 2026):
+ *   - Dirham (AED): CBUAE "Dirham Currency Symbol Guideline" v1.0 (official
+ *     vector artwork, page 9 — Unicode U+20C3, accepted for Unicode 18.0).
+ *   - Riyal (SAR): SAMA's official symbol SVG (sama.gov.sa/.../Guideline.aspx
+ *     — Unicode U+20C1, ratified in Unicode 17.0).
+ * Sized in `em` by default so they scale with whatever text they sit next to,
+ * with no per-call-site size tuning needed. `currentColor` fill inherits the
+ * surrounding text color (e.g. the pink price text).
+ */
+type CurrencySignProps = SVGProps<SVGSVGElement> & { size?: number | string };
+
+export const DirhamSign = ({ size = "1em", style, ...rest }: CurrencySignProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 384.53 334.44"
+    fill="currentColor"
+    aria-hidden
+    style={{ display: "inline-block", verticalAlign: "-0.05em", ...style }}
+    {...rest}
+  >
+    <path
+      fillRule="evenodd"
+      d="M 381.52 157.18 L 384.53 160.02 L 384.53 151.41 C 384.53 132.45 371.24 117.02 354.91 117.02 L 328.81 117.03 C 310.55 40.93 248.32 0.00 155.76 0.00 C 96.81 0.00 89.24 0.00 33.42 0.00 C 33.42 0.00 50.18 14.09 50.18 58.44 L 50.18 117.06 L 19.31 117.07 C 13.31 117.07 7.68 114.75 3.01 110.36 L 0.00 107.53 L 0.00 116.14 C 0.00 135.10 13.29 150.53 29.62 150.53 L 50.18 150.52 L 50.18 183.96 L 19.31 183.97 C 13.31 183.97 7.68 181.65 3.01 177.27 L 0.00 174.43 L 0.00 183.03 C 0.00 201.99 13.29 217.41 29.62 217.41 L 50.18 217.40 L 50.18 278.61 C 50.18 321.71 33.42 334.43 33.42 334.43 L 155.76 334.44 C 251.23 334.44 311.47 293.22 329.03 217.37 L 365.22 217.36 C 371.22 217.36 376.85 219.68 381.52 224.06 L 384.53 226.90 L 384.53 218.29 C 384.53 199.34 371.24 183.92 354.91 183.92 L 333.84 183.92 C 334.20 178.48 334.39 172.91 334.39 167.20 C 334.39 161.49 334.19 155.92 333.81 150.48 L 365.22 150.48 C 371.22 150.48 376.85 152.80 381.52 157.18 Z M 100.31 16.74 L 151.45 16.74 C 220.25 16.74 260.10 47.22 272.00 117.04 L 100.31 117.06 L 100.31 16.74 Z M 151.89 317.73 L 100.31 317.73 L 100.31 217.40 L 271.89 217.37 C 260.77 280.56 224.98 315.93 151.89 317.73 Z M 275.81 167.22 C 275.81 172.94 275.68 178.51 275.43 183.93 L 100.31 183.96 L 100.31 150.52 L 275.43 150.49 C 275.68 155.89 275.81 161.46 275.81 167.22 Z"
+    />
+  </svg>
+);
+
+export const RiyalSign = ({ size = "1em", style, ...rest }: CurrencySignProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 1124.14 1256.39"
+    fill="currentColor"
+    aria-hidden
+    style={{ display: "inline-block", verticalAlign: "-0.05em", ...style }}
+    {...rest}
+  >
+    <path d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z" />
+    <path d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z" />
   </svg>
 );

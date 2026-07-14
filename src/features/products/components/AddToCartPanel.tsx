@@ -24,18 +24,15 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
   const dispatch = useAppDispatch();
   const { add } = useCart();
   const { t } = useT();
-  const { setActiveUrl, setActiveImages } = usePdpImage();
+  // Selection is owned by PdpImageProvider (shared with ProductGallery) so picking a
+  // colour here and clicking its photo in the gallery are the same action.
+  const { selected, selectOption } = usePdpImage();
   const wishlisted = useAppSelector((s) =>
     s.wishlist.items.some((i) => i.productId === product.id)
   );
   const [qty, setQty] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [selected, setSelected] = useState<Record<string, string>>(() =>
-    Object.fromEntries(
-      (product.options ?? []).map((o) => [o.id, o.options[0] ?? ""])
-    )
-  );
 
   useEffect(() => {
     return () => {
@@ -77,22 +74,9 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
               key={opt.id}
               title={opt.title}
               options={opt.options}
+              colors={opt.optionColors}
               value={selected[opt.id] ?? null}
-              onChange={(v) => {
-                setSelected((prev) => ({ ...prev, [opt.id]: v }));
-                // If this value has mapped photos, swap the gallery to its set
-                // (first photo becomes the main image).
-                const idx = opt.options.indexOf(v);
-                const set = (opt.optionImageSets?.[idx] ?? [])
-                  .map((u) => u.trim())
-                  .filter(Boolean);
-                const single = opt.optionImages?.[idx]?.trim();
-                const gallery = set.length > 0 ? set : single ? [single] : [];
-                if (gallery.length > 0) {
-                  setActiveImages(gallery);
-                  setActiveUrl(gallery[0]);
-                }
-              }}
+              onChange={(v) => selectOption(opt.id, v)}
             />
           ))}
         </div>

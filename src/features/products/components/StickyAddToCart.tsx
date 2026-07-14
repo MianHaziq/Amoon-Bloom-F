@@ -2,12 +2,11 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui";
+import { Button, CurrencyAmount } from "@/components/ui";
 import { BagIcon } from "@/components/icons";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useAppDispatch } from "@/store";
 import { pushToast, toggleCartDrawer } from "@/store/slices/ui.slice";
-import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
@@ -84,9 +83,12 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
           <p className="truncate font-display text-sm font-medium text-ink-900">
             {product.title}
           </p>
-          <p className="text-sm font-semibold tabular-nums text-bloom-700">
-            {formatCurrency(product.price.amount, currency, locale)}
-          </p>
+          <CurrencyAmount
+            amount={product.price.amount}
+            currency={currency}
+            locale={locale}
+            className="block text-sm font-semibold tabular-nums text-bloom-700"
+          />
         </div>
         <Button
           size="md"

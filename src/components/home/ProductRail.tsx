@@ -22,6 +22,7 @@ export function ProductRail({
   products,
   spacing = "md",
   tone,
+  id,
 }: {
   locale: Locale;
   eyebrowKey: MessageKey;
@@ -30,10 +31,11 @@ export function ProductRail({
   products: Product[];
   spacing?: "sm" | "md" | "lg";
   tone?: "default" | "cream";
+  id?: string;
 }) {
   if (products.length === 0) return null;
   return (
-    <Section spacing={spacing} tone={tone}>
+    <Section id={id} spacing={spacing} tone={tone}>
       <Reveal>
         <SectionHeader
           eyebrow={t(locale, eyebrowKey)}

@@ -12,6 +12,11 @@
 
 import type { Product } from "./types";
 
+/** Sentinel `ProductFilter.category` value that selects the "Best Selling" source
+ *  in the shop sidebar instead of a real category — handled specially by ShopPLP's
+ *  data-fetching (calls `productsApi.bestSellers` instead of a category/list query). */
+export const BEST_SELLING_FILTER_VALUE = "__best-selling__";
+
 /** Normalise an option label/value for matching: trimmed, lowercased, spaces
  *  and separators collapsed. Handles EN + AR. */
 const norm = (s: string): string =>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { WhatsAppFloatButton } from "@/components/layout/WhatsAppFloatButton";
 import { CartDrawer } from "@/features/cart/components/CartDrawer";
 import { CartPersistence } from "@/features/cart/components/CartPersistence";
 import { CartSync } from "@/features/cart/components/CartSync";
@@ -34,6 +35,7 @@ export default async function StorefrontLayout({
         {children}
       </main>
       <Footer />
+      <WhatsAppFloatButton />
       <CartDrawer />
     </>
   );

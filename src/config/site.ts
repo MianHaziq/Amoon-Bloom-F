@@ -29,17 +29,22 @@ export const siteConfig = {
     "https://ammon-pull-zone.b-cdn.net/videos/3fc3ab0e-11ac-448a-8279-32bd281ad382.mp4",
     "https://ammon-pull-zone.b-cdn.net/videos/e9077e2a-808c-4e4c-9dd1-d25826738a5d.mp4",
   ],
+  // Legal entity name shown in the copyright line — distinct from the
+  // customer-facing `name` above.
+  legalEntity: "AMOON BLOOM Trading L.L.C S.O.C™",
   contact: {
     email: "management@amoonbloom.com",
     phone: "+971 50 606 7910",
-    whatsapp: "+971 50 266 1181",
+    whatsapp: "+971 50 606 7910",
     address: "Dubai, United Arab Emirates",
     hours: "Daily · 10:00 — 00:00 (Dubai time)",
   },
   links: {
-    instagram: "https://instagram.com/amoonisboutique",
-    tiktok: "https://tiktok.com/@amoonisboutique",
-    whatsapp: "https://wa.me/971502661181",
+    instagram: "https://www.instagram.com/amoonis.boutique/?hl=en",
+    facebook: "https://www.facebook.com/amoonis.boutique/",
+    tiktok: "https://www.tiktok.com/@amoonis.boutique",
+    threads: "https://www.threads.com/@amoonis.boutique",
+    whatsapp: "https://wa.me/971506067910",
   },
   shipping: {
     sameDayCutoff: "Order before 6 PM for same-day delivery in Dubai.",

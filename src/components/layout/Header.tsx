@@ -180,7 +180,7 @@ export function Header() {
                   className={cn(
                     "relative inline-flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50",
                     itemCount > 0
-                      ? "bg-bloom-50 text-bloom-700 hover:bg-bloom-100"
+                      ? "bg-ink-900 text-white hover:bg-ink-800"
                       : "text-ink-700 hover:bg-ink-900 hover:text-white"
                   )}
                   aria-label={cartLabel}
@@ -257,7 +257,7 @@ export function Header() {
               className={cn(
                 "relative inline-flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50",
                 itemCount > 0
-                  ? "bg-bloom-50 text-bloom-700 hover:bg-bloom-100"
+                  ? "bg-ink-900 text-white hover:bg-ink-800"
                   : "text-ink-700 hover:bg-ink-900 hover:text-white"
               )}
               aria-label={cartLabel}

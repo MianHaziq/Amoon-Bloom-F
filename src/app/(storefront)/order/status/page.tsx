@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
-import { Container, Section, Input, Button, Card, Badge } from "@/components/ui";
+import { Container, Section, Input, Button, Card, Badge, CurrencyAmount } from "@/components/ui";
 import { ArrowRight, CheckCircleIcon } from "@/components/icons";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { ROUTES } from "@/constants/routes";
@@ -12,7 +12,7 @@ import {
   ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
 } from "@/features/orders/constants";
-import { formatCurrency } from "@/lib/format";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
 
 const PROGRESS = [
@@ -25,6 +25,7 @@ const PROGRESS = [
 
 export default function OrderStatusPage() {
   const { t } = useT();
+  const { currency, locale } = useCurrency();
   const [orderId, setOrderId] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -110,7 +111,7 @@ export default function OrderStatusPage() {
                       {t("order.orderLabel")} {result.id.slice(0, 8)}
                     </p>
                     <p className="font-display text-lg font-medium text-ink-900">
-                      {formatCurrency(result.totalAmount)}
+                      <CurrencyAmount amount={result.totalAmount} currency={currency} locale={locale} />
                     </p>
                   </div>
                 </div>

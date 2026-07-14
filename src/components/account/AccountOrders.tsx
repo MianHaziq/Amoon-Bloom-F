@@ -5,11 +5,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { queryKeys } from "@/services/queryKeys";
-import { Badge } from "@/components/ui";
+import { Badge, CurrencyAmount } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Loader";
 import { Pagination } from "@/components/admin/Pagination";
 import { ChevronRight } from "@/components/icons";
-import { formatCurrency, formatDate, intlLocale } from "@/lib/format";
+import { formatDate, intlLocale } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import {
@@ -95,7 +95,7 @@ export function AccountOrders() {
                 {t(ORDER_STATUS_LABEL_KEY[order.status])}
               </Badge>
               <p className="min-w-[6rem] text-end font-medium text-ink-900">
-                {formatCurrency(order.totalAmount, currency, curLocale)}
+                <CurrencyAmount amount={order.totalAmount} currency={currency} locale={curLocale} />
               </p>
             </div>
             <ChevronRight size={16} className="shrink-0 text-ink-400 rtl:-scale-x-100" />

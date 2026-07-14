@@ -33,6 +33,7 @@ export async function BestSellers() {
 
   return (
     <ProductRail
+      id="best-sellers"
       locale={locale}
       eyebrowKey="home.bestSellersEyebrow"
       titleKey="home.bestSellersTitle"

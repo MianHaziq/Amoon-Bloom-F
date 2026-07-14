@@ -46,6 +46,22 @@ export const productsApi = {
     return data;
   },
 
+  /**
+   * Best-selling products (`/products/best-sellers`), ranked by real units sold
+   * from non-cancelled orders in the requesting region. Backend fills any
+   * remaining slots from a showcase category, then the plain catalogue, so this
+   * never returns empty even for a brand-new store.
+   */
+  async bestSellers(
+    params: ApiProductListParams = {}
+  ): Promise<PaginatedResponse<ApiProduct>> {
+    const { data } = await http.get<PaginatedResponse<ApiProduct>>(
+      "/products/best-sellers",
+      { params }
+    );
+    return data;
+  },
+
   async getById(id: string, region?: string): Promise<ApiProduct> {
     const { data } = await http.get<ApiResponse<ApiProduct>>(`/products/${id}`, {
       params: region ? { region } : undefined,

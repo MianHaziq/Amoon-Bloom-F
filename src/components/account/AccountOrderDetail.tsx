@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { queryKeys } from "@/services/queryKeys";
-import { Badge } from "@/components/ui";
+import { Badge, CurrencyAmount } from "@/components/ui";
 import { Spinner } from "@/components/ui/Loader";
 import { ChevronRight } from "@/components/icons";
 import { formatCurrency, formatDate, intlLocale } from "@/lib/format";
@@ -130,7 +130,8 @@ export function AccountOrderDetail({ id }: { id: string }) {
                     {item.product?.title ?? t("account.removedProduct")}
                   </p>
                   <p className="text-xs text-ink-500">
-                    {formatCurrency(item.price, currency, curLocale)} × {item.quantity}
+                    <CurrencyAmount amount={item.price} currency={currency} locale={curLocale} />{" "}
+                    × {item.quantity}
                   </p>
                   {item.perProductMessage ? (
                     <p className="mt-1 text-xs italic text-ink-500 wrap-break-word">
@@ -139,7 +140,11 @@ export function AccountOrderDetail({ id }: { id: string }) {
                   ) : null}
                 </div>
                 <p className="shrink-0 font-medium text-ink-900">
-                  {formatCurrency(item.price * item.quantity, currency, curLocale)}
+                  <CurrencyAmount
+                    amount={item.price * item.quantity}
+                    currency={currency}
+                    locale={curLocale}
+                  />
                 </p>
               </div>
             </li>
@@ -148,7 +153,7 @@ export function AccountOrderDetail({ id }: { id: string }) {
         <dl className="mt-4 space-y-1 border-t border-ink-100 pt-4 text-sm">
           <div className="flex justify-between text-ink-500">
             <dt>{t("common.subtotal")}</dt>
-            <dd>{formatCurrency(itemsTotal, currency, curLocale)}</dd>
+            <dd><CurrencyAmount amount={itemsTotal} currency={currency} locale={curLocale} /></dd>
           </div>
           {order.discountAmount && order.discountAmount > 0 ? (
             <div className="flex justify-between text-ink-500">
@@ -160,12 +165,19 @@ export function AccountOrderDetail({ id }: { id: string }) {
                   </span>
                 ) : null}
               </dt>
-              <dd>−{formatCurrency(order.discountAmount, currency, curLocale)}</dd>
+              <dd>
+                −
+                <CurrencyAmount
+                  amount={order.discountAmount}
+                  currency={currency}
+                  locale={curLocale}
+                />
+              </dd>
             </div>
           ) : null}
           <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">
             <dt>{t("common.total")}</dt>
-            <dd>{formatCurrency(order.totalAmount, currency, curLocale)}</dd>
+            <dd><CurrencyAmount amount={order.totalAmount} currency={currency} locale={curLocale} /></dd>
           </div>
         </dl>
       </section>

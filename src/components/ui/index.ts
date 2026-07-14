@@ -22,3 +22,4 @@ export {
 export { Spinner, Skeleton, PageLoader } from "./Loader";
 export { ToastViewport } from "./Toast";
 export { Divider } from "./Divider";
+export { CurrencyAmount } from "./CurrencyAmount";

@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { m, AnimatePresence } from "motion/react";
-import { Button, Drawer, Divider } from "@/components/ui";
+import { Button, Drawer, Divider, CurrencyAmount } from "@/components/ui";
 import { ArrowRight, BagIcon } from "@/components/icons";
 import { CartLineItem } from "./CartLineItem";
 import { microTransition } from "@/lib/motion";
-import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -64,7 +63,7 @@ export function CartDrawer() {
                 transition={microTransition}
                 className="font-display text-xl font-medium tabular-nums text-ink-900"
               >
-                {formatCurrency(subtotal, currency, locale)}
+                <CurrencyAmount amount={subtotal} currency={currency} locale={locale} />
               </m.span>
             </div>
             <p className="mt-1 text-xs text-ink-500">

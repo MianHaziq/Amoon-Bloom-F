@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 interface PriceRangeSliderProps {
@@ -12,7 +12,7 @@ interface PriceRangeSliderProps {
   onChange: (next: { min: number; max: number }) => void;
   step?: number;
   /** Formats an amount for the value labels (e.g. currency). */
-  format: (amount: number) => string;
+  format: (amount: number) => ReactNode;
   className?: string;
 }
 

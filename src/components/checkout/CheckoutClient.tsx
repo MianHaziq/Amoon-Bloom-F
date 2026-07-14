@@ -16,6 +16,7 @@ import {
   Button,
   Divider,
   Card,
+  CurrencyAmount,
 } from "@/components/ui";
 import { Spinner } from "@/components/ui/Loader";
 import {
@@ -914,7 +915,11 @@ function SummaryStep({
               <span className="text-ink-400">× {item.quantity}</span>
             </span>
             <span className="shrink-0 tabular-nums text-ink-900">
-              {formatCurrency(item.unitPrice * item.quantity, currency, locale)}
+              <CurrencyAmount
+                amount={item.unitPrice * item.quantity}
+                currency={currency}
+                locale={locale}
+              />
             </span>
           </li>
         ))}
@@ -960,7 +965,8 @@ function SummaryStep({
           isLoading={isPlacing}
           className="w-full sm:w-auto"
         >
-          {t("checkout.placeOrder")} · {formatCurrency(total, currency, locale)}
+          {t("checkout.placeOrder")} ·{" "}
+          <CurrencyAmount amount={total} currency={currency} locale={locale} />
         </Button>
       </div>
     </Card>
@@ -1119,11 +1125,11 @@ function CheckoutSummary({
                   <p className="text-xs text-ink-500">{t("common.qty")} {item.quantity}</p>
                 </div>
                 <p className="shrink-0 font-medium tabular-nums">
-                  {formatCurrency(
-                    item.unitPrice * item.quantity,
-                    currency,
-                    locale
-                  )}
+                  <CurrencyAmount
+                    amount={item.unitPrice * item.quantity}
+                    currency={currency}
+                    locale={locale}
+                  />
                 </p>
               </div>
             </li>
@@ -1133,12 +1139,14 @@ function CheckoutSummary({
         <div className="flex flex-col gap-2 text-sm">
           <div className="flex justify-between text-ink-500">
             <span>{t("common.subtotal")}</span>
-            <span>{formatCurrency(subtotal, currency, locale)}</span>
+            <span><CurrencyAmount amount={subtotal} currency={currency} locale={locale} /></span>
           </div>
           {discount > 0 ? (
             <div className="flex justify-between text-ink-500">
               <span>{t("common.discount")}</span>
-              <span>−{formatCurrency(discount, currency, locale)}</span>
+              <span>
+                −<CurrencyAmount amount={discount} currency={currency} locale={locale} />
+              </span>
             </div>
           ) : null}
           {vatRatePercent != null && vatAmount > 0 ? (
@@ -1150,21 +1158,23 @@ function CheckoutSummary({
               </span>
               <span>
                 {vatAdds ? "+ " : ""}
-                {formatCurrency(vatAmount, currency, locale)}
+                <CurrencyAmount amount={vatAmount} currency={currency} locale={locale} />
               </span>
             </div>
           ) : null}
           <div className="flex justify-between text-ink-500">
             <span>{t("common.delivery")}</span>
             <span>
-              {shipping === 0
-                ? t("common.free")
-                : formatCurrency(shipping, currency, locale)}
+              {shipping === 0 ? (
+                t("common.free")
+              ) : (
+                <CurrencyAmount amount={shipping} currency={currency} locale={locale} />
+              )}
             </span>
           </div>
           <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">
             <span>{t("common.total")}</span>
-            <span>{formatCurrency(total, currency, locale)}</span>
+            <span><CurrencyAmount amount={total} currency={currency} locale={locale} /></span>
           </div>
           {vatUncertain ? (
             <p className="text-xs text-ink-400">{t("checkout.vatEstimateNote")}</p>

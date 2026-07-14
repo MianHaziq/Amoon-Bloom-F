@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Drawer } from "@/components/ui";
 import { ChevronRight } from "@/components/icons";
@@ -24,6 +25,7 @@ const LOCALES: { value: Locale; nativeLabel: string; label: string }[] = [
 export function MobileNav() {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const pathname = usePathname();
   const { t } = useT();
   const open = useAppSelector((s) => s.ui.isMobileNavOpen);
   const locale = useAppSelector((s) => s.ui.locale);
@@ -105,6 +107,7 @@ export function MobileNav() {
             </Link>
           ) : null}
           {[
+            { href: ROUTES.home, label: t("common.home") },
             { href: ROUTES.shop, label: t("nav.shopEverything") },
             { href: "/about", label: t("nav.ourStory") },
             { href: "/contact", label: t("nav.contact") },
@@ -113,7 +116,12 @@ export function MobileNav() {
               key={link.href}
               onClick={close}
               href={link.href}
-              className="rounded-xl px-3 py-2.5 text-sm font-medium text-ink-700 hover:bg-cream-50"
+              className={cn(
+                "rounded-xl px-3 py-2.5 text-sm font-medium",
+                pathname === link.href
+                  ? "bg-bloom-50 text-bloom-700"
+                  : "text-ink-700 hover:bg-cream-50"
+              )}
             >
               {link.label}
             </Link>

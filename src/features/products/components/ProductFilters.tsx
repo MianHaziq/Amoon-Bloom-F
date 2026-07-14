@@ -2,11 +2,11 @@
 
 import { useId } from "react";
 import { cn } from "@/lib/cn";
-import { formatCurrency } from "@/lib/format";
+import { CurrencyAmount } from "@/components/ui";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { PriceRangeSlider } from "./PriceRangeSlider";
 import type { ProductFilter } from "../types";
-import type { ColorFacet, PriceBounds } from "../facets";
+import { BEST_SELLING_FILTER_VALUE, type ColorFacet, type PriceBounds } from "../facets";
 import type { Category } from "@/features/categories/types";
 import { useT } from "@/i18n/useT";
 
@@ -57,6 +57,8 @@ export function ProductFilters({
     onChange({ ...filter, colors: next.length ? next : undefined });
   };
 
+  const bestSellingActive = filter.category === BEST_SELLING_FILTER_VALUE;
+
   return (
     <div
       className={cn(
@@ -64,6 +66,10 @@ export function ProductFilters({
         className
       )}
     >
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-900">
+        {t("shop.filters")}
+      </p>
+
       {/* Category */}
       <div className="flex flex-col gap-2.5">
         <FacetHeading>{t("shop.category")}</FacetHeading>
@@ -87,6 +93,23 @@ export function ProductFilters({
             >
               {resultCount}
             </span>
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onChange({
+                ...filter,
+                category: bestSellingActive ? undefined : BEST_SELLING_FILTER_VALUE,
+              })
+            }
+            className={cn(
+              "flex items-center justify-between rounded-xl px-3 py-2.5 text-start text-sm transition-colors",
+              bestSellingActive
+                ? "bg-bloom-50 font-semibold text-bloom-700"
+                : "text-ink-600 hover:bg-cream-50 hover:text-ink-900"
+            )}
+          >
+            <span>{t("shop.bestSelling")}</span>
           </button>
           {categories.map((cat) => {
             const active = filter.category === cat.slug;
@@ -139,7 +162,7 @@ export function ProductFilters({
                 maxPrice: max >= priceBounds.max ? undefined : max,
               })
             }
-            format={(a) => formatCurrency(a, currency, locale)}
+            format={(a) => <CurrencyAmount amount={a} currency={currency} locale={locale} />}
           />
         </div>
       )}

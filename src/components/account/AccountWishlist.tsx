@@ -2,13 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui";
+import { Button, CurrencyAmount } from "@/components/ui";
 import { TrashIcon, BagIcon, HeartIcon } from "@/components/icons";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { removeWishlistItem } from "@/store/slices/wishlist.slice";
 import { addItem } from "@/store/slices/cart.slice";
 import { pushToast } from "@/store/slices/ui.slice";
-import { formatCurrency } from "@/lib/format";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
 import { ROUTES } from "@/constants/routes";
@@ -71,7 +70,7 @@ export function AccountWishlist() {
                 {item.title}
               </Link>
               <p className="mt-0.5 text-sm font-medium text-ink-700">
-                {formatCurrency(item.unitPrice, currency, locale)}
+                <CurrencyAmount amount={item.unitPrice} currency={currency} locale={locale} />
               </p>
             </div>
 

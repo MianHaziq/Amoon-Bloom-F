@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { m } from "motion/react";
-import { Button, Divider } from "@/components/ui";
+import { Button, Divider, CurrencyAmount } from "@/components/ui";
 import { ArrowRight, ShieldIcon, TruckIcon } from "@/components/icons";
 import { useAppSelector } from "@/store";
 import { microTransition } from "@/lib/motion";
-import { formatCurrency } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
@@ -48,7 +47,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
             transition={microTransition}
             className="font-medium tabular-nums text-ink-900"
           >
-            {formatCurrency(subtotal, currency, locale)}
+            <CurrencyAmount amount={subtotal} currency={currency} locale={locale} />
           </m.dd>
         </div>
         <div className="flex justify-between">
@@ -68,7 +67,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
           transition={microTransition}
           className="font-display text-2xl font-medium tabular-nums text-ink-900"
         >
-          {formatCurrency(total, currency, locale)}
+          <CurrencyAmount amount={total} currency={currency} locale={locale} />
         </m.span>
       </div>
 
