@@ -44,6 +44,12 @@ export interface Product {
   reviewCount?: number;
   options?: ProductOptionGroup[];
   tags?: string[];
+  /** Free gift-card message add-on, offered per product (most products have it). */
+  giftCardEnabled?: boolean;
+  giftCardExtraPrice?: number;
+  /** Paid "add a custom name" add-on, offered only on select products. */
+  customNameEnabled?: boolean;
+  customNamePrice?: number;
 }
 
 export interface ProductFilter {

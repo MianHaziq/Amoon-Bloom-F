@@ -108,6 +108,13 @@ export function OrderDetailPage({ id }: { id: string }) {
                       <p className="text-xs text-ink-500">
                         {formatCurrency(item.price)} × {item.quantity}
                       </p>
+                      {(item.giftCardSelected || item.customName) && (
+                        <p className="mt-1 text-xs font-medium text-bloom-700">
+                          {[item.giftCardSelected ? t("product.giftCardBadge") : null, item.customName]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
                       {item.perProductMessage ? (
                         <p className="mt-1 text-xs italic text-ink-500">
                           “{item.perProductMessage}”

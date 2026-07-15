@@ -71,6 +71,12 @@ function useProductFormSchema() {
       // Manual Saudi Riyal price override — no auto FX, admin enters it explicitly.
       priceSar: z.number().nonnegative().nullable(),
       discountedPriceSar: z.number().nonnegative().nullable(),
+      // Gift card add-on — free personalized message, toggled per product.
+      giftCardEnabled: z.boolean(),
+      giftCardExtraPrice: z.number().nonnegative().nullable(),
+      // Custom name add-on — customer types a name at add-to-cart time for this fee.
+      customNameEnabled: z.boolean(),
+      customNamePrice: z.number().nonnegative().nullable(),
       quantity: z
         .number()
         .int(t("admin.productForm.quantityWhole"))
@@ -103,6 +109,10 @@ const emptyDefaults: ProductFormValues = {
   discountedPrice: null,
   priceSar: null,
   discountedPriceSar: null,
+  giftCardEnabled: false,
+  giftCardExtraPrice: null,
+  customNameEnabled: false,
+  customNamePrice: null,
   quantity: 0,
   categoryId: null,
   status: "PUBLISHED",
@@ -145,6 +155,10 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       discountedPrice: initial.discountedPrice,
       priceSar: initial.priceSar ?? null,
       discountedPriceSar: initial.discountedPriceSar ?? null,
+      giftCardEnabled: initial.giftCardEnabled ?? false,
+      giftCardExtraPrice: initial.giftCardExtraPrice ?? null,
+      customNameEnabled: initial.customNameEnabled ?? false,
+      customNamePrice: initial.customNamePrice ?? null,
       quantity: initial.quantity,
       categoryId: initial.categoryId,
       status: initial.status ?? "PUBLISHED",
@@ -175,6 +189,8 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
   const optionsArray = useFieldArray({ control, name: "productOptions" });
 
   const images = watch("images");
+  const giftCardEnabled = watch("giftCardEnabled");
+  const customNameEnabled = watch("customNameEnabled");
 
   const submit = handleSubmit(async (values) => {
     const cleanedDescriptions = values.descriptions.map((d) => ({
@@ -236,6 +252,16 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         values.discountedPriceSar === null || values.discountedPriceSar === undefined
           ? null
           : Number(values.discountedPriceSar),
+      giftCardEnabled: values.giftCardEnabled,
+      giftCardExtraPrice:
+        values.giftCardExtraPrice === null || values.giftCardExtraPrice === undefined
+          ? null
+          : Number(values.giftCardExtraPrice),
+      customNameEnabled: values.customNameEnabled,
+      customNamePrice:
+        values.customNamePrice === null || values.customNamePrice === undefined
+          ? null
+          : Number(values.customNamePrice),
       quantity: values.quantity,
       categoryId: values.categoryId || null,
       status: values.status,
@@ -337,6 +363,60 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                   setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
                 })}
               />
+            </div>
+          </div>
+
+          <div className="mt-4 border-t border-ink-100 pt-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
+              Gift options
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    {...register("giftCardEnabled")}
+                    className="h-5 w-5 accent-bloom-600"
+                  />
+                  <span className="text-sm font-medium text-ink-900">
+                    Offer a gift card message
+                  </span>
+                </label>
+                <Input
+                  label="Extra charge (leave empty for free)"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  disabled={!giftCardEnabled}
+                  error={errors.giftCardExtraPrice?.message}
+                  {...register("giftCardExtraPrice", {
+                    setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+                  })}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    {...register("customNameEnabled")}
+                    className="h-5 w-5 accent-bloom-600"
+                  />
+                  <span className="text-sm font-medium text-ink-900">
+                    Offer a custom name add-on
+                  </span>
+                </label>
+                <Input
+                  label="Extra charge"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  disabled={!customNameEnabled}
+                  error={errors.customNamePrice?.message}
+                  {...register("customNamePrice", {
+                    setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+                  })}
+                />
+              </div>
             </div>
           </div>
         </Card>

@@ -27,6 +27,8 @@ export function apiCartToCartItems(cart: ApiCart): CartItem[] {
       quantity: it.quantity,
       message: it.message,
       selectedOptions: it.selectedOptions ?? null,
+      giftCardSelected: it.giftCardSelected ?? false,
+      customName: it.customName ?? null,
     };
   });
 }

@@ -224,6 +224,13 @@ function Receipt({
                   {item.product?.title ?? t("order.itemFallback")}
                 </p>
                 <p className="text-xs text-ink-500">{t("common.qty")} {item.quantity}</p>
+                {(item.giftCardSelected || item.customName) && (
+                  <p className="truncate text-xs text-bloom-700">
+                    {[item.giftCardSelected ? t("product.giftCardBadge") : null, item.customName]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                )}
               </div>
               <p className="shrink-0 text-sm font-medium tabular-nums text-ink-900">
                 <CurrencyAmount

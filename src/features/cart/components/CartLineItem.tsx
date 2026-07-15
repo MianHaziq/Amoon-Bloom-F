@@ -88,6 +88,20 @@ export function CartLineItem({
           <CurrencyAmount amount={item.unitPrice} currency={currency} locale={locale} />{" "}
           {t("cart.each")}
         </p>
+        {(item.giftCardSelected || item.customName) && (
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {item.giftCardSelected && (
+              <span className="inline-flex items-center rounded-full bg-blush-100 px-2 py-0.5 text-[11px] font-medium text-bloom-700">
+                {t("product.giftCardBadge")}
+              </span>
+            )}
+            {item.customName && (
+              <span className="inline-flex items-center rounded-full bg-blush-100 px-2 py-0.5 text-[11px] font-medium text-bloom-700">
+                {item.customName}
+              </span>
+            )}
+          </div>
+        )}
         <div className="mt-auto flex items-center justify-between pt-3">
           <QuantitySelector
             size="sm"

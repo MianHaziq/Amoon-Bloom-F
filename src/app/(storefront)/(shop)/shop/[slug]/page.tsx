@@ -1,13 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Container, Section, Divider } from "@/components/ui";
-import {
-  ChevronRight,
-  TruckIcon,
-  ShieldIcon,
-  HeartIcon,
-  SparkleIcon,
-} from "@/components/icons";
+import { ChevronRight } from "@/components/icons";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/motion/primitives";
 import { ProductGallery } from "@/features/products/components/ProductGallery";
 import { AddToCartPanel } from "@/features/products/components/AddToCartPanel";
@@ -111,7 +105,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <Section spacing="sm" tone="cream">
         <PdpImageProvider product={product}>
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-          <ProductGallery title={product.title} />
+          <div className="flex flex-col gap-6">
+            <ProductGallery title={product.title} />
+          </div>
 
           <StaggerGroup className="flex flex-col gap-6" trigger="mount" stagger={0.08}>
             <StaggerItem>
@@ -139,33 +135,22 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <StaggerItem>
               <AddToCartPanel product={product} />
             </StaggerItem>
-
-            <StaggerItem
-              as="ul"
-              className="grid grid-cols-1 divide-y divide-ink-100 overflow-hidden rounded-2xl border border-ink-100 bg-white sm:grid-cols-2 sm:gap-x-8 sm:gap-y-1 sm:divide-y-0 sm:p-5"
-            >
-              <PerkRow
-                icon={<TruckIcon size={18} />}
-                title={t(locale, "product.sameDay")}
-                description={t(locale, "product.sameDayHint")}
-              />
-              <PerkRow
-                icon={<SparkleIcon size={18} />}
-                title={t(locale, "product.handArranged")}
-                description={t(locale, "product.handArrangedHint")}
-              />
-              <PerkRow
-                icon={<HeartIcon size={18} />}
-                title={t(locale, "product.messageCard")}
-                description={t(locale, "product.messageCardHint")}
-              />
-              <PerkRow
-                icon={<ShieldIcon size={18} />}
-                title={t(locale, "product.freshness")}
-                description={t(locale, "product.freshnessHint")}
-              />
-            </StaggerItem>
           </StaggerGroup>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <ValueCard
+            title={t(locale, "product.valueCuratedTitle")}
+            body={t(locale, "product.valueCuratedBody")}
+          />
+          <ValueCard
+            title={t(locale, "product.valueReadyTitle")}
+            body={t(locale, "product.valueReadyBody")}
+          />
+          <ValueCard
+            title={t(locale, "product.valuePersonalTitle")}
+            body={t(locale, "product.valuePersonalBody")}
+          />
         </div>
         </PdpImageProvider>
       </Section>
@@ -198,24 +183,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
   );
 }
 
-function PerkRow({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
+function ValueCard({ title, body }: { title: string; body: string }) {
   return (
-    <li className="flex items-center gap-3.5 px-5 py-4 sm:px-0 sm:py-0">
-      <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush-100/70 text-bloom-700 ring-1 ring-inset ring-blush-200/70">
-        {icon}
-      </span>
-      <div className="min-w-0 text-sm">
-        <p className="font-semibold tracking-tight text-ink-900">{title}</p>
-        <p className="mt-0.5 text-xs leading-relaxed text-ink-500">{description}</p>
-      </div>
-    </li>
+    <div className="rounded-2xl border border-ink-100 bg-white p-4">
+      <p className="font-display text-base font-medium text-ink-900">{title}</p>
+      <p className="mt-1.5 text-xs leading-relaxed text-ink-500">{body}</p>
+    </div>
   );
 }

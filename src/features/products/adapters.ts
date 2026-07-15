@@ -104,6 +104,10 @@ export function toUiProduct(api: ApiProduct, opts: ToUiProductOptions = {}): Pro
     categorySlug,
     inStock: api.quantity > 0,
     options: api.productOptions?.map((o) => adaptOption(o, locale)),
+    giftCardEnabled: api.giftCardEnabled ?? false,
+    giftCardExtraPrice: api.giftCardExtraPrice ?? undefined,
+    customNameEnabled: api.customNameEnabled ?? false,
+    customNamePrice: api.customNamePrice ?? undefined,
   };
 }
 

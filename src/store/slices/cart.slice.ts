@@ -13,6 +13,23 @@ export interface CartItem {
   message?: string | null;
   /** Chosen variant, e.g. {"Colour":"Pink"} — keyed by the option group title. */
   selectedOptions?: Record<string, string> | null;
+  /** Gift-card/custom-name add-on selections. `unitPrice` already includes their cost. */
+  giftCardSelected?: boolean;
+  customName?: string | null;
+}
+
+/** Mirrors the backend's productService.optionExtraCharge exactly — only counts a
+ * selection if the PRODUCT actually has that option enabled. Client-side mirror
+ * purely for instant cart display; the backend remains authoritative at checkout. */
+function optionExtraCharge(
+  product: Product,
+  giftCardSelected?: boolean,
+  customName?: string | null
+): number {
+  let extra = 0;
+  if (giftCardSelected && product.giftCardEnabled) extra += product.giftCardExtraPrice ?? 0;
+  if (customName && product.customNameEnabled) extra += product.customNamePrice ?? 0;
+  return extra;
 }
 
 export interface CartState {
@@ -31,9 +48,12 @@ const cartSlice = createSlice({
         product: Product;
         quantity?: number;
         selectedOptions?: Record<string, string> | null;
+        giftCardSelected?: boolean;
+        customName?: string | null;
+        message?: string | null;
       }>
     ) {
-      const { product, quantity = 1, selectedOptions } = action.payload;
+      const { product, quantity = 1, selectedOptions, giftCardSelected, customName, message } = action.payload;
       const existing = state.items.find((i) => i.productId === product.id);
       if (existing) {
         existing.quantity += quantity;
@@ -41,6 +61,11 @@ const cartSlice = createSlice({
         // different variant of an already-cart'd product overwrites the
         // selection on that single line (last wins), mirroring the backend.
         if (selectedOptions !== undefined) existing.selectedOptions = selectedOptions;
+        if (giftCardSelected !== undefined) existing.giftCardSelected = giftCardSelected;
+        if (customName !== undefined) existing.customName = customName;
+        if (message !== undefined) existing.message = message;
+        existing.unitPrice =
+          product.price.amount + optionExtraCharge(product, existing.giftCardSelected, existing.customName);
         return;
       }
       state.items.push({
@@ -48,10 +73,13 @@ const cartSlice = createSlice({
         slug: product.slug,
         title: product.title,
         imageUrl: product.images[0]?.url,
-        unitPrice: product.price.amount,
+        unitPrice: product.price.amount + optionExtraCharge(product, giftCardSelected, customName),
         currency: product.price.currency,
         quantity,
         selectedOptions: selectedOptions ?? null,
+        giftCardSelected: giftCardSelected ?? false,
+        customName: customName ?? null,
+        message: message ?? null,
       });
     },
     updateQuantity(

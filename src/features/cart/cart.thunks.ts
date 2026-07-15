@@ -66,20 +66,40 @@ async function handleServerError(
   return { ok: false, error };
 }
 
+export interface CartExtras {
+  giftCardSelected?: boolean;
+  customName?: string | null;
+  /** Gift-card personalized message. Reuses the cart's existing message field. */
+  message?: string | null;
+}
+
 export const addToCart =
   (
     product: Product,
     quantity = 1,
-    selectedOptions?: Record<string, string> | null
+    selectedOptions?: Record<string, string> | null,
+    extras?: CartExtras
   ): AppThunk<Promise<CartMutationResult>> =>
   async (dispatch, getState) => {
-    dispatch(addItem({ product, quantity, selectedOptions }));
+    dispatch(
+      addItem({
+        product,
+        quantity,
+        selectedOptions,
+        giftCardSelected: extras?.giftCardSelected,
+        customName: extras?.customName,
+        message: extras?.message,
+      })
+    );
     if (!isAuthed(getState)) return { ok: true };
     try {
       const server = await cartApi.add({
         productId: product.id,
         quantity,
         selectedOptions,
+        giftCardSelected: extras?.giftCardSelected,
+        customName: extras?.customName,
+        message: extras?.message,
       });
       dispatch(setItems(apiCartToCartItems(server)));
       return { ok: true };

@@ -14,6 +14,8 @@ export interface ApiCartItem {
   message: string | null;
   /** Chosen variant, e.g. {"Colour":"Pink"} — keyed by the option group title. */
   selectedOptions?: Record<string, string> | null;
+  giftCardSelected?: boolean;
+  customName?: string | null;
   lineTotal: number;
 }
 
@@ -29,6 +31,8 @@ export interface ApiCartAddInput {
   quantity?: number;
   message?: string | null;
   selectedOptions?: Record<string, string> | null;
+  giftCardSelected?: boolean;
+  customName?: string | null;
 }
 
 export interface ApiCartQuantityInput {

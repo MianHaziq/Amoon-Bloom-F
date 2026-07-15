@@ -40,6 +40,14 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
 
   const handleAdd = () => {
     if (!product.inStock) return;
+    // This bar does a 1-click add with no option selection UI of its own. A
+    // product with a gift-card/custom-name add-on needs that selection (custom
+    // name is required once toggled on), so instead of silently skipping it,
+    // scroll up to the main panel where those toggles live.
+    if (product.giftCardEnabled || product.customNameEnabled) {
+      document.getElementById("add-to-cart-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     add(product, 1);
     dispatch(
       pushToast({

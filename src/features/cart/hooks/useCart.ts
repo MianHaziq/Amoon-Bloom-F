@@ -7,6 +7,7 @@ import {
   setCartQuantity,
   removeFromCart,
   emptyCart,
+  type CartExtras,
 } from "@/features/cart/cart.thunks";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import type { Product } from "@/features/products/types";
@@ -48,8 +49,9 @@ export function useCart() {
     add: (
       product: Product,
       quantity = 1,
-      selectedOptions?: Record<string, string> | null
-    ) => dispatch(addToCart(product, quantity, selectedOptions)),
+      selectedOptions?: Record<string, string> | null,
+      extras?: CartExtras
+    ) => dispatch(addToCart(product, quantity, selectedOptions, extras)),
     remove: (productId: string) => dispatch(removeFromCart(productId)),
     setQuantity: (productId: string, quantity: number) =>
       dispatch(setCartQuantity(productId, quantity)),

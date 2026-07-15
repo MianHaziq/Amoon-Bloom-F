@@ -62,6 +62,9 @@ export interface ApiOrderItem {
   price: number;
   /** Chosen variant, e.g. {"Colour":"Pink"}. Null for orders placed before this was captured. */
   selectedOptions?: Record<string, string> | null;
+  /** Gift-card/custom-name add-ons chosen at add-to-cart time, snapshotted at order time. */
+  giftCardSelected?: boolean;
+  customName?: string | null;
   /** This line's VAT rate/amount, snapshotted at order time. 0 when the line wasn't taxable. */
   vatRatePercent?: number;
   vatAmount?: number;
@@ -186,6 +189,8 @@ export interface ApiGuestCheckoutItem {
   quantity: number;
   message?: string | null;
   selectedOptions?: Record<string, string> | null;
+  giftCardSelected?: boolean;
+  customName?: string | null;
 }
 
 /** Body for `POST /orders/guest-checkout` (unauthenticated). */

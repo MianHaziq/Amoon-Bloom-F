@@ -51,6 +51,12 @@ export interface ApiProduct {
   /** Manual Saudi Riyal price override (admin-entered, no auto FX). Null = not set. */
   priceSar?: number | null;
   discountedPriceSar?: number | null;
+  /** Free gift-card message add-on, offered per product (most products have it). */
+  giftCardEnabled?: boolean;
+  giftCardExtraPrice?: number | null;
+  /** Paid "add a custom name" add-on, offered only on select products (mugs/cups/boxes). */
+  customNameEnabled?: boolean;
+  customNamePrice?: number | null;
   quantity: number;
   categoryId: string | null;
   category?: ApiProductCategoryRef | null;
@@ -96,6 +102,10 @@ export interface ApiProductCreateInput {
   discountedPrice?: number | null;
   priceSar?: number | null;
   discountedPriceSar?: number | null;
+  giftCardEnabled?: boolean;
+  giftCardExtraPrice?: number | null;
+  customNameEnabled?: boolean;
+  customNamePrice?: number | null;
   quantity?: number;
   categoryId?: string | null;
   descriptions?: ApiProductDescriptionInput[];

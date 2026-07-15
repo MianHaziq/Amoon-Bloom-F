@@ -253,6 +253,10 @@ export function CheckoutClient() {
       await cartApi.add({
         productId: item.productId,
         quantity: item.quantity,
+        message: item.message ?? undefined,
+        selectedOptions: item.selectedOptions ?? undefined,
+        giftCardSelected: item.giftCardSelected,
+        customName: item.customName ?? undefined,
       });
     }
     if (orderMessage.trim()) {
@@ -297,6 +301,8 @@ export function CheckoutClient() {
             quantity: i.quantity,
             message: i.message ?? null,
             selectedOptions: i.selectedOptions ?? undefined,
+            giftCardSelected: i.giftCardSelected,
+            customName: i.customName ?? undefined,
           })),
           // Guests always fill the inline form, so shippingAddress is defined.
           shippingAddress: shippingAddress!,
@@ -1123,6 +1129,13 @@ function CheckoutSummary({
                 <div className="min-w-0">
                   <p className="truncate font-medium text-ink-900">{item.title}</p>
                   <p className="text-xs text-ink-500">{t("common.qty")} {item.quantity}</p>
+                  {(item.giftCardSelected || item.customName) && (
+                    <p className="truncate text-xs text-bloom-700">
+                      {[item.giftCardSelected ? t("product.giftCardBadge") : null, item.customName]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  )}
                 </div>
                 <p className="shrink-0 font-medium tabular-nums">
                   <CurrencyAmount
