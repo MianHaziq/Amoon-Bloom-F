@@ -13,6 +13,7 @@ import {
   GlobeIcon,
   BellIcon,
   PercentIcon,
+  StarIcon,
 } from "@/components/icons";
 import type { ManagerPermission } from "@/features/users/types";
 import type { ComponentType, SVGProps } from "react";
@@ -76,6 +77,12 @@ export const adminNav: AdminNavGroup[] = [
         href: "/admin/banners",
         icon: ImageIcon,
         permission: "BANNERS",
+      },
+      {
+        label: "Reviews",
+        href: "/admin/reviews",
+        icon: StarIcon,
+        permission: "REVIEWS",
       },
     ],
   },

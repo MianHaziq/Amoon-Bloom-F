@@ -158,6 +158,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       {/* Description · Additional information · Reviews (tabbed, like client) */}
       <Section spacing="md" tone="default" containerSize="md">
         <ProductTabs
+          productId={product.id}
           description={product.description}
           descriptions={product.descriptions}
           options={product.options}

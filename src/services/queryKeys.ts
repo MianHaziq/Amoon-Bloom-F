@@ -23,6 +23,7 @@ export const queryKeys = {
     byCategory: (categoryId: string, params?: unknown) =>
       [...queryKeys.products.all, "category", categoryId, params ?? null] as const,
     detail: (id: string) => [...queryKeys.products.all, "detail", id] as const,
+    search: (q: string) => [...queryKeys.products.all, "search", q] as const,
   },
 
   categories: {
@@ -80,6 +81,14 @@ export const queryKeys = {
     all: ["contact"] as const,
     list: (params?: unknown) =>
       [...queryKeys.contact.all, "list", params ?? null] as const,
+  },
+
+  reviews: {
+    all: ["reviews"] as const,
+    list: (productId: string, params?: unknown) =>
+      [...queryKeys.reviews.all, "product", productId, params ?? null] as const,
+    adminList: (params?: unknown) =>
+      [...queryKeys.reviews.all, "admin", "list", params ?? null] as const,
   },
 
   settings: {

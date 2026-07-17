@@ -36,6 +36,7 @@ export function SettingsAdminPage() {
           .nullable(),
         currency: z.string().min(3, t("admin.settingsPage.currencyRequired")),
         maintenanceMode: z.boolean(),
+        allowGuestReviews: z.boolean(),
         hiddenPagesText: z.string(),
       }),
     [t]
@@ -63,6 +64,7 @@ export function SettingsAdminPage() {
       supportEmail: "",
       currency: "USD",
       maintenanceMode: false,
+      allowGuestReviews: true,
       hiddenPagesText: "",
     },
   });
@@ -77,6 +79,7 @@ export function SettingsAdminPage() {
       supportEmail: s.supportEmail ?? "",
       currency: s.currency,
       maintenanceMode: s.maintenanceMode,
+      allowGuestReviews: s.allowGuestReviews,
       hiddenPagesText: (s.hiddenPages ?? []).join("\n"),
     });
   }, [settingsQuery.data, reset]);
@@ -102,6 +105,7 @@ export function SettingsAdminPage() {
       supportEmail: v.supportEmail || null,
       currency: v.currency,
       maintenanceMode: v.maintenanceMode,
+      allowGuestReviews: v.allowGuestReviews,
       hiddenPages,
     });
   });
@@ -185,6 +189,23 @@ export function SettingsAdminPage() {
                     </span>
                     <span className="block text-xs text-ink-500">
                       {t("admin.settingsPage.maintenanceModeHint")}
+                    </span>
+                  </span>
+                </label>
+              </div>
+              <div className="mt-4">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    type="checkbox"
+                    {...register("allowGuestReviews")}
+                    className="h-5 w-5 accent-bloom-600"
+                  />
+                  <span>
+                    <span className="text-sm font-medium text-ink-900">
+                      {t("admin.settingsPage.allowGuestReviewsLabel")}
+                    </span>
+                    <span className="block text-xs text-ink-500">
+                      {t("admin.settingsPage.allowGuestReviewsHint")}
                     </span>
                   </span>
                 </label>

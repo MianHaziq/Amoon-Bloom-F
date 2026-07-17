@@ -23,6 +23,7 @@ const LABEL_KEY: Record<string, MessageKey> = {
   Categories: "admin.categories",
   Sections: "admin.sections",
   Banners: "admin.banners",
+  Reviews: "admin.reviews",
   Collaborations: "admin.collaborations",
   Orders: "admin.orders",
   "Promo codes": "admin.promoCodes",

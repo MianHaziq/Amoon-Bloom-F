@@ -1,8 +1,9 @@
 /**
  * Adapters between the canonical backend `ApiProduct` shape and the storefront
- * UI `Product` shape. The backend has no notion of slugs, badges, ratings, or
+ * UI `Product` shape. The backend has no notion of slugs, badges, or
  * collections — those fields stay undefined on the UI side and the components
- * fall back gracefully. URLs use the product's UUID as the slug.
+ * fall back gracefully. URLs use the product's UUID as the slug. `rating`/
+ * `reviewCount` ARE backend-aggregated (from the Review table).
  */
 
 import type { Product, ProductDescriptionBlock, ProductOptionGroup } from "./types";
@@ -108,6 +109,8 @@ export function toUiProduct(api: ApiProduct, opts: ToUiProductOptions = {}): Pro
     giftCardExtraPrice: api.giftCardExtraPrice ?? undefined,
     customNameEnabled: api.customNameEnabled ?? false,
     customNamePrice: api.customNamePrice ?? undefined,
+    rating: api.avgRating ?? undefined,
+    reviewCount: api.reviewCount ?? undefined,
   };
 }
 

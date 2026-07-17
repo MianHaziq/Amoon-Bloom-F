@@ -69,6 +69,9 @@ export interface ApiProduct {
   images: string[];
   descriptions: ApiProductDescriptionBlock[];
   productOptions: ApiProductOptionGroup[];
+  /** Aggregated from the Review table — null/0 until the product has any reviews. */
+  avgRating?: number | null;
+  reviewCount?: number;
   createdAt: string;
   updatedAt: string;
 }

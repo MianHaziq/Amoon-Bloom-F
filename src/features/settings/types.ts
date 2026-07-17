@@ -7,11 +7,15 @@ export interface ApiSettings {
   currency: string;
   maintenanceMode: boolean;
   hiddenPages: string[];
+  /** Master switch for the reviews feature. When false, only signed-in customers can submit a review. */
+  allowGuestReviews: boolean;
   updatedAt: string;
 }
 
 export interface ApiPublicSettings {
   hiddenPages: string[];
+  maintenanceMode?: boolean;
+  allowGuestReviews?: boolean;
 }
 
 export interface ApiSettingsUpdateInput {
@@ -22,4 +26,5 @@ export interface ApiSettingsUpdateInput {
   currency?: string;
   maintenanceMode?: boolean;
   hiddenPages?: string[];
+  allowGuestReviews?: boolean;
 }

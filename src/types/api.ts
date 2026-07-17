@@ -21,6 +21,9 @@ export interface ResponseMeta {
   unreadCount?: number;
   /** Product search echoes the normalized query here. */
   query?: string;
+  /** Product reviews list echoes the aggregate rating here. */
+  avgRating?: number | null;
+  reviewCount?: number;
 }
 
 export interface PaginatedResponse<T> {
