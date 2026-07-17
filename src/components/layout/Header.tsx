@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AE, SA } from "country-flag-icons/react/3x2";
 import { Container, IconButton } from "@/components/ui";
@@ -15,6 +14,8 @@ import {
 import { AnnouncementBar } from "./AnnouncementBar";
 import { MegaMenu } from "./MegaMenu";
 import { MobileNav } from "./MobileNav";
+import { HeaderSearch } from "./HeaderSearch";
+import { MobileSearchOverlay } from "./MobileSearchOverlay";
 import { LocaleToggle } from "./LocaleToggle";
 import { AccountMenu } from "./AccountMenu";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
@@ -31,16 +32,9 @@ const FLAGS = { UAE: AE, SAUDI_ARABIA: SA } as const;
 
 export function Header() {
   const dispatch = useAppDispatch();
-  const router = useRouter();
   const { t, tc } = useT();
-  const [query, setQuery] = useState("");
   const [locationOpen, setLocationOpen] = useState(false);
-
-  const submitSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const term = query.trim();
-    router.push(term ? `${ROUTES.shop}?q=${encodeURIComponent(term)}` : ROUTES.shop);
-  };
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const itemCount = useAppSelector((s) =>
     s.cart.items.reduce((sum, i) => sum + i.quantity, 0)
@@ -169,7 +163,7 @@ export function Header() {
                 <IconButton
                   label={t("common.search")}
                   variant="ghost"
-                  onClick={() => router.push(ROUTES.shop)}
+                  onClick={() => setSearchOpen(true)}
                 >
                   <SearchIcon size={20} />
                 </IconButton>
@@ -206,23 +200,7 @@ export function Header() {
             <img src="/logo.svg" alt={siteConfig.name} className="h-9 w-auto" />
           </Link>
 
-          <form
-            role="search"
-            className="min-w-0 flex-1"
-            onSubmit={submitSearch}
-          >
-            <label className="group flex h-11 items-center gap-3 rounded-full border border-ink-200 bg-white px-4 transition-all focus-within:border-bloom-400 focus-within:ring-4 focus-within:ring-bloom-100">
-              <SearchIcon size={18} className="text-ink-400" />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("nav.searchPlaceholder")}
-                className="h-full flex-1 bg-transparent text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
-                aria-label={t("common.search")}
-              />
-            </label>
-          </form>
+          <HeaderSearch />
 
           {isStaff ? (
             <nav className="flex items-center">
@@ -278,6 +256,8 @@ export function Header() {
       </header>
 
       <MobileNav />
+      {/* Mobile search — triggered by the row 2 search icon */}
+      <MobileSearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       {/* Mobile location picker — triggered by row 1 button */}
       <LocationSheet open={locationOpen} onClose={() => setLocationOpen(false)} />
     </>
