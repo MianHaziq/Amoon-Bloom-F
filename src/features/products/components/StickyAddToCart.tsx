@@ -6,7 +6,7 @@ import { Button, CurrencyAmount } from "@/components/ui";
 import { BagIcon } from "@/components/icons";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useAppDispatch } from "@/store";
-import { pushToast, toggleCartDrawer } from "@/store/slices/ui.slice";
+import { toggleCartDrawer } from "@/store/slices/ui.slice";
 import { cn } from "@/lib/cn";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
@@ -38,7 +38,7 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!product.inStock) return;
     // This bar does a 1-click add with no option selection UI of its own. A
     // product with a gift-card/custom-name add-on needs that selection (custom
@@ -48,15 +48,10 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
       document.getElementById("add-to-cart-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    add(product, 1);
-    dispatch(
-      pushToast({
-        title: t("common.addedToCart"),
-        description: product.title,
-        variant: "success",
-      })
-    );
-    dispatch(toggleCartDrawer(true));
+    // Open the drawer only once the mutation is confirmed; the thunk raises
+    // its own error toast (e.g. "Only 3 in stock") if the server rejects.
+    const res = await add(product, 1);
+    if (res.ok) dispatch(toggleCartDrawer(true));
   };
 
   const primaryImage = product.images[0];

@@ -108,10 +108,18 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
   const queryClient = useQueryClient();
   const { t } = useT();
   const current = useAppSelector((s) => s.location);
+  const activeRegions = useAppSelector((s) => s.location.activeRegions);
   const user = useAppSelector((s) => s.auth.user);
   const [country, setSelectedCountry] = useState<CountryCode>(current.country);
   const [city, setSelectedCity] = useState<string>(current.city);
   const def = getCountry(country);
+  // Only offer countries the admin hasn't hidden. `current.country` is kept
+  // valid by `setActiveRegions`'s correction logic, so it's always among these
+  // (or this list has exactly one entry) — no extra fallback needed here.
+  const selectableCountries = COUNTRIES.filter((c) =>
+    activeRegions.some((r) => r.country === c.code)
+  );
+  const showCountryStep = selectableCountries.length > 1;
 
   const handleSave = () => {
     const finalCity = (def.cities as readonly string[]).includes(city)
@@ -144,38 +152,40 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
       size="sm"
     >
       <div className="flex flex-col gap-7">
-        <fieldset className="flex flex-col gap-3">
-          <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
-            {t("location.country")}
-          </legend>
-          <div
-            className="flex flex-col gap-2"
-            role="radiogroup"
-            aria-label={t("location.country")}
-          >
-            {COUNTRIES.map((c) => {
-              const Flag = FLAGS[c.code];
-              const selected = country === c.code;
-              return (
-                <OptionRow
-                  key={c.code}
-                  selected={selected}
-                  onClick={() => {
-                    setSelectedCountry(c.code);
-                    setSelectedCity(c.defaultCity);
-                  }}
-                  label={c.name}
-                  sublabel={c.currency}
-                  leading={
-                    <span className="inline-flex h-8 w-11 shrink-0 overflow-hidden rounded-md shadow-sm ring-1 ring-ink-900/10">
-                      <Flag className="h-full w-full object-cover" title={c.name} />
-                    </span>
-                  }
-                />
-              );
-            })}
-          </div>
-        </fieldset>
+        {showCountryStep && (
+          <fieldset className="flex flex-col gap-3">
+            <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+              {t("location.country")}
+            </legend>
+            <div
+              className="flex flex-col gap-2"
+              role="radiogroup"
+              aria-label={t("location.country")}
+            >
+              {selectableCountries.map((c) => {
+                const Flag = FLAGS[c.code];
+                const selected = country === c.code;
+                return (
+                  <OptionRow
+                    key={c.code}
+                    selected={selected}
+                    onClick={() => {
+                      setSelectedCountry(c.code);
+                      setSelectedCity(c.defaultCity);
+                    }}
+                    label={c.name}
+                    sublabel={c.currency}
+                    leading={
+                      <span className="inline-flex h-8 w-11 shrink-0 overflow-hidden rounded-md shadow-sm ring-1 ring-ink-900/10">
+                        <Flag className="h-full w-full object-cover" title={c.name} />
+                      </span>
+                    }
+                  />
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
 
         <fieldset className="flex flex-col gap-3">
           <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">

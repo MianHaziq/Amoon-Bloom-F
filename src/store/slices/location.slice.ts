@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DEFAULT_COUNTRY, getCountry, type CountryCode } from "@/features/location/data";
+import { COUNTRIES, DEFAULT_COUNTRY, getCountry, type CountryCode } from "@/features/location/data";
+import type { ActiveRegionEntry } from "@/features/location/activeRegions";
 
 export interface LocationState {
   country: CountryCode;
@@ -9,6 +10,14 @@ export interface LocationState {
    * "soft" so the storefront can render server-side without forcing onboarding.
    */
   hasChosen: boolean;
+  /**
+   * Which storefront regions are currently active (admin-controlled). Seeds
+   * "fail-open" as both static countries so nothing regresses before real data
+   * arrives (SSR) or if a later client fetch fails — see `setActiveRegions`.
+   */
+  activeRegions: ActiveRegionEntry[];
+  /** Fallback region for a visitor whose current country is no longer active. */
+  defaultCountry: CountryCode;
 }
 
 const fallback = getCountry(DEFAULT_COUNTRY);
@@ -16,6 +25,8 @@ const initialState: LocationState = {
   country: DEFAULT_COUNTRY,
   city: fallback.defaultCity,
   hasChosen: false,
+  activeRegions: COUNTRIES.map((c) => ({ code: c.regionCode, country: c.code })),
+  defaultCountry: DEFAULT_COUNTRY,
 };
 
 const locationSlice = createSlice({
@@ -77,6 +88,30 @@ const locationSlice = createSlice({
         state.city = def.defaultCity;
       }
     },
+    /**
+     * Refreshes which regions are currently active (SSR seed on every page
+     * load, or the client's tab-refocus check — see `LocationPersistence`).
+     * Also silently corrects `country`/`city` if the current selection is no
+     * longer active, so a visitor whose region just got hidden by an admin
+     * never stays pointed at it. Deliberately leaves `hasChosen` untouched —
+     * an auto-correction isn't a user pick (mirrors `setCountryFromRegion`).
+     */
+    setActiveRegions(
+      state,
+      action: PayloadAction<{ activeRegions: ActiveRegionEntry[]; defaultCountry: CountryCode }>
+    ) {
+      const { activeRegions, defaultCountry } = action.payload;
+      state.activeRegions = activeRegions;
+      state.defaultCountry = defaultCountry;
+      const stillActive = activeRegions.some((r) => r.country === state.country);
+      if (!stillActive) {
+        const def = getCountry(defaultCountry);
+        state.country = def.code;
+        if (!(def.cities as readonly string[]).includes(state.city)) {
+          state.city = def.defaultCity;
+        }
+      }
+    },
   },
 });
 
@@ -86,5 +121,6 @@ export const {
   setLocation,
   setLocationFromStorage,
   setCountryFromRegion,
+  setActiveRegions,
 } = locationSlice.actions;
 export default locationSlice.reducer;

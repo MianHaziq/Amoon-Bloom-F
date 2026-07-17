@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppStore, useAppSelector } from "@/store";
-import { setLocationFromStorage, setLocation } from "@/store/slices/location.slice";
+import { setLocationFromStorage, setLocation, setActiveRegions } from "@/store/slices/location.slice";
 import type { LocationState } from "@/store/slices/location.slice";
 import { storage } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { regionCodeForCountry, writeRegionCookie } from "@/features/location/region";
 import { COUNTRIES, type CountryCode } from "@/features/location/data";
+import { deriveActiveRegions } from "@/features/location/activeRegions";
+import { regionsApi } from "@/features/regions/api/regions.api";
 
 /**
  * Hydrates the location slice from localStorage on mount and writes future
@@ -20,6 +23,7 @@ import { COUNTRIES, type CountryCode } from "@/features/location/data";
 export function LocationPersistence() {
   const dispatch = useAppDispatch();
   const store = useAppStore();
+  const router = useRouter();
   const hydrated = useRef(false);
   const seededUserId = useRef<string | null>(null);
   const user = useAppSelector((s) => s.auth.user);
@@ -79,6 +83,36 @@ export function LocationPersistence() {
     });
     return unsubscribe;
   }, [store]);
+
+  // Re-validates the active-region set whenever the tab regains focus, so a
+  // visitor whose region got hidden by an admin while their tab sat in the
+  // background is silently corrected without needing a fresh navigation.
+  // Deliberately NOT run on mount: the root layout already seeds fresh
+  // activeRegions from SSR on every full page load (see StoreProvider), so a
+  // mount-time re-fetch here would just repeat that same request on every
+  // single page view for a condition that's rare (an admin hiding a region).
+  useEffect(() => {
+    async function refresh() {
+      try {
+        const apiRegions = await regionsApi.list();
+        const { activeRegions, defaultCountry } = deriveActiveRegions(apiRegions);
+        const wasValid = activeRegions.some((r) => r.country === store.getState().location.country);
+        dispatch(setActiveRegions({ activeRegions, defaultCountry }));
+        if (!wasValid) {
+          // Re-run Server Components so SSR-sourced content (catalog, footer,
+          // currency) reflects the corrected region too, not just the client store.
+          router.refresh();
+        }
+      } catch {
+        // Network hiccup — keep the last-known active regions, try again on next focus.
+      }
+    }
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") refresh();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [dispatch, store, router]);
 
   return null;
 }

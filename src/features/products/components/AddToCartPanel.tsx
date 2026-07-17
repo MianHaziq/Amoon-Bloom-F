@@ -86,8 +86,8 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
       setCustomNameError(true);
       return;
     }
-    // Only confirm (toast + open drawer + "Added ✓") once the mutation succeeds.
-    // For signed-in users the server enforces stock and the thunk toasts the
+    // Only confirm (open drawer + "Added ✓") once the mutation succeeds. For
+    // signed-in users the server enforces stock and the thunk toasts the
     // reason on rejection; guests always succeed locally.
     const res = await add(
       product,
@@ -101,13 +101,6 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
       }
     );
     if (!res.ok) return;
-    dispatch(
-      pushToast({
-        title: t("common.addedToCart"),
-        description: `${qty} × ${product.title}`,
-        variant: "success",
-      })
-    );
     dispatch(toggleCartDrawer(true));
     // Brief inline acknowledgement on the button itself.
     setJustAdded(true);

@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 import { ROUTES } from "@/constants/routes";
 import { useAppDispatch } from "@/store";
 import { addToCart } from "@/features/cart/cart.thunks";
-import { pushToast } from "@/store/slices/ui.slice";
+import { toggleCartDrawer } from "@/store/slices/ui.slice";
 import { WishlistToggle } from "@/features/wishlist/components/WishlistToggle";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useShowVatInclusive } from "@/features/vat/hooks/useShowVatInclusive";
@@ -57,17 +57,11 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     e.preventDefault();
     e.stopPropagation();
     if (!product.inStock) return;
-    // Success toast only once the mutation is confirmed; the thunk raises its
-    // own error toast (e.g. "Only 3 in stock") if the server rejects.
+    // Open the cart drawer only once the mutation is confirmed; the thunk
+    // raises its own error toast (e.g. "Only 3 in stock") if the server rejects.
     const res = await dispatch(addToCart(product, 1));
     if (res.ok) {
-      dispatch(
-        pushToast({
-          title: t("common.addedToCart"),
-          description: product.title,
-          variant: "success",
-        })
-      );
+      dispatch(toggleCartDrawer(true));
     }
   };
 

@@ -9,6 +9,8 @@ import { getServerLocale } from "@/i18n/server";
 import { dirFor } from "@/i18n";
 import { getServerRegion } from "@/services/serverRegion";
 import { getCountryByRegionCode } from "@/features/location/regionCopy";
+import { getCachedRegions } from "@/services/catalogCache";
+import { deriveActiveRegions } from "@/features/location/activeRegions";
 import "./globals.css";
 
 /**
@@ -77,11 +79,16 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [locale, region] = await Promise.all([
+  const [locale, region, apiRegions] = await Promise.all([
     getServerLocale(),
     getServerRegion(),
+    getCachedRegions().catch(() => []),
   ]);
-  const initialCountry = getCountryByRegionCode(region);
+  const { activeRegions, defaultCountry } = deriveActiveRegions(apiRegions);
+  const rawInitialCountry = getCountryByRegionCode(region);
+  const initialCountry = activeRegions.some((r) => r.country === rawInitialCountry)
+    ? rawInitialCountry
+    : defaultCountry;
   return (
     <html
       lang={locale}
@@ -89,7 +96,12 @@ export default async function RootLayout({
       className={`${jakarta.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream-50 text-ink-900 font-sans">
-        <StoreProvider initialLocale={locale} initialCountry={initialCountry}>
+        <StoreProvider
+          initialLocale={locale}
+          initialCountry={initialCountry}
+          initialActiveRegions={activeRegions}
+          initialDefaultCountry={defaultCountry}
+        >
           <QueryProvider>
             <MotionProvider>
               {children}
