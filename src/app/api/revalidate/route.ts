@@ -3,7 +3,7 @@ import { revalidateTag } from "next/cache";
 /**
  * On-demand revalidation for the storefront Data Cache.
  *
- * Admin edits (sections, products, categories, banners) mutate the backend
+ * Admin edits (sections, products, categories, banners, regions) mutate the backend
  * directly, so the Next.js `unstable_cache` layer (see `services/catalogCache`)
  * wouldn't otherwise notice and could serve stale content for up to its TTL.
  * The admin panel POSTs here after a successful mutation to expire the relevant
@@ -12,7 +12,7 @@ import { revalidateTag } from "next/cache";
  * `{ expire: 0 }` = immediate expiration — the recommended form when an external
  * trigger (our admin action) needs the change visible right away (Next 16).
  */
-const ALLOWED = ["products", "categories", "sections", "banners"] as const;
+const ALLOWED = ["products", "categories", "sections", "banners", "regions"] as const;
 
 export async function POST(request: Request) {
   let requested: string[] | null = null;

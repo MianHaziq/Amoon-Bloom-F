@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { RegionForm } from "./RegionForm";
 import { useToast } from "@/hooks/useToast";
@@ -20,6 +21,7 @@ export function RegionCreatePage() {
     onSuccess: (created) => {
       toast.success({ title: t("admin.regionsPage.toastCreated"), description: created.code });
       queryClient.invalidateQueries({ queryKey: queryKeys.regions.all });
+      revalidateCatalog(["regions"]);
       router.push("/admin/regions");
     },
     onError: (err) => toast.fromError(t("admin.regionsPage.toastCreateError"), err),

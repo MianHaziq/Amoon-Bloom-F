@@ -8,7 +8,8 @@ import {
 import { siteConfig } from "@/config/site";
 import { ROUTES } from "@/constants/routes";
 import { getServerT } from "@/i18n/server";
-import { getCachedCategories } from "@/services/catalogCache";
+import { getServerRegion } from "@/services/serverRegion";
+import { getCachedCategories, getCachedRegions } from "@/services/catalogCache";
 
 /** Resolves a footer shop-column link to a real category, falling back to
  * the full shop page if that category isn't found (e.g. renamed/removed). */
@@ -38,10 +39,21 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 }
 
 export async function Footer() {
-  const [{ t }, categories] = await Promise.all([
+  const regionCode = await getServerRegion();
+  const [{ t }, categories, regions] = await Promise.all([
     getServerT(),
     getCachedCategories().catch(() => []),
+    getCachedRegions().catch(() => []),
   ]);
+
+  // Region-specific legal entity name for the copyright line (admin-editable per
+  // region). Falls back to the default region, then the static site config, so
+  // regions without one set (or a failed fetch) still render a sensible line.
+  const currentRegion =
+    regions.find((r) => r.code.toUpperCase() === regionCode?.toUpperCase()) ??
+    regions.find((r) => r.isDefault) ??
+    null;
+  const legalEntity = currentRegion?.legalEntity?.trim() || siteConfig.legalEntity;
 
   const columns = [
     {
@@ -169,7 +181,7 @@ export async function Footer() {
 
       <div className="mx-auto max-w-7xl px-6 pb-10 lg:px-8">
         <div className="rounded-2xl border border-white/10 px-6 py-4 text-xs text-cream-100/50">
-          © {new Date().getFullYear()} {siteConfig.legalEntity}. {t("footer.rights")}
+          © {new Date().getFullYear()} {legalEntity}. {t("footer.rights")}
         </div>
       </div>
     </footer>

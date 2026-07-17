@@ -8,7 +8,7 @@
  * @param tags Which cache tags to expire. Omit to expire all catalog tags.
  */
 export function revalidateCatalog(
-  tags?: Array<"products" | "categories" | "sections" | "banners">
+  tags?: Array<"products" | "categories" | "sections" | "banners" | "regions">
 ): void {
   try {
     void fetch("/api/revalidate", {

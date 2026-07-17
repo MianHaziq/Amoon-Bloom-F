@@ -35,6 +35,7 @@ export function RegionForm({
           .string()
           .length(3, t("admin.regionForm.currencyLength"))
           .toUpperCase(),
+        legalEntity: z.string().max(200, t("admin.regionForm.legalEntityMax")).optional(),
         sortOrder: z
           .number()
           .int(t("admin.regionForm.sortOrderWhole"))
@@ -59,6 +60,7 @@ export function RegionForm({
       name: "",
       name_ar: "",
       currency: "AED",
+      legalEntity: "",
       sortOrder: 0,
       isDefault: false,
       isActive: true,
@@ -72,6 +74,7 @@ export function RegionForm({
       name: initial.name,
       name_ar: initial.name_ar ?? "",
       currency: initial.currency ?? "AED",
+      legalEntity: initial.legalEntity ?? "",
       sortOrder: initial.sortOrder,
       isDefault: initial.isDefault,
       isActive: initial.isActive,
@@ -84,6 +87,7 @@ export function RegionForm({
       name: v.name.trim(),
       name_ar: v.name_ar?.trim() || null,
       currency: v.currency.trim().toUpperCase(),
+      legalEntity: v.legalEntity?.trim() || null,
       sortOrder: v.sortOrder,
       isDefault: v.isDefault,
       isActive: v.isActive,
@@ -130,6 +134,14 @@ export function RegionForm({
               hint={t("admin.regionForm.currencyHint")}
               error={errors.currency?.message}
               {...register("currency")}
+            />
+            <Input
+              label={t("admin.regionForm.legalEntityLabel")}
+              placeholder="AMOON BLOOM Trading L.L.C S.O.C™"
+              hint={t("admin.regionForm.legalEntityHint")}
+              error={errors.legalEntity?.message}
+              containerClassName="sm:col-span-2"
+              {...register("legalEntity")}
             />
           </div>
         </section>

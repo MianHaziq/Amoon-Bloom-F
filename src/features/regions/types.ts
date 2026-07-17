@@ -12,6 +12,9 @@ export interface ApiRegion {
   name_ar: string | null;
   /** ISO 4217 currency code shown/charged for this region (e.g. "AED", "SAR"). */
   currency: string;
+  /** Legal entity name shown in the storefront footer's copyright line for this
+   * region. Null/blank falls back to the frontend's default siteConfig.legalEntity. */
+  legalEntity: string | null;
   isDefault: boolean;
   isActive: boolean;
   sortOrder: number;
@@ -24,6 +27,7 @@ export interface ApiRegionCreateInput {
   name: string;
   name_ar?: string | null;
   currency?: string;
+  legalEntity?: string | null;
   isDefault?: boolean;
   isActive?: boolean;
   sortOrder?: number;

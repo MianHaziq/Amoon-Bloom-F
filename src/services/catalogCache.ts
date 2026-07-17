@@ -21,6 +21,7 @@ import { productsApi } from "@/features/products/api/products.api";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { sectionsApi } from "@/features/sections/api/sections.api";
 import { bannersApi } from "@/features/banners/api/banners.api";
+import { regionsApi } from "@/features/regions/api/regions.api";
 
 // Reference/catalog data changes rarely (admin edits) → cache longer.
 const CATALOG_TTL = 300; // 5 min: categories, sections, banners
@@ -101,3 +102,15 @@ export const getCachedBanners = cache(
   (region?: string, platform: "MOBILE" | "WEB" = "WEB") =>
     _banners(r(region), platform)
 );
+
+// --- Regions ----------------------------------------------------------------
+// Not region-keyed (the endpoint itself isn't scoped by a region cookie) — this
+// is the small, rarely-changing list of ACTIVE regions used to resolve the
+// visitor's current region (e.g. for the footer's per-region legal entity name).
+
+const _regions = unstable_cache(
+  () => regionsApi.list(),
+  ["catalog:regions"],
+  { revalidate: CATALOG_TTL, tags: ["regions"] }
+);
+export const getCachedRegions = cache(() => _regions());
