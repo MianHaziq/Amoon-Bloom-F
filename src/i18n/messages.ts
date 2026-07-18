@@ -555,7 +555,7 @@ export const messages = {
         "Be first to see seasonal boxes, member-only edits, and behind the scenes.",
       poweredBy: "Powered by",
       brandDesc:
-        "Gift boxes, floral bouquets, newborn keepsakes, and occasion gifts - thoughtfully curated and prepared with care at Amoon Boutique in Dubai.",
+        "Gift boxes, floral bouquets, newborn keepsakes, and occasion gifts - thoughtfully curated and prepared with care at Amoon Boutique in {country}.",
       hoursTemplate: "Daily · 10:00 — 00:00 ({city} time)",
       bestSeller: "Best Seller",
       giftBoxes: "Gift Boxes",
@@ -1950,7 +1950,7 @@ export const messages = {
         "كن أول من يرى العلب الموسمية، والاختيارات الخاصة بالأعضاء، وما وراء الكواليس.",
       poweredBy: "مُشغّل بواسطة",
       brandDesc:
-        "علب هدايا، وباقات ورد، وهدايا للمواليد، وهدايا المناسبات - مُنسّقة ومُجهّزة بعناية في Amoon Boutique في دبي.",
+        "علب هدايا، وباقات ورد، وهدايا للمواليد، وهدايا المناسبات - مُنسّقة ومُجهّزة بعناية في Amoon Boutique في {country}.",
       hoursTemplate: "يوميًا · 10:00 — 00:00 (بتوقيت {city})",
       bestSeller: "الأكثر مبيعًا",
       giftBoxes: "علب الهدايا",

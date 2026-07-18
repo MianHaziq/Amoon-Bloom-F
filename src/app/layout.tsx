@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
+import { dehydrate } from "@tanstack/react-query";
 import { StoreProvider } from "@/store/providers/StoreProvider";
 import { QueryProvider } from "@/store/providers/QueryProvider";
 import { MotionProvider } from "@/components/motion/MotionProvider";
@@ -10,6 +11,8 @@ import { dirFor } from "@/i18n";
 import { getServerRegion } from "@/services/serverRegion";
 import { getCachedRegions } from "@/services/catalogCache";
 import { deriveActiveRegions } from "@/features/location/activeRegions";
+import { createQueryClient } from "@/services/queryClient";
+import { queryKeys } from "@/services/queryKeys";
 import "./globals.css";
 
 /**
@@ -86,6 +89,16 @@ export default async function RootLayout({
   const { activeRegions, defaultCountry } = deriveActiveRegions(apiRegions);
   // `region` (the cookie value) already IS the region's code — no mapping step.
   const initialCountry = region && activeRegions.includes(region) ? region : defaultCountry;
+
+  // Seed the client query cache with the same regions list used above, so
+  // client components resolving currency/country text from it (useCurrency,
+  // useRegionCopy) get data on their very first render instead of a fresh
+  // client-side fetch — that race was flipping currency signs/country names
+  // right after hydration and tripping React's hydration-mismatch check.
+  const queryClient = createQueryClient();
+  queryClient.setQueryData(queryKeys.regions.list(), apiRegions);
+  const dehydratedState = dehydrate(queryClient);
+
   return (
     <html
       lang={locale}
@@ -99,7 +112,7 @@ export default async function RootLayout({
           initialActiveRegions={activeRegions}
           initialDefaultCountry={defaultCountry}
         >
-          <QueryProvider>
+          <QueryProvider dehydratedState={dehydratedState}>
             <MotionProvider>
               {children}
               <ToastViewport />

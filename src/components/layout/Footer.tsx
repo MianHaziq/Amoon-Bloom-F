@@ -40,7 +40,7 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 
 export async function Footer() {
   const regionCode = await getServerRegion();
-  const [{ t }, categories, regions] = await Promise.all([
+  const [{ t, locale }, categories, regions] = await Promise.all([
     getServerT(),
     getCachedCategories().catch(() => []),
     getCachedRegions().catch(() => []),
@@ -54,6 +54,14 @@ export async function Footer() {
     regions.find((r) => r.isDefault) ??
     null;
   const legalEntity = currentRegion?.legalEntity?.trim() || siteConfig.legalEntity;
+
+  // Country name for the currently selected region (e.g. "Saudi Arabia" on
+  // /sa/), used in the footer's address/hours lines instead of a hardcoded
+  // "Dubai, UAE" — falls back to the site default when no region resolved.
+  const regionCountryName =
+    (locale === "ar" ? currentRegion?.name_ar : currentRegion?.name)?.trim() ||
+    currentRegion?.name?.trim() ||
+    null;
 
   const columns = [
     {
@@ -101,8 +109,8 @@ export async function Footer() {
   const contactLines = [
     { href: `tel:${siteConfig.contact.phone.replace(/\s/g, "")}`, label: siteConfig.contact.phone.replace(/\s/g, "") },
     { href: `mailto:${siteConfig.contact.email}`, label: siteConfig.contact.email },
-    { href: null, label: siteConfig.contact.address },
-    { href: null, label: t("footer.hours") },
+    { href: null, label: regionCountryName ?? siteConfig.contact.address },
+    { href: null, label: t("footer.hoursTemplate", { city: regionCountryName ?? "" }) },
   ];
 
   const socials = [
@@ -121,7 +129,7 @@ export async function Footer() {
             <img src="/logo.svg" alt={siteConfig.name} className="h-10 w-auto sm:h-12" />
           </Link>
           <p className="mt-5 text-sm leading-relaxed text-cream-100/70">
-            {t("footer.brandDesc")}
+            {t("footer.brandDesc", { country: regionCountryName ?? "" })}
           </p>
           <div className="mt-6 flex items-center gap-3">
             {socials.map(({ href, label, Icon }) => (
