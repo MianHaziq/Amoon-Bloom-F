@@ -14,7 +14,7 @@ import {
   DocumentIcon,
   DownloadIcon,
 } from "@/components/icons";
-import { staggerContainer, staggerItem } from "@/lib/motion";
+import { staggerContainer, staggerItem, EASE_OUT } from "@/lib/motion";
 import { formatCurrency, intlLocale } from "@/lib/format";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
@@ -44,10 +44,53 @@ const STEPS: { key: OrderStatus; labelKey: MessageKey }[] = [
 const ITEM_COLS =
   "grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_3rem_6.5rem_7rem] items-start gap-x-4";
 
-/** Clean white stage — the receipt is the focus, no decorative surface tint. */
+/**
+ * Torn/perforated receipt edge — a single zigzag `clip-path` polygon applied
+ * to both the top and bottom of the card, corners left flush so the paper
+ * still reads as a rectangle at a glance. X uses percentages (teeth stay
+ * proportional across the card's bounded max-w-2xl width); Y uses a fixed px
+ * depth so the notches themselves stay a consistent size. Built once at
+ * module scope — it's a static shape, not something to recompute per render.
+ */
+function buildTornEdgeClipPath(teeth: number, depth: number): string {
+  const step = 100 / teeth;
+  const top: string[] = [];
+  const bottom: string[] = [];
+  for (let i = 0; i <= teeth; i++) {
+    const x = `${(i * step).toFixed(3)}%`;
+    const notch = i % 2 === 1;
+    top.push(`${x} ${notch ? `${depth}px` : "0px"}`);
+  }
+  for (let i = teeth; i >= 0; i--) {
+    const x = `${(i * step).toFixed(3)}%`;
+    const notch = i % 2 === 1;
+    bottom.push(`${x} ${notch ? `calc(100% - ${depth}px)` : "100%"}`);
+  }
+  return `polygon(${[...top, ...bottom].join(", ")})`;
+}
+
+const TORN_EDGE_CLIP_PATH = buildTornEdgeClipPath(22, 7);
+
+/** Confetti burst — eight small on-brand dots springing out from the success
+ * seal. Fixed (not random) offsets: deterministic across server/client
+ * render, and a tidy circular burst reads more "premium" than a scatter. */
+const CONFETTI_BURST = [
+  { dx: 0, dy: -46, size: 5, color: "var(--color-bloom-500)", delay: 0.0 },
+  { dx: 33, dy: -33, size: 4, color: "var(--color-gold-500)", delay: 0.02 },
+  { dx: 46, dy: 0, size: 6, color: "var(--color-blush-400)", delay: 0.04 },
+  { dx: 33, dy: 33, size: 4, color: "var(--color-bloom-400)", delay: 0.06 },
+  { dx: 0, dy: 46, size: 5, color: "var(--color-gold-400)", delay: 0.03 },
+  { dx: -33, dy: 33, size: 4, color: "var(--color-blush-300)", delay: 0.05 },
+  { dx: -46, dy: 0, size: 5, color: "var(--color-bloom-500)", delay: 0.01 },
+  { dx: -33, dy: -33, size: 4, color: "var(--color-gold-500)", delay: 0.07 },
+] as const;
+
+/** Warm-white stage, one shade off the paper itself so the torn edge and drop
+ * shadow have something to read against (a pure white-on-white card would
+ * hide the perforation entirely). */
 export function ReceiptStage({ children }: { children: ReactNode }) {
   return (
-    <section className="receipt-stage relative overflow-hidden bg-cream-50">
+    <section className="receipt-stage relative overflow-hidden bg-cream-100">
       <div
         aria-hidden
         className="no-print pointer-events-none absolute inset-x-0 top-0 h-56 bg-[radial-gradient(55%_100%_at_50%_0,var(--color-bloom-50)_0%,transparent_72%)]"
@@ -89,6 +132,35 @@ export function ConfirmationHero({
           <CheckIcon size={26} />
         </span>
         <SparkleIcon size={16} className="absolute -right-1 -top-1 text-gold-500" />
+        {CONFETTI_BURST.map((p, i) => (
+          <m.span
+            key={i}
+            aria-hidden
+            className="pointer-events-none absolute rounded-full"
+            style={{
+              left: "50%",
+              top: "50%",
+              width: p.size,
+              height: p.size,
+              marginLeft: -p.size / 2,
+              marginTop: -p.size / 2,
+              backgroundColor: p.color,
+            }}
+            initial={{ x: 0, y: 0, opacity: 0, scale: 0 }}
+            animate={{
+              x: p.dx,
+              y: [0, p.dy * 0.6, p.dy],
+              opacity: [0, 1, 1, 0],
+              scale: [0, 1, 1, 0.6],
+            }}
+            transition={{
+              duration: 0.7,
+              delay: 0.1 + p.delay,
+              ease: EASE_OUT,
+              times: [0, 0.3, 0.7, 1],
+            }}
+          />
+        ))}
       </m.span>
 
       <m.div variants={staggerItem} className="mt-6 flex items-center gap-3 text-bloom-700">
@@ -157,12 +229,21 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
     : "";
 
   return (
+    // Entrance ("printing/sliding into view"): scale + rise from the top edge,
+    // as if the paper is being fed out — transform/opacity only (compositor-
+    // friendly), matching this codebase's motion conventions. The torn-edge
+    // shape below is static, so it never has to animate the clip-path itself.
     <m.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="receipt-print-area mt-10 overflow-hidden rounded-2xl border border-ink-200/80 bg-cream-50 shadow-(--shadow-soft)"
+      initial={{ opacity: 0, y: -14, scaleY: 0.92 }}
+      animate={{ opacity: 1, y: 0, scaleY: 1 }}
+      transition={{ delay: 0.2, duration: 0.45, ease: EASE_OUT }}
+      style={{ transformOrigin: "top center" }}
+      className="mt-10"
     >
+      <div
+        className="receipt-print-area bg-cream-50 shadow-(--shadow-soft)"
+        style={{ clipPath: TORN_EDGE_CLIP_PATH }}
+      >
       {/* Branded header: company identity + document title/meta */}
       <header className="flex flex-col gap-6 border-b border-ink-100 px-6 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-9 sm:py-7">
         <div className="flex flex-col gap-2">
@@ -386,6 +467,7 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
           {t("order.receiptFooter", { brand: siteConfig.name })}
         </p>
       </div>
+      </div>
     </m.div>
   );
 }
@@ -402,28 +484,41 @@ export function ReceiptActions({ children }: { children?: ReactNode }) {
     if (typeof window !== "undefined") window.print();
   };
   return (
-    <div className="no-print mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
-      {children}
-      <Button
-        size="lg"
-        variant="outline"
-        fullWidth
-        className="sm:w-auto"
-        leadingIcon={<DocumentIcon size={16} />}
-        onClick={handlePrint}
-      >
-        {t("order.print")}
-      </Button>
-      <Button
-        size="lg"
-        fullWidth
-        className="sm:w-auto"
-        leadingIcon={<DownloadIcon size={16} />}
-        onClick={handlePrint}
-      >
-        {t("order.downloadPdf")}
-      </Button>
-    </div>
+    <m.div
+      className="no-print mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center"
+      variants={staggerContainer(0.07, 0.6)}
+      initial="hidden"
+      animate="show"
+    >
+      {children ? (
+        <m.div variants={staggerItem} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          {children}
+        </m.div>
+      ) : null}
+      <m.div variants={staggerItem}>
+        <Button
+          size="lg"
+          variant="outline"
+          fullWidth
+          className="sm:w-auto"
+          leadingIcon={<DocumentIcon size={16} />}
+          onClick={handlePrint}
+        >
+          {t("order.print")}
+        </Button>
+      </m.div>
+      <m.div variants={staggerItem}>
+        <Button
+          size="lg"
+          fullWidth
+          className="sm:w-auto"
+          leadingIcon={<DownloadIcon size={16} />}
+          onClick={handlePrint}
+        >
+          {t("order.downloadPdf")}
+        </Button>
+      </m.div>
+    </m.div>
   );
 }
 
