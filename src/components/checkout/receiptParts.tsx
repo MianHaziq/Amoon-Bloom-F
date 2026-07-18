@@ -42,7 +42,7 @@ const STEPS: { key: OrderStatus; labelKey: MessageKey }[] = [
 // Shared column template so the items table header and every row stay aligned.
 // Mobile collapses to "details | amount"; sm+ expands to the full four columns.
 const ITEM_COLS =
-  "grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_3rem_6.5rem_7rem] items-center gap-x-4";
+  "grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_3rem_6.5rem_7rem] items-start gap-x-4";
 
 /** Clean white stage — the receipt is the focus, no decorative surface tint. */
 export function ReceiptStage({ children }: { children: ReactNode }) {
@@ -278,24 +278,24 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
         <ul className="divide-y divide-ink-100">
           {order.items.map((item) => (
             <li key={item.id} className={`${ITEM_COLS} py-3.5`}>
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-blush-50 ring-1 ring-ink-100">
+              <div className="flex min-w-0 flex-col gap-2">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-blush-50 ring-1 ring-ink-100">
                   {item.product?.image ? (
                     <Image
                       src={item.product.image}
                       alt={item.product.title}
                       fill
-                      sizes="56px"
+                      sizes="64px"
                       className="object-cover"
                     />
                   ) : null}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink-900">
+                  <p className="wrap-break-word text-sm font-medium leading-snug text-ink-900">
                     {item.product?.title ?? t("order.itemFallback")}
                   </p>
                   {(item.giftCardSelected || item.customName) && (
-                    <p className="mt-0.5 truncate text-xs text-bloom-700">
+                    <p className="mt-0.5 wrap-break-word text-xs text-bloom-700">
                       {[item.giftCardSelected ? t("product.giftCardBadge") : null, item.customName]
                         .filter(Boolean)
                         .join(" · ")}
