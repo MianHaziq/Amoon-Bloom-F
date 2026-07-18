@@ -14,7 +14,6 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
-import { regionCodeForCountry } from "@/features/location/region";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import type { MessageKey } from "@/i18n";
 import type {
@@ -197,7 +196,7 @@ function AddressFormModal({ open, onClose, initial, title }: AddressFormModalPro
   const queryClient = useQueryClient();
   const { t, locale: uiLocale } = useT();
   const { countryCode } = useCurrency();
-  const regionCode = regionCodeForCountry(countryCode);
+  const regionCode = countryCode;
   const dialCode = DIAL_CODE[regionCode] ?? "";
 
   const zonesQuery = useQuery({

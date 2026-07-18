@@ -35,7 +35,6 @@ import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.a
 import { queryKeys } from "@/services/queryKeys";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
-import { regionCodeForCountry } from "@/features/location/region";
 import { ROUTES } from "@/constants/routes";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { storage } from "@/lib/storage";
@@ -107,7 +106,7 @@ export function CheckoutClient() {
   const authHydrating =
     hydrated && !isAuthed && Boolean(storage.get<string>(STORAGE_KEYS.authToken));
   const { currency, locale, countryName, countryCode } = useCurrency();
-  const regionCode = regionCodeForCountry(countryCode);
+  const regionCode = countryCode;
   const dialCode = DIAL_CODE[regionCode] ?? "";
   const { t, tc } = useT();
 

@@ -8,7 +8,6 @@ import { siteConfig } from "@/config/site";
 import { getServerLocale } from "@/i18n/server";
 import { dirFor } from "@/i18n";
 import { getServerRegion } from "@/services/serverRegion";
-import { getCountryByRegionCode } from "@/features/location/regionCopy";
 import { getCachedRegions } from "@/services/catalogCache";
 import { deriveActiveRegions } from "@/features/location/activeRegions";
 import "./globals.css";
@@ -85,10 +84,8 @@ export default async function RootLayout({
     getCachedRegions().catch(() => []),
   ]);
   const { activeRegions, defaultCountry } = deriveActiveRegions(apiRegions);
-  const rawInitialCountry = getCountryByRegionCode(region);
-  const initialCountry = activeRegions.some((r) => r.country === rawInitialCountry)
-    ? rawInitialCountry
-    : defaultCountry;
+  // `region` (the cookie value) already IS the region's code — no mapping step.
+  const initialCountry = region && activeRegions.includes(region) ? region : defaultCountry;
   return (
     <html
       lang={locale}

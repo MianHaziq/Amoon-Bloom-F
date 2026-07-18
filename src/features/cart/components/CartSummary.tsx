@@ -10,7 +10,6 @@ import { microTransition } from "@/lib/motion";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
-import { regionCodeForCountry } from "@/features/location/region";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { useT } from "@/i18n/useT";
@@ -39,7 +38,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
     queryKey: queryKeys.regions.list(),
     queryFn: () => regionsApi.list(),
   });
-  const regionCode = regionCodeForCountry(countryCode);
+  const regionCode = countryCode;
   const currentRegion = regionsQuery.data?.find((r) => r.code === regionCode);
   const shipping =
     currentRegion?.shippingFlatRate != null

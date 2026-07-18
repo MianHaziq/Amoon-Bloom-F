@@ -2,30 +2,25 @@
 
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, m } from "motion/react";
-import { AE, SA } from "country-flag-icons/react/3x2";
 import { Modal, Button } from "@/components/ui";
 import { CheckIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { tapScale, popFeedback } from "@/lib/motion";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setLocation } from "@/store/slices/location.slice";
-import { COUNTRIES, type CountryCode, getCountry } from "@/features/location/data";
+import { regionsApi } from "@/features/regions/api/regions.api";
+import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
+import { queryKeys } from "@/services/queryKeys";
 import { profileApi } from "@/features/auth/api/profile.api";
 import { useT } from "@/i18n/useT";
+import { RegionFlag } from "./RegionFlag";
 
 interface LocationSheetProps {
   open: boolean;
   onClose: () => void;
 }
-
-// Explicit named imports (rather than a namespace + dynamic lookup) so only
-// these two flags end up in the bundle, not all 265 the package ships.
-const FLAGS: Record<CountryCode, typeof AE> = {
-  UAE: AE,
-  SAUDI_ARABIA: SA,
-};
 
 /** Shared row for both the country and city pickers — same visual language
  *  (leading visual, label + sublabel, trailing radio) so the two steps read
@@ -98,9 +93,12 @@ function OptionRow({
 }
 
 /**
- * Two-step modal that captures delivery country + city. Used both for the
+ * Two-step modal that captures delivery region + zone. Used both for the
  * onboarding gate (when `hasChosen` is false) and the header "Deliver to"
- * pill (re-opening to change). Mirrors mobile spec §3.3 and §3.5.
+ * pill (re-opening to change). Regions and their zones are both admin-
+ * managed (`GET /regions`, `GET /delivery-zones?region=`) — the same data
+ * checkout's "Emirate" dropdown reads — so an admin adding/removing a region
+ * or its sub-areas shows up here immediately, no code change needed.
  */
 export function LocationSheet({ open, onClose }: LocationSheetProps) {
   const dispatch = useAppDispatch();
@@ -110,26 +108,49 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
   const current = useAppSelector((s) => s.location);
   const activeRegions = useAppSelector((s) => s.location.activeRegions);
   const user = useAppSelector((s) => s.auth.user);
-  const [country, setSelectedCountry] = useState<CountryCode>(current.country);
-  const [city, setSelectedCity] = useState<string>(current.city);
-  const def = getCountry(country);
-  // Only offer countries the admin hasn't hidden. `current.country` is kept
+  const [country, setSelectedCountry] = useState<string>(current.country);
+  // Explicit user pick only (null = "hasn't touched this step yet") — the
+  // effective `city` used for rendering/saving is derived below from this
+  // plus the live zone list, so it's always valid without needing an effect.
+  const [citySelection, setCitySelection] = useState<string | null>(current.city || null);
+
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+    enabled: open,
+    staleTime: 5 * 60_000,
+  });
+  // Only offer regions the admin hasn't hidden. `current.country` is kept
   // valid by `setActiveRegions`'s correction logic, so it's always among these
   // (or this list has exactly one entry) — no extra fallback needed here.
-  const selectableCountries = COUNTRIES.filter((c) =>
-    activeRegions.some((r) => r.country === c.code)
+  const selectableRegions = (regionsQuery.data ?? []).filter((r) =>
+    activeRegions.includes(r.code)
   );
-  const showCountryStep = selectableCountries.length > 1;
+  const showCountryStep = selectableRegions.length > 1;
+
+  const zonesQuery = useQuery({
+    queryKey: queryKeys.deliveryZones.list(country),
+    queryFn: () => deliveryZonesApi.list(country),
+    enabled: open && Boolean(country),
+    staleTime: 5 * 60_000,
+  });
+  const zones = zonesQuery.data ?? [];
+  // A region may legitimately have zero configured zones — the city step is
+  // then skipped entirely rather than blocking Save on an empty required list
+  // (mirrors CheckoutClient's zoneRequired fallback).
+  const showCityStep = !zonesQuery.isPending && zones.length > 0;
+  // The effective selection: the user's explicit pick if it's still valid for
+  // the current zone list, otherwise the first zone stands in as a live
+  // default (same intent the old static `defaultCity` served, just derived
+  // from live data now instead of synced via an effect).
+  const city = zones.some((z) => z.name === citySelection) ? citySelection! : zones[0]?.name ?? "";
 
   const handleSave = () => {
-    const finalCity = (def.cities as readonly string[]).includes(city)
-      ? city
-      : def.defaultCity;
     const countryChanged = country !== current.country;
-    dispatch(setLocation({ country, city: finalCity }));
+    dispatch(setLocation({ country, city }));
     if (user) {
       profileApi
-        .setAddress({ addressCountry: country, addressCity: finalCity })
+        .setAddress({ addressCountry: country, addressCity: city })
         .catch(() => {});
     }
     onClose();
@@ -162,24 +183,19 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
               role="radiogroup"
               aria-label={t("location.country")}
             >
-              {selectableCountries.map((c) => {
-                const Flag = FLAGS[c.code];
-                const selected = country === c.code;
+              {selectableRegions.map((r) => {
+                const selected = country === r.code;
                 return (
                   <OptionRow
-                    key={c.code}
+                    key={r.code}
                     selected={selected}
                     onClick={() => {
-                      setSelectedCountry(c.code);
-                      setSelectedCity(c.defaultCity);
+                      setSelectedCountry(r.code);
+                      setCitySelection(null);
                     }}
-                    label={c.name}
-                    sublabel={c.currency}
-                    leading={
-                      <span className="inline-flex h-8 w-11 shrink-0 overflow-hidden rounded-md shadow-sm ring-1 ring-ink-900/10">
-                        <Flag className="h-full w-full object-cover" title={c.name} />
-                      </span>
-                    }
+                    label={r.name}
+                    sublabel={r.currency}
+                    leading={<RegionFlag region={r} shape="circle" className="h-10 w-10" />}
                   />
                 );
               })}
@@ -187,25 +203,27 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
           </fieldset>
         )}
 
-        <fieldset className="flex flex-col gap-3">
-          <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
-            {t("location.city")}
-          </legend>
-          <div
-            className="flex flex-col gap-2"
-            role="radiogroup"
-            aria-label={t("location.city")}
-          >
-            {def.cities.map((c) => (
-              <OptionRow
-                key={c}
-                selected={city === c}
-                onClick={() => setSelectedCity(c)}
-                label={c}
-              />
-            ))}
-          </div>
-        </fieldset>
+        {showCityStep && (
+          <fieldset className="flex flex-col gap-3">
+            <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+              {t("location.city")}
+            </legend>
+            <div
+              className="flex flex-col gap-2"
+              role="radiogroup"
+              aria-label={t("location.city")}
+            >
+              {zones.map((z) => (
+                <OptionRow
+                  key={z.id}
+                  selected={city === z.name}
+                  onClick={() => setCitySelection(z.name)}
+                  label={z.name}
+                />
+              ))}
+            </div>
+          </fieldset>
+        )}
 
         <div className="flex items-center justify-end gap-2 border-t border-ink-100 pt-5">
           <Button type="button" variant="ghost" onClick={onClose}>

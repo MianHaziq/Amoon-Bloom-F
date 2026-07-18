@@ -22,6 +22,7 @@ import { categoriesApi } from "@/features/categories/api/categories.api";
 import { sectionsApi } from "@/features/sections/api/sections.api";
 import { bannersApi } from "@/features/banners/api/banners.api";
 import { regionsApi } from "@/features/regions/api/regions.api";
+import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 
 // Reference/catalog data changes rarely (admin edits) → cache longer.
 const CATALOG_TTL = 300; // 5 min: categories, sections, banners
@@ -114,3 +115,15 @@ const _regions = unstable_cache(
   { revalidate: CATALOG_TTL, tags: ["regions"] }
 );
 export const getCachedRegions = cache(() => _regions());
+
+// --- Delivery zones -----------------------------------------------------
+// Region-scoped sub-areas (e.g. UAE's emirates) — same admin-managed list
+// checkout's zone dropdown reads, reused server-side for marketing copy
+// (e.g. "same-day delivery in {city}") so there's one source of truth.
+
+const _deliveryZones = unstable_cache(
+  (regionCode: string) => deliveryZonesApi.list(regionCode),
+  ["catalog:delivery-zones"],
+  { revalidate: CATALOG_TTL, tags: ["delivery-zones"] }
+);
+export const getCachedDeliveryZones = cache((regionCode: string) => _deliveryZones(regionCode));

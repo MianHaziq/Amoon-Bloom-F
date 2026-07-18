@@ -55,7 +55,7 @@ export default async function BranchesPage() {
     getServerLocale(),
     getServerRegion(),
   ]);
-  const regionCopy = regionCopyFromRegionCode(region, locale);
+  const regionCopy = await regionCopyFromRegionCode(region, locale);
   const hasPhysicalBranches = regionCopy.countryCode === "UAE";
   const branches = hasPhysicalBranches ? getBranches(locale) : [];
   return (

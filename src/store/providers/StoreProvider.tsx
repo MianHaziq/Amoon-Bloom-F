@@ -5,26 +5,25 @@ import { Provider } from "react-redux";
 import { makeStore } from "@/store";
 import { setLocale, type Locale } from "@/store/slices/ui.slice";
 import { setCountryFromRegion, setActiveRegions } from "@/store/slices/location.slice";
-import { DEFAULT_COUNTRY, type CountryCode } from "@/features/location/data";
-import type { ActiveRegionEntry } from "@/features/location/activeRegions";
+import { DEFAULT_REGION_CODE } from "@/features/location/region";
 
 interface StoreProviderProps {
   children: ReactNode;
   /** Locale resolved server-side from the cookie, so client components render
    *  in the right language on first paint (no English flash in Arabic). */
   initialLocale?: Locale;
-  /** Country resolved server-side from the `region` cookie (see
-   *  `getServerRegion` + `getCountryByRegionCode`), so client components
-   *  render the right region on first paint instead of always defaulting to
-   *  UAE and then flipping post-hydration (which throws a hydration
-   *  mismatch for a returning visitor whose region is Saudi Arabia). */
-  initialCountry?: CountryCode;
+  /** Region code resolved server-side from the `region` cookie (see
+   *  `getServerRegion`), so client components render the right region on
+   *  first paint instead of always defaulting to UAE and then flipping
+   *  post-hydration (which throws a hydration mismatch for a returning
+   *  visitor whose region is Saudi Arabia). */
+  initialCountry?: string;
   /** Which regions are currently active (admin-controlled), resolved
    *  server-side so the picker/pill reflect a hidden region immediately on
    *  first paint instead of only after a client-side fetch. */
-  initialActiveRegions?: ActiveRegionEntry[];
+  initialActiveRegions?: string[];
   /** Fallback region for a visitor whose current country is no longer active. */
-  initialDefaultCountry?: CountryCode;
+  initialDefaultCountry?: string;
 }
 
 /**
@@ -44,14 +43,14 @@ export function StoreProvider({
     if (initialLocale && initialLocale !== "en") {
       s.dispatch(setLocale(initialLocale));
     }
-    if (initialCountry && initialCountry !== DEFAULT_COUNTRY) {
+    if (initialCountry && initialCountry !== DEFAULT_REGION_CODE) {
       s.dispatch(setCountryFromRegion(initialCountry));
     }
     if (initialActiveRegions) {
       s.dispatch(
         setActiveRegions({
           activeRegions: initialActiveRegions,
-          defaultCountry: initialDefaultCountry ?? DEFAULT_COUNTRY,
+          defaultCountry: initialDefaultCountry ?? DEFAULT_REGION_CODE,
         })
       );
     }

@@ -17,7 +17,7 @@ export async function TrustStrip() {
     getServerLocale(),
     getServerRegion(),
   ]);
-  const regionCopy = regionCopyFromRegionCode(region, locale);
+  const regionCopy = await regionCopyFromRegionCode(region, locale);
 
   const items = itemKeys.map(({ titleKey, descriptionKey }) => ({
     title: t(locale, titleKey),

@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAppSelector } from "@/store";
-import { ChevronDown, PinIcon } from "@/components/icons";
+import { ChevronDown } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { useT } from "@/i18n/useT";
+import { regionsApi } from "@/features/regions/api/regions.api";
+import { queryKeys } from "@/services/queryKeys";
 import { LocationSheet } from "./LocationSheet";
+import { RegionFlag } from "./RegionFlag";
 
 interface DeliverToPillProps {
   className?: string;
@@ -14,13 +18,23 @@ interface DeliverToPillProps {
 }
 
 /**
- * Trigger button that opens the `LocationSheet`. Surfaces the active city +
- * currency so the customer always knows what context they're shopping in.
+ * Trigger button that opens the `LocationSheet` (country step, then that
+ * country's cities/zones). Surfaces the active country's flag + city so the
+ * customer always knows what context they're shopping in — and can change
+ * the country from here, not just the city.
  */
 export function DeliverToPill({ className, compact = false }: DeliverToPillProps) {
   const [open, setOpen] = useState(false);
+  const country = useAppSelector((s) => s.location.country);
   const city = useAppSelector((s) => s.location.city);
   const { t } = useT();
+
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+    staleTime: 5 * 60_000,
+  });
+  const currentRegion = regionsQuery.data?.find((r) => r.code === country);
 
   return (
     <>
@@ -28,14 +42,23 @@ export function DeliverToPill({ className, compact = false }: DeliverToPillProps
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "inline-flex h-9 items-center gap-2 rounded-full border border-ink-200 bg-white px-3 text-xs font-medium text-ink-700 transition-colors hover:border-ink-300 hover:text-ink-900",
+          "group inline-flex items-center gap-2 rounded-full py-1.5 pe-3 ps-1.5 text-sm transition-all duration-200 hover:bg-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50",
           className
         )}
       >
-        <PinIcon size={14} className="text-bloom-700" />
-        {compact ? null : <span className="text-ink-500">{t("nav.deliverTo")}</span>}
-        <span className="text-ink-900">{city}</span>
-        <ChevronDown size={12} className="text-ink-400" />
+        <RegionFlag region={currentRegion} shape="circle" className="h-7 w-7" />
+        {compact ? null : (
+          <span className="font-medium text-ink-900 transition-colors group-hover:text-white">
+            {t("nav.deliverTo")}
+          </span>
+        )}
+        <span className="font-semibold text-bloom-600 transition-colors group-hover:text-bloom-300">
+          {city}
+        </span>
+        <ChevronDown
+          size={12}
+          className="shrink-0 text-ink-400 transition-colors group-hover:text-white"
+        />
       </button>
       <LocationSheet open={open} onClose={() => setOpen(false)} />
     </>

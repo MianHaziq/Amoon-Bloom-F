@@ -7,7 +7,7 @@ import { regionCopyFromRegionCode } from "@/features/location/regionCopy";
 
 export async function Editorial() {
   const region = await getServerRegion();
-  const regionCopy = regionCopyFromRegionCode(region, "en");
+  const regionCopy = await regionCopyFromRegionCode(region, "en");
   return (
     <section className="bg-ink-900 text-cream-50">
       <Container className="grid gap-12 py-20 md:grid-cols-2 md:items-center md:py-28 lg:py-36">

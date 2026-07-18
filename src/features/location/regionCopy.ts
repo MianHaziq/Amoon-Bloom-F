@@ -1,49 +1,77 @@
 import type { Locale } from "@/store/slices/ui.slice";
-import {
-  COUNTRIES,
-  DEFAULT_COUNTRY,
-  getCountry,
-  type CountryCode,
-  type CountryDef,
-} from "./data";
+import type { ApiRegion } from "@/features/regions/types";
+import type { ApiDeliveryZone } from "@/features/delivery-zones/types";
+import { getCachedRegions, getCachedDeliveryZones } from "@/services/catalogCache";
+import { DEFAULT_REGION_CODE } from "./region";
 
 export interface RegionCopy {
   city: string;
   country: string;
-  countryCode: CountryCode;
+  countryCode: string;
 }
 
-/** Reverse-maps the `region` cookie value (backend `regionCode`) to a `CountryCode`. */
-export function getCountryByRegionCode(regionCode?: string): CountryCode {
-  const found = COUNTRIES.find((c) => c.regionCode === regionCode);
-  return found?.code ?? DEFAULT_COUNTRY;
+function localizedName(
+  entity: { name: string; name_ar: string | null } | undefined,
+  locale: Locale
+): string {
+  if (!entity) return "";
+  return locale === "ar" ? entity.name_ar ?? entity.name : entity.name;
 }
 
-function cityLabel(def: CountryDef, city: string, locale: Locale): string {
-  const idx = (def.cities as readonly string[]).indexOf(city);
-  if (idx === -1) return city;
-  return locale === "ar" ? def.citiesAr[idx] : def.cities[idx];
-}
-
-export function regionCopyFromCountryCity(
-  country: CountryCode,
-  city: string,
+/** Pure helper shared by the server and client resolvers below — given the
+ * already-fetched region/zone lists, produce localized copy. `cityName`, when
+ * provided, picks a specific zone (e.g. the visitor's actual pick); otherwise
+ * the first zone (lowest sortOrder) stands in as a representative city for
+ * generic marketing copy. */
+function buildRegionCopy(
+  regions: ApiRegion[],
+  zones: ApiDeliveryZone[],
+  code: string,
+  cityName: string | undefined,
   locale: Locale
 ): RegionCopy {
-  const def = getCountry(country);
+  const region = regions.find((r) => r.code === code);
+  const zone = cityName ? zones.find((z) => z.name === cityName) : zones[0];
   return {
-    city: cityLabel(def, city, locale),
-    country: locale === "ar" ? def.nameAr : def.name,
-    countryCode: def.code,
+    city: zone ? localizedName(zone, locale) : cityName ?? "",
+    country: region ? localizedName(region, locale) : code,
+    countryCode: code,
   };
 }
 
-/** Server-side variant: derives region copy from the `region` cookie value (country-level only, no specific city). */
-export function regionCopyFromRegionCode(
+function resolveCode(regions: ApiRegion[], regionCode: string | undefined): string {
+  if (regionCode && regions.some((r) => r.code === regionCode && r.isActive)) return regionCode;
+  const fallback = regions.find((r) => r.isDefault && r.isActive) ?? regions.find((r) => r.isActive);
+  return fallback?.code ?? DEFAULT_REGION_CODE;
+}
+
+/**
+ * Server-side: resolves localized region + representative-city copy from the
+ * `region` cookie value. Regions/zones are both request-deduped and cross-
+ * request cached (see `catalogCache.ts`), so calling this from many marketing
+ * components in the same page render is cheap, not a fetch storm.
+ */
+export async function regionCopyFromRegionCode(
   regionCode: string | undefined,
   locale: Locale
+): Promise<RegionCopy> {
+  const regions = await getCachedRegions().catch<ApiRegion[]>(() => []);
+  const code = resolveCode(regions, regionCode);
+  const zones = await getCachedDeliveryZones(code).catch<ApiDeliveryZone[]>(() => []);
+  return buildRegionCopy(regions, zones, code, undefined, locale);
+}
+
+/**
+ * Client-side: same shape, but takes already-fetched live query data instead
+ * of doing its own fetch — see `useRegionCopy()`, which supplies it from
+ * `useQuery(regionsApi.list)`/`useQuery(deliveryZonesApi.list)`.
+ */
+export function regionCopyFromLiveData(
+  regions: ApiRegion[] | undefined,
+  zones: ApiDeliveryZone[] | undefined,
+  code: string,
+  cityName: string,
+  locale: Locale
 ): RegionCopy {
-  const country = getCountryByRegionCode(regionCode);
-  const def = getCountry(country);
-  return regionCopyFromCountryCity(country, def.defaultCity, locale);
+  return buildRegionCopy(regions ?? [], zones ?? [], code, cityName, locale);
 }

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { m } from "motion/react";
 import { useAppSelector } from "@/store";
 import { staggerContainer, subtleRise, fadeInUp } from "@/lib/motion";
@@ -17,6 +18,7 @@ import type { ManagerPermission } from "@/features/users/types";
 import { ArrowRight } from "@/components/icons";
 import { formatCurrency } from "@/lib/format";
 import { useT } from "@/i18n/useT";
+import { customerLabel, isGuestOrder } from "@/components/admin/orders/orderCustomer";
 
 function hasPerm(
   role: string | undefined,
@@ -30,6 +32,7 @@ function hasPerm(
 
 export function AdminDashboard() {
   const { t } = useT();
+  const router = useRouter();
   const user = useAppSelector((s) => s.auth.user);
   const role = user?.role;
   const perms = user?.managerPermissions;
@@ -195,29 +198,31 @@ export function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(recentOrdersQuery.data?.data ?? []).map((order) => {
-                    const customerName = order.user
-                      ? [order.user.firstName, order.user.lastName]
-                          .filter(Boolean)
-                          .join(" ") || order.user.email
-                      : "—";
-                    return (
-                      <tr key={order.id} className="border-t border-ink-100">
-                        <td className="px-4 py-3 font-mono text-xs text-ink-700">
-                          {order.id.slice(0, 8)}
-                        </td>
-                        <td className="px-4 py-3 text-ink-700">
-                          {customerName}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge tone="ink">{order.status}</Badge>
-                        </td>
-                        <td className="px-4 py-3 text-end text-ink-900">
-                          {formatCurrency(order.totalAmount, currency)}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {(recentOrdersQuery.data?.data ?? []).map((order) => (
+                    <tr
+                      key={order.id}
+                      onClick={() => router.push(`/admin/orders/${order.id}`)}
+                      className="cursor-pointer border-t border-ink-100 transition-colors hover:bg-cream-50"
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-ink-700">
+                        {order.id.slice(0, 8)}
+                      </td>
+                      <td className="px-4 py-3 text-ink-700">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate">{customerLabel(order)}</span>
+                          {isGuestOrder(order) ? (
+                            <Badge tone="neutral">{t("admin.ordersPage.guest")}</Badge>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge tone="ink">{order.status}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-end text-ink-900">
+                        {formatCurrency(order.totalAmount, currency)}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

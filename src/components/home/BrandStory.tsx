@@ -17,7 +17,7 @@ export async function BrandStory() {
     getServerLocale(),
     getServerRegion(),
   ]);
-  const regionCopy = regionCopyFromRegionCode(region, locale);
+  const regionCopy = await regionCopyFromRegionCode(region, locale);
   return (
     <Section spacing="lg" tone="cream" containerSize="md">
       <Reveal>

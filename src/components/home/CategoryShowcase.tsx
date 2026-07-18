@@ -21,7 +21,7 @@ export async function CategoryShowcase() {
   ]);
   const apiCategories = await getCachedCategories(region).catch(() => []);
   const featured = toUiCategories(apiCategories, locale).slice(0, 4);
-  const regionCopy = regionCopyFromRegionCode(region, locale);
+  const regionCopy = await regionCopyFromRegionCode(region, locale);
 
   if (featured.length === 0) return null;
 

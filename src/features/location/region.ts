@@ -1,18 +1,18 @@
-import { getCountry, type CountryCode } from "./data";
-
 /**
  * The storefront region. The backend is region-aware: catalog visibility
  * (products, categories, sections, banners) is scoped by the region the client
  * sends via the `X-Region` header (client requests) or `?region=` query param
  * (SSR fetches). The chosen region code is mirrored into a cookie so both the
  * browser axios interceptor and server components can read it.
+ *
+ * Regions are admin-managed data (`GET /regions`), not a fixed compile-time
+ * list — `location.slice.ts`'s `country` field IS the region's `code` value
+ * directly (e.g. "UAE", "SA"), with no separate country-code indirection.
  */
 export const REGION_COOKIE = "region";
 
-/** Backend region `code` (the X-Region value) for a delivery-country choice. */
-export function regionCodeForCountry(country: CountryCode): string {
-  return getCountry(country).regionCode;
-}
+/** Seed value before any live region data has loaded (SSR/first paint only). */
+export const DEFAULT_REGION_CODE = "UAE";
 
 /** Reads the region cookie on the client (undefined on the server). */
 export function readRegionCookie(): string | undefined {

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button, Input } from "@/components/ui";
+import { RegionFlag } from "@/features/location/components/RegionFlag";
 import { useT } from "@/i18n/useT";
 import type { ApiRegion, ApiRegionCreateInput } from "@/features/regions/types";
 
@@ -37,6 +38,10 @@ export function RegionForm({
           .toUpperCase(),
         legalEntity: z.string().max(200, t("admin.regionForm.legalEntityMax")).optional(),
         shippingFlatRate: z.number().nonnegative(t("admin.regionForm.shippingFlatRateMin")).nullable(),
+        iso2: z
+          .string()
+          .refine((v) => v === "" || /^[A-Za-z]{2}$/.test(v), t("admin.regionForm.iso2Invalid"))
+          .optional(),
         sortOrder: z
           .number()
           .int(t("admin.regionForm.sortOrderWhole"))
@@ -53,6 +58,7 @@ export function RegionForm({
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -63,11 +69,14 @@ export function RegionForm({
       currency: "AED",
       legalEntity: "",
       shippingFlatRate: null,
+      iso2: "",
       sortOrder: 0,
       isDefault: false,
       isActive: true,
     },
   });
+
+  const iso2Value = watch("iso2");
 
   useEffect(() => {
     if (!initial) return;
@@ -78,6 +87,7 @@ export function RegionForm({
       currency: initial.currency ?? "AED",
       legalEntity: initial.legalEntity ?? "",
       shippingFlatRate: initial.shippingFlatRate != null ? Number(initial.shippingFlatRate) : null,
+      iso2: initial.iso2 ?? "",
       sortOrder: initial.sortOrder,
       isDefault: initial.isDefault,
       isActive: initial.isActive,
@@ -92,6 +102,7 @@ export function RegionForm({
       currency: v.currency.trim().toUpperCase(),
       legalEntity: v.legalEntity?.trim() || null,
       shippingFlatRate: v.shippingFlatRate,
+      iso2: v.iso2?.trim() ? v.iso2.trim().toUpperCase() : null,
       sortOrder: v.sortOrder,
       isDefault: v.isDefault,
       isActive: v.isActive,
@@ -159,6 +170,22 @@ export function RegionForm({
                 setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
               })}
             />
+            <div className="flex items-end gap-3">
+              <Input
+                label={t("admin.regionForm.iso2Label")}
+                placeholder="AE"
+                maxLength={2}
+                hint={t("admin.regionForm.iso2Hint")}
+                error={errors.iso2?.message}
+                containerClassName="flex-1"
+                {...register("iso2")}
+              />
+              <RegionFlag
+                region={/^[A-Za-z]{2}$/.test(iso2Value ?? "") ? { iso2: iso2Value ?? null, name: "" } : undefined}
+                shape="circle"
+                className="mb-2.5 h-10 w-10"
+              />
+            </div>
           </div>
         </section>
       </div>

@@ -20,32 +20,10 @@ import {
   ORDER_STATUS_TONE,
 } from "./orderStatus";
 import { OrderExportDialog } from "./OrderExportDialog";
+import { customerName, customerEmail, customerLabel, isGuestOrder } from "./orderCustomer";
 import type { ApiOrderListRow, OrderStatus } from "@/features/orders/types";
 
 const PAGE_SIZE = 20;
-
-function customerName(o: ApiOrderListRow): string {
-  if (o.user) {
-    const composed = [o.user.firstName, o.user.lastName]
-      .filter(Boolean)
-      .join(" ");
-    return o.user.fullName || composed || "";
-  }
-  // Guest order — no linked account; use the contact snapshot.
-  return o.guestName || "";
-}
-
-function customerEmail(o: ApiOrderListRow): string | null {
-  return o.user?.email || o.guestEmail || null;
-}
-
-function customerLabel(o: ApiOrderListRow): string {
-  return customerName(o) || customerEmail(o) || "—";
-}
-
-function isGuestOrder(o: ApiOrderListRow): boolean {
-  return !o.user;
-}
 
 function lineItemCount(o: ApiOrderListRow): number {
   if (typeof o.itemCount === "number") return o.itemCount;

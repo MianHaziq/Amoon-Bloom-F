@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, SearchIcon, TrashIcon } from "@/components/icons";
+import { RegionFlag } from "@/features/location/components/RegionFlag";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
 import type { ApiRegion } from "@/features/regions/types";
@@ -63,13 +64,16 @@ export function RegionsAdminPage() {
       key: "name",
       header: t("admin.regionsPage.columnName"),
       cell: (r) => (
-        <div>
-          <p className="text-ink-900">{r.name}</p>
-          {r.name_ar ? (
-            <p className="mt-0.5 text-xs text-ink-500" dir="rtl">
-              {r.name_ar}
-            </p>
-          ) : null}
+        <div className="flex items-center gap-2.5">
+          <RegionFlag region={r} shape="circle" className="h-8 w-8" />
+          <div>
+            <p className="text-ink-900">{r.name}</p>
+            {r.name_ar ? (
+              <p className="mt-0.5 text-xs text-ink-500" dir="rtl">
+                {r.name_ar}
+              </p>
+            ) : null}
+          </div>
         </div>
       ),
     },

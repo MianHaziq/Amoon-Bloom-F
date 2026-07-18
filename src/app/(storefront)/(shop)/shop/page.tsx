@@ -22,7 +22,7 @@ export default async function ShopPage(props: PageProps<"/shop">) {
     getServerRegion(),
     getServerLocale(),
   ]);
-  const regionCopy = regionCopyFromRegionCode(region, locale);
+  const regionCopy = await regionCopyFromRegionCode(region, locale);
   const searchParams = await props.searchParams;
   const rawQ = searchParams?.q;
   const q = (typeof rawQ === "string" ? rawQ : "").trim();

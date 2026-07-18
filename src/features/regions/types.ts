@@ -18,6 +18,9 @@ export interface ApiRegion {
   /** Flat shipping fee charged on every order placed in this region. Null = free
    * (no fee configured). Serialized as a string (Prisma Decimal), like Product.price. */
   shippingFlatRate: string | null;
+  /** ISO 3166-1 alpha-2 code (e.g. "AE") — renders this region's flag in the
+   * storefront's country/region pickers. Null shows a neutral placeholder. */
+  iso2: string | null;
   isDefault: boolean;
   isActive: boolean;
   sortOrder: number;
@@ -32,6 +35,7 @@ export interface ApiRegionCreateInput {
   currency?: string;
   legalEntity?: string | null;
   shippingFlatRate?: number | null;
+  iso2?: string | null;
   isDefault?: boolean;
   isActive?: boolean;
   sortOrder?: number;

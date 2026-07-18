@@ -67,7 +67,7 @@ export default async function AboutPage() {
     getServerLocale(),
     getServerRegion(),
   ]);
-  const regionCopy = regionCopyFromRegionCode(region, locale);
+  const regionCopy = await regionCopyFromRegionCode(region, locale);
   const principlesList = principles(locale, regionCopy);
   const milestonesList = milestones(locale, regionCopy);
   return (

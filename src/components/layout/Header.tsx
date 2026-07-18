@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AE, SA } from "country-flag-icons/react/3x2";
+import { useQuery } from "@tanstack/react-query";
 import { Container, IconButton } from "@/components/ui";
 import {
   SearchIcon,
@@ -21,14 +21,15 @@ import { AccountMenu } from "./AccountMenu";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { DeliverToPill } from "@/features/location/components/DeliverToPill";
 import { LocationSheet } from "@/features/location/components/LocationSheet";
+import { RegionFlag } from "@/features/location/components/RegionFlag";
+import { regionsApi } from "@/features/regions/api/regions.api";
+import { queryKeys } from "@/services/queryKeys";
 import { ROUTES } from "@/constants/routes";
 import { siteConfig } from "@/config/site";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { toggleCartDrawer, toggleMobileNav } from "@/store/slices/ui.slice";
 import { cn } from "@/lib/cn";
 import { useT } from "@/i18n/useT";
-
-const FLAGS = { UAE: AE, SAUDI_ARABIA: SA } as const;
 
 export function Header() {
   const dispatch = useAppDispatch();
@@ -44,7 +45,12 @@ export function Header() {
   const isStaff = user?.role === "ADMIN" || user?.role === "MANAGER";
   const country = useAppSelector((s) => s.location.country);
   const city = useAppSelector((s) => s.location.city);
-  const FlagIcon = FLAGS[country] ?? AE;
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+    staleTime: 5 * 60_000,
+  });
+  const currentRegion = regionsQuery.data?.find((r) => r.code === country);
 
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -142,9 +148,11 @@ export function Header() {
                   <ChevronDown size={12} />
                 </p>
               </div>
-              <span className="inline-flex h-9 w-9 shrink-0 overflow-hidden rounded-full shadow-sm ring-2 ring-ink-100">
-                <FlagIcon className="h-full w-full object-cover" title={country} />
-              </span>
+              <RegionFlag
+                region={currentRegion}
+                shape="circle"
+                className="h-9 w-9 shadow-sm ring-2 ring-ink-100"
+              />
             </button>
           </Container>
 
