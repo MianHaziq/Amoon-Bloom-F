@@ -23,7 +23,8 @@ export type ManagerPermission =
   | "PROMO_CODES"
   | "ANALYTICS"
   | "REGIONS"
-  | "REVIEWS";
+  | "REVIEWS"
+  | "DELIVERY_ZONES";
 
 export interface ApiAdminUser {
   id: string;

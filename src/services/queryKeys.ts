@@ -132,6 +132,11 @@ export const queryKeys = {
     list: () => [...queryKeys.regions.all, "list"] as const,
   },
 
+  deliveryZones: {
+    all: ["delivery-zones"] as const,
+    list: (regionCode?: string) => [...queryKeys.deliveryZones.all, "list", regionCode ?? "all"] as const,
+  },
+
   vat: {
     all: ["vat"] as const,
     list: () => [...queryKeys.vat.all, "list"] as const,

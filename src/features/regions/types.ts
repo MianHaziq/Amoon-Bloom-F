@@ -15,6 +15,9 @@ export interface ApiRegion {
   /** Legal entity name shown in the storefront footer's copyright line for this
    * region. Null/blank falls back to the frontend's default siteConfig.legalEntity. */
   legalEntity: string | null;
+  /** Flat shipping fee charged on every order placed in this region. Null = free
+   * (no fee configured). Serialized as a string (Prisma Decimal), like Product.price. */
+  shippingFlatRate: string | null;
   isDefault: boolean;
   isActive: boolean;
   sortOrder: number;
@@ -28,6 +31,7 @@ export interface ApiRegionCreateInput {
   name_ar?: string | null;
   currency?: string;
   legalEntity?: string | null;
+  shippingFlatRate?: number | null;
   isDefault?: boolean;
   isActive?: boolean;
   sortOrder?: number;

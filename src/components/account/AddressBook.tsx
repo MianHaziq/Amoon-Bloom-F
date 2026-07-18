@@ -1,36 +1,52 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { addressesApi } from "@/features/addresses/api/addresses.api";
+import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { queryKeys } from "@/services/queryKeys";
 import { Button, Input, Modal } from "@/components/ui";
 import { Spinner } from "@/components/ui/Loader";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
-import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { regionCodeForCountry } from "@/features/location/region";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
+import type { MessageKey } from "@/i18n";
 import type {
   ApiAddress,
   ApiAddressCreateInput,
 } from "@/features/addresses/types";
 
-type FormValues = {
-  label?: string;
-  fullName: string;
-  phone: string;
-  streetAddress: string;
-  apartment?: string;
-  city: string;
-  state?: string;
-  postalCode?: string;
-  country: string;
-  isDefault?: boolean;
-};
+// Mirrors CheckoutClient.tsx's dial-code convention exactly — same reasoning:
+// the field stores one E.164-ish string in the existing `phone` column, no
+// backend schema change. Kept in sync manually since it's a 2-entry map.
+const DIAL_CODE: Record<string, string> = { UAE: "+971", SA: "+966" };
+function stripDialCode(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const known = Object.values(DIAL_CODE).find((code) => phone.startsWith(code));
+  return known ? phone.slice(known.length) : phone.replace(/^\+/, "");
+}
+
+type TranslateFn = (key: MessageKey) => string;
+
+const makeAddressSchema = (t: TranslateFn, zoneRequired: boolean) =>
+  z.object({
+    label: z.string().optional(),
+    fullName: z.string().min(1, t("validation.required")),
+    phone: z.string().min(4, t("validation.required")),
+    area: z.string().min(1, t("validation.required")),
+    deliveryZoneId: zoneRequired
+      ? z.string().min(1, t("validation.required"))
+      : z.string().optional(),
+    isDefault: z.boolean().optional(),
+  });
+
+type FormValues = z.infer<ReturnType<typeof makeAddressSchema>>;
 
 export function AddressBook() {
   const toast = useToast();
@@ -94,55 +110,53 @@ export function AddressBook() {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {addresses.map((a) => (
-            <div
-              key={a.id}
-              className="rounded-2xl border border-ink-100 bg-white p-4"
-            >
-              <div className="mb-2 flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-ink-900 wrap-break-word">
-                    {a.label || a.fullName}
-                  </p>
-                  {a.isDefault ? (
-                    <span className="mt-1 inline-block rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-bloom-700">
-                      {t("common.default")}
-                    </span>
-                  ) : null}
+          {addresses.map((a) => {
+            // Legacy addresses saved before this feature has no `area` — fall
+            // back to the old street/city line so nothing renders blank.
+            const locationLine = a.area
+              ? `${a.area}${a.deliveryZone ? `, ${a.deliveryZone.name}` : ""}`
+              : `${a.streetAddress}${a.apartment ? `, ${a.apartment}` : ""}, ${a.city}`;
+            return (
+              <div
+                key={a.id}
+                className="rounded-2xl border border-ink-100 bg-white p-4"
+              >
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-ink-900 wrap-break-word">
+                      {a.label || a.fullName}
+                    </p>
+                    {a.isDefault ? (
+                      <span className="mt-1 inline-block rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-bloom-700">
+                        {t("common.default")}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(a)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-500 hover:bg-ink-50 hover:text-ink-900"
+                      aria-label={t("common.edit")}
+                    >
+                      <PencilIcon size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingDelete(a)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md text-bloom-700 hover:bg-bloom-50"
+                      aria-label={t("common.delete")}
+                    >
+                      <TrashIcon size={16} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setEditing(a)}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink-500 hover:bg-ink-50 hover:text-ink-900"
-                    aria-label={t("common.edit")}
-                  >
-                    <PencilIcon size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPendingDelete(a)}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-md text-bloom-700 hover:bg-bloom-50"
-                    aria-label={t("common.delete")}
-                  >
-                    <TrashIcon size={16} />
-                  </button>
-                </div>
+                <p className="text-sm text-ink-700">{a.fullName}</p>
+                <p className="text-xs text-ink-500">{a.phone}</p>
+                <p className="mt-2 text-sm text-ink-700 wrap-break-word">{locationLine}</p>
               </div>
-              <p className="text-sm text-ink-700">{a.fullName}</p>
-              <p className="text-xs text-ink-500">{a.phone}</p>
-              <p className="mt-2 text-sm text-ink-700 wrap-break-word">
-                {a.streetAddress}
-                {a.apartment ? `, ${a.apartment}` : ""}
-              </p>
-              <p className="text-sm text-ink-700">
-                {a.city}
-                {a.state ? `, ${a.state}` : ""}
-                {a.postalCode ? ` ${a.postalCode}`: ""}
-              </p>
-              <p className="text-sm text-ink-700">{a.country}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -181,41 +195,43 @@ interface AddressFormModalProps {
 function AddressFormModal({ open, onClose, initial, title }: AddressFormModalProps) {
   const toast = useToast();
   const queryClient = useQueryClient();
-  const { t } = useT();
-  const regionCopy = useRegionCopy();
+  const { t, locale: uiLocale } = useT();
+  const { countryCode } = useCurrency();
+  const regionCode = regionCodeForCountry(countryCode);
+  const dialCode = DIAL_CODE[regionCode] ?? "";
+
+  const zonesQuery = useQuery({
+    queryKey: queryKeys.deliveryZones.list(regionCode),
+    queryFn: () => deliveryZonesApi.list(regionCode),
+    enabled: Boolean(regionCode) && open,
+  });
+  const zones = zonesQuery.data ?? [];
+  const zoneRequired = !zonesQuery.isPending && zones.length > 0;
 
   const emptyDefaults: FormValues = useMemo(
     () => ({
       label: "",
       fullName: "",
       phone: "",
-      streetAddress: "",
-      apartment: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      country: regionCopy.country,
+      area: "",
+      deliveryZoneId: "",
       isDefault: false,
     }),
-    [regionCopy.country]
+    []
   );
 
-  const schema = useMemo(
-    () =>
-      z.object({
-        label: z.string().optional(),
-        fullName: z.string().min(1, t("validation.required")),
-        phone: z.string().min(4, t("validation.required")),
-        streetAddress: z.string().min(1, t("validation.required")),
-        apartment: z.string().optional(),
-        city: z.string().min(1, t("validation.required")),
-        state: z.string().optional(),
-        postalCode: z.string().optional(),
-        country: z.string().min(2, t("validation.required")),
-        isDefault: z.boolean().optional(),
-      }),
-    [t]
-  );
+  const schema = useMemo(() => makeAddressSchema(t, zoneRequired), [t, zoneRequired]);
+
+  const initialValues: FormValues | undefined = initial
+    ? {
+        label: initial.label ?? "",
+        fullName: initial.fullName,
+        phone: stripDialCode(initial.phone),
+        area: initial.area ?? "",
+        deliveryZoneId: initial.deliveryZoneId ?? "",
+        isDefault: initial.isDefault,
+      }
+    : undefined;
 
   const {
     register,
@@ -224,48 +240,26 @@ function AddressFormModal({ open, onClose, initial, title }: AddressFormModalPro
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: initial
-      ? {
-          label: initial.label ?? "",
-          fullName: initial.fullName,
-          phone: initial.phone,
-          streetAddress: initial.streetAddress,
-          apartment: initial.apartment ?? "",
-          city: initial.city,
-          state: initial.state ?? "",
-          postalCode: initial.postalCode ?? "",
-          country: initial.country,
-          isDefault: initial.isDefault,
-        }
-      : emptyDefaults,
-    values: initial
-      ? {
-          label: initial.label ?? "",
-          fullName: initial.fullName,
-          phone: initial.phone,
-          streetAddress: initial.streetAddress,
-          apartment: initial.apartment ?? "",
-          city: initial.city,
-          state: initial.state ?? "",
-          postalCode: initial.postalCode ?? "",
-          country: initial.country,
-          isDefault: initial.isDefault,
-        }
-      : emptyDefaults,
+    defaultValues: initialValues ?? emptyDefaults,
+    values: initialValues ?? emptyDefaults,
   });
+
+  // Reset to a blank form the next time this modal opens for "add new" (avoids
+  // showing a just-closed edit's leftover values if the user immediately clicks
+  // "Add address" afterward — `values` above only re-syncs for the edit case).
+  useEffect(() => {
+    if (open && !initial) reset(emptyDefaults);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       const payload: ApiAddressCreateInput = {
         label: values.label?.trim() || null,
         fullName: values.fullName.trim(),
-        phone: values.phone.trim(),
-        streetAddress: values.streetAddress.trim(),
-        apartment: values.apartment?.trim() || null,
-        city: values.city.trim(),
-        state: values.state?.trim() || null,
-        postalCode: values.postalCode?.trim() || null,
-        country: values.country.trim(),
+        phone: `${dialCode}${values.phone.trim().replace(/[\s-]/g, "")}`,
+        area: values.area.trim(),
+        deliveryZoneId: values.deliveryZoneId || null,
         isDefault: values.isDefault,
       };
       if (initial) {
@@ -298,30 +292,88 @@ function AddressFormModal({ open, onClose, initial, title }: AddressFormModalPro
         <Input
           label={t("checkout.fullName")}
           error={errors.fullName?.message}
+          containerClassName="sm:col-span-2"
           {...register("fullName")}
         />
         <Input
-          label={t("checkout.phone")}
-          type="tel"
-          error={errors.phone?.message}
-          {...register("phone")}
+          label={t("checkout.area")}
+          placeholder={t("checkout.areaPlaceholder")}
+          hint={t("checkout.areaHint")}
+          error={errors.area?.message}
+          {...register("area")}
         />
-        <Input
-          label={t("checkout.streetAddress")}
-          error={errors.streetAddress?.message}
-          containerClassName="sm:col-span-2"
-          {...register("streetAddress")}
-        />
-        <Input label={t("checkout.apartment")} {...register("apartment")} />
-        <Input label={t("checkout.city")} error={errors.city?.message} {...register("city")} />
-        <Input label={t("address.stateRegion")} {...register("state")} />
-        <Input label={t("address.postalCode")} {...register("postalCode")} />
-        <Input
-          label={t("checkout.country")}
-          error={errors.country?.message}
-          containerClassName="sm:col-span-2"
-          {...register("country")}
-        />
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="address-zone"
+            className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500"
+          >
+            {regionCode === "UAE" ? t("checkout.emirate") : t("checkout.province")}
+          </label>
+          {zonesQuery.isPending ? (
+            <div className="flex h-12 items-center rounded-2xl border border-ink-200 px-4">
+              <Spinner size="sm" />
+            </div>
+          ) : zones.length === 0 ? (
+            <p className="flex h-12 items-center text-xs text-ink-400">
+              {t("checkout.emirateUnavailable")}
+            </p>
+          ) : (
+            <select
+              id="address-zone"
+              className="h-12 rounded-2xl border border-ink-200 bg-white px-4 text-sm text-ink-900 focus:border-bloom-400 focus:outline-none focus:ring-4 focus:ring-bloom-100"
+              {...register("deliveryZoneId")}
+            >
+              <option value="">
+                {regionCode === "UAE" ? t("checkout.selectEmirate") : t("checkout.selectProvince")}
+              </option>
+              {zones.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {uiLocale === "ar" && z.name_ar ? z.name_ar : z.name}
+                </option>
+              ))}
+            </select>
+          )}
+          {errors.deliveryZoneId?.message ? (
+            <p className="text-xs text-bloom-700">{errors.deliveryZoneId.message}</p>
+          ) : null}
+        </div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <label
+            htmlFor="address-phone"
+            className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500"
+          >
+            {t("checkout.phone")}
+          </label>
+          <div
+            className={
+              "flex h-12 items-center rounded-2xl border bg-white transition-all " +
+              (errors.phone
+                ? "border-(--color-danger)"
+                : "border-ink-200 focus-within:border-bloom-400 focus-within:ring-4 focus-within:ring-bloom-100")
+            }
+          >
+            <span className="flex h-full items-center border-e border-ink-200 px-3 text-sm font-medium text-ink-700">
+              {dialCode}
+            </span>
+            <input
+              id="address-phone"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel-national"
+              className="h-full flex-1 rounded-e-2xl bg-transparent px-3 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
+              onKeyDown={(e) => {
+                const allowed = ["Backspace","Delete","Tab","Escape","Enter","ArrowLeft","ArrowRight","Home","End"];
+                if (!allowed.includes(e.key) && !/^[0-9\s-]$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+                  e.preventDefault();
+                }
+              }}
+              {...register("phone")}
+            />
+          </div>
+          {errors.phone?.message ? (
+            <p className="text-xs text-bloom-700">{errors.phone.message}</p>
+          ) : null}
+        </div>
 
         <label className="sm:col-span-2 inline-flex cursor-pointer items-center gap-2">
           <input

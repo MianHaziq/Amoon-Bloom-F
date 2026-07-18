@@ -10,7 +10,7 @@ import { queryKeys } from "@/services/queryKeys";
 import { ROUTES } from "@/constants/routes";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n";
-import { ReceiptStage, ConfirmationHero, ReceiptCard } from "./receiptParts";
+import { ReceiptStage, ConfirmationHero, ReceiptCard, ReceiptActions } from "./receiptParts";
 
 /**
  * Post-order confirmation + receipt for an authenticated customer. A boutique
@@ -41,35 +41,30 @@ export function OrderReceipt({ orderId }: { orderId?: string }) {
         ) : query.isError || !query.data ? (
           <FallbackCard orderId={orderId} t={t} />
         ) : (
-          <ReceiptCard order={query.data} footer={<Actions orderId={query.data.id} />} />
+          <>
+            <ReceiptCard order={query.data} />
+            <ReceiptActions>
+              <Link href={ROUTES.shop} className="contents">
+                <Button size="lg" variant="outline" fullWidth className="sm:w-auto">
+                  {t("common.continueShopping")}
+                </Button>
+              </Link>
+              <Link href={`/account/orders/${query.data.id}`} className="contents">
+                <Button
+                  size="lg"
+                  variant="subtle"
+                  fullWidth
+                  className="sm:w-auto"
+                  trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
+                >
+                  {t("order.trackOrder")}
+                </Button>
+              </Link>
+            </ReceiptActions>
+          </>
         )}
       </Container>
     </ReceiptStage>
-  );
-}
-
-function Actions({ orderId }: { orderId?: string }) {
-  const { t } = useT();
-  return (
-    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
-      <Link href={ROUTES.shop} className="contents">
-        <Button size="lg" variant="outline" fullWidth className="sm:w-auto">
-          {t("common.continueShopping")}
-        </Button>
-      </Link>
-      {orderId && (
-        <Link href={`/account/orders/${orderId}`} className="contents">
-          <Button
-            size="lg"
-            fullWidth
-            className="sm:w-auto"
-            trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
-          >
-            {t("order.trackOrder")}
-          </Button>
-        </Link>
-      )}
-    </div>
   );
 }
 
@@ -95,7 +90,25 @@ function FallbackCard({
           </div>
         )}
         <p className="max-w-sm text-sm text-ink-500">{t("order.thankYouBody")}</p>
-        <Actions orderId={orderId} />
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+          <Link href={ROUTES.shop} className="contents">
+            <Button size="lg" variant="outline" fullWidth className="sm:w-auto">
+              {t("common.continueShopping")}
+            </Button>
+          </Link>
+          {orderId && (
+            <Link href={`/account/orders/${orderId}`} className="contents">
+              <Button
+                size="lg"
+                fullWidth
+                className="sm:w-auto"
+                trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
+              >
+                {t("order.trackOrder")}
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

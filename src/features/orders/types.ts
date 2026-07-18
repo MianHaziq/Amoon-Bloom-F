@@ -17,15 +17,34 @@ export type PaymentMethod = "COD" | "MYFATOORAH";
 
 export type PaymentStatus = "UNPAID" | "PAID" | "FAILED";
 
+/** Matches `toOrderResponsePayload`'s actual `?? null` mapping — every field
+ * here can genuinely be null (e.g. every legacy field is null for an order
+ * placed through the current area/zone-based checkout). Never assume a field
+ * is present without checking; UI that reads this should prefer `area`/
+ * `deliveryZoneName` and fall back to the legacy fields for older orders. */
 export interface OrderShippingAddress {
-  fullName: string;
-  phone: string;
-  streetAddress: string;
+  fullName: string | null;
+  phone: string | null;
+  streetAddress: string | null;
   apartment: string | null;
-  city: string;
+  city: string | null;
   state: string | null;
   postalCode: string | null;
-  country: string;
+  country: string | null;
+  /** Neighborhood/community free text — the checkout form's primary location field. */
+  area: string | null;
+  /** Zone (e.g. emirate) name, snapshot at checkout time — not a live reference. */
+  deliveryZoneName: string | null;
+}
+
+/** Inline address sent when placing an order — the current checkout form's
+ * minimal field set. Distinct from `OrderShippingAddress` (the fuller response
+ * shape, which also carries legacy fields from before this feature existed). */
+export interface OrderShippingAddressInput {
+  fullName: string;
+  phone: string;
+  area: string;
+  deliveryZoneId?: string;
 }
 
 export interface OrderItemProductSnapshot {
@@ -97,6 +116,9 @@ export interface ApiOrder {
   orderMessage: string | null;
   totalAmount: number;
   discountAmount: number | null;
+  /** Flat delivery fee charged on this order (snapshot of the region's rate at
+   * checkout). Already included in totalAmount. 0 for legacy/free-shipping orders. */
+  shippingAmount?: number;
   /** Pre-VAT, pre-discount line sum. Null for legacy orders placed before VAT. */
   subtotalAmount?: number | null;
   /** Total VAT — included in totalAmount for exclusive VAT, extracted (informational) for inclusive VAT. 0 when no VAT applied. */
@@ -179,7 +201,7 @@ export interface ApiOrderStatusLite {
 
 export interface ApiCheckoutInput {
   addressId?: string;
-  shippingAddress?: OrderShippingAddress;
+  shippingAddress?: OrderShippingAddressInput;
   paymentMethod?: PaymentMethod;
   promoCode?: string;
 }
@@ -196,7 +218,7 @@ export interface ApiGuestCheckoutItem {
 /** Body for `POST /orders/guest-checkout` (unauthenticated). */
 export interface ApiGuestCheckoutInput {
   items: ApiGuestCheckoutItem[];
-  shippingAddress: OrderShippingAddress;
+  shippingAddress: OrderShippingAddressInput;
   /** Optional — enables the confirmation email and links the order on sign-up. */
   email?: string;
   orderMessage?: string;

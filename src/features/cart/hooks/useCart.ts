@@ -29,18 +29,11 @@ export function useCart() {
       0
     );
     const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-    // The backend charges no shipping (order totalAmount = items − discount),
-    // so the storefront must not invent a shipping fee — otherwise the total
-    // shown wouldn't match the order the backend records.
-    return {
-      subtotal,
-      shipping: 0,
-      total: subtotal,
-      itemCount,
-      currency,
-      locale,
-      qualifiesForFreeShipping: false,
-    };
+    // Shipping/VAT depend on the current region and (for VAT) admin config
+    // fetched separately at checkout — this hook only tracks cart contents,
+    // not the final order total. See CheckoutClient/CartSummary for the
+    // real subtotal→discount→VAT→shipping pipeline.
+    return { subtotal, itemCount, currency, locale };
   }, [items, currency, locale]);
 
   return {

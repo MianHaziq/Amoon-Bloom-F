@@ -152,25 +152,46 @@ export const emptyCart = (): AppThunk<Promise<CartMutationResult>> =>
     }
   };
 
+// Dedupes concurrent hydrateServerCart calls (e.g. React Strict Mode
+// double-invoking CartSync's effect in dev, or a rapid re-auth) — without
+// this, two overlapping calls both read the same non-empty guest cart before
+// either clears localStorage, and both re-POST every item, doubling
+// quantities server-side. Module-level (not per-thunk-call) so it's shared
+// across every dispatch.
+let hydrateInFlight: Promise<void> | null = null;
+
 /**
  * On sign-in (or a reload while signed-in): merge any leftover guest cart into
  * the server, drop the guest localStorage copy, then load the authoritative
  * server cart into Redux. Safe to call repeatedly — once the guest copy is
  * cleared, subsequent calls just re-hydrate from the server.
  */
-export const hydrateServerCart = (): AppThunk => async (dispatch, getState) => {
+export const hydrateServerCart = (): AppThunk<Promise<void>> => async (dispatch, getState) => {
   if (!isAuthed(getState)) return;
-  try {
-    const guest = storage.get<CartItem[]>(STORAGE_KEYS.cart);
-    if (Array.isArray(guest) && guest.length > 0) {
-      for (const it of guest) {
-        await cartApi.add({ productId: it.productId, quantity: it.quantity });
+  if (hydrateInFlight) return hydrateInFlight;
+
+  hydrateInFlight = (async () => {
+    try {
+      const guest = storage.get<CartItem[]>(STORAGE_KEYS.cart);
+      if (Array.isArray(guest) && guest.length > 0) {
+        // First item runs alone so the server-side cart row (unique per user)
+        // is guaranteed to exist before the rest fire concurrently — otherwise
+        // a brand-new user's first-ever sync could race N parallel "create
+        // cart" attempts against that unique constraint.
+        const [first, ...rest] = guest;
+        await cartApi.add({ productId: first.productId, quantity: first.quantity });
+        await Promise.all(
+          rest.map((it) => cartApi.add({ productId: it.productId, quantity: it.quantity }))
+        );
+        storage.remove(STORAGE_KEYS.cart);
       }
-      storage.remove(STORAGE_KEYS.cart);
+      const server = await cartApi.get();
+      dispatch(setItems(apiCartToCartItems(server)));
+    } catch {
+      // Offline / transient — keep whatever is already in Redux.
+    } finally {
+      hydrateInFlight = null;
     }
-    const server = await cartApi.get();
-    dispatch(setItems(apiCartToCartItems(server)));
-  } catch {
-    // Offline / transient — keep whatever is already in Redux.
-  }
+  })();
+  return hydrateInFlight;
 };

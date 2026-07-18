@@ -407,3 +407,62 @@ button:disabled,
     scroll-behavior: auto !important;
   }
 }
+
+/* =====================================================================
+   Print — receipt / invoice
+   --------------------------------------------------------------------
+   The receipt page's "Print" and "Download PDF" actions both call
+   window.print(); the browser's "Save as PDF" destination handles the
+   download. We isolate the receipt so only it lands on the page: hide the
+   whole document, then re-reveal the `.receipt-print-area` subtree and lift
+   it to the page origin. `.no-print` removes chrome (hero, nudges, buttons,
+   trackers). Accent fills are asked to render exactly so badges/dividers
+   survive on paper.
+   ===================================================================== */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  /* Neutralise the stage's positioning/clipping so the absolutely-positioned
+     receipt below anchors to the page origin (no header-height gap on top). */
+  .receipt-stage {
+    position: static !important;
+    overflow: visible !important;
+  }
+
+  /* Hide everything, then reveal only the receipt subtree. `visibility`
+     (not `display`) keeps the receipt's own layout intact. */
+  body * {
+    visibility: hidden;
+  }
+  .receipt-print-area,
+  .receipt-print-area * {
+    visibility: visible;
+  }
+  .receipt-print-area {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Explicitly excluded from print, even inside the receipt subtree. */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Keep brand accents (status badges, coloured dividers) on paper. */
+  .receipt-print-area * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

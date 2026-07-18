@@ -10,7 +10,7 @@ import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n";
 import type { ApiOrder } from "@/features/orders/types";
-import { ReceiptStage, ConfirmationHero, ReceiptCard } from "./receiptParts";
+import { ReceiptStage, ConfirmationHero, ReceiptCard, ReceiptActions } from "./receiptParts";
 
 const BENEFITS: MessageKey[] = [
   "order.benefitTrack",
@@ -49,10 +49,15 @@ export function GuestOrderSuccess() {
           body={t("order.guestThankYouBody")}
         />
 
-        {order ? <ReceiptCard order={order} /> : null}
+        {order ? (
+          <>
+            <ReceiptCard order={order} />
+            <ReceiptActions />
+          </>
+        ) : null}
 
         {/* Create-account nudge — the heart of the guest post-purchase flow. */}
-        <div className="mt-6 overflow-hidden rounded-3xl border border-bloom-200 bg-linear-to-br from-bloom-50 to-blush-50 p-6 shadow-(--shadow-lift) sm:p-8">
+        <div className="no-print mt-6 overflow-hidden rounded-3xl border border-bloom-200 bg-linear-to-br from-bloom-50 to-blush-50 p-6 shadow-(--shadow-lift) sm:p-8">
           <h2 className="flex items-center gap-2 font-display text-xl font-medium text-ink-900 sm:text-2xl">
             <SparkleIcon size={18} className="text-gold-500" />
             {t("order.createAccountTitle")}
@@ -88,7 +93,7 @@ export function GuestOrderSuccess() {
           </div>
         </div>
 
-        <div className="mt-6 flex justify-center">
+        <div className="no-print mt-6 flex justify-center">
           <Link href={ROUTES.shop} className="contents">
             <Button size="lg" variant="ghost">
               {t("common.continueShopping")}

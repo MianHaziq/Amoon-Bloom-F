@@ -221,20 +221,34 @@ export function OrderDetailPage({ id }: { id: string }) {
                 </p>
                 <p>{order.shippingAddress.phone}</p>
                 {order.guestEmail ? <p>{order.guestEmail}</p> : null}
-                <p className="mt-2">
-                  {order.shippingAddress.streetAddress}
-                  {order.shippingAddress.apartment
-                    ? `, ${order.shippingAddress.apartment}`
-                    : ""}
-                </p>
-                <p>
-                  {order.shippingAddress.city}
-                  {order.shippingAddress.state ? `, ${order.shippingAddress.state}` : ""}
-                  {order.shippingAddress.postalCode
-                    ? ` ${order.shippingAddress.postalCode}`
-                    : ""}
-                </p>
-                <p>{order.shippingAddress.country}</p>
+                {/* Area/zone is the current checkout's primary location field —
+                    fall back to the legacy street/city/country lines for orders
+                    placed before this feature existed. */}
+                {order.shippingAddress.area ? (
+                  <p className="mt-2">
+                    {order.shippingAddress.area}
+                    {order.shippingAddress.deliveryZoneName
+                      ? `, ${order.shippingAddress.deliveryZoneName}`
+                      : ""}
+                  </p>
+                ) : (
+                  <>
+                    <p className="mt-2">
+                      {order.shippingAddress.streetAddress}
+                      {order.shippingAddress.apartment
+                        ? `, ${order.shippingAddress.apartment}`
+                        : ""}
+                    </p>
+                    <p>
+                      {order.shippingAddress.city}
+                      {order.shippingAddress.state ? `, ${order.shippingAddress.state}` : ""}
+                      {order.shippingAddress.postalCode
+                        ? ` ${order.shippingAddress.postalCode}`
+                        : ""}
+                    </p>
+                    <p>{order.shippingAddress.country}</p>
+                  </>
+                )}
               </div>
             </section>
           ) : null}

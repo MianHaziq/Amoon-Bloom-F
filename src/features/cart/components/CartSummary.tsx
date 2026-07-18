@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { m } from "motion/react";
+import { useQuery } from "@tanstack/react-query";
 import { Button, Divider, CurrencyAmount } from "@/components/ui";
 import { ArrowRight, ShieldIcon, TruckIcon } from "@/components/icons";
 import { useAppSelector } from "@/store";
@@ -9,6 +10,9 @@ import { microTransition } from "@/lib/motion";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
+import { regionCodeForCountry } from "@/features/location/region";
+import { regionsApi } from "@/features/regions/api/regions.api";
+import { queryKeys } from "@/services/queryKeys";
 import { useT } from "@/i18n/useT";
 
 interface CartSummaryProps {
@@ -17,16 +21,31 @@ interface CartSummaryProps {
 
 export function CartSummary({ variant = "page" }: CartSummaryProps) {
   const items = useAppSelector((s) => s.cart.items);
-  const { currency, locale } = useCurrency();
+  const { currency, locale, countryCode } = useCurrency();
   const regionCopy = useRegionCopy();
   const { t } = useT();
   const subtotal = items.reduce(
     (sum, i) => sum + i.unitPrice * i.quantity,
     0
   );
-  // The backend does not charge shipping, so the total is simply the subtotal
-  // (promo discounts are applied by the backend at checkout).
-  const total = subtotal;
+
+  // Flat shipping fee for the current region — same query key as
+  // CheckoutClient so this is served from cache, not a second request.
+  // Promo discounts and VAT are only resolved at checkout (they depend on a
+  // code/config the cart page doesn't fetch), so this total is delivery-
+  // inclusive but tax/discount-exclusive — the final checkout total is the
+  // source of truth.
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+  });
+  const regionCode = regionCodeForCountry(countryCode);
+  const currentRegion = regionsQuery.data?.find((r) => r.code === regionCode);
+  const shipping =
+    currentRegion?.shippingFlatRate != null
+      ? Number(currentRegion.shippingFlatRate)
+      : 0;
+  const total = subtotal + shipping;
 
   return (
     <aside
@@ -52,7 +71,13 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
         </div>
         <div className="flex justify-between">
           <dt className="text-ink-600">{t("common.delivery")}</dt>
-          <dd className="font-medium tabular-nums text-ink-900">{t("common.free")}</dd>
+          <dd className="font-medium tabular-nums text-ink-900">
+            {shipping > 0 ? (
+              <CurrencyAmount amount={shipping} currency={currency} locale={locale} />
+            ) : (
+              t("common.free")
+            )}
+          </dd>
         </div>
       </dl>
 

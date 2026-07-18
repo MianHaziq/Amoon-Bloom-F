@@ -36,6 +36,7 @@ export function RegionForm({
           .length(3, t("admin.regionForm.currencyLength"))
           .toUpperCase(),
         legalEntity: z.string().max(200, t("admin.regionForm.legalEntityMax")).optional(),
+        shippingFlatRate: z.number().nonnegative(t("admin.regionForm.shippingFlatRateMin")).nullable(),
         sortOrder: z
           .number()
           .int(t("admin.regionForm.sortOrderWhole"))
@@ -61,6 +62,7 @@ export function RegionForm({
       name_ar: "",
       currency: "AED",
       legalEntity: "",
+      shippingFlatRate: null,
       sortOrder: 0,
       isDefault: false,
       isActive: true,
@@ -75,6 +77,7 @@ export function RegionForm({
       name_ar: initial.name_ar ?? "",
       currency: initial.currency ?? "AED",
       legalEntity: initial.legalEntity ?? "",
+      shippingFlatRate: initial.shippingFlatRate != null ? Number(initial.shippingFlatRate) : null,
       sortOrder: initial.sortOrder,
       isDefault: initial.isDefault,
       isActive: initial.isActive,
@@ -88,6 +91,7 @@ export function RegionForm({
       name_ar: v.name_ar?.trim() || null,
       currency: v.currency.trim().toUpperCase(),
       legalEntity: v.legalEntity?.trim() || null,
+      shippingFlatRate: v.shippingFlatRate,
       sortOrder: v.sortOrder,
       isDefault: v.isDefault,
       isActive: v.isActive,
@@ -142,6 +146,18 @@ export function RegionForm({
               error={errors.legalEntity?.message}
               containerClassName="sm:col-span-2"
               {...register("legalEntity")}
+            />
+            <Input
+              label={t("admin.regionForm.shippingFlatRateLabel")}
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="25.00"
+              hint={t("admin.regionForm.shippingFlatRateHint")}
+              error={errors.shippingFlatRate?.message}
+              {...register("shippingFlatRate", {
+                setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+              })}
             />
           </div>
         </section>

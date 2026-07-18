@@ -14,6 +14,7 @@ import {
   BellIcon,
   PercentIcon,
   StarIcon,
+  PinIcon,
 } from "@/components/icons";
 import type { ManagerPermission } from "@/features/users/types";
 import type { ComponentType, SVGProps } from "react";
@@ -118,6 +119,12 @@ export const adminNav: AdminNavGroup[] = [
         href: "/admin/regions",
         icon: GlobeIcon,
         permission: "REGIONS",
+      },
+      {
+        label: "Delivery zones",
+        href: "/admin/delivery-zones",
+        icon: PinIcon,
+        permission: "DELIVERY_ZONES",
       },
       {
         label: "Notifications",
