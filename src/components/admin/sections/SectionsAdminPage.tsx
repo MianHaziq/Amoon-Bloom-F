@@ -8,6 +8,7 @@ import { queryKeys } from "@/services/queryKeys";
 import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
+import { RegionBadges } from "@/components/admin/RegionBadges";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { useToast } from "@/hooks/useToast";
@@ -95,6 +96,11 @@ export function SectionsAdminPage() {
       header: t("admin.sectionsPage.columnOrder"),
       align: "right",
       cell: (s) => <span className="text-ink-700">{s.sortOrder}</span>,
+    },
+    {
+      key: "region",
+      header: t("admin.sectionsPage.columnRegion"),
+      cell: (s) => <RegionBadges regions={s.regions} />,
     },
     {
       key: "actions",

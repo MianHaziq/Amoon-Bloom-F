@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
-import { ProductGrid } from "@/features/products/components/ProductGrid";
+import { ProductCarousel } from "@/features/products/components/ProductCarousel";
 import { ROUTES } from "@/constants/routes";
 import { t } from "@/i18n";
 import type { Locale } from "@/store/slices/ui.slice";
@@ -54,7 +54,7 @@ export function ProductRail({
         />
       </Reveal>
       <div className="mt-8">
-        <ProductGrid products={products} columns={4} />
+        <ProductCarousel products={products} />
       </div>
     </Section>
   );

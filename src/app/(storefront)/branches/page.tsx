@@ -5,6 +5,7 @@ import { getServerLocale } from "@/i18n/server";
 import { getServerRegion } from "@/services/serverRegion";
 import { localized } from "@/i18n";
 import { regionCopyFromRegionCode } from "@/features/location/regionCopy";
+import { regionContactFromRegionCode } from "@/features/location/regionContact";
 import { ROUTES } from "@/constants/routes";
 import Link from "next/link";
 import type { Locale } from "@/store/slices/ui.slice";
@@ -57,6 +58,10 @@ export default async function BranchesPage() {
   ]);
   const regionCopy = await regionCopyFromRegionCode(region, locale);
   const hasPhysicalBranches = regionCopy.countryCode === "UAE";
+  // Only the delivery-only fallback card below is region-scoped — the physical
+  // UAE branch list further down is real per-location data (its own address,
+  // hours, phone per branch) and only ever renders for the UAE region anyway.
+  const contact = await regionContactFromRegionCode(region, locale);
   const branches = hasPhysicalBranches ? getBranches(locale) : [];
   return (
     <>
@@ -107,18 +112,18 @@ export default async function BranchesPage() {
             </p>
             <div className="mt-2 flex flex-col gap-2 text-sm">
               <a
-                href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`}
+                href={`tel:${contact.phone.replace(/\s/g, "")}`}
                 className="inline-flex items-center gap-2 text-ink-700 hover:text-bloom-700"
               >
                 <PhoneIcon size={14} className="shrink-0" />
-                {siteConfig.contact.phone}
+                {contact.phone}
               </a>
               <a
-                href={`mailto:${siteConfig.contact.email}`}
+                href={`mailto:${contact.email}`}
                 className="inline-flex items-start gap-2 text-ink-700 hover:text-bloom-700"
               >
                 <MailIcon size={14} className="mt-0.5 shrink-0" />
-                <span className="wrap-break-word">{siteConfig.contact.email}</span>
+                <span className="wrap-break-word">{contact.email}</span>
               </a>
             </div>
             <Link href={ROUTES.shop} className="contents">

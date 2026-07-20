@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
-import { ProductGrid } from "@/features/products/components/ProductGrid";
+import { ProductCarousel } from "@/features/products/components/ProductCarousel";
 import { ProductRail } from "./ProductRail";
 import { getCachedSections, getCachedProductList } from "@/services/catalogCache";
 import { toUiProducts } from "@/features/products/adapters";
@@ -13,7 +13,9 @@ import { localized, t } from "@/i18n";
 
 // Generous cap so admins can add several rails; guards against a runaway home.
 const MAX_SECTIONS = 8;
-const PRODUCTS_PER_SECTION = 6;
+// Higher than the old grid's 6 so the horizontal rail has enough to scroll
+// through (the pagination dots make the extra products discoverable).
+const PRODUCTS_PER_SECTION = 12;
 
 /**
  * Home product rails, driven entirely by admin-managed Sections (e.g. "Best
@@ -36,11 +38,11 @@ export async function HomeSections() {
     .slice(0, MAX_SECTIONS);
 
   if (eligible.length === 0) {
-    const page = await getCachedProductList(region, 1, 8).catch(() => ({
+    const page = await getCachedProductList(region, 1, 12).catch(() => ({
       data: [],
       meta: {},
     }));
-    const products = toUiProducts(page.data, { locale }).slice(0, 6);
+    const products = toUiProducts(page.data, { locale }).slice(0, PRODUCTS_PER_SECTION);
     return (
       <ProductRail
         locale={locale}
@@ -85,7 +87,7 @@ export async function HomeSections() {
               />
             </Reveal>
             <div className="mt-8">
-              <ProductGrid products={products} columns={4} />
+              <ProductCarousel products={products} />
             </div>
           </Section>
         );

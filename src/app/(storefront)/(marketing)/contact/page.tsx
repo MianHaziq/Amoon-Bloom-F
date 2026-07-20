@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import {
   Container,
   Section,
@@ -16,17 +17,39 @@ import {
   PinIcon,
   ArrowRight,
 } from "@/components/icons";
-import { siteConfig } from "@/config/site";
 import { contactApi } from "@/features/contact/api/contact.api";
+import { regionsApi } from "@/features/regions/api/regions.api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
 import { useT } from "@/i18n/useT";
+import { useAppSelector } from "@/store";
+import { queryKeys } from "@/services/queryKeys";
 import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
+import { useRegionContact } from "@/features/location/hooks/useRegionContact";
 
 export default function ContactPage() {
-  const { t } = useT();
+  const { t, locale } = useT();
   const regionCopy = useRegionCopy();
+  const contact = useRegionContact();
+  const country = useAppSelector((s) => s.location.country);
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+    staleTime: 5 * 60_000,
+  });
+  const currentRegion = regionsQuery.data?.find((r) => r.code === country);
+  // Same override-over-existing-fallback convention as the footer: an explicit
+  // per-region address/hours override wins; otherwise keep today's behavior
+  // (the delivery zone city/country, and the {city}-templated hours string).
+  const boutiqueLocation =
+    (locale === "ar" ? currentRegion?.address_ar?.trim() : undefined) ||
+    currentRegion?.address?.trim() ||
+    `${regionCopy.city}, ${regionCopy.country}`;
+  const openHours =
+    (locale === "ar" ? currentRegion?.hours_ar?.trim() : undefined) ||
+    currentRegion?.hours?.trim() ||
+    t("footer.hoursTemplate", { city: regionCopy.city });
   const toast = useToast();
   const { isAuthenticated } = useAuth();
   const [submitting, setSubmitting] = useState(false);
@@ -149,26 +172,26 @@ export default function ContactPage() {
             <ContactRow
               icon={<MailIcon size={18} />}
               title={t("contact.emailTitle")}
-              value={siteConfig.contact.email}
-              href={`mailto:${siteConfig.contact.email}`}
+              value={contact.email}
+              href={`mailto:${contact.email}`}
             />
             <ContactRow
               icon={<PhoneIcon size={18} />}
               title={t("contact.phoneTitle")}
-              value={siteConfig.contact.phone}
-              href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`}
+              value={contact.phone}
+              href={`tel:${contact.phone.replace(/\s/g, "")}`}
             />
             <ContactRow
               icon={<PinIcon size={18} />}
               title={t("contact.boutiqueTitle")}
-              value={`${regionCopy.city}, ${regionCopy.country}`}
+              value={boutiqueLocation}
             />
             <Card padding="md" className="bg-cream-50">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
                 {t("contact.openDaily")}
               </p>
               <p className="mt-2 font-display text-xl font-medium text-ink-900">
-                {t("footer.hoursTemplate", { city: regionCopy.city })}
+                {openHours}
               </p>
               <p className="mt-1 text-sm text-ink-500">
                 {t("contact.walkIns")}

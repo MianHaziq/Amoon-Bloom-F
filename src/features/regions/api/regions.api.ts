@@ -39,4 +39,21 @@ export const regionsApi = {
   async remove(id: string): Promise<void> {
     await http.delete(`/regions/${id}`);
   },
+
+  /**
+   * Links ALL existing products and/or categories to this region in one
+   * shot — a new region otherwise starts with zero visible products/
+   * categories (same "no rows = visible in none" rule Product/Category/
+   * Section/Banner region-scoping already uses). Idempotent: only adds
+   * missing links, safe to call more than once.
+   */
+  async bulkAssign(
+    id: string,
+    payload: { products?: boolean; categories?: boolean }
+  ): Promise<{ productsLinked: number; categoriesLinked: number }> {
+    const { data } = await http.post<
+      ApiResponse<{ productsLinked: number; categoriesLinked: number }>
+    >(`/regions/${id}/bulk-assign`, payload);
+    return data.data;
+  },
 };

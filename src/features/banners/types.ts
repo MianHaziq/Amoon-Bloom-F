@@ -5,6 +5,13 @@ export type BannerPlatform = "MOBILE" | "WEB";
 /** How the banner should be rendered on the storefront (derived from the URL). */
 export type BannerMediaKind = "image" | "video";
 
+export interface ApiBannerRegion {
+  id: string;
+  code: string;
+  name: string;
+  name_ar: string | null;
+}
+
 export interface ApiBanner {
   id: string;
   url: string;
@@ -13,6 +20,10 @@ export interface ApiBanner {
   status?: "DRAFT" | "PUBLISHED";
   /** Target client. Optional for backward compatibility; defaults to MOBILE server-side. */
   platform?: BannerPlatform;
+  /** Regions this banner is visible in. Present on staff reads. */
+  regions?: ApiBannerRegion[];
+  /** Same data as `regions`, flattened to ids — convenient for the admin edit form. */
+  regionIds?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -25,4 +36,13 @@ export interface ApiBannerCreateInput {
   platform?: BannerPlatform;
   /** Publish state. Admin uploads default to PUBLISHED so banners appear immediately. */
   status?: "DRAFT" | "PUBLISHED";
+  /** Regions to show this banner in. Omitted/empty defaults to the default region only. */
+  regionIds?: string[];
+}
+
+export interface ApiBannerUpdateInput {
+  platform?: BannerPlatform;
+  status?: "DRAFT" | "PUBLISHED";
+  /** Full replace of the banner's region set. */
+  regionIds?: string[];
 }

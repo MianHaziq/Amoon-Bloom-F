@@ -4,6 +4,8 @@ export interface ApiReview {
   userId: string | null;
   rating: number;
   comment: string;
+  /** Customer-uploaded review photos (CDN URLs). Empty array when none. */
+  media: string[];
   reviewerName: string;
   reviewerAvatar: string | null;
   isGuest: boolean;
@@ -15,6 +17,8 @@ export interface ApiReview {
 export interface ApiReviewCreateInput {
   rating: number;
   comment: string;
+  /** Uploaded review photo URLs (from reviewsApi.uploadMedia). Up to 6. */
+  media?: string[];
   /** Required only when submitting as a guest (not signed in). */
   guestName?: string;
   guestEmail?: string;

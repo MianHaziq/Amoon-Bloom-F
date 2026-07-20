@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { reviewsApi } from "@/features/reviews/api/reviews.api";
 import { StarRatingDisplay } from "@/features/reviews/components/StarRatingDisplay";
+import { ReviewMedia } from "@/features/reviews/components/ReviewMedia";
 import { queryKeys } from "@/services/queryKeys";
 import { Badge } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -83,9 +84,18 @@ export function ReviewsAdminPage() {
       key: "comment",
       header: t("admin.reviewsPage.columnComment"),
       cell: (r) => (
-        <p className="max-w-sm truncate text-sm text-ink-600" title={r.comment}>
-          {r.comment}
-        </p>
+        <div className="max-w-sm">
+          <p className="truncate text-sm text-ink-600" title={r.comment}>
+            {r.comment}
+          </p>
+          {r.media && r.media.length > 0 && (
+            <ReviewMedia
+              urls={r.media}
+              className="mt-2"
+              thumbClassName="h-10 w-10 sm:h-10 sm:w-10"
+            />
+          )}
+        </div>
       ),
     },
     {

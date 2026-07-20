@@ -106,11 +106,28 @@ export async function Footer() {
     },
   ];
 
+  // Region-specific contact info (admin-editable per region), same fallback
+  // convention as legalEntity above. Address/hours specifically fall back to
+  // the pre-existing behavior (region country name / the {city}-templated
+  // hours string) rather than jumping straight to siteConfig — that's what
+  // every region without an explicit override already shows today.
+  const contactPhone = currentRegion?.contactPhone?.trim() || siteConfig.contact.phone;
+  const contactEmail = currentRegion?.contactEmail?.trim() || siteConfig.contact.email;
+  const contactAddress =
+    (locale === "ar" ? currentRegion?.address_ar?.trim() : undefined) ||
+    currentRegion?.address?.trim() ||
+    regionCountryName ||
+    siteConfig.contact.address;
+  const contactHours =
+    (locale === "ar" ? currentRegion?.hours_ar?.trim() : undefined) ||
+    currentRegion?.hours?.trim() ||
+    t("footer.hoursTemplate", { city: regionCountryName ?? "" });
+
   const contactLines = [
-    { href: `tel:${siteConfig.contact.phone.replace(/\s/g, "")}`, label: siteConfig.contact.phone.replace(/\s/g, "") },
-    { href: `mailto:${siteConfig.contact.email}`, label: siteConfig.contact.email },
-    { href: null, label: regionCountryName ?? siteConfig.contact.address },
-    { href: null, label: t("footer.hoursTemplate", { city: regionCountryName ?? "" }) },
+    { href: `tel:${contactPhone.replace(/\s/g, "")}`, label: contactPhone.replace(/\s/g, "") },
+    { href: `mailto:${contactEmail}`, label: contactEmail },
+    { href: null, label: contactAddress },
+    { href: null, label: contactHours },
   ];
 
   const socials = [

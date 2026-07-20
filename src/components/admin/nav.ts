@@ -116,12 +116,17 @@ export const adminNav: AdminNavGroup[] = [
   {
     label: "Operations",
     items: [
-      { label: "Users", href: "/admin/users", icon: UsersIcon, adminOnly: true },
+      {
+        label: "Users",
+        href: "/admin/users",
+        icon: UsersIcon,
+        permission: "USERS",
+      },
       {
         label: "Managers",
         href: "/admin/managers",
         icon: ShieldIcon,
-        adminOnly: true,
+        permission: "MANAGERS",
       },
       {
         label: "Regions",
@@ -160,7 +165,10 @@ export const adminNav: AdminNavGroup[] = [
 /**
  * Filters the nav based on the user's role and permissions. Admins see all
  * items; managers see only items whose `permission` they hold (or which have
- * no permission requirement). The Users page is admin-only.
+ * no permission requirement). Users/Managers are gated by the USERS/MANAGERS
+ * permissions respectively — same as any other section, no longer a special
+ * admin-only case (the backend still blocks a manager from ever touching an
+ * ADMIN account regardless of these).
  */
 export function filterNavForUser(
   groups: AdminNavGroup[],

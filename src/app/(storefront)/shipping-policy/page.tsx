@@ -4,12 +4,14 @@ import {
   type LegalSection,
 } from "@/components/legal/LegalPageLayout";
 import { getServerLocale } from "@/i18n/server";
+import { getServerRegion } from "@/services/serverRegion";
 import { localized } from "@/i18n";
+import { regionContactFromRegionCode, type RegionContact } from "@/features/location/regionContact";
 import type { Locale } from "@/store/slices/ui.slice";
 
 export const metadata = { title: "Shipping Policy" };
 
-const getSections = (locale: Locale): LegalSection[] => {
+const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => {
   const P = (en: string, ar: string): LegalBlock => ({
     type: "p",
     text: localized(en, ar, locale),
@@ -31,8 +33,8 @@ const getSections = (locale: Locale): LegalSection[] => {
       title: localized("1. Delivery Coverage", "1. نطاق التوصيل", locale),
       blocks: [
         P(
-          "Amoon Bloom Trading LLC delivers across the United Arab Emirates. We currently do not offer international shipping.",
-          "تقوم أمون بلوم للتجارة ذ.م.م بالتوصيل داخل دولة الإمارات العربية المتحدة، ولا نقدّم حاليًا خدمة الشحن الدولي."
+          `Amoon Bloom Trading LLC delivers across ${contact.countryName}. We currently do not offer international shipping.`,
+          `تقوم أمون بلوم للتجارة ذ.م.م بالتوصيل داخل دولة ${contact.countryName}، ولا نقدّم حاليًا خدمة الشحن الدولي.`
         ),
       ],
     },
@@ -150,8 +152,8 @@ const getSections = (locale: Locale): LegalSection[] => {
       title: localized("6. Order Tracking", "6. تتبع الطلب", locale),
       blocks: [
         P(
-          "You can track your order status by contacting our customer care team via WhatsApp at +971 50 345 6793.",
-          "يمكنك متابعة حالة طلبك من خلال التواصل مع فريق خدمة العملاء عبر واتساب على 6793 345 50 971+."
+          `You can track your order status by contacting our customer care team via WhatsApp at ${contact.whatsappNumber}.`,
+          `يمكنك متابعة حالة طلبك من خلال التواصل مع فريق خدمة العملاء عبر واتساب على ${contact.whatsappNumber}.`
         ),
       ],
     },
@@ -178,8 +180,8 @@ const getSections = (locale: Locale): LegalSection[] => {
       ),
       blocks: [
         P(
-          "In the event of a delivery failure caused by us (not attributable to customer error or force majeure), we will re-deliver at no additional charge or issue a full refund at the customer's election, in accordance with UAE Consumer Protection Law.",
-          "في حال حدوث فشل في التسليم بسبب خطأ من جانبنا (وليس بسبب خطأ من العميل أو ظرف قاهر)، سنقوم بإعادة التسليم دون أي رسوم إضافية أو نصدر استردادًا كاملًا حسب اختيار العميل، وفقًا لقانون حماية المستهلك الإماراتي."
+          `In the event of a delivery failure caused by us (not attributable to customer error or force majeure), we will re-deliver at no additional charge or issue a full refund at the customer's election, in accordance with ${contact.consumerProtectionLawName}.`,
+          `في حال حدوث فشل في التسليم بسبب خطأ من جانبنا (وليس بسبب خطأ من العميل أو ظرف قاهر)، سنقوم بإعادة التسليم دون أي رسوم إضافية أو نصدر استردادًا كاملًا حسب اختيار العميل، بموجب ${contact.consumerProtectionLawName}.`
         ),
       ],
     },
@@ -200,19 +202,9 @@ const getSections = (locale: Locale): LegalSection[] => {
           "لأي استفسارات تتعلق بالتوصيل أو طلبات التسليم الخاصة:"
         ),
         LL([
-          [
-            "Email",
-            "management@amoonbloom.com",
-            "البريد الإلكتروني",
-            "management@amoonbloom.com",
-          ],
-          ["WhatsApp", "+971 50 345 6793", "واتساب", "6793 345 50 971+"],
-          [
-            "Hours",
-            "10:00 AM – 12:00 AM (Dubai Time)",
-            "أوقات العمل",
-            "10:00 صباحًا – 12:00 منتصف الليل (بتوقيت دبي)",
-          ],
+          ["Email", contact.email, "البريد الإلكتروني", contact.email],
+          ["WhatsApp", contact.whatsappNumber, "واتساب", contact.whatsappNumber],
+          ["Hours", contact.hours, "أوقات العمل", contact.hours],
         ]),
       ],
     },
@@ -220,20 +212,21 @@ const getSections = (locale: Locale): LegalSection[] => {
 };
 
 export default async function ShippingPolicyPage() {
-  const locale = await getServerLocale();
+  const [locale, region] = await Promise.all([getServerLocale(), getServerRegion()]);
+  const contact = await regionContactFromRegionCode(region, locale);
   return (
     <LegalPageLayout
       eyebrow={localized("Policies", "السياسات", locale)}
       title={localized("Shipping Policy", "سياسة الشحن", locale)}
       intro={localized(
-        "Learn how Amoon Bloom Trading LLC delivers orders across the UAE, including delivery options, charges, and what to expect on delivery day.",
-        "تعرّف على كيفية توصيل أمون بلوم للتجارة ذ.م.م للطلبات داخل دولة الإمارات العربية المتحدة، بما في ذلك خيارات التوصيل والرسوم وما يمكن توقعه في يوم التسليم.",
+        `Learn how Amoon Bloom Trading LLC delivers orders across ${contact.countryName}, including delivery options, charges, and what to expect on delivery day.`,
+        `تعرّف على كيفية توصيل أمون بلوم للتجارة ذ.م.م للطلبات داخل دولة ${contact.countryName}، بما في ذلك خيارات التوصيل والرسوم وما يمكن توقعه في يوم التسليم.`,
         locale
       )}
       badge={localized("Shipping Policy", "سياسة الشحن", locale)}
       updatedLabel={localized("Last Updated", "آخر تحديث", locale)}
       updatedValue={localized("June 2026", "يونيو 2026", locale)}
-      sections={getSections(locale)}
+      sections={getSections(locale, contact)}
     />
   );
 }

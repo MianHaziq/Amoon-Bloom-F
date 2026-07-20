@@ -4,12 +4,14 @@ import {
   type LegalSection,
 } from "@/components/legal/LegalPageLayout";
 import { getServerLocale } from "@/i18n/server";
+import { getServerRegion } from "@/services/serverRegion";
 import { localized } from "@/i18n";
+import { regionContactFromRegionCode, type RegionContact } from "@/features/location/regionContact";
 import type { Locale } from "@/store/slices/ui.slice";
 
 export const metadata = { title: "Product Disclaimer" };
 
-const getSections = (locale: Locale): LegalSection[] => {
+const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => {
   const P = (en: string, ar: string): LegalBlock => ({
     type: "p",
     text: localized(en, ar, locale),
@@ -105,8 +107,8 @@ const getSections = (locale: Locale): LegalSection[] => {
         ),
         L([
           [
-            "All baby products included in our gift boxes comply with applicable UAE safety standards where required.",
-            "تتوافق جميع منتجات الأطفال المدرجة في صناديق الهدايا لدينا مع معايير السلامة الإماراتية المعمول بها حيثما يلزم.",
+            `All baby products included in our gift boxes comply with applicable safety standards in ${contact.countryName} where required.`,
+            `تتوافق جميع منتجات الأطفال المدرجة في صناديق الهدايا لدينا مع معايير السلامة المعمول بها في ${contact.countryName} حيثما يلزم.`,
           ],
           [
             "Items such as balloons and small accessories may present a choking or suffocation hazard. Keep out of reach of children under 3 years of age.",
@@ -167,8 +169,8 @@ const getSections = (locale: Locale): LegalSection[] => {
       title: localized("7. General Limitation", "7. تحديد عام للمسؤولية", locale),
       blocks: [
         P(
-          "Amoon Bloom Trading LLC makes no warranties, express or implied, beyond those required by UAE Federal Law No. 15 of 2020 on Consumer Protection and the applicable laws. Our products are sold as gifts and are not intended for medical, therapeutic, or professional use unless explicitly stated.",
-          "لا تقدّم شركة أمون بلوم للتجارة ذ.م.م أي ضمانات، صريحة أو ضمنية، تتجاوز ما يقتضيه القانون الاتحادي الإماراتي رقم 15 لسنة 2020 بشأن حماية المستهلك والقوانين المعمول بها الأخرى. وتُباع منتجاتنا كهدايا وليست مخصصة للاستخدام الطبي أو العلاجي أو المهني ما لم يُذكر ذلك صراحةً."
+          `Amoon Bloom Trading LLC makes no warranties, express or implied, beyond those required by ${contact.consumerProtectionLawName} and the applicable laws. Our products are sold as gifts and are not intended for medical, therapeutic, or professional use unless explicitly stated.`,
+          `لا تقدّم شركة أمون بلوم للتجارة ذ.م.م أي ضمانات، صريحة أو ضمنية، تتجاوز ما يقتضيه ${contact.consumerProtectionLawName} والقوانين المعمول بها الأخرى. وتُباع منتجاتنا كهدايا وليست مخصصة للاستخدام الطبي أو العلاجي أو المهني ما لم يُذكر ذلك صراحةً.`
         ),
       ],
     },
@@ -176,8 +178,8 @@ const getSections = (locale: Locale): LegalSection[] => {
       title: localized("8. Regulatory Compliance", "8. الامتثال التنظيمي", locale),
       blocks: [
         P(
-          "All products sold by Amoonis Boutique are sourced from suppliers who comply with applicable UAE laws and standards. We are committed to consumer safety and adhere to the requirements of the Emirates Authority for Standardisation and Metrology (ESMA) where applicable.",
-          "يتم توريد جميع المنتجات التي تبيعها أموونيس بوتيك من موردين يلتزمون بالقوانين والمعايير الإماراتية المعمول بها. ونحن ملتزمون بسلامة المستهلك ونتقيّد بمتطلبات هيئة الإمارات للمواصفات والمقاييس (ESMA) حيثما ينطبق ذلك."
+          `All products sold by Amoonis Boutique are sourced from suppliers who comply with applicable laws and standards in ${contact.countryName}. We are committed to consumer safety and adhere to the requirements of the ${contact.standardsAuthority} where applicable.`,
+          `يتم توريد جميع المنتجات التي تبيعها أموونيس بوتيك من موردين يلتزمون بالقوانين والمعايير المعمول بها في ${contact.countryName}. ونحن ملتزمون بسلامة المستهلك ونتقيّد بمتطلبات ${contact.standardsAuthority} حيثما ينطبق ذلك.`
         ),
       ],
     },
@@ -198,19 +200,9 @@ const getSections = (locale: Locale): LegalSection[] => {
           "لأي استفسارات بخصوص هذه السياسة، يُرجى التواصل معنا:"
         ),
         LL([
-          [
-            "Email",
-            "management@amoonbloom.com",
-            "البريد الإلكتروني",
-            "management@amoonbloom.com",
-          ],
-          ["WhatsApp", "+971 50 345 6793", "واتساب", "6793 345 50 971+"],
-          [
-            "Address",
-            "Abraj Centre, 903-31 Office, Naif, Dubai, United Arab Emirates",
-            "العنوان",
-            "أبراج سنتر، مكتب 903-31، نايف، دبي، الإمارات العربية المتحدة",
-          ],
+          ["Email", contact.email, "البريد الإلكتروني", contact.email],
+          ["WhatsApp", contact.whatsappNumber, "واتساب", contact.whatsappNumber],
+          ["Address", contact.address, "العنوان", contact.address],
         ]),
       ],
     },
@@ -218,7 +210,8 @@ const getSections = (locale: Locale): LegalSection[] => {
 };
 
 export default async function ProductDisclaimerPage() {
-  const locale = await getServerLocale();
+  const [locale, region] = await Promise.all([getServerLocale(), getServerRegion()]);
+  const contact = await regionContactFromRegionCode(region, locale);
   return (
     <LegalPageLayout
       eyebrow={localized("Policies", "السياسات", locale)}
@@ -231,7 +224,7 @@ export default async function ProductDisclaimerPage() {
       badge={localized("Product Disclaimer", "إخلاء مسؤولية المنتج", locale)}
       updatedLabel={localized("Last Updated", "آخر تحديث", locale)}
       updatedValue={localized("June 2026", "يونيو 2026", locale)}
-      sections={getSections(locale)}
+      sections={getSections(locale, contact)}
     />
   );
 }

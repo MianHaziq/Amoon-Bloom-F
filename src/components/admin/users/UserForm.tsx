@@ -29,11 +29,36 @@ function useUserFormSchemas() {
       avatar: z.string().url().nullable(),
     });
 
-    const createSchema = baseSchema.extend({
-      password: z.string().min(6, t("admin.userForm.passwordMin")),
-    });
+    // Manager title + at least one permission are only required when role is
+    // MANAGER. Enforced here (not a silent early-return in the submit handler)
+    // so a missing field surfaces as a real, visible error instead of the
+    // submit button just doing nothing.
+    const requireManagerFields = (
+      data: z.infer<typeof baseSchema>,
+      ctx: z.RefinementCtx
+    ) => {
+      if (data.role !== "MANAGER") return;
+      if (!data.managerTitle || !data.managerTitle.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["managerTitle"],
+          message: t("admin.userForm.managerTitleRequired"),
+        });
+      }
+      if (!data.managerPermissions || data.managerPermissions.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["managerPermissions"],
+          message: t("admin.userForm.pickPermissionHint"),
+        });
+      }
+    };
 
-    const editSchema = baseSchema;
+    const createSchema = baseSchema
+      .extend({ password: z.string().min(6, t("admin.userForm.passwordMin")) })
+      .superRefine(requireManagerFields);
+
+    const editSchema = baseSchema.superRefine(requireManagerFields);
     return { createSchema, editSchema };
   }, [t]);
 }
@@ -130,13 +155,6 @@ export function UserForm({
   };
 
   const submit = handleSubmit(async (values) => {
-    if (values.role === "MANAGER") {
-      if (!values.managerTitle || !values.managerTitle.trim()) {
-        // Friendly inline guard. Could move into schema with refine.
-        return;
-      }
-      if (selectedPerms.length === 0) return;
-    }
     await onSubmit(values);
   });
 
@@ -214,6 +232,7 @@ export function UserForm({
               <Input
                 label={t("admin.userForm.managerTitleLabel")}
                 placeholder="Senior Operations Manager"
+                error={errors.managerTitle?.message}
                 {...register("managerTitle")}
               />
               <div>
@@ -245,7 +264,11 @@ export function UserForm({
                     );
                   })}
                 </div>
-                {selectedPerms.length === 0 ? (
+                {errors.managerPermissions ? (
+                  <p className="mt-2 text-xs text-(--color-danger)">
+                    {errors.managerPermissions.message}
+                  </p>
+                ) : selectedPerms.length === 0 ? (
                   <p className="mt-2 text-xs text-bloom-700">
                     {t("admin.userForm.pickPermissionHint")}
                   </p>

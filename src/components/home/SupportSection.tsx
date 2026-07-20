@@ -1,13 +1,14 @@
 import { Container } from "@/components/ui";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/motion/primitives";
 import { MailIcon, PhoneIcon, WhatsAppIcon, ArrowRight } from "@/components/icons";
-import { siteConfig } from "@/config/site";
 import { getServerLocale } from "@/i18n/server";
 import { t } from "@/i18n";
+import { getServerRegion } from "@/services/serverRegion";
+import { regionContactFromRegionCode } from "@/features/location/regionContact";
 
 export async function SupportSection() {
-  const locale = await getServerLocale();
-  const { contact, links } = siteConfig;
+  const [locale, regionCode] = await Promise.all([getServerLocale(), getServerRegion()]);
+  const contact = await regionContactFromRegionCode(regionCode, locale);
 
   const channels = [
     {
@@ -27,8 +28,8 @@ export async function SupportSection() {
     {
       icon: WhatsAppIcon,
       label: t(locale, "home.supportWhatsapp"),
-      value: contact.whatsapp,
-      href: links.whatsapp,
+      value: contact.whatsappNumber,
+      href: contact.whatsappUrl,
       glowDelay: "1.8s",
     },
   ];

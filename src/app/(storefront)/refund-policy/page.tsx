@@ -4,12 +4,14 @@ import {
   type LegalSection,
 } from "@/components/legal/LegalPageLayout";
 import { getServerLocale } from "@/i18n/server";
+import { getServerRegion } from "@/services/serverRegion";
 import { localized } from "@/i18n";
+import { regionContactFromRegionCode, type RegionContact } from "@/features/location/regionContact";
 import type { Locale } from "@/store/slices/ui.slice";
 
 export const metadata = { title: "Refund & Return Policy" };
 
-const getSections = (locale: Locale): LegalSection[] => {
+const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => {
   const P = (en: string, ar: string): LegalBlock => ({
     type: "p",
     text: localized(en, ar, locale),
@@ -112,8 +114,8 @@ const getSections = (locale: Locale): LegalSection[] => {
         P("To initiate a return or refund request:", "لبدء طلب الإرجاع أو الاسترداد:"),
         L([
           [
-            "Contact us within 24 hours of receiving your order at management@amoonbloom.com or via WhatsApp at +971 50 345 6793",
-            "تواصل معنا خلال 24 ساعة من استلام طلبك عبر management@amoonbloom.com أو واتساب على 6793 345 50 971+",
+            `Contact us within 24 hours of receiving your order at ${contact.email} or via WhatsApp at ${contact.whatsappNumber}`,
+            `تواصل معنا خلال 24 ساعة من استلام طلبك عبر ${contact.email} أو واتساب على ${contact.whatsappNumber}`,
           ],
           [
             "Provide your order number, a description of the issue, and clear photographs of the product and packaging",
@@ -162,8 +164,8 @@ const getSections = (locale: Locale): LegalSection[] => {
             "لا يمكن إلغاء الطلبات المخصصة بعد بدء التخصيص.",
           ],
           [
-            "To cancel an order, contact us immediately via WhatsApp at +971 50 345 6793.",
-            "لإلغاء طلب، تواصل معنا فورًا عبر واتساب على 6793 345 50 971+.",
+            `To cancel an order, contact us immediately via WhatsApp at ${contact.whatsappNumber}.`,
+            `لإلغاء طلب، تواصل معنا فورًا عبر واتساب على ${contact.whatsappNumber}.`,
           ],
           [
             "Cancellations approved before dispatch will receive a full refund.",
@@ -185,8 +187,8 @@ const getSections = (locale: Locale): LegalSection[] => {
       title: localized("8. Consumer Rights", "8. حقوق المستهلك", locale),
       blocks: [
         P(
-          "Nothing in this policy limits or excludes your rights as a consumer under UAE Federal Law No. 15 of 2020 and the applicable laws. In the event of a dispute, you may also refer your complaint to the UAE Ministry of Economy Consumer Protection Department.",
-          "لا يحد أي بند في هذه السياسة من حقوقك كمستهلك بموجب القانون الاتحادي الإماراتي رقم 15 لسنة 2020 والقوانين المعمول بها الأخرى، أو يستثنيها. وفي حال وجود نزاع، يمكنك أيضًا إحالة شكواك إلى إدارة حماية المستهلك في وزارة الاقتصاد الإماراتية."
+          `Nothing in this policy limits or excludes your rights as a consumer under ${contact.consumerProtectionLawName} and the applicable laws. In the event of a dispute, you may also refer your complaint to the ${contact.consumerProtectionAuthority}.`,
+          `لا يحد أي بند في هذه السياسة من حقوقك كمستهلك بموجب ${contact.consumerProtectionLawName} والقوانين المعمول بها الأخرى، أو يستثنيها. وفي حال وجود نزاع، يمكنك أيضًا إحالة شكواك إلى ${contact.consumerProtectionAuthority}.`
         ),
       ],
     },
@@ -195,19 +197,9 @@ const getSections = (locale: Locale): LegalSection[] => {
       blocks: [
         P("For any return or refund enquiries:", "لأي استفسارات تتعلق بالإرجاع أو الاسترداد:"),
         LL([
-          [
-            "Email",
-            "management@amoonbloom.com",
-            "البريد الإلكتروني",
-            "management@amoonbloom.com",
-          ],
-          ["WhatsApp", "+971 50 345 6793", "واتساب", "6793 345 50 971+"],
-          [
-            "Hours",
-            "10:00 AM – 12:00 AM (Dubai Time)",
-            "أوقات العمل",
-            "10:00 صباحًا – 12:00 منتصف الليل (بتوقيت دبي)",
-          ],
+          ["Email", contact.email, "البريد الإلكتروني", contact.email],
+          ["WhatsApp", contact.whatsappNumber, "واتساب", contact.whatsappNumber],
+          ["Hours", contact.hours, "أوقات العمل", contact.hours],
         ]),
       ],
     },
@@ -215,20 +207,21 @@ const getSections = (locale: Locale): LegalSection[] => {
 };
 
 export default async function RefundPolicyPage() {
-  const locale = await getServerLocale();
+  const [locale, region] = await Promise.all([getServerLocale(), getServerRegion()]);
+  const contact = await regionContactFromRegionCode(region, locale);
   return (
     <LegalPageLayout
       eyebrow={localized("Policies", "السياسات", locale)}
       title={localized("Refund & Return Policy", "سياسة الاسترجاع والاستبدال", locale)}
       intro={localized(
-        "This policy is in accordance with UAE Federal Law on Consumer Protection and Cabinet Decisions on the Executive Regulation of Consumer Protection.",
-        "تتوافق هذه السياسة مع القانون الاتحادي الإماراتي بشأن حماية المستهلك وقرارات مجلس الوزراء الخاصة باللائحة التنفيذية لحماية المستهلك.",
+        `This policy is in accordance with ${contact.consumerProtectionLawName} and its executive regulations.`,
+        `تتوافق هذه السياسة مع ${contact.consumerProtectionLawName} ولوائحه التنفيذية.`,
         locale
       )}
       badge={localized("Refund & Return Policy", "سياسة الاسترجاع والاستبدال", locale)}
       updatedLabel={localized("Last Updated", "آخر تحديث", locale)}
       updatedValue={localized("June 2026", "يونيو 2026", locale)}
-      sections={getSections(locale)}
+      sections={getSections(locale, contact)}
     />
   );
 }

@@ -8,10 +8,10 @@ import { siteConfig } from "@/config/site";
 import { intlLocale } from "@/lib/format";
 
 /**
- * Currency + region name for the storefront. The backend supports a per-product
- * manual SAR price override (Product.priceSar) and resolves `price`/
- * `discountedPrice` to the requesting region's currency server-side — so the
- * NUMBER already reflects the region. This hook supplies the matching
+ * Currency + region name for the storefront. The backend supports a per-region
+ * manual price override per product (ProductRegion.price/discountedPrice) and
+ * resolves `price`/`discountedPrice` to the requesting region server-side — so
+ * the NUMBER already reflects the region. This hook supplies the matching
  * currency LABEL for formatting, resolved from the live `GET /regions` list
  * (same query key `CheckoutClient`/`CartSummary`/admin already use — cache-
  * shared, not a new network call in most flows) instead of a static map.

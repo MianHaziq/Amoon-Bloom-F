@@ -8,10 +8,11 @@ import { isVideoUrl } from "@/features/banners/media";
 import { queryKeys } from "@/services/queryKeys";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Spinner } from "@/components/ui/Loader";
-import { Button } from "@/components/ui";
+import { Button, Badge, Modal } from "@/components/ui";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { RegionPicker } from "@/components/admin/RegionPicker";
 import { SortableList, SortableItem } from "@/components/admin/Sortable";
-import { TrashIcon, ImageIcon, GripVerticalIcon } from "@/components/icons";
+import { TrashIcon, ImageIcon, GripVerticalIcon, PencilIcon } from "@/components/icons";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
 import { ApiError } from "@/services/http";
@@ -30,6 +31,13 @@ export function BannersAdminPage() {
   // Which client the NEXT uploaded banner targets. Default MOBILE — the mobile app
   // shows image banners; WEB is opt-in for the website (and can be a video).
   const [platform, setPlatform] = useState<BannerPlatform>("MOBILE");
+  // Regions the NEXT uploaded banner shows in. Empty = default region only,
+  // same convention as RegionPicker's other consumers (Promo codes, Sections).
+  const [uploadRegionIds, setUploadRegionIds] = useState<string[]>([]);
+  // Banner currently open in the "edit regions" dialog, and its in-progress
+  // selection (seeded from the banner's current regions on open).
+  const [editingBanner, setEditingBanner] = useState<ApiBanner | null>(null);
+  const [editRegionIds, setEditRegionIds] = useState<string[]>([]);
   // When the user reorders, we hold an override list locally. Otherwise we
   // render directly from the query — no effect-driven sync needed.
   const [override, setOverride] = useState<ApiBanner[] | null>(null);
@@ -49,7 +57,12 @@ export function BannersAdminPage() {
         ? await uploadsApi.video(file, "uploads")
         : await uploadsApi.image(file, "uploads");
       // Publish immediately so the banner appears on the storefront right away.
-      return bannersApi.create({ url, platform, status: "PUBLISHED" });
+      return bannersApi.create({
+        url,
+        platform,
+        status: "PUBLISHED",
+        regionIds: uploadRegionIds,
+      });
     },
     onSuccess: () => {
       toast.success({ title: t("admin.bannersPage.toastAdded") });
@@ -58,6 +71,18 @@ export function BannersAdminPage() {
       setOverride(null);
     },
     onError: (err) => toast.fromError(t("admin.bannersPage.toastAddError"), err),
+  });
+
+  const updateRegionsMutation = useMutation({
+    mutationFn: () =>
+      bannersApi.update(editingBanner!.id, { regionIds: editRegionIds }),
+    onSuccess: () => {
+      toast.success({ title: t("admin.bannersPage.toastRegionsUpdated") });
+      queryClient.invalidateQueries({ queryKey: queryKeys.banners.all });
+      revalidateCatalog(["banners"]);
+      setEditingBanner(null);
+    },
+    onError: (err) => toast.fromError(t("admin.bannersPage.toastRegionsUpdateError"), err),
   });
 
   const deleteMutation = useMutation({
@@ -161,6 +186,15 @@ export function BannersAdminPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="mx-auto mb-4 max-w-sm text-start">
+          <RegionPicker
+            selectedIds={uploadRegionIds}
+            onChange={setUploadRegionIds}
+            label={t("admin.bannersPage.regionsLabel")}
+            hint={t("admin.bannersPage.regionsHint")}
+          />
         </div>
 
         <p className="mb-3 text-sm text-ink-700">
@@ -284,6 +318,17 @@ export function BannersAdminPage() {
                         </button>
                         <button
                           type="button"
+                          onClick={() => {
+                            setEditRegionIds(banner.regionIds ?? []);
+                            setEditingBanner(banner);
+                          }}
+                          className="rounded-full bg-white/90 p-2 text-ink-600 shadow-sm transition-colors hover:bg-white"
+                          aria-label={t("admin.bannersPage.editRegionsAriaLabel")}
+                        >
+                          <PencilIcon size={14} />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setPendingDelete(banner)}
                           className="rounded-full bg-white/90 p-2 text-bloom-700 shadow-sm transition-colors hover:bg-white"
                           aria-label={t("admin.bannersPage.removeAriaLabel")}
@@ -291,6 +336,19 @@ export function BannersAdminPage() {
                           <TrashIcon size={14} />
                         </button>
                       </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1 border-t border-ink-100 px-3 py-2">
+                      {(banner.regions ?? []).length === 0 ? (
+                        <span className="text-xs text-ink-400">
+                          {t("admin.bannersPage.defaultRegionOnly")}
+                        </span>
+                      ) : (
+                        (banner.regions ?? []).map((r) => (
+                          <Badge key={r.id} tone="neutral">
+                            {r.name}
+                          </Badge>
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
@@ -310,6 +368,34 @@ export function BannersAdminPage() {
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}
         onClose={() => setPendingDelete(null)}
       />
+
+      <Modal
+        open={Boolean(editingBanner)}
+        onClose={() => setEditingBanner(null)}
+        title={t("admin.bannersPage.editRegionsTitle")}
+        size="sm"
+      >
+        <div className="flex flex-col gap-5">
+          <RegionPicker
+            selectedIds={editRegionIds}
+            onChange={setEditRegionIds}
+            label={t("admin.bannersPage.regionsLabel")}
+            hint={t("admin.bannersPage.regionsHint")}
+          />
+          <div className="flex items-center justify-end gap-2 border-t border-ink-100 pt-4">
+            <Button type="button" variant="ghost" onClick={() => setEditingBanner(null)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              type="button"
+              isLoading={updateRegionsMutation.isPending}
+              onClick={() => updateRegionsMutation.mutate()}
+            >
+              {t("common.save")}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

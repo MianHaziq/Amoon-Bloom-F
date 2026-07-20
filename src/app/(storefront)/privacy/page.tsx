@@ -4,12 +4,14 @@ import {
   type LegalSection,
 } from "@/components/legal/LegalPageLayout";
 import { getServerLocale } from "@/i18n/server";
+import { getServerRegion } from "@/services/serverRegion";
 import { localized } from "@/i18n";
+import { regionContactFromRegionCode, type RegionContact } from "@/features/location/regionContact";
 import type { Locale } from "@/store/slices/ui.slice";
 
 export const metadata = { title: "Privacy policy" };
 
-const getSections = (locale: Locale): LegalSection[] => {
+const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => {
   const P = (en: string, ar: string): LegalBlock => ({
     type: "p",
     text: localized(en, ar, locale),
@@ -31,8 +33,8 @@ const getSections = (locale: Locale): LegalSection[] => {
       title: localized("1. Introduction", "1. مقدمة", locale),
       blocks: [
         P(
-          "Amoon Bloom Trading LLC (“we”, “us”, or “our”) is committed to protecting your personal data in accordance with UAE Federal Decree-Law No. 45 of 2021 on the Protection of Personal Data (PDPL) and applicable regulations. This Privacy Policy explains how we collect, use, store, and protect your information when you visit or make a purchase on our website.",
-          "تلتزم شركة أمون بلوم للتجارة ذ.م.م (\"نحن\" أو \"لنا\") بحماية بياناتك الشخصية وفقًا للمرسوم بقانون اتحادي رقم 45 لسنة 2021 بشأن حماية البيانات الشخصية واللوائح المعمول بها. توضح سياسة الخصوصية هذه كيفية جمعنا واستخدامنا وتخزيننا وحمايتنا لمعلوماتك عند زيارتك لموقعنا أو الشراء منه."
+          `Amoon Bloom Trading LLC ("we", "us", or "our") is committed to protecting your personal data in accordance with ${contact.dataProtectionLawName} and applicable regulations. This Privacy Policy explains how we collect, use, store, and protect your information when you visit or make a purchase on our website.`,
+          `تلتزم شركة أمون بلوم للتجارة ذ.م.م ("نحن" أو "لنا") بحماية بياناتك الشخصية بموجب ${contact.dataProtectionLawName} واللوائح المعمول بها. توضح سياسة الخصوصية هذه كيفية جمعنا واستخدامنا وتخزيننا وحمايتنا لمعلوماتك عند زيارتك لموقعنا أو الشراء منه.`
         ),
       ],
     },
@@ -117,8 +119,8 @@ const getSections = (locale: Locale): LegalSection[] => {
             "لتحسين موقعنا ومنتجاتنا وخدماتنا",
           ],
           [
-            "To comply with legal obligations under UAE law",
-            "للامتثال للالتزامات القانونية بموجب القانون الإماراتي",
+            `To comply with legal obligations under ${contact.countryShort} law`,
+            `للامتثال للالتزامات القانونية بموجب قوانين ${contact.countryName}`,
           ],
           [
             "To send you promotional offers and newsletters, where you have provided consent",
@@ -135,8 +137,8 @@ const getSections = (locale: Locale): LegalSection[] => {
       ),
       blocks: [
         P(
-          "We process your data on the basis of: (a) contractual necessity to fulfil your order; (b) your explicit consent for marketing communications; and (c) compliance with applicable UAE legal obligations.",
-          "نعالج بياناتك استنادًا إلى: (أ) الضرورة التعاقدية لتنفيذ طلبك؛ (ب) موافقتك الصريحة على المراسلات التسويقية؛ و(ج) الامتثال للالتزامات القانونية الإماراتية المعمول بها."
+          `We process your data on the basis of: (a) contractual necessity to fulfil your order; (b) your explicit consent for marketing communications; and (c) compliance with applicable legal obligations in ${contact.countryName}.`,
+          `نعالج بياناتك استنادًا إلى: (أ) الضرورة التعاقدية لتنفيذ طلبك؛ (ب) موافقتك الصريحة على المراسلات التسويقية؛ و(ج) الامتثال للالتزامات القانونية المعمول بها في ${contact.countryName}.`
         ),
       ],
     },
@@ -157,8 +159,8 @@ const getSections = (locale: Locale): LegalSection[] => {
             "معالِجي المدفوعات العاملين وفق معايير الأمان المعمول بها",
           ],
           [
-            "Government authorities when required by UAE law",
-            "الجهات الحكومية عند الاقتضاء بموجب القانون الإماراتي",
+            `Government authorities when required by ${contact.countryShort} law`,
+            `الجهات الحكومية عند الاقتضاء بموجب قوانين ${contact.countryName}`,
           ],
         ]),
       ],
@@ -175,7 +177,10 @@ const getSections = (locale: Locale): LegalSection[] => {
     {
       title: localized("7. Your Rights", "7. حقوقك", locale),
       blocks: [
-        P("Under UAE law, you have the right to:", "بموجب القانون الإماراتي، يحق لك:"),
+        P(
+          `Under ${contact.countryShort} law, you have the right to:`,
+          `بموجب قوانين ${contact.countryName}، يحق لك:`
+        ),
         L([
           [
             "Access the personal data we hold about you",
@@ -194,13 +199,13 @@ const getSections = (locale: Locale): LegalSection[] => {
             "سحب موافقتك على المراسلات التسويقية في أي وقت",
           ],
           [
-            "Lodge a complaint with the UAE Data Office",
-            "تقديم شكوى إلى مكتب البيانات الإماراتي",
+            `Lodge a complaint with the ${contact.dataProtectionAuthority}`,
+            `تقديم شكوى إلى ${contact.dataProtectionAuthority}`,
           ],
         ]),
         P(
-          "To exercise any of these rights, contact us at management@amoonbloom.com or via WhatsApp at +971 50 345 6793.",
-          "لممارسة أي من هذه الحقوق، تواصل معنا عبر management@amoonbloom.com أو واتساب على 6793 345 50 971+."
+          `To exercise any of these rights, contact us at ${contact.email} or via WhatsApp at ${contact.whatsappNumber}.`,
+          `لممارسة أي من هذه الحقوق، تواصل معنا عبر ${contact.email} أو واتساب على ${contact.whatsappNumber}.`
         ),
       ],
     },
@@ -217,8 +222,8 @@ const getSections = (locale: Locale): LegalSection[] => {
       title: localized("9. Data Security", "9. أمان البيانات", locale),
       blocks: [
         P(
-          "We implement appropriate technical and organisational measures to safeguard your personal data against unauthorised access, loss, or disclosure, in accordance with Article 16 of the UAE PDPL.",
-          "نطبّق التدابير التقنية والتنظيمية المناسبة لحماية بياناتك الشخصية من الوصول غير المصرح به أو الفقدان أو الإفصاح، وذلك وفقًا للمادة 16 من قانون حماية البيانات الشخصية الإماراتي."
+          `We implement appropriate technical and organisational measures to safeguard your personal data against unauthorised access, loss, or disclosure, in accordance with Article 16 of the ${contact.dataProtectionLawName}.`,
+          `نطبّق التدابير التقنية والتنظيمية المناسبة لحماية بياناتك الشخصية من الوصول غير المصرح به أو الفقدان أو الإفصاح، وذلك بموجب المادة 16 من ${contact.dataProtectionLawName}.`
         ),
       ],
     },
@@ -243,8 +248,8 @@ const getSections = (locale: Locale): LegalSection[] => {
           "يمكن للعملاء المسجَّلين طلب حذف حسابهم على الموقع وبياناتهم الشخصية المرتبطة به في أي وقت."
         ),
         P(
-          "You may request account deletion by contacting us at management@amoonbloom.com or via WhatsApp at +971 50 345 6793.",
-          "يمكنك طلب حذف حسابك من خلال التواصل معنا عبر management@amoonbloom.com أو واتساب على 6793 345 50 971+."
+          `You may request account deletion by contacting us at ${contact.email} or via WhatsApp at ${contact.whatsappNumber}.`,
+          `يمكنك طلب حذف حسابك من خلال التواصل معنا عبر ${contact.email} أو واتساب على ${contact.whatsappNumber}.`
         ),
         P(
           "After verification, we will delete or anonymise your account data, except where certain information must be retained for legal, tax, payment, order, or regulatory purposes.",
@@ -260,19 +265,9 @@ const getSections = (locale: Locale): LegalSection[] => {
           "لأي استفسارات متعلقة بالخصوصية، يُرجى التواصل مع أموونيس بوتيك:"
         ),
         LL([
-          [
-            "Email",
-            "management@amoonbloom.com",
-            "البريد الإلكتروني",
-            "management@amoonbloom.com",
-          ],
-          ["WhatsApp", "+971 50 345 6793", "واتساب", "6793 345 50 971+"],
-          [
-            "Address",
-            "Abraj Centre, 903-31 Office, Naif, Dubai, United Arab Emirates",
-            "العنوان",
-            "أبراج سنتر، مكتب 903-31، نايف، دبي، الإمارات العربية المتحدة",
-          ],
+          ["Email", contact.email, "البريد الإلكتروني", contact.email],
+          ["WhatsApp", contact.whatsappNumber, "واتساب", contact.whatsappNumber],
+          ["Address", contact.address, "العنوان", contact.address],
         ]),
       ],
     },
@@ -280,7 +275,8 @@ const getSections = (locale: Locale): LegalSection[] => {
 };
 
 export default async function PrivacyPage() {
-  const locale = await getServerLocale();
+  const [locale, region] = await Promise.all([getServerLocale(), getServerRegion()]);
+  const contact = await regionContactFromRegionCode(region, locale);
   return (
     <LegalPageLayout
       eyebrow={localized("Policies", "السياسات", locale)}
@@ -293,7 +289,7 @@ export default async function PrivacyPage() {
       badge={localized("Privacy Policy", "سياسة الخصوصية", locale)}
       updatedLabel={localized("Last Updated", "آخر تحديث", locale)}
       updatedValue={localized("June 2026", "يونيو 2026", locale)}
-      sections={getSections(locale)}
+      sections={getSections(locale, contact)}
     />
   );
 }

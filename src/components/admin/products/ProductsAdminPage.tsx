@@ -9,6 +9,7 @@ import { queryKeys } from "@/services/queryKeys";
 import { Badge } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
+import { RegionBadges } from "@/components/admin/RegionBadges";
 import { Pagination } from "@/components/admin/Pagination";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
@@ -144,6 +145,11 @@ export function ProductsAdminPage() {
         ) : (
           <Badge tone="danger">{t("admin.productsPage.outOfStock")}</Badge>
         ),
+    },
+    {
+      key: "region",
+      header: t("admin.productsPage.columnRegion"),
+      cell: (p) => <RegionBadges regions={p.regions} />,
     },
     {
       key: "actions",

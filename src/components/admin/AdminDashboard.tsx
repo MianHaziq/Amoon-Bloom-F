@@ -49,7 +49,7 @@ export function AdminDashboard() {
   const canSeeRevenue =
     role === "ADMIN" || hasPerm(role, perms, "ORDERS") || hasPerm(role, perms, "SETTINGS");
   const canSeeOrders = role === "ADMIN" || hasPerm(role, perms, "ORDERS");
-  const canSeeUsers = role === "ADMIN";
+  const canSeeUsers = role === "ADMIN" || hasPerm(role, perms, "USERS");
   const canSeeContact = role === "ADMIN" || hasPerm(role, perms, "CONTACT");
 
   // Quick actions — only the shortcuts the current user is actually allowed to
@@ -71,7 +71,7 @@ export function AdminDashboard() {
       label: t("admin.dashboardPage.qaCreateManager"),
       href: "/admin/managers/new",
       icon: UserPlusIcon,
-      show: role === "ADMIN",
+      show: role === "ADMIN" || hasPerm(role, perms, "MANAGERS"),
     },
     {
       label: t("admin.promoCodes"),
@@ -120,7 +120,7 @@ export function AdminDashboard() {
   });
 
   const summary = revenueQuery.data?.summary;
-  const currency = revenueQuery.data?.currency ?? "USD";
+  const currency = revenueQuery.data?.currency ?? "AED";
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-8">

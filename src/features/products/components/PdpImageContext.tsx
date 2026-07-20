@@ -81,12 +81,34 @@ export function PdpImageProvider({
     });
   }, [visualOption]);
 
-  const fallbackGallery = useMemo<GalleryPhoto[]>(
+  const baseGallery = useMemo<GalleryPhoto[]>(
     () => product.images.map((img) => ({ optionId: "", value: "", url: img.url })),
     [product.images]
   );
 
-  const gallery = variantGallery.length > 0 ? variantGallery : fallbackGallery;
+  // The gallery is EVERY uploaded product image (in upload order) — not only the
+  // ones assigned to a variant. Images that double as a variant photo keep their
+  // {optionId, value} so clicking their thumbnail still selects that variant;
+  // images attached to no option show as plain photos instead of being dropped.
+  // Any variant photo whose URL isn't among the base images (a variant uploaded
+  // its own distinct image) is appended so it's never lost either.
+  const gallery = useMemo<GalleryPhoto[]>(() => {
+    if (variantGallery.length === 0) return baseGallery;
+    const variantByUrl = new Map(variantGallery.map((g) => [g.url, g]));
+    const seen = new Set<string>();
+    const merged: GalleryPhoto[] = [];
+    for (const photo of baseGallery) {
+      merged.push(variantByUrl.get(photo.url) ?? photo);
+      seen.add(photo.url);
+    }
+    for (const g of variantGallery) {
+      if (!seen.has(g.url)) {
+        merged.push(g);
+        seen.add(g.url);
+      }
+    }
+    return merged;
+  }, [variantGallery, baseGallery]);
 
   const selectedValue = visualOption ? selected[visualOption.id] : null;
   const activeUrl =

@@ -62,7 +62,7 @@ export function SettingsAdminPage() {
       logo: null,
       contactEmail: "",
       supportEmail: "",
-      currency: "USD",
+      currency: "AED",
       maintenanceMode: false,
       allowGuestReviews: true,
       hiddenPagesText: "",

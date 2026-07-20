@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { categoriesApi } from "@/features/categories/api/categories.api";
+import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { Button, Input, Textarea } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
@@ -68,9 +69,16 @@ function useProductFormSchema() {
         .number({ message: t("admin.productForm.priceInvalid") })
         .nonnegative(t("admin.productForm.priceMin")),
       discountedPrice: z.number().nonnegative(t("admin.productForm.discountMin")).nullable(),
-      // Manual Saudi Riyal price override — no auto FX, admin enters it explicitly.
-      priceSar: z.number().nonnegative().nullable(),
-      discountedPriceSar: z.number().nonnegative().nullable(),
+      // Per-region manual price overrides, keyed by regionId — no auto FX, admin
+      // enters each region's price explicitly. One row rendered per active
+      // non-default region (see overrideRegions below).
+      regionPrices: z.record(
+        z.string(),
+        z.object({
+          price: z.number().nonnegative().nullable(),
+          discountedPrice: z.number().nonnegative().nullable(),
+        })
+      ),
       // Gift card add-on — free personalized message, toggled per product.
       giftCardEnabled: z.boolean(),
       giftCardExtraPrice: z.number().nonnegative().nullable(),
@@ -107,8 +115,7 @@ const emptyDefaults: ProductFormValues = {
   subtitle_ar: "",
   price: 0,
   discountedPrice: null,
-  priceSar: null,
-  discountedPriceSar: null,
+  regionPrices: {},
   giftCardEnabled: false,
   giftCardExtraPrice: null,
   customNameEnabled: false,
@@ -129,6 +136,15 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
     queryKey: queryKeys.categories.list(),
     queryFn: () => categoriesApi.list(),
   });
+  // Same query key as RegionPicker below — shares its cache entry, no extra request.
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+  });
+  // Every non-default active region gets its own price-override row, unconditionally
+  // (not gated on the Regions visibility checkboxes) — matches the old fixed SAR
+  // section's behavior, now extended to every region instead of just Saudi Arabia.
+  const overrideRegions = (regionsQuery.data ?? []).filter((r) => !r.isDefault);
 
   const {
     register,
@@ -153,8 +169,12 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       subtitle_ar: initial.subtitle_ar ?? "",
       price: initial.price,
       discountedPrice: initial.discountedPrice,
-      priceSar: initial.priceSar ?? null,
-      discountedPriceSar: initial.discountedPriceSar ?? null,
+      regionPrices: Object.fromEntries(
+        (initial.regionPrices ?? []).map((rp) => [
+          rp.regionId,
+          { price: rp.price, discountedPrice: rp.discountedPrice },
+        ])
+      ),
       giftCardEnabled: initial.giftCardEnabled ?? false,
       giftCardExtraPrice: initial.giftCardExtraPrice ?? null,
       customNameEnabled: initial.customNameEnabled ?? false,
@@ -177,10 +197,27 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         options_ar: o.options_ar,
         optionImages: o.optionImages ?? [],
         optionColors: o.optionColors ?? [],
-        optionImageSets:
-          o.optionImageSets && o.optionImageSets.length > 0
-            ? o.optionImageSets
-            : (o.optionImages ?? []).map((u) => (u ? [u] : [])),
+        // Reconstruct each value's photo set so the picker opens with the
+        // CURRENTLY-assigned images already selected. Reconcile per value (not
+        // all-or-nothing): prefer that value's set, but when the set is missing
+        // or empty fall back to its single `optionImages[i]` — otherwise images
+        // stored only in `optionImages` (mobile app / older data) would load as
+        // empty and look like they must be re-picked from scratch.
+        optionImageSets: (() => {
+          const sets = o.optionImageSets ?? [];
+          const singles = o.optionImages ?? [];
+          const len = Math.max(
+            o.options?.length ?? 0,
+            sets.length,
+            singles.length
+          );
+          return Array.from({ length: len }, (_, i) => {
+            const set = (sets[i] ?? []).filter((u) => u && u.trim());
+            if (set.length > 0) return set;
+            const single = (singles[i] ?? "").trim();
+            return single ? [single] : [];
+          });
+        })(),
       })),
     });
   }, [initial, reset]);
@@ -244,14 +281,11 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         values.discountedPrice === null || values.discountedPrice === undefined
           ? null
           : Number(values.discountedPrice),
-      priceSar:
-        values.priceSar === null || values.priceSar === undefined
-          ? null
-          : Number(values.priceSar),
-      discountedPriceSar:
-        values.discountedPriceSar === null || values.discountedPriceSar === undefined
-          ? null
-          : Number(values.discountedPriceSar),
+      regionPrices: Object.entries(values.regionPrices ?? {}).map(([regionId, v]) => ({
+        regionId,
+        price: v.price ?? null,
+        discountedPrice: v.discountedPrice ?? null,
+      })),
       giftCardEnabled: values.giftCardEnabled,
       giftCardExtraPrice:
         values.giftCardExtraPrice === null || values.giftCardExtraPrice === undefined
@@ -333,38 +367,52 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
             />
           </div>
 
-          <div className="mt-4 border-t border-ink-100 pt-4">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
-              Saudi Riyal pricing (optional)
-            </p>
-            <p className="mb-3 text-xs text-ink-500">
-              Enter a separate SAR price for the Saudi region. Leave empty to
-              fall back to the AED price above.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input
-                label="SAR price"
-                type="number"
-                step="0.01"
-                min="0"
-                error={errors.priceSar?.message}
-                {...register("priceSar", {
-                  setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+          {overrideRegions.map((region) => (
+            <div key={region.id} className="mt-4 border-t border-ink-100 pt-4">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
+                {t("admin.productForm.regionalPricingHeading", {
+                  region: region.name,
+                  currency: region.currency,
                 })}
-              />
-              <Input
-                label="SAR discounted price"
-                type="number"
-                step="0.01"
-                min="0"
-                hint="Leave empty for no SAR discount"
-                error={errors.discountedPriceSar?.message}
-                {...register("discountedPriceSar", {
-                  setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
-                })}
-              />
+              </p>
+              <p className="mb-3 text-xs text-ink-500">
+                {t("admin.productForm.regionalPricingHint", { currency: region.currency })}
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input
+                  label={t("admin.productForm.regionPriceLabel", { currency: region.currency })}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  error={
+                    (errors.regionPrices as Record<string, { price?: { message?: string } }> | undefined)?.[
+                      region.id
+                    ]?.price?.message
+                  }
+                  {...register(`regionPrices.${region.id}.price`, {
+                    setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+                  })}
+                />
+                <Input
+                  label={t("admin.productForm.regionDiscountedPriceLabel", { currency: region.currency })}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  hint={t("admin.productForm.regionDiscountedPriceHint")}
+                  error={
+                    (
+                      errors.regionPrices as
+                        | Record<string, { discountedPrice?: { message?: string } }>
+                        | undefined
+                    )?.[region.id]?.discountedPrice?.message
+                  }
+                  {...register(`regionPrices.${region.id}.discountedPrice`, {
+                    setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+                  })}
+                />
+              </div>
             </div>
-          </div>
+          ))}
 
           <div className="mt-4 border-t border-ink-100 pt-4">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">

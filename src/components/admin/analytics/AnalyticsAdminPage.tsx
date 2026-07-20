@@ -63,7 +63,7 @@ export function AnalyticsAdminPage() {
   });
 
   const summary = revenueQuery.data?.summary;
-  const currency = revenueQuery.data?.currency ?? "USD";
+  const currency = revenueQuery.data?.currency ?? "AED";
 
   const series = useMemo(
     () => (Array.isArray(dailyQuery.data?.points) ? dailyQuery.data!.points : []),

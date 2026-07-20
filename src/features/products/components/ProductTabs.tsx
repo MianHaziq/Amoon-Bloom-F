@@ -15,6 +15,7 @@ import { reviewsApi } from "@/features/reviews/api/reviews.api";
 import { settingsApi } from "@/features/settings/api/settings.api";
 import { StarRatingInput } from "@/features/reviews/components/StarRatingInput";
 import { StarRatingDisplay } from "@/features/reviews/components/StarRatingDisplay";
+import { ReviewMedia, ReviewMediaPicker } from "@/features/reviews/components/ReviewMedia";
 import { formatDate, intlLocale } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import type { PaginatedResponse } from "@/types";
@@ -326,6 +327,7 @@ export function ProductTabs({
                     <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-ink-700">
                       {r.comment}
                     </p>
+                    <ReviewMedia urls={r.media} />
                   </li>
                 ))}
               </ul>
@@ -380,6 +382,8 @@ function ReviewForm({
   const { t } = useT();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [media, setMedia] = useState<string[]>([]);
+  const [mediaUploading, setMediaUploading] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [errors, setErrors] = useState<{ rating?: string; comment?: string; name?: string; email?: string }>({});
@@ -389,6 +393,7 @@ function ReviewForm({
       reviewsApi.create(productId, {
         rating,
         comment: comment.trim(),
+        ...(media.length > 0 ? { media } : {}),
         ...(isAuthenticated
           ? {}
           : { guestName: guestName.trim(), guestEmail: guestEmail.trim() }),
@@ -396,6 +401,7 @@ function ReviewForm({
     onSuccess: () => {
       setRating(0);
       setComment("");
+      setMedia([]);
       setGuestName("");
       setGuestEmail("");
       setErrors({});
@@ -469,6 +475,13 @@ function ReviewForm({
         {errors.comment && <p className="mt-1 text-xs text-danger">{errors.comment}</p>}
       </div>
 
+      <ReviewMediaPicker
+        value={media}
+        onChange={setMedia}
+        onUploadingChange={setMediaUploading}
+        disabled={submitMutation.isPending}
+      />
+
       {!isAuthenticated && (
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -518,8 +531,12 @@ function ReviewForm({
       )}
 
       <div className="flex items-center gap-3">
-        <Button type="submit" isLoading={submitMutation.isPending}>
-          {t("product.submitReview")}
+        <Button
+          type="submit"
+          isLoading={submitMutation.isPending}
+          disabled={mediaUploading}
+        >
+          {mediaUploading ? t("product.reviewMediaUploading") : t("product.submitReview")}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel}>
           {t("product.cancelReview")}

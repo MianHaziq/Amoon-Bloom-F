@@ -1,15 +1,16 @@
 "use client";
 
 import { WhatsAppIcon } from "@/components/icons";
-import { siteConfig } from "@/config/site";
 import { useT } from "@/i18n/useT";
+import { useRegionContact } from "@/features/location/hooks/useRegionContact";
 
 /** Persistent chat affordance — mirrors the client site's floating WhatsApp button. */
 export function WhatsAppFloatButton() {
   const { t } = useT();
+  const { whatsappUrl } = useRegionContact();
   return (
     <a
-      href={siteConfig.links.whatsapp}
+      href={whatsappUrl}
       target="_blank"
       rel="noreferrer"
       aria-label={t("common.chatOnWhatsapp")}

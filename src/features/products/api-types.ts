@@ -40,6 +40,14 @@ export interface ApiProductRegionRef {
   name_ar?: string | null;
 }
 
+/** Per-region manual price override (no auto FX conversion). Null price/discountedPrice
+ *  means that region falls back to the product's base price. */
+export interface ApiProductRegionPrice {
+  regionId: string;
+  price: number | null;
+  discountedPrice: number | null;
+}
+
 export interface ApiProduct {
   id: string;
   title: string;
@@ -48,9 +56,8 @@ export interface ApiProduct {
   subtitle_ar: string | null;
   price: number;
   discountedPrice: number | null;
-  /** Manual Saudi Riyal price override (admin-entered, no auto FX). Null = not set. */
-  priceSar?: number | null;
-  discountedPriceSar?: number | null;
+  /** Per-region manual price overrides (admin-entered, no auto FX). Present on staff reads only. */
+  regionPrices?: ApiProductRegionPrice[];
   /** Free gift-card message add-on, offered per product (most products have it). */
   giftCardEnabled?: boolean;
   giftCardExtraPrice?: number | null;
@@ -103,8 +110,9 @@ export interface ApiProductCreateInput {
   subtitle_ar?: string | null;
   price: number;
   discountedPrice?: number | null;
-  priceSar?: number | null;
-  discountedPriceSar?: number | null;
+  /** Per-region manual price overrides. One entry per region that needs an override —
+   *  a region left out (or with null price/discountedPrice) falls back to the base price. */
+  regionPrices?: ApiProductRegionPrice[];
   giftCardEnabled?: boolean;
   giftCardExtraPrice?: number | null;
   customNameEnabled?: boolean;

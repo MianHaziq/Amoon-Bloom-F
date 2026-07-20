@@ -15,10 +15,14 @@ import {
   DownloadIcon,
 } from "@/components/icons";
 import { staggerContainer, staggerItem, EASE_OUT } from "@/lib/motion";
+import { useQuery } from "@tanstack/react-query";
 import { formatCurrency, intlLocale } from "@/lib/format";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
 import { siteConfig } from "@/config/site";
+import { regionsApi } from "@/features/regions/api/regions.api";
+import { queryKeys } from "@/services/queryKeys";
+import { resolveRegionContact } from "@/features/location/regionContact";
 import type { MessageKey } from "@/i18n";
 import type { ApiOrder, OrderStatus, PaymentStatus } from "@/features/orders/types";
 
@@ -191,6 +195,17 @@ export function ConfirmationHero({
 export function ReceiptCard({ order }: { order: ApiOrder }) {
   const { t, locale } = useT();
   const { currency } = useCurrency();
+  // The receipt reflects the order's OWN region (not the viewer's current
+  // browsing region) — a Saudi order should always show Saudi contact info,
+  // even if whoever's looking at it later has since switched to UAE. Reuses
+  // the same cache-shared regions list every other region-aware hook queries.
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+    staleTime: 5 * 60_000,
+  });
+  const orderRegion = regionsQuery.data?.find((r) => r.id === order.regionId);
+  const contact = resolveRegionContact(orderRegion, locale);
 
   const subtotal =
     order.subtotalAmount ?? order.items.reduce((s, i) => s + i.price * i.quantity, 0);
@@ -251,9 +266,9 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
           <img src="/logo.svg" alt={siteConfig.name} className="h-8 w-auto self-start" />
           <div>
             <p className="font-display text-base font-medium text-ink-900">{siteConfig.name}</p>
-            <p className="text-xs text-ink-400">{siteConfig.legalEntity}</p>
+            <p className="text-xs text-ink-400">{contact.legalEntity}</p>
           </div>
-          <p className="text-xs text-ink-500">{siteConfig.contact.email}</p>
+          <p className="text-xs text-ink-500">{contact.email}</p>
         </div>
 
         <div className="sm:text-end">

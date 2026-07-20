@@ -8,6 +8,7 @@ import { queryKeys } from "@/services/queryKeys";
 import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
+import { RegionBadges } from "@/components/admin/RegionBadges";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { useToast } from "@/hooks/useToast";
@@ -64,6 +65,11 @@ export function CategoriesAdminPage() {
       header: t("admin.categoriesPage.columnProducts"),
       align: "right",
       cell: (c) => <span className="text-ink-700">{c.totalProducts}</span>,
+    },
+    {
+      key: "region",
+      header: t("admin.categoriesPage.columnRegion"),
+      cell: (c) => <RegionBadges regions={c.regions} />,
     },
     {
       key: "actions",
