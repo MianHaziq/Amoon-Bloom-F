@@ -49,6 +49,11 @@ interface UserFormProps {
   onSubmit: (values: UserCreateFormValues | UserEditFormValues) => Promise<void>;
   submitLabel: string;
   submitting?: boolean;
+  /** Initial role for a fresh form (defaults to CUSTOMER). */
+  defaultRole?: "CUSTOMER" | "MANAGER";
+  /** Hide the customer/manager role picker entirely (e.g. the dedicated
+   *  "create manager" flow, where the role is fixed to MANAGER). */
+  lockRole?: boolean;
 }
 
 export function UserForm({
@@ -57,6 +62,8 @@ export function UserForm({
   onSubmit,
   submitLabel,
   submitting,
+  defaultRole = "CUSTOMER",
+  lockRole = false,
 }: UserFormProps) {
   const { t } = useT();
   const { createSchema, editSchema } = useUserFormSchemas();
@@ -83,7 +90,7 @@ export function UserForm({
       firstName: "",
       lastName: "",
       email: "",
-      role: "CUSTOMER",
+      role: defaultRole,
       managerTitle: "",
       managerPermissions: [],
       avatar: null,
@@ -183,22 +190,24 @@ export function UserForm({
               {t("admin.userForm.adminNotice")}
             </p>
           ) : null}
-          <div className="grid gap-2 sm:grid-cols-2">
-            <RoleCard
-              value="CUSTOMER"
-              currentValue={role}
-              onChange={(v) => setValue("role", v, { shouldDirty: true })}
-              title={t("admin.userForm.customerTitle")}
-              description={t("admin.userForm.customerDescription")}
-            />
-            <RoleCard
-              value="MANAGER"
-              currentValue={role}
-              onChange={(v) => setValue("role", v, { shouldDirty: true })}
-              title={t("admin.userForm.managerTitle")}
-              description={t("admin.userForm.managerDescription")}
-            />
-          </div>
+          {!lockRole ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <RoleCard
+                value="CUSTOMER"
+                currentValue={role}
+                onChange={(v) => setValue("role", v, { shouldDirty: true })}
+                title={t("admin.userForm.customerTitle")}
+                description={t("admin.userForm.customerDescription")}
+              />
+              <RoleCard
+                value="MANAGER"
+                currentValue={role}
+                onChange={(v) => setValue("role", v, { shouldDirty: true })}
+                title={t("admin.userForm.managerTitle")}
+                description={t("admin.userForm.managerDescription")}
+              />
+            </div>
+          ) : null}
 
           {role === "MANAGER" ? (
             <div className="mt-5 grid gap-4 border-t border-ink-100 pt-5">

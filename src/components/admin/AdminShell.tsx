@@ -3,12 +3,15 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { m, AnimatePresence } from "motion/react";
 import { authApi } from "@/features/auth/api/auth.api";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { authFulfilled, logout } from "@/store/slices/auth.slice";
 import { storage } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { queryKeys } from "@/services/queryKeys";
+import { overlayBackdrop, drawerPanel } from "@/lib/motion";
+import { useT } from "@/i18n/useT";
 import { Spinner } from "@/components/ui/Loader";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { AdminSidebar } from "./AdminSidebar";
@@ -38,6 +41,7 @@ export function AdminShell({ children, title }: AdminShellProps) {
   const reduxToken = useAppSelector((s) => s.auth.token);
   const reduxUser = useAppSelector((s) => s.auth.user);
   const hydrated = useIsHydrated();
+  const { dir } = useT();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const token = reduxToken ?? (hydrated ? storage.get<string>(STORAGE_KEYS.authToken) : null);
@@ -116,20 +120,36 @@ export function AdminShell({ children, title }: AdminShellProps) {
         <AdminSidebar />
       </div>
 
-      {/* Mobile sidebar drawer */}
-      {mobileNavOpen ? (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label="Close admin navigation"
-            className="absolute inset-0 bg-ink-900/40"
-            onClick={handleCloseMobileNav}
-          />
-          <div className="relative h-full w-64 max-w-[80vw]">
-            <AdminSidebar onNavigate={handleCloseMobileNav} />
+      {/* Mobile sidebar drawer — eases in/out via the shared drawer variants.
+          AnimatePresence keeps the panel mounted through its exit animation so
+          it slides away instead of snapping shut. */}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <m.button
+              type="button"
+              aria-label="Close admin navigation"
+              className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm"
+              onClick={handleCloseMobileNav}
+              variants={overlayBackdrop}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+            />
+            {/* inset-s-0 pins the panel to the inline-start edge; drawerPanel("left")
+                resolves the physical slide direction against `dir` so it's RTL-safe. */}
+            <m.div
+              className="absolute inset-s-0 top-0 h-full w-64 max-w-[80vw]"
+              variants={drawerPanel("left", dir)}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+            >
+              <AdminSidebar onNavigate={handleCloseMobileNav} />
+            </m.div>
           </div>
-        </div>
-      ) : null}
+        )}
+      </AnimatePresence>
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <AdminTopbar title={title} onOpenMobileNav={handleOpenMobileNav} />

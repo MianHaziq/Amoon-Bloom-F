@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAppSelector } from "@/store";
 import { ChevronDown } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { useT } from "@/i18n/useT";
 import { regionsApi } from "@/features/regions/api/regions.api";
+import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { queryKeys } from "@/services/queryKeys";
 import { LocationSheet } from "./LocationSheet";
 import { RegionFlag } from "./RegionFlag";
@@ -27,7 +28,9 @@ export function DeliverToPill({ className, compact = false }: DeliverToPillProps
   const [open, setOpen] = useState(false);
   const country = useAppSelector((s) => s.location.country);
   const city = useAppSelector((s) => s.location.city);
+  const activeRegions = useAppSelector((s) => s.location.activeRegions);
   const { t } = useT();
+  const queryClient = useQueryClient();
 
   const regionsQuery = useQuery({
     queryKey: queryKeys.regions.list(),
@@ -35,6 +38,20 @@ export function DeliverToPill({ className, compact = false }: DeliverToPillProps
     staleTime: 5 * 60_000,
   });
   const currentRegion = regionsQuery.data?.find((r) => r.code === country);
+
+  // Warm the delivery-zones cache for every switchable region as soon as the
+  // header mounts, so picking a country in LocationSheet (e.g. Saudi Arabia)
+  // resolves from cache instantly instead of paying a fresh round trip on
+  // first click. Cheap — there are only a couple of active regions.
+  useEffect(() => {
+    activeRegions.forEach((code) => {
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.deliveryZones.list(code),
+        queryFn: () => deliveryZonesApi.list(code),
+        staleTime: 5 * 60_000,
+      });
+    });
+  }, [activeRegions, queryClient]);
 
   return (
     <>

@@ -15,6 +15,7 @@ import {
   PercentIcon,
   StarIcon,
   PinIcon,
+  ShieldIcon,
 } from "@/components/icons";
 import type { ManagerPermission } from "@/features/users/types";
 import type { ComponentType, SVGProps } from "react";
@@ -33,6 +34,8 @@ export interface AdminNavItem {
   permission?: ManagerPermission;
   /** Manager passes if they have ANY of these permissions. */
   permissionAny?: ManagerPermission[];
+  /** Admin-only link — never shown to managers regardless of permissions. */
+  adminOnly?: boolean;
 }
 
 export interface AdminNavGroup {
@@ -113,7 +116,13 @@ export const adminNav: AdminNavGroup[] = [
   {
     label: "Operations",
     items: [
-      { label: "Users", href: "/admin/users", icon: UsersIcon },
+      { label: "Users", href: "/admin/users", icon: UsersIcon, adminOnly: true },
+      {
+        label: "Managers",
+        href: "/admin/managers",
+        icon: ShieldIcon,
+        adminOnly: true,
+      },
       {
         label: "Regions",
         href: "/admin/regions",
@@ -165,7 +174,7 @@ export function filterNavForUser(
     .map((group) => ({
       ...group,
       items: group.items.filter((item) => {
-        if (item.href === "/admin/users") return false;
+        if (item.adminOnly) return false;
         if (item.permission) return set.has(item.permission);
         if (item.permissionAny) return item.permissionAny.some((p) => set.has(p));
         return true;

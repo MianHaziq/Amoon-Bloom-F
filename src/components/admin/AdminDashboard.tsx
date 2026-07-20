@@ -15,7 +15,16 @@ import { Skeleton } from "@/components/ui/Loader";
 import { Badge } from "@/components/ui/Badge";
 import { ApiError } from "@/services/http";
 import type { ManagerPermission } from "@/features/users/types";
-import { ArrowRight } from "@/components/icons";
+import {
+  ArrowRight,
+  DocumentIcon,
+  BoxIcon,
+  UserPlusIcon,
+  TicketIcon,
+  BellIcon,
+  ChatIcon,
+} from "@/components/icons";
+import type { ComponentType, SVGProps } from "react";
 import { formatCurrency } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 import { customerLabel, isGuestOrder } from "@/components/admin/orders/orderCustomer";
@@ -42,6 +51,47 @@ export function AdminDashboard() {
   const canSeeOrders = role === "ADMIN" || hasPerm(role, perms, "ORDERS");
   const canSeeUsers = role === "ADMIN";
   const canSeeContact = role === "ADMIN" || hasPerm(role, perms, "CONTACT");
+
+  // Quick actions — only the shortcuts the current user is actually allowed to
+  // reach. Admins see all; managers see only areas they hold the permission for.
+  const quickActions: QuickAction[] = [
+    {
+      label: t("admin.orders"),
+      href: "/admin/orders",
+      icon: DocumentIcon,
+      show: canSeeOrders,
+    },
+    {
+      label: t("admin.dashboardPage.qaAddProduct"),
+      href: "/admin/products/new",
+      icon: BoxIcon,
+      show: role === "ADMIN" || hasPerm(role, perms, "PRODUCTS"),
+    },
+    {
+      label: t("admin.dashboardPage.qaCreateManager"),
+      href: "/admin/managers/new",
+      icon: UserPlusIcon,
+      show: role === "ADMIN",
+    },
+    {
+      label: t("admin.promoCodes"),
+      href: "/admin/promo-codes",
+      icon: TicketIcon,
+      show: role === "ADMIN" || hasPerm(role, perms, "PROMO_CODES"),
+    },
+    {
+      label: t("admin.notifications"),
+      href: "/admin/notifications",
+      icon: BellIcon,
+      show: role === "ADMIN" || hasPerm(role, perms, "NOTIFICATIONS"),
+    },
+    {
+      label: t("admin.contact"),
+      href: "/admin/contact",
+      icon: ChatIcon,
+      show: canSeeContact,
+    },
+  ].filter((a) => a.show);
 
   const revenueQuery = useQuery({
     queryKey: queryKeys.analytics.revenue({ preset: "month" }),
@@ -146,6 +196,30 @@ export function AdminDashboard() {
         />
       </m.section>
 
+      {quickActions.length > 0 ? (
+        <m.section variants={fadeInUp} initial="hidden" animate="show">
+          <h3 className="mb-3 font-display text-lg text-ink-900">
+            {t("admin.dashboardPage.quickActionsHeading")}
+          </h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {quickActions.map((action) => (
+              <Link
+                key={action.href}
+                href={action.href}
+                className="group flex flex-col items-start gap-3 rounded-2xl border border-ink-100 bg-white p-4 transition-colors hover:border-bloom-300 hover:bg-bloom-50"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-bloom-100 text-bloom-700 transition-colors group-hover:bg-bloom-200">
+                  <action.icon size={20} />
+                </span>
+                <span className="text-sm font-medium text-ink-900">
+                  {action.label}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </m.section>
+      ) : null}
+
       {canSeeOrders ? (
         <m.section
           className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6"
@@ -231,6 +305,13 @@ export function AdminDashboard() {
       ) : null}
     </div>
   );
+}
+
+interface QuickAction {
+  label: string;
+  href: string;
+  icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
+  show: boolean;
 }
 
 interface KpiCardProps {

@@ -232,6 +232,9 @@ export function NotificationsBroadcastPage() {
           />
         </section>
 
+        {/* Deep link (advanced) — hidden for now, not needed yet. Re-enable by
+            uncommenting this section; `dataJson` stays wired in the schema/
+            form/submit so nothing else needs to change when it comes back.
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
           <h3 className="mb-1 font-display text-lg text-ink-900">
             {t("admin.notificationsPage.deepLinkHeading")}
@@ -249,6 +252,7 @@ export function NotificationsBroadcastPage() {
             {...register("dataJson")}
           />
         </section>
+        */}
 
         <div className="flex justify-end">
           <Button type="submit" size="lg">

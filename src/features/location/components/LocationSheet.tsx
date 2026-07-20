@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, m } from "motion/react";
-import { Modal, Button } from "@/components/ui";
+import { Modal, Button, Skeleton } from "@/components/ui";
 import { CheckIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { tapScale, popFeedback } from "@/lib/motion";
@@ -139,6 +139,11 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
   // then skipped entirely rather than blocking Save on an empty required list
   // (mirrors CheckoutClient's zoneRequired fallback).
   const showCityStep = !zonesQuery.isPending && zones.length > 0;
+  // Zones are prefetched per-region as soon as the header mounts (see
+  // DeliverToPill), so this should rarely actually show — it's the fallback
+  // for a cold cache (e.g. TTL expired) so switching country never looks like
+  // nothing happened while the fetch is in flight.
+  const showCityStepLoading = zonesQuery.isPending && Boolean(country);
   // The effective selection: the user's explicit pick if it's still valid for
   // the current zone list, otherwise the first zone stands in as a live
   // default (same intent the old static `defaultCity` served, just derived
@@ -230,6 +235,19 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
                   }}
                   label={z.name}
                 />
+              ))}
+            </div>
+          </fieldset>
+        )}
+
+        {showCityStepLoading && (
+          <fieldset className="flex flex-col gap-3">
+            <legend className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+              {t("location.city")}
+            </legend>
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-15 w-full rounded-2xl" />
               ))}
             </div>
           </fieldset>
