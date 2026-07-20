@@ -145,12 +145,15 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
   // from live data now instead of synced via an effect).
   const city = zones.some((z) => z.name === citySelection) ? citySelection! : zones[0]?.name ?? "";
 
-  const handleSave = () => {
-    const countryChanged = country !== current.country;
-    dispatch(setLocation({ country, city }));
+  // Takes explicit values (not the `country`/`city` state) so a city tap can
+  // commit immediately with the just-clicked zone, without waiting on a
+  // re-render to see it reflected in the derived `city` value.
+  const commit = (finalCountry: string, finalCity: string) => {
+    const countryChanged = finalCountry !== current.country;
+    dispatch(setLocation({ country: finalCountry, city: finalCity }));
     if (user) {
       profileApi
-        .setAddress({ addressCountry: country, addressCity: city })
+        .setAddress({ addressCountry: finalCountry, addressCity: finalCity })
         .catch(() => {});
     }
     onClose();
@@ -163,6 +166,8 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
       queryClient.invalidateQueries();
     }
   };
+
+  const handleSave = () => commit(country, city);
 
   return (
     <Modal
@@ -217,7 +222,12 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
                 <OptionRow
                   key={z.id}
                   selected={city === z.name}
-                  onClick={() => setCitySelection(z.name)}
+                  onClick={() => {
+                    // Picking a city is the final step — select and close
+                    // immediately instead of requiring a separate Save tap.
+                    setCitySelection(z.name);
+                    commit(country, z.name);
+                  }}
                   label={z.name}
                 />
               ))}

@@ -16,6 +16,10 @@ import {
   Divider,
   Card,
   CurrencyAmount,
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
 } from "@/components/ui";
 import { Spinner } from "@/components/ui/Loader";
 import {
@@ -38,6 +42,7 @@ import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { ROUTES } from "@/constants/routes";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { storage } from "@/lib/storage";
+import { cn } from "@/lib/cn";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
@@ -165,6 +170,7 @@ export function CheckoutClient() {
     getValues: getNewAddrValues,
     trigger: triggerNewAddr,
     setValue: setNewAddrValue,
+    watch: watchNewAddr,
   } = useForm<NewAddressValues>({
     resolver: zodResolver(newAddressSchema),
     defaultValues: {
@@ -185,6 +191,10 @@ export function CheckoutClient() {
   useEffect(() => {
     setNewAddrValue("deliveryZoneId", "");
   }, [regionCode, setNewAddrValue]);
+
+  const zoneValue = watchNewAddr("deliveryZoneId") ?? "";
+  const onZoneChange = (id: string) =>
+    setNewAddrValue("deliveryZoneId", id, { shouldValidate: true });
 
   const validatePromo = useMutation({
     mutationFn: (code: string) =>
@@ -444,6 +454,8 @@ export function CheckoutClient() {
             regionCode={regionCode}
             zones={zones}
             zonesLoading={zonesQuery.isPending}
+            zoneValue={zoneValue}
+            onZoneChange={onZoneChange}
             orderMessage={orderMessage}
             onOrderMessageChange={setOrderMessage}
             submitError={submitError}
@@ -492,6 +504,71 @@ interface DeliveryZoneOption {
   name_ar: string | null;
 }
 
+/** Emirate/province picker — the site's standard `Menu` dropdown (same
+ * primitive as the shop's sort-by control) instead of a native `<select>`,
+ * so it matches how every other dropdown in the storefront looks/behaves. */
+function ZoneMenu({
+  zones,
+  value,
+  onChange,
+  locale,
+  placeholder,
+  hasError,
+}: {
+  zones: DeliveryZoneOption[];
+  value: string;
+  onChange: (id: string) => void;
+  locale: string;
+  placeholder: string;
+  hasError: boolean;
+}) {
+  const selected = zones.find((z) => z.id === value);
+  const label = selected
+    ? locale === "ar" && selected.name_ar
+      ? selected.name_ar
+      : selected.name
+    : placeholder;
+
+  return (
+    <Menu className="w-full">
+      <MenuTrigger
+        label={placeholder}
+        className={cn(
+          "group flex h-12 w-full items-center justify-between gap-2 rounded-2xl border bg-white px-4 text-start text-sm transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-bloom-100",
+          hasError
+            ? "border-(--color-danger)"
+            : "border-ink-200 hover:border-ink-300 focus-visible:border-bloom-400",
+          selected ? "text-ink-900" : "text-ink-400"
+        )}
+      >
+        <span className="truncate">{label}</span>
+        <ChevronDown
+          size={14}
+          className="shrink-0 text-ink-400 transition-transform duration-200 group-aria-expanded:rotate-180"
+        />
+      </MenuTrigger>
+      <MenuContent align="start" className="w-[calc(100%-0.5rem)] sm:w-64">
+        <div className="max-h-72 overflow-y-auto">
+          {zones.map((z) => {
+            const active = z.id === value;
+            const zoneLabel = locale === "ar" && z.name_ar ? z.name_ar : z.name;
+            return (
+              <MenuItem
+                key={z.id}
+                onSelect={() => onChange(z.id)}
+                trailing={active ? <CheckIcon size={14} className="text-bloom-600" /> : undefined}
+                className={active ? "font-semibold text-ink-900" : undefined}
+              >
+                {zoneLabel}
+              </MenuItem>
+            );
+          })}
+        </div>
+      </MenuContent>
+    </Menu>
+  );
+}
+
 interface BillingShippingCardProps {
   isAuthed: boolean;
   addresses: ApiAddress[] | undefined;
@@ -504,6 +581,8 @@ interface BillingShippingCardProps {
   regionCode: string;
   zones: DeliveryZoneOption[];
   zonesLoading: boolean;
+  zoneValue: string;
+  onZoneChange: (id: string) => void;
   orderMessage: string;
   onOrderMessageChange: (v: string) => void;
   submitError: string | null;
@@ -521,6 +600,8 @@ function BillingShippingCard({
   regionCode,
   zones,
   zonesLoading,
+  zoneValue,
+  onZoneChange,
   orderMessage,
   onOrderMessageChange,
   submitError,
@@ -604,13 +685,13 @@ function BillingShippingCard({
           />
           <div className="flex flex-col gap-1.5">
             <label
-              htmlFor="checkout-zone"
+              id="checkout-zone-label"
               className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500"
             >
               {regionCode === "UAE" ? t("checkout.emirate") : t("checkout.province")}
             </label>
             {zonesLoading ? (
-              <div className="flex h-12 items-center rounded-2xl border border-ink-200 px-4">
+              <div className="flex h-12 w-full items-center rounded-2xl border border-ink-200 px-4">
                 <Spinner size="sm" />
               </div>
             ) : zones.length === 0 ? (
@@ -620,20 +701,16 @@ function BillingShippingCard({
                 {t("checkout.emirateUnavailable")}
               </p>
             ) : (
-              <select
-                id="checkout-zone"
-                className="h-12 rounded-2xl border border-ink-200 bg-white px-4 text-sm text-ink-900 focus:border-bloom-400 focus:outline-none focus:ring-4 focus:ring-bloom-100"
-                {...regNewAddr("deliveryZoneId")}
-              >
-                <option value="">
-                  {regionCode === "UAE" ? t("checkout.selectEmirate") : t("checkout.selectProvince")}
-                </option>
-                {zones.map((z) => (
-                  <option key={z.id} value={z.id}>
-                    {uiLocale === "ar" && z.name_ar ? z.name_ar : z.name}
-                  </option>
-                ))}
-              </select>
+              <ZoneMenu
+                zones={zones}
+                value={zoneValue}
+                onChange={onZoneChange}
+                locale={uiLocale}
+                placeholder={
+                  regionCode === "UAE" ? t("checkout.selectEmirate") : t("checkout.selectProvince")
+                }
+                hasError={Boolean(newAddrErrors.deliveryZoneId?.message)}
+              />
             )}
             {newAddrErrors.deliveryZoneId?.message ? (
               <p className="text-xs text-bloom-700">
@@ -686,6 +763,7 @@ function BillingShippingCard({
               autoComplete="email"
               hint={t("checkout.emailHint")}
               error={newAddrErrors.email?.message}
+              containerClassName="sm:col-span-2"
               {...regNewAddr("email")}
             />
           ) : null}

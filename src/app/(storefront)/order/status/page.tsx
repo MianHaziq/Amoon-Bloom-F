@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { Container, Section, Input, Button, Card, Badge, CurrencyAmount } from "@/components/ui";
+import { Spinner } from "@/components/ui/Loader";
 import { ArrowRight, CheckCircleIcon } from "@/components/icons";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { ROUTES } from "@/constants/routes";
@@ -23,10 +25,28 @@ const PROGRESS = [
   "DELIVERED",
 ] as const;
 
+// useSearchParams() requires a Suspense boundary (reads the ?id= the "Track
+// your order" email button links to) — the actual page content lives in
+// OrderStatusContent below; this default export just supplies that boundary.
 export default function OrderStatusPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
+      <OrderStatusContent />
+    </Suspense>
+  );
+}
+
+function OrderStatusContent() {
   const { t } = useT();
   const { currency, locale } = useCurrency();
-  const [orderId, setOrderId] = useState("");
+  const searchParams = useSearchParams();
+  const [orderId, setOrderId] = useState(() => searchParams.get("id") ?? "");
   const [error, setError] = useState<string | null>(null);
 
   const lookup = useMutation({
@@ -45,6 +65,15 @@ export default function OrderStatusPage() {
     if (!id) return;
     lookup.mutate(id);
   };
+
+  // Auto-run the lookup when arriving from a link that already knows the order
+  // id (e.g. the "Track your order" button in the confirmation/status emails)
+  // — the customer shouldn't have to re-type/paste it themselves.
+  useEffect(() => {
+    const idFromLink = searchParams.get("id");
+    if (idFromLink) lookup.mutate(idFromLink.trim());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const result = lookup.data;
   const currentIdx = result ? (PROGRESS as readonly string[]).indexOf(result.status) : -1;

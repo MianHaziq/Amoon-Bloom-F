@@ -23,6 +23,8 @@ export interface ApiReviewCreateInput {
 export interface ApiReviewListParams {
   page?: number;
   limit?: number;
+  /** Narrow to one star rating (1-5). Server-side filter used by the rating-breakdown bars. */
+  rating?: number;
 }
 
 export interface ApiReviewAdminListParams extends ApiReviewListParams {

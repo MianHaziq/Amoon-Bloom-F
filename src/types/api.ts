@@ -24,6 +24,8 @@ export interface ResponseMeta {
   /** Product reviews list echoes the aggregate rating here. */
   avgRating?: number | null;
   reviewCount?: number;
+  /** Product reviews list: count of reviews per star (5 → 1), always for the whole product regardless of any `rating` filter applied to `data`. */
+  ratingBreakdown?: { rating: number; count: number }[];
 }
 
 export interface PaginatedResponse<T> {

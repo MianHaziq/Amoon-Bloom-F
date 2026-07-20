@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/cn";
+import { CloseIcon } from "@/components/icons";
 import { useT } from "@/i18n/useT";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useAppDispatch } from "@/store";
@@ -59,10 +60,23 @@ export function ProductTabs({
       .map((o) => ({ label: o.title, value: o.options.join(", ") })),
   ];
 
+  // Star clicked in the rating-breakdown bars narrows the list server-side;
+  // the summary stats (avgRating/reviewCount/ratingBreakdown) always stay
+  // whole-product so the bars never shift under the customer's cursor.
+  const [ratingFilter, setRatingFilter] = useState<number | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
   const reviewsQuery = useInfiniteQuery({
-    queryKey: queryKeys.reviews.list(productId, { limit: REVIEWS_PAGE_SIZE }),
+    queryKey: queryKeys.reviews.list(productId, {
+      limit: REVIEWS_PAGE_SIZE,
+      rating: ratingFilter ?? undefined,
+    }),
     queryFn: ({ pageParam }): Promise<PaginatedResponse<ApiReview>> =>
-      reviewsApi.listForProduct(productId, { page: pageParam, limit: REVIEWS_PAGE_SIZE }),
+      reviewsApi.listForProduct(productId, {
+        page: pageParam,
+        limit: REVIEWS_PAGE_SIZE,
+        rating: ratingFilter ?? undefined,
+      }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const p = lastPage.meta?.pagination;
@@ -77,6 +91,7 @@ export function ProductTabs({
   const firstPageMeta = reviewsQuery.data?.pages[0]?.meta;
   const reviewCount = firstPageMeta?.reviewCount ?? 0;
   const avgRating = firstPageMeta?.avgRating ?? null;
+  const ratingBreakdown = firstPageMeta?.ratingBreakdown ?? [];
 
   const publicSettingsQuery = useQuery({
     queryKey: queryKeys.settings.public(),
@@ -178,41 +193,121 @@ export function ProductTabs({
 
         {active === "reviews" && (
           <div className="max-w-3xl space-y-8">
-            {avgRating != null && reviewCount > 0 && (
-              <div className="flex items-center gap-3">
-                <StarRatingDisplay rating={avgRating} size={20} />
-                <span className="text-sm font-medium text-ink-900">
-                  {avgRating.toFixed(1)}
-                </span>
-                <span className="text-sm text-ink-500">
-                  · {reviewCount} {reviewCount === 1 ? t("product.reviewOne") : t("product.reviewOther")}
-                </span>
+            <div>
+              <h3 className="font-display text-xl text-ink-900">
+                {t("product.reviewsHeading")}
+              </h3>
+
+              {reviewCount > 0 && (
+                <div className="mt-4 grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-12">
+                  <div className="flex shrink-0 flex-col items-start gap-1.5">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-display text-4xl font-medium text-ink-900">
+                        {avgRating != null ? avgRating.toFixed(1) : "—"}
+                      </span>
+                      <span className="text-sm text-ink-500">{t("product.outOf5")}</span>
+                    </div>
+                    <StarRatingDisplay rating={avgRating ?? 0} size={18} />
+                    <span className="text-sm text-ink-500">
+                      {reviewCount} {reviewCount === 1 ? t("product.reviewOne") : t("product.reviewOther")}
+                    </span>
+                  </div>
+
+                  {ratingBreakdown.length > 0 && (
+                    <div className="flex flex-col gap-1.5 sm:max-w-sm">
+                      {ratingBreakdown.map((b) => {
+                        const pct = reviewCount > 0 ? Math.round((b.count / reviewCount) * 100) : 0;
+                        const isActive = ratingFilter === b.rating;
+                        return (
+                          <button
+                            key={b.rating}
+                            type="button"
+                            disabled={b.count === 0}
+                            onClick={() => setRatingFilter(isActive ? null : b.rating)}
+                            className="group flex items-center gap-3 rounded-md py-0.5 text-start disabled:pointer-events-none"
+                          >
+                            <span
+                              className={cn(
+                                "w-14 shrink-0 text-xs font-medium",
+                                isActive ? "text-bloom-700" : "text-ink-600"
+                              )}
+                            >
+                              {t("product.ratingStarFilter", { n: b.rating })}
+                            </span>
+                            <span className="h-2 flex-1 overflow-hidden rounded-full bg-ink-100">
+                              <span
+                                className={cn(
+                                  "block h-full rounded-full transition-colors",
+                                  isActive
+                                    ? "bg-bloom-600"
+                                    : "bg-(--color-gold-500) group-hover:bg-bloom-500"
+                                )}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </span>
+                            <span className="w-7 shrink-0 text-end text-xs tabular-nums text-ink-500">
+                              {b.count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-5">
+                {!showReviewForm && (
+                  <Button variant="outline" onClick={() => setShowReviewForm(true)}>
+                    {t("product.writeReviewCta")}
+                  </Button>
+                )}
               </div>
+            </div>
+
+            {showReviewForm && (
+              <ReviewForm
+                productId={productId}
+                isAuthenticated={isAuthenticated}
+                userName={user?.fullName ?? null}
+                guestReviewsAllowed={guestReviewsAllowed}
+                onCancel={() => setShowReviewForm(false)}
+                onSubmitted={() => {
+                  dispatch(
+                    pushToast({ title: t("product.reviewSubmitted"), variant: "success" })
+                  );
+                  queryClient.invalidateQueries({ queryKey: queryKeys.reviews.all });
+                  setShowReviewForm(false);
+                }}
+              />
             )}
 
-            <ReviewForm
-              productId={productId}
-              isAuthenticated={isAuthenticated}
-              userName={user?.fullName ?? null}
-              guestReviewsAllowed={guestReviewsAllowed}
-              onSubmitted={() => {
-                dispatch(
-                  pushToast({ title: t("product.reviewSubmitted"), variant: "success" })
-                );
-                queryClient.invalidateQueries({ queryKey: queryKeys.reviews.all });
-              }}
-            />
+            {ratingFilter != null && (
+              <div className="flex items-center gap-2 text-sm text-ink-600">
+                <span>{t("product.showingRatingFilter", { n: ratingFilter })}</span>
+                <button
+                  type="button"
+                  onClick={() => setRatingFilter(null)}
+                  className="inline-flex items-center gap-1 rounded-full border border-ink-200 px-2.5 py-1 text-xs font-medium text-ink-700 transition-colors hover:border-ink-400"
+                >
+                  <CloseIcon size={12} />
+                  {t("product.showAllReviews")}
+                </button>
+              </div>
+            )}
 
             {reviewsQuery.isPending ? (
               <p className="text-sm text-ink-400">…</p>
             ) : reviews.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-ink-200 bg-cream-50 px-6 py-10 text-center">
                 <p className="font-display text-lg text-ink-900">
-                  {t("product.noReviews")}
+                  {ratingFilter != null
+                    ? t("product.noReviewsForRating", { n: ratingFilter })
+                    : t("product.noReviews")}
                 </p>
-                <p className="mt-1 text-sm text-ink-500">
-                  {t("product.noReviewsBody")}
-                </p>
+                {ratingFilter == null && (
+                  <p className="mt-1 text-sm text-ink-500">{t("product.noReviewsBody")}</p>
+                )}
               </div>
             ) : (
               <ul className="flex flex-col gap-6">
@@ -273,12 +368,14 @@ function ReviewForm({
   userName,
   guestReviewsAllowed,
   onSubmitted,
+  onCancel,
 }: {
   productId: string;
   isAuthenticated: boolean;
   userName: string | null;
   guestReviewsAllowed: boolean;
   onSubmitted: () => void;
+  onCancel: () => void;
 }) {
   const { t } = useT();
   const [rating, setRating] = useState(0);
@@ -420,9 +517,12 @@ function ReviewForm({
         </p>
       )}
 
-      <div>
+      <div className="flex items-center gap-3">
         <Button type="submit" isLoading={submitMutation.isPending}>
           {t("product.submitReview")}
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          {t("product.cancelReview")}
         </Button>
       </div>
     </form>

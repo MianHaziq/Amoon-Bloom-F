@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { m, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/cn";
 import { EASE_OUT } from "@/lib/motion";
@@ -18,7 +18,8 @@ const ZOOM = 2; // magnification on hover (Amazon-style)
 export function ProductGallery({ title }: ProductGalleryProps) {
   // Cursor-following zoom (desktop hover only; touch never fires these).
   const [zoom, setZoom] = useState({ on: false, x: 50, y: 50 });
-  const { t } = useT();
+  const { t, dir } = useT();
+  const touchStartX = useRef<number | null>(null);
   // Gallery + selection both come from PdpImageProvider — computed from the product
   // up front, so the first paint already matches the default variant (see the
   // provider's doc comment for why that used to be wrong).
@@ -45,13 +46,32 @@ export function ProductGallery({ title }: ProductGalleryProps) {
     setActiveUrl(gallery[nextIndex].url);
   };
 
+  // Mobile swipe-to-advance. Direction is flipped in RTL so a swipe toward
+  // the start of reading order always means "next", matching the prev/next
+  // buttons above (which are positioned via logical inset-s/e, not left/right).
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current == null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    const SWIPE_THRESHOLD = 40;
+    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
+    const swipedTowardStart = delta < 0;
+    const goNext = dir === "rtl" ? !swipedTowardStart : swipedTowardStart;
+    step(goNext ? 1 : -1);
+  };
+
   return (
     <div className="flex flex-col gap-4 lg:sticky lg:top-24">
       <div
-        className="group relative aspect-square overflow-hidden rounded-3xl bg-blush-50 lg:cursor-zoom-in"
+        className="group relative aspect-square touch-pan-y overflow-hidden rounded-3xl bg-blush-50 lg:cursor-zoom-in"
         onMouseEnter={() => setZoom((z) => ({ ...z, on: true }))}
         onMouseLeave={() => setZoom({ on: false, x: 50, y: 50 })}
         onMouseMove={onMove}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         {/* Crossfade between gallery images; the inner <Image> also scales on
             hover, panning toward the cursor for a magnifier effect. */}
