@@ -106,7 +106,7 @@ export const adminNav: AdminNavGroup[] = [
         label: "Tax (VAT)",
         href: "/admin/tax",
         icon: PercentIcon,
-        permission: "SETTINGS",
+        permission: "VAT",
       },
     ],
   },
@@ -130,7 +130,7 @@ export const adminNav: AdminNavGroup[] = [
         label: "Notifications",
         href: "/admin/notifications",
         icon: BellIcon,
-        permissionAny: ["SETTINGS", "ORDERS"],
+        permission: "NOTIFICATIONS",
       },
       {
         label: "Contact messages",

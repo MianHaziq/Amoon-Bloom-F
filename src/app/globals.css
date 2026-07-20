@@ -120,6 +120,30 @@ body {
   font-weight: 500;
 }
 
+/* =====================================================================
+   Arabic (RTL) typography
+   --------------------------------------------------------------------
+   The Latin faces (Jakarta/Fraunces) carry no Arabic glyphs, so Arabic
+   text is routed to dedicated Arabic webfonts loaded in layout.tsx —
+   Noto Sans Arabic for body, IBM Plex Sans Arabic for display — matching
+   the client's live site. Scoped to `dir="rtl"` so the Latin experience
+   is untouched. The global negative `letter-spacing` and Latin OpenType
+   stylistic sets (`ss01/ss02/cv11`) are reset here: letter-spacing on a
+   cursive, connected script suppresses glyph joining, and the stylistic
+   sets are Latin-only features that don't apply to Arabic anyway.
+   ===================================================================== */
+html[dir="rtl"] body {
+  font-family: var(--font-arabic-body), "Segoe UI", Tahoma, Arial, sans-serif;
+  letter-spacing: normal;
+  font-feature-settings: normal;
+}
+
+html[dir="rtl"] .font-display {
+  font-family: var(--font-arabic-heading), "Segoe UI", Tahoma, Arial, sans-serif;
+  letter-spacing: normal;
+  font-weight: 600;
+}
+
 /* Tabular figures inside data tables/prices */
 .tabular-nums {
   font-variant-numeric: tabular-nums;

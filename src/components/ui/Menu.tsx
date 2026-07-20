@@ -259,9 +259,13 @@ export function MenuContent({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.97, y: -4 }}
           transition={{ duration: 0.16, ease: EASE_OUT }}
-          style={{ transformOrigin: align === "end" ? "top right" : "top left" }}
           className={cn(
-            "absolute top-[calc(100%+0.5rem)] z-50 min-w-56 origin-top overflow-hidden rounded-2xl border border-ink-100 bg-white p-1.5 shadow-(--shadow-lift)",
+            "absolute top-[calc(100%+0.5rem)] z-50 min-w-56 overflow-hidden rounded-2xl border border-ink-100 bg-white p-1.5 shadow-(--shadow-lift)",
+            // Scale-in origin must follow the resolved physical side, which flips
+            // under RTL: `end` sits on the right in LTR, the left in RTL.
+            align === "end"
+              ? "origin-top-right rtl:origin-top-left"
+              : "origin-top-left rtl:origin-top-right",
             ALIGN[align],
             className
           )}

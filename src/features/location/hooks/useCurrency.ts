@@ -5,6 +5,7 @@ import { useAppSelector } from "@/store";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { siteConfig } from "@/config/site";
+import { intlLocale } from "@/lib/format";
 
 /**
  * Currency + region name for the storefront. The backend supports a per-product
@@ -15,11 +16,14 @@ import { siteConfig } from "@/config/site";
  * (same query key `CheckoutClient`/`CartSummary`/admin already use — cache-
  * shared, not a new network call in most flows) instead of a static map.
  *
- * `locale` stays store-wide (siteConfig.locale) — it only affects digit
- * grouping/formatting style and is independent of region.
+ * `locale` follows the active UI language (via intlLocale) so price grouping/
+ * formatting matches the rest of the localized UI. Arabic maps to
+ * `ar-AE-u-nu-latn` (Latin digits, Arabic label conventions) — independent of
+ * the region, which only drives the currency symbol.
  */
 export function useCurrency() {
   const country = useAppSelector((s) => s.location.country);
+  const uiLocale = useAppSelector((s) => s.ui.locale);
   const query = useQuery({
     queryKey: queryKeys.regions.list(),
     queryFn: () => regionsApi.list(),
@@ -28,7 +32,7 @@ export function useCurrency() {
   const region = query.data?.find((r) => r.code === country);
   return {
     currency: region?.currency ?? siteConfig.currency,
-    locale: siteConfig.locale,
+    locale: intlLocale(uiLocale),
     countryCode: country,
     countryName: region?.name ?? country,
   };

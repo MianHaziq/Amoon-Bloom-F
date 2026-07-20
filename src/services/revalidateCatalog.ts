@@ -7,13 +7,22 @@
  *
  * @param tags Which cache tags to expire. Omit to expire all catalog tags.
  */
+import { STORAGE_KEYS } from "@/constants/storage-keys";
+import { storage } from "@/lib/storage";
+
 export function revalidateCatalog(
   tags?: Array<"products" | "categories" | "sections" | "banners" | "regions">
 ): void {
   try {
+    // Forward the admin/manager token so the route can authorize the request — the
+    // endpoint rejects anonymous callers to prevent cache-bust abuse.
+    const token = storage.get<string>(STORAGE_KEYS.authToken);
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
     void fetch("/api/revalidate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(tags ? { tags } : {}),
       keepalive: true,
     }).catch(() => {});

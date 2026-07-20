@@ -57,6 +57,10 @@ export const messages = {
     },
     a11y: {
       skipToContent: "Skip to content",
+      availableColours: "Available colours",
+      minimumPrice: "Minimum price",
+      maximumPrice: "Maximum price",
+      breadcrumb: "Breadcrumb",
     },
     error: {
       eyebrow: "Something went wrong",
@@ -1461,6 +1465,10 @@ export const messages = {
     },
     a11y: {
       skipToContent: "تخطَّ إلى المحتوى",
+      availableColours: "الألوان المتاحة",
+      minimumPrice: "الحد الأدنى للسعر",
+      maximumPrice: "الحد الأقصى للسعر",
+      breadcrumb: "مسار التنقّل",
     },
     error: {
       eyebrow: "حدث خطأ ما",

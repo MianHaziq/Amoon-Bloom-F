@@ -11,7 +11,7 @@ import type {
 export const notificationsApi = {
   /**
    * Enqueues a push/email broadcast to customers. Backend guard requires
-   * ADMIN, or a MANAGER holding the SETTINGS or ORDERS permission. Returns the
+   * ADMIN, or a MANAGER holding the NOTIFICATIONS permission. Returns the
    * enqueued job id (202). Throws ApiError(503) if the job engine is down.
    */
   async broadcast(payload: ApiBroadcastInput): Promise<ApiBroadcastResult> {

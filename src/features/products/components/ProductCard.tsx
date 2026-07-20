@@ -178,7 +178,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
           {colors.length > 0 ? (
             <span
               className="flex items-center gap-1.5"
-              aria-label="Available colours"
+              aria-label={t("a11y.availableColours")}
               onMouseLeave={() => setPreviewImg(null)}
             >
               {colors.slice(0, 4).map((c) => {

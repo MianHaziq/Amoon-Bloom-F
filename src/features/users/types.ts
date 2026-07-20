@@ -24,7 +24,9 @@ export type ManagerPermission =
   | "ANALYTICS"
   | "REGIONS"
   | "REVIEWS"
-  | "DELIVERY_ZONES";
+  | "DELIVERY_ZONES"
+  | "VAT"
+  | "NOTIFICATIONS";
 
 export interface ApiAdminUser {
   id: string;

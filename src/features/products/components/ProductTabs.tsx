@@ -15,7 +15,7 @@ import { reviewsApi } from "@/features/reviews/api/reviews.api";
 import { settingsApi } from "@/features/settings/api/settings.api";
 import { StarRatingInput } from "@/features/reviews/components/StarRatingInput";
 import { StarRatingDisplay } from "@/features/reviews/components/StarRatingDisplay";
-import { formatDate } from "@/lib/format";
+import { formatDate, intlLocale } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import type { PaginatedResponse } from "@/types";
 import type { ApiReview } from "@/features/reviews/types";
@@ -46,7 +46,7 @@ export function ProductTabs({
   options,
   category,
 }: ProductTabsProps) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const { user, isAuthenticated } = useAuth();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
@@ -319,7 +319,7 @@ export function ProductTabs({
                         <p className="text-sm font-semibold text-ink-900">{r.reviewerName}</p>
                         <div className="mt-0.5 flex items-center gap-2">
                           <StarRatingDisplay rating={r.rating} size={13} />
-                          <span className="text-xs text-ink-400">{formatDate(r.createdAt)}</span>
+                          <span className="text-xs text-ink-400">{formatDate(r.createdAt, intlLocale(locale))}</span>
                         </div>
                       </div>
                     </div>

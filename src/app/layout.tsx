@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
+import {
+  Plus_Jakarta_Sans,
+  Fraunces,
+  IBM_Plex_Sans_Arabic,
+  Noto_Sans_Arabic,
+} from "next/font/google";
 import { dehydrate } from "@tanstack/react-query";
 import { StoreProvider } from "@/store/providers/StoreProvider";
 import { QueryProvider } from "@/store/providers/QueryProvider";
@@ -45,6 +50,28 @@ const fraunces = Fraunces({
   // the editorial heading accents (e.g. hero title accent).
   weight: ["400", "500", "600"],
   style: ["normal", "italic"],
+});
+
+/**
+ * Arabic faces. The Latin pair above (Jakarta/Fraunces) ship no Arabic glyphs,
+ * so Arabic text would otherwise fall back to an uncontrolled OS font. These
+ * mirror the two-role split (display heading / body) with Arabic-covering
+ * faces and match the client's live site exactly: IBM Plex Sans Arabic for
+ * headings, Noto Sans Arabic for body. Applied only under `dir="rtl"` via
+ * globals.css so the Latin experience is untouched.
+ */
+const ibmPlexArabic = IBM_Plex_Sans_Arabic({
+  variable: "--font-arabic-heading",
+  subsets: ["arabic"],
+  display: "swap",
+  weight: ["500", "600", "700"],
+});
+
+const notoArabic = Noto_Sans_Arabic({
+  variable: "--font-arabic-body",
+  subsets: ["arabic"],
+  display: "swap",
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -103,7 +130,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dirFor(locale)}
-      className={`${jakarta.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${fraunces.variable} ${ibmPlexArabic.variable} ${notoArabic.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream-50 text-ink-900 font-sans">
         <StoreProvider

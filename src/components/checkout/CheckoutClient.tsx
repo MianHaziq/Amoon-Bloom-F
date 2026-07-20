@@ -420,7 +420,7 @@ export function CheckoutClient() {
         <Container>
           <nav
             className="flex items-center gap-1 text-xs text-ink-500"
-            aria-label="Breadcrumb"
+            aria-label={t("a11y.breadcrumb")}
           >
             <Link href={ROUTES.cart} className="hover:text-ink-900">
               {t("nav.cart")}

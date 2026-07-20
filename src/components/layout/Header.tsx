@@ -99,7 +99,7 @@ export function Header() {
   const wishlistLabel = `${t("nav.wishlist")}, ${tc(wishlistCount, "units.itemOne", "units.itemOther")}`;
 
   const cartBadge = itemCount > 0 && (
-    <span className="absolute -right-0.5 -top-0.5 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-bloom-500 px-1 text-[10px] font-bold tabular-nums text-white ring-2 ring-cream-50">
+    <span className="absolute -inset-e-0.5 -top-0.5 inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-bloom-500 px-1 text-[10px] font-bold tabular-nums text-white ring-2 ring-cream-50">
       {itemCount > 99 ? "99+" : itemCount}
     </span>
   );

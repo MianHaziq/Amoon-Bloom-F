@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { useT } from "@/i18n/useT";
 
 interface PriceRangeSliderProps {
   /** Absolute bounds of the whole catalogue set. */
@@ -30,6 +31,7 @@ export function PriceRangeSlider({
   format,
   className,
 }: PriceRangeSliderProps) {
+  const { t } = useT();
   const span = Math.max(max - min, 1);
   const lowPct = ((value.min - min) / span) * 100;
   const highPct = ((value.max - min) / span) * 100;
@@ -68,7 +70,7 @@ export function PriceRangeSlider({
           max={max}
           step={step}
           value={value.min}
-          aria-label="Minimum price"
+          aria-label={t("a11y.minimumPrice")}
           onChange={(e) => setLow(Number(e.target.value))}
         />
         <input
@@ -78,7 +80,7 @@ export function PriceRangeSlider({
           max={max}
           step={step}
           value={value.max}
-          aria-label="Maximum price"
+          aria-label={t("a11y.maximumPrice")}
           onChange={(e) => setHigh(Number(e.target.value))}
         />
       </div>
