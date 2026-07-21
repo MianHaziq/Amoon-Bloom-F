@@ -13,17 +13,12 @@ import { ApiError } from "@/services/http";
 import {
   ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
+  ORDER_PROGRESS_STEPS,
+  ORDER_TERMINAL_NOTE_KEY,
+  ORDER_PAUSED_NOTE_KEY,
 } from "@/features/orders/constants";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
-
-const PROGRESS = [
-  "PENDING",
-  "CONFIRMED",
-  "PROCESSING",
-  "SHIPPED",
-  "DELIVERED",
-] as const;
 
 // useSearchParams() requires a Suspense boundary (reads the ?id= the "Track
 // your order" email button links to) — the actual page content lives in
@@ -76,8 +71,11 @@ function OrderStatusContent() {
   }, []);
 
   const result = lookup.data;
-  const currentIdx = result ? (PROGRESS as readonly string[]).indexOf(result.status) : -1;
-  const cancelled = result?.status === "CANCELLED";
+  const currentIdx = result ? ORDER_PROGRESS_STEPS.findIndex((s) => s.key === result.status) : -1;
+  const inFlow = currentIdx >= 0;
+  const offFlowNoteKey = result
+    ? ORDER_TERMINAL_NOTE_KEY[result.status] ?? ORDER_PAUSED_NOTE_KEY[result.status]
+    : undefined;
 
   return (
     <>
@@ -149,12 +147,12 @@ function OrderStatusContent() {
                 </Badge>
               </div>
 
-              {!cancelled ? (
-                <div className="grid grid-cols-5 gap-1">
-                  {PROGRESS.map((s, i) => {
+              {inFlow ? (
+                <div className="grid grid-cols-3 gap-1">
+                  {ORDER_PROGRESS_STEPS.map((s, i) => {
                     const reached = i <= currentIdx;
                     return (
-                      <div key={s} className="flex min-w-0 flex-col items-center gap-1">
+                      <div key={s.key} className="flex min-w-0 flex-col items-center gap-1">
                         <div
                           className={
                             "h-1.5 w-full rounded-full " +
@@ -167,7 +165,7 @@ function OrderStatusContent() {
                             (reached ? "text-bloom-700" : "text-ink-400")
                           }
                         >
-                          {t(ORDER_STATUS_LABEL_KEY[s])}
+                          {t(s.labelKey)}
                         </span>
                       </div>
                     );
@@ -175,7 +173,7 @@ function OrderStatusContent() {
                 </div>
               ) : (
                 <p className="text-sm text-bloom-700">
-                  {t("order.cancelledNote")}
+                  {t(offFlowNoteKey ?? "order.cancelledNote")}
                 </p>
               )}
             </div>

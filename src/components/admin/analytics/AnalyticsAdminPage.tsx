@@ -13,7 +13,7 @@ import { DownloadIcon, ChevronDownIcon } from "@/components/icons";
 import { downloadBlob } from "@/lib/download";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatCompactCurrency } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n/messages";
 
@@ -175,7 +175,8 @@ export function AnalyticsAdminPage() {
       <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Kpi
           label={t("admin.analyticsPage.kpiRevenue")}
-          value={summary ? formatCurrency(summary.revenue, currency) : null}
+          value={summary ? formatCompactCurrency(summary.revenue, currency) : null}
+          title={summary ? formatCurrency(summary.revenue, currency) : undefined}
           loading={revenueQuery.isPending}
         />
         <Kpi
@@ -276,9 +277,11 @@ interface KpiProps {
   label: string;
   value: string | null;
   loading?: boolean;
+  /** Exact figure shown on hover — useful when `value` is abbreviated (e.g. "AED 11.9K"). */
+  title?: string;
 }
 
-function Kpi({ label, value, loading }: KpiProps) {
+function Kpi({ label, value, loading, title }: KpiProps) {
   return (
     <div className="rounded-2xl border border-ink-100 bg-white p-5">
       <p className="text-xs font-medium uppercase tracking-wider text-ink-400">
@@ -288,7 +291,9 @@ function Kpi({ label, value, loading }: KpiProps) {
         {loading || value === null ? (
           <Skeleton className="h-8 w-2/3" />
         ) : (
-          <p className="font-display text-3xl text-ink-900">{value}</p>
+          <p className="font-display text-3xl text-ink-900" title={title}>
+            {value}
+          </p>
         )}
       </div>
     </div>

@@ -39,4 +39,12 @@ export const deliveryZonesApi = {
   async remove(id: string): Promise<void> {
     await http.delete(`/delivery-zones/${id}`);
   },
+
+  /**
+   * Persist admin drag-and-drop order of zones. sortOrder is scoped per-region,
+   * so callers reorder the zones of a single region at a time.
+   */
+  async reorder(items: { id: string; sortOrder: number }[]): Promise<void> {
+    await http.patch("/delivery-zones/order", { items });
+  },
 };

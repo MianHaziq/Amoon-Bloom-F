@@ -39,6 +39,7 @@ import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.a
 import { queryKeys } from "@/services/queryKeys";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { stripKnownCallingCode } from "@/features/regions/countries";
 import { ROUTES } from "@/constants/routes";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { storage } from "@/lib/storage";
@@ -62,20 +63,76 @@ function round2(n: number) {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
-// Delivery region determines the dial code shown next to the phone field —
-// mirrors the header's locked country/city precedent (never independently
-// user-editable here). Combined with the typed digits into one E.164-ish
-// string sent to the existing `phone` field (no backend schema change).
-const DIAL_CODE: Record<string, string> = { UAE: "+971", SA: "+966" };
+// The backend validates Scheduled Delivery's day boundary against the business's
+// operating timezone (Asia/Dubai — see order.service.js's BUSINESS_TIMEZONE), not the
+// customer's own device timezone. If this picker's min/max were computed from the
+// browser's local midnight instead, a customer in a different timezone (e.g. Riyadh,
+// one hour behind Dubai) could see a "valid" time near midnight that the backend then
+// rejects as still today. Mirroring the same Dubai-anchored boundary here keeps both
+// sides in agreement.
+const BUSINESS_TIMEZONE = "Asia/Dubai";
 
-// The profile's saved phone (used to prefill this field) is already a full
-// E.164 string (e.g. "+971501234567") — strip any known dial code before
-// prefilling so submit doesn't double-prefix it into "+971+971501234567".
-function stripDialCode(phone: string | null | undefined): string {
-  if (!phone) return "";
-  const known = Object.values(DIAL_CODE).find((code) => phone.startsWith(code));
-  return known ? phone.slice(known.length) : phone.replace(/^\+/, "");
+/** The UTC offset (in minutes) of `timeZone` at instant `date`, via Intl. */
+function tzOffsetMinutes(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+    .formatToParts(date)
+    .reduce<Record<string, number>>((acc, p) => {
+      if (p.type !== "literal") acc[p.type] = Number(p.value);
+      return acc;
+    }, {});
+  const asUTC = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second
+  );
+  return (asUTC - date.getTime()) / 60000;
 }
+
+/** UTC instant for midnight, `daysFromNow` days out, on the calendar in BUSINESS_TIMEZONE. */
+function startOfDayPlusDays(daysFromNow: number): Date {
+  const now = new Date();
+  const offsetMin = tzOffsetMinutes(now, BUSINESS_TIMEZONE);
+  const zonedNow = new Date(now.getTime() + offsetMin * 60000);
+  const y = zonedNow.getUTCFullYear();
+  const m = zonedNow.getUTCMonth();
+  const d = zonedNow.getUTCDate();
+  return new Date(Date.UTC(y, m, d + daysFromNow) - offsetMin * 60000);
+}
+
+/** Formats a Date as the "YYYY-MM-DDTHH:mm" string <input type="datetime-local"> expects,
+ * in local time — same convention PromoCodeForm.tsx uses for its date fields. */
+function toDatetimeLocalValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+    date.getHours()
+  )}:${pad(date.getMinutes())}`;
+}
+
+// The delivery region's dial code (e.g. "+212" for Morocco) is derived
+// automatically from its `iso2` by useCurrency() — never a hand-maintained
+// per-region map, so a brand-new region gets the right prefix immediately.
+// Combined with the typed digits into one E.164-ish string sent to the
+// existing `phone` field (no backend schema change).
+//
+// The profile's saved phone (used to prefill this field) is already a full
+// E.164 string (e.g. "+212612345678") — strip any RECOGNIZED dial code
+// before prefilling so submit doesn't double-prefix it into
+// "+212+212612345678". Uses the full known-code table (not just the
+// customer's current region) since the number may have been saved under a
+// different region than the one being viewed now.
+const stripDialCode = stripKnownCallingCode;
 
 const makeNewAddressSchema = (t: TranslateFn, zoneRequired: boolean) =>
   z.object({
@@ -110,9 +167,8 @@ export function CheckoutClient() {
   // token) fall straight through to the guest flow.
   const authHydrating =
     hydrated && !isAuthed && Boolean(storage.get<string>(STORAGE_KEYS.authToken));
-  const { currency, locale, countryName, countryCode } = useCurrency();
+  const { currency, locale, countryName, countryCode, dialCode } = useCurrency();
   const regionCode = countryCode;
-  const dialCode = DIAL_CODE[regionCode] ?? "";
   const { t, tc } = useT();
 
   const [explicitSelection, setExplicitSelection] = useState<
@@ -125,6 +181,10 @@ export function CheckoutClient() {
     useState<ApiPromoValidationResult | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [deliveryType, setDeliveryType] = useState<"STANDARD" | "SCHEDULED">("STANDARD");
+  // Raw <input type="datetime-local"> value (local time, no timezone) — converted
+  // to a UTC ISO string only at submit time, same as PromoCodeForm's date fields.
+  const [scheduledDeliveryAt, setScheduledDeliveryAt] = useState("");
 
   // Saved addresses are an authenticated-only feature (GET /user/addresses).
   // Guests always use the inline form.
@@ -292,6 +352,14 @@ export function CheckoutClient() {
 
   const placeOrderMutation = useMutation({
     mutationFn: async () => {
+      if (deliveryType === "SCHEDULED" && !scheduledDeliveryAt) {
+        throw new Error(t("checkout.chooseDeliveryDateError"));
+      }
+      const scheduledDeliveryAtIso =
+        deliveryType === "SCHEDULED"
+          ? new Date(scheduledDeliveryAt).toISOString()
+          : undefined;
+
       let resolvedAddressId: string | undefined;
       let inlineAddress: NewAddressValues | undefined;
 
@@ -333,6 +401,8 @@ export function CheckoutClient() {
           email: inlineAddress?.email?.trim() || undefined,
           orderMessage: orderMessage.trim() || undefined,
           promoCode: promoResult ? promoCode.trim() : undefined,
+          deliveryType,
+          scheduledDeliveryAt: scheduledDeliveryAtIso,
         });
       }
 
@@ -343,6 +413,8 @@ export function CheckoutClient() {
         shippingAddress,
         paymentMethod: "COD",
         promoCode: promoResult ? promoCode.trim() : undefined,
+        deliveryType,
+        scheduledDeliveryAt: scheduledDeliveryAtIso,
       });
     },
     onSuccess: (order) => {
@@ -489,6 +561,11 @@ export function CheckoutClient() {
             }}
             onPlaceOrder={placeOrder}
             isPlacing={placeOrderMutation.isPending}
+            deliveryType={deliveryType}
+            onDeliveryTypeChange={setDeliveryType}
+            scheduledDeliveryAt={scheduledDeliveryAt}
+            onScheduledDeliveryAtChange={setScheduledDeliveryAt}
+            standardDeliveryDays={currentRegion?.standardDeliveryDays ?? null}
           />
         </div>
       </Section>
@@ -885,6 +962,13 @@ interface OrderReviewCardProps {
   onClear: () => void;
   onPlaceOrder: () => void;
   isPlacing: boolean;
+  deliveryType: "STANDARD" | "SCHEDULED";
+  onDeliveryTypeChange: (v: "STANDARD" | "SCHEDULED") => void;
+  /** Raw <input type="datetime-local"> value. */
+  scheduledDeliveryAt: string;
+  onScheduledDeliveryAtChange: (v: string) => void;
+  /** Region's Standard Delivery lead time, if configured. */
+  standardDeliveryDays: number | null;
 }
 
 function OrderReviewCard({
@@ -909,9 +993,23 @@ function OrderReviewCard({
   onClear,
   onPlaceOrder,
   isPlacing,
+  deliveryType,
+  onDeliveryTypeChange,
+  scheduledDeliveryAt,
+  onScheduledDeliveryAtChange,
+  standardDeliveryDays,
 }: OrderReviewCardProps) {
   const { currency, locale } = useCurrency();
   const { t } = useT();
+
+  // Mirrors the backend's window (order.service.js SCHEDULED_DELIVERY_MIN_LEAD_DAYS /
+  // MAX_WINDOW_DAYS) — just a UX hint; the backend re-validates regardless.
+  const minScheduledDeliveryAt = toDatetimeLocalValue(startOfDayPlusDays(1));
+  // Last moment of day 60 (backend rejects at/after the start of day 61), so the
+  // picker's native max doesn't cut off the final day's later hours.
+  const maxScheduledDeliveryAt = toDatetimeLocalValue(
+    new Date(startOfDayPlusDays(61).getTime() - 60_000)
+  );
 
   return (
     <aside className="flex flex-col gap-4">
@@ -983,10 +1081,16 @@ function OrderReviewCard({
                   ? t("order.vatIncludedLabel", { rate: vatRatePercent })
                   : t("order.vatLabel", { rate: vatRatePercent })}
               </span>
-              <span>
-                {vatAdds ? "+ " : ""}
-                <CurrencyAmount amount={vatAmount} currency={currency} locale={locale} />
-              </span>
+              {/* Inclusive VAT is already baked into the item prices above — showing
+                  its extracted amount here (a different number than the same rate
+                  would add on an exclusive order) reads as a calculation error, so
+                  only the label is shown, no figure. */}
+              {!vatInclusive ? (
+                <span>
+                  {vatAdds ? "+ " : ""}
+                  <CurrencyAmount amount={vatAmount} currency={currency} locale={locale} />
+                </span>
+              ) : null}
             </div>
           ) : null}
           <div className="flex justify-between text-ink-500">
@@ -1066,6 +1170,63 @@ function OrderReviewCard({
       </Card>
 
       <Card variant="flat" padding="lg" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-bloom-700">
+            {t("checkout.deliveryHeading")}
+          </p>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-ink-900 bg-cream-50 p-4">
+            <input
+              type="radio"
+              name="deliveryType"
+              checked={deliveryType === "STANDARD"}
+              onChange={() => onDeliveryTypeChange("STANDARD")}
+              className="mt-1 h-4 w-4 accent-ink-900"
+            />
+            <div>
+              <p className="font-medium text-ink-900">{t("checkout.standardDelivery")}</p>
+              <p className="text-sm text-ink-500">
+                {standardDeliveryDays != null
+                  ? t(
+                      standardDeliveryDays === 1
+                        ? "checkout.standardDeliveryEtaOne"
+                        : "checkout.standardDeliveryEtaOther",
+                      { days: standardDeliveryDays }
+                    )
+                  : t("checkout.standardDeliveryEtaUnknown")}
+              </p>
+            </div>
+          </label>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-ink-200 p-4">
+            <input
+              type="radio"
+              name="deliveryType"
+              checked={deliveryType === "SCHEDULED"}
+              onChange={() => onDeliveryTypeChange("SCHEDULED")}
+              className="mt-1 h-4 w-4 accent-ink-900"
+            />
+            <div className="flex-1">
+              <p className="font-medium text-ink-900">{t("checkout.scheduledDelivery")}</p>
+              <p className="text-sm text-ink-500">{t("checkout.scheduledDeliveryHint")}</p>
+              {deliveryType === "SCHEDULED" ? (
+                <Input
+                  type="datetime-local"
+                  aria-label={t("checkout.scheduledDelivery")}
+                  min={minScheduledDeliveryAt}
+                  max={maxScheduledDeliveryAt}
+                  value={scheduledDeliveryAt}
+                  onChange={(e) => onScheduledDeliveryAtChange(e.target.value)}
+                  containerClassName="mt-3"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : null}
+            </div>
+          </label>
+        </div>
+
+        <Divider />
+
         <div className="flex items-start gap-3 rounded-2xl border border-ink-900 bg-cream-50 p-4">
           <input
             type="radio"

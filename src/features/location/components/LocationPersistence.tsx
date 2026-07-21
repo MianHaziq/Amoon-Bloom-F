@@ -33,12 +33,28 @@ export function LocationPersistence() {
     hydrated.current = true;
     const stored = storage.get<Partial<LocationState>>(STORAGE_KEYS.location);
     if (stored && stored.hasChosen) {
+      // The server already rendered using the `region` cookie (see
+      // StoreProvider's `initialCountry`). localStorage is the user's
+      // explicit past choice and should still win if it disagrees — but the
+      // cookie can go stale independently of localStorage (cleared via
+      // browser privacy settings, a different profile, etc.), and patching
+      // ONLY Redux in that case leaves server-rendered markup (catalog,
+      // footer, currency) stuck on the old region while client-rendered text
+      // jumps to the new one — a jarring half-corrected flash. If they
+      // disagree, refresh Server Components too so the whole page lands on
+      // one consistent region instead of a split state.
+      const priorCountry = store.getState().location.country;
       dispatch(setLocationFromStorage(stored));
+      writeRegionCookie(store.getState().location.country);
+      if (stored.country && stored.country !== priorCountry) {
+        router.refresh();
+      }
+      return;
     }
     // Mirror the (possibly default) region into the cookie so SSR catalog
     // fetches and the axios X-Region interceptor agree on the same region.
     writeRegionCookie(store.getState().location.country);
-  }, [dispatch, store]);
+  }, [dispatch, store, router]);
 
   // When a user logs in (or the page loads with an active session), seed the
   // location from their saved profile if they haven't explicitly chosen one yet.

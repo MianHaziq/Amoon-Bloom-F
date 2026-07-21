@@ -18,6 +18,10 @@ export interface ApiRegion {
   /** Flat shipping fee charged on every order placed in this region. Null = free
    * (no fee configured). Serialized as a string (Prisma Decimal), like Product.price. */
   shippingFlatRate: string | null;
+  /** Typical Standard Delivery lead time for this region, in whole days (e.g. 1, 3).
+   * Null = not configured, so the storefront shows no ETA. Plain number — unlike
+   * shippingFlatRate, this is a Prisma Int, not a Decimal, so no string quirk. */
+  standardDeliveryDays: number | null;
   /** ISO 3166-1 alpha-2 code (e.g. "AE") — renders this region's flag in the
    * storefront's country/region pickers. Null shows a neutral placeholder. */
   iso2: string | null;
@@ -74,6 +78,7 @@ export interface ApiRegionCreateInput {
   currency?: string;
   legalEntity?: string | null;
   shippingFlatRate?: number | null;
+  standardDeliveryDays?: number | null;
   iso2?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;

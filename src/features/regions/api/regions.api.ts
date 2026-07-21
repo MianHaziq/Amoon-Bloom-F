@@ -41,19 +41,25 @@ export const regionsApi = {
   },
 
   /**
-   * Links ALL existing products and/or categories to this region in one
-   * shot — a new region otherwise starts with zero visible products/
-   * categories (same "no rows = visible in none" rule Product/Category/
-   * Section/Banner region-scoping already uses). Idempotent: only adds
-   * missing links, safe to call more than once.
+   * Links ALL existing products, categories and/or sections to this region in
+   * one shot — a new region otherwise starts with zero visible products/
+   * categories/sections (same "no rows = visible in none" rule Product/Category/
+   * Section/Banner region-scoping already uses). Sections only render on the
+   * storefront when they also have in-region products, so link all three
+   * together. Idempotent: only adds missing links, safe to call more than once.
    */
   async bulkAssign(
     id: string,
-    payload: { products?: boolean; categories?: boolean }
-  ): Promise<{ productsLinked: number; categoriesLinked: number }> {
+    payload: { products?: boolean; categories?: boolean; sections?: boolean }
+  ): Promise<{ productsLinked: number; categoriesLinked: number; sectionsLinked: number }> {
     const { data } = await http.post<
-      ApiResponse<{ productsLinked: number; categoriesLinked: number }>
+      ApiResponse<{ productsLinked: number; categoriesLinked: number; sectionsLinked: number }>
     >(`/regions/${id}/bulk-assign`, payload);
     return data.data;
+  },
+
+  /** Persist admin drag-and-drop order of regions (drives the region picker order). */
+  async reorder(items: { id: string; sortOrder: number }[]): Promise<void> {
+    await http.patch("/regions/order", { items });
   },
 };

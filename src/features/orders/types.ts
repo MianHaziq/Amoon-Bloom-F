@@ -4,16 +4,21 @@
  */
 
 export type OrderStatus =
-  | "PENDING"
-  | "CONFIRMED"
+  | "PENDING_PAYMENT"
   | "PROCESSING"
-  | "SHIPPED"
-  | "DELIVERED"
-  | "CANCELLED";
+  | "ON_HOLD"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "REFUNDED"
+  | "FAILED"
+  | "DRAFT";
 
 // The web only initiates COD, but the backend can return MYFATOORAH on orders
 // placed via other clients (e.g. mobile) that the web may still display.
 export type PaymentMethod = "COD" | "MYFATOORAH";
+
+/** STANDARD (default) or SCHEDULED (customer picked a future date/time at checkout). */
+export type DeliveryType = "STANDARD" | "SCHEDULED";
 
 export type PaymentStatus = "UNPAID" | "PAID" | "FAILED";
 
@@ -119,6 +124,13 @@ export interface ApiOrder {
   /** Flat delivery fee charged on this order (snapshot of the region's rate at
    * checkout). Already included in totalAmount. 0 for legacy/free-shipping orders. */
   shippingAmount?: number;
+  /** STANDARD (default) or SCHEDULED. Undefined/absent on legacy orders — treat as STANDARD. */
+  deliveryType?: DeliveryType;
+  /** Customer-chosen future date/time. Only set when deliveryType is SCHEDULED. */
+  scheduledDeliveryAt?: string | null;
+  /** Snapshot of the region's standard delivery days at checkout time. Only set when
+   * deliveryType is STANDARD; null for legacy orders or when the region had no ETA configured. */
+  estimatedDeliveryDays?: number | null;
   /** Pre-VAT, pre-discount line sum. Null for legacy orders placed before VAT. */
   subtotalAmount?: number | null;
   /** Total VAT — included in totalAmount for exclusive VAT, extracted (informational) for inclusive VAT. 0 when no VAT applied. */
@@ -174,6 +186,13 @@ export interface ApiOrderListRow {
   vatInclusive?: boolean;
   /** Currency the order was totaled in (e.g. "AED", "SAR"). Defaults to AED for legacy orders. */
   currency?: string;
+  /** STANDARD (default) or SCHEDULED. Undefined/absent on legacy orders — treat as STANDARD. */
+  deliveryType?: DeliveryType;
+  /** Customer-chosen future date/time. Only set when deliveryType is SCHEDULED. */
+  scheduledDeliveryAt?: string | null;
+  /** Snapshot of the region's standard delivery days at checkout time. Only set when
+   * deliveryType is STANDARD. */
+  estimatedDeliveryDays?: number | null;
   /** Region the order was placed in. */
   region?: ApiOrderListRegion | null;
   status: OrderStatus;
@@ -204,6 +223,10 @@ export interface ApiCheckoutInput {
   shippingAddress?: OrderShippingAddressInput;
   paymentMethod?: PaymentMethod;
   promoCode?: string;
+  /** Defaults to STANDARD on the backend when omitted. */
+  deliveryType?: DeliveryType;
+  /** Required (and validated as 1-60 days out) when deliveryType is SCHEDULED. ISO datetime. */
+  scheduledDeliveryAt?: string;
 }
 
 export interface ApiGuestCheckoutItem {
@@ -223,6 +246,10 @@ export interface ApiGuestCheckoutInput {
   email?: string;
   orderMessage?: string;
   promoCode?: string;
+  /** Defaults to STANDARD on the backend when omitted. */
+  deliveryType?: DeliveryType;
+  /** Required (and validated as 1-60 days out) when deliveryType is SCHEDULED. ISO datetime. */
+  scheduledDeliveryAt?: string;
 }
 
 export interface ApiOrderHistoryParams {

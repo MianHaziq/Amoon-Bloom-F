@@ -10,6 +10,20 @@ import { ROUTES } from "@/constants/routes";
 import { getServerRegion } from "@/services/serverRegion";
 import { getServerLocale } from "@/i18n/server";
 import { localized, t } from "@/i18n";
+import {
+  BEST_SELLING_FILTER_VALUE,
+  NEW_ARRIVALS_FILTER_VALUE,
+} from "@/features/products/facets";
+
+/** "View all" destination for a section — Best Sellers/New Arrivals land on the
+ *  shop page pre-filtered to the matching real ranking (sales-desc / createdAt-desc)
+ *  via the same sentinel mechanism the shop sidebar's "Best Selling" chip uses; a
+ *  plain CUSTOM section just goes to the unfiltered shop, as before. */
+function viewAllHref(kind: string | undefined): string {
+  if (kind === "BEST_SELLERS") return `${ROUTES.shop}?category=${BEST_SELLING_FILTER_VALUE}`;
+  if (kind === "NEW_ARRIVALS") return `${ROUTES.shop}?category=${NEW_ARRIVALS_FILTER_VALUE}`;
+  return ROUTES.shop;
+}
 
 // Generous cap so admins can add several rails; guards against a runaway home.
 const MAX_SECTIONS = 8;
@@ -73,7 +87,7 @@ export async function HomeSections() {
               <SectionHeader
                 title={localized(section.title, section.title_ar, locale)}
                 action={
-                  <Link href={ROUTES.shop} className="contents">
+                  <Link href={viewAllHref(section.kind)} className="contents">
                     <Button
                       variant="ghost"
                       trailingIcon={

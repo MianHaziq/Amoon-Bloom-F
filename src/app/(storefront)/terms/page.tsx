@@ -33,8 +33,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       title: localized("1. Acceptance of Terms", "1. قبول الشروط", locale),
       blocks: [
         P(
-          "By accessing and using the Amoon Bloom Trading LLC website (www.amoonbloom.com) and placing an order, you agree to be bound by these Terms and Conditions. These terms are governed by applicable Electronic Transactions, Trust Services and Consumer Protection laws.",
-          "من خلال الدخول إلى موقع أمون بلوم للتجارة ذ.م.م (www.amoonbloom.com) وإتمام أي طلب، فإنك توافق على الالتزام بهذه الشروط والأحكام. وتخضع هذه الشروط لقوانين المعاملات الإلكترونية وخدمات الثقة وحماية المستهلك المعمول بها."
+          `By accessing and using the ${contact.legalEntity} website (www.amoonbloom.com) and placing an order, you agree to be bound by these Terms and Conditions. These terms are governed by applicable Electronic Transactions, Trust Services and Consumer Protection laws.`,
+          `من خلال الدخول إلى موقع ${contact.legalEntity} (www.amoonbloom.com) وإتمام أي طلب، فإنك توافق على الالتزام بهذه الشروط والأحكام. وتخضع هذه الشروط لقوانين المعاملات الإلكترونية وخدمات الثقة وحماية المستهلك المعمول بها.`
         ),
       ],
     },
@@ -42,8 +42,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       title: localized("2. About Us", "2. من نحن", locale),
       blocks: [
         P(
-          `Amoon Bloom Trading LLC is an online e-commerce business registered and operating in ${contact.registrationCity ? `${contact.registrationCity}, ${contact.countryName}` : contact.countryName}, offering gift boxes, flower bouquets, flower mugs, newborn gifts, natural oil, and other gift items.`,
-          `شركة أمون بلوم للتجارة ذ.م.م هي متجر إلكتروني مسجل ويعمل في ${contact.registrationCity ? `${contact.registrationCity}، ${contact.countryName}` : contact.countryName}، ويقدّم صناديق الهدايا وباقات الزهور وأكواب الزهور وهدايا المواليد والزيوت الطبيعية ومنتجات الهدايا الأخرى.`
+          `${contact.legalEntity} is an online e-commerce business registered and operating in ${contact.registrationCity ? `${contact.registrationCity}, ${contact.countryName}` : contact.countryName}, offering gift boxes, flower bouquets, flower mugs, newborn gifts, natural oil, and other gift items.`,
+          `${contact.legalEntity} هي متجر إلكتروني مسجل ويعمل في ${contact.registrationCity ? `${contact.registrationCity}، ${contact.countryName}` : contact.countryName}، ويقدّم صناديق الهدايا وباقات الزهور وأكواب الزهور وهدايا المواليد والزيوت الطبيعية ومنتجات الهدايا الأخرى.`
         ),
         LL([
           ["Address", contact.address, "العنوان", contact.address],
@@ -84,8 +84,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         L([
           [
-            "Orders are subject to acceptance and confirmation by Amoon Bloom Trading LLC.",
-            "تخضع الطلبات لقبول وتأكيد أمون بلوم للتجارة ذ.م.م.",
+            `Orders are subject to acceptance and confirmation by ${contact.legalEntity}.`,
+            `تخضع الطلبات لقبول وتأكيد ${contact.legalEntity}.`,
           ],
           [
             "We accept payment via the secure payment methods listed at checkout.",
@@ -146,8 +146,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       title: localized("7. Intellectual Property", "7. الملكية الفكرية", locale),
       blocks: [
         P(
-          `All content on the Amoon Bloom Trading LLC website including text, images, logos, and product designs is the intellectual property of Amoon Bloom Trading LLC or its licensors and is protected under ${contact.ipLawName}. Reproduction, distribution, or commercial use without written permission is strictly prohibited.`,
-          `يُعد كل محتوى موقع أمون بلوم للتجارة ذ.م.م، بما في ذلك النصوص والصور والشعارات وتصاميم المنتجات، ملكية فكرية للشركة أو مرخّصيها، ويخضع للحماية بموجب ${contact.ipLawName}. ويُحظر نسخه أو توزيعه أو استخدامه تجاريًا دون إذن كتابي.`
+          `All content on the ${contact.legalEntity} website including text, images, logos, and product designs is the intellectual property of ${contact.legalEntity} or its licensors and is protected under ${contact.ipLawName}. Reproduction, distribution, or commercial use without written permission is strictly prohibited.`,
+          `يُعد كل محتوى موقع ${contact.legalEntity}، بما في ذلك النصوص والصور والشعارات وتصاميم المنتجات، ملكية فكرية للشركة أو مرخّصيها، ويخضع للحماية بموجب ${contact.ipLawName}. ويُحظر نسخه أو توزيعه أو استخدامه تجاريًا دون إذن كتابي.`
         ),
       ],
     },
@@ -155,8 +155,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       title: localized("8. Limitation of Liability", "8. تحديد المسؤولية", locale),
       blocks: [
         P(
-          `To the fullest extent permitted by ${contact.countryShort} law, Amoon Bloom Trading LLC shall not be liable for any indirect, incidental, or consequential damages arising from the use of our website or products. Our aggregate liability to any customer shall not exceed the value of the order in question.`,
-          `إلى أقصى حد تسمح به قوانين ${contact.countryName}، لا تتحمل أمون بلوم للتجارة ذ.م.م مسؤولية أي أضرار غير مباشرة أو عرضية أو تبعية ناتجة عن استخدام موقعنا أو منتجاتنا. ولا تتجاوز مسؤوليتنا الإجمالية تجاه أي عميل قيمة الطلب المعني.`
+          `To the fullest extent permitted by ${contact.countryShort} law, ${contact.legalEntity} shall not be liable for any indirect, incidental, or consequential damages arising from the use of our website or products. Our aggregate liability to any customer shall not exceed the value of the order in question.`,
+          `إلى أقصى حد تسمح به قوانين ${contact.countryName}، لا تتحمل ${contact.legalEntity} مسؤولية أي أضرار غير مباشرة أو عرضية أو تبعية ناتجة عن استخدام موقعنا أو منتجاتنا. ولا تتجاوز مسؤوليتنا الإجمالية تجاه أي عميل قيمة الطلب المعني.`
         ),
       ],
     },
@@ -207,8 +207,8 @@ export default async function TermsPage() {
       eyebrow={localized("Policies", "السياسات", locale)}
       title={localized("Terms & Conditions", "الشروط والأحكام", locale)}
       intro={localized(
-        "Please review these Terms and Conditions before accessing our website or placing an order with Amoonis Boutique, operated by Amoon Bloom Trading LLC.",
-        "يُرجى مراجعة هذه الشروط والأحكام قبل الدخول إلى موقعنا أو إتمام أي طلب مع أموونيس بوتيك، التي تديرها شركة أمون بلوم للتجارة ذ.م.م.",
+        `Please review these Terms and Conditions before accessing our website or placing an order with Amoonis Boutique, operated by ${contact.legalEntity}.`,
+        `يُرجى مراجعة هذه الشروط والأحكام قبل الدخول إلى موقعنا أو إتمام أي طلب مع أموونيس بوتيك، التي تديرها ${contact.legalEntity}.`,
         locale
       )}
       badge={localized("Terms & Conditions", "الشروط والأحكام", locale)}

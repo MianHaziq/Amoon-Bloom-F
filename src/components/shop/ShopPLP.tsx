@@ -13,7 +13,7 @@ import {
 } from "@/features/products/facets";
 import { productsApi } from "@/features/products/api/products.api";
 import { toUiProducts } from "@/features/products/adapters";
-import { BEST_SELLING_FILTER_VALUE } from "@/features/products/facets";
+import { BEST_SELLING_FILTER_VALUE, NEW_ARRIVALS_FILTER_VALUE } from "@/features/products/facets";
 import {
   Drawer,
   Button,
@@ -100,17 +100,22 @@ export function ShopPLP({
   pageSize = 12,
   lockedCategorySlug,
 }: ShopPLPProps) {
-  const [filter, setFilter] = useState<ProductFilter>({
+  const searchParams = useSearchParams();
+  const rawQ = (searchParams.get("q") ?? "").trim();
+  const q = rawQ.toLowerCase();
+  const [filter, setFilter] = useState<ProductFilter>(() => ({
     sort: "featured",
-    category: lockedCategorySlug,
-  });
+    // Seed the data source from the `?category=` URL param on mount, so the
+    // homepage's Best Sellers / New Arrivals "View all" links (which navigate to
+    // /shop?category=<sentinel>) — and any shared /shop?category=<slug> URL —
+    // land on the intended feed instead of the default catalogue. The
+    // /shop/category/[slug] route's lockedCategorySlug always wins when present.
+    category: lockedCategorySlug ?? searchParams.get("category") ?? undefined,
+  }));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { t, tc, locale: uiLocale } = useT();
   const { currency, locale } = useCurrency();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const rawQ = (searchParams.get("q") ?? "").trim();
-  const q = rawQ.toLowerCase();
 
   // The data SOURCE is the (locked-or-selected) category, or the search query.
   // Category & search are resolved SERVER-SIDE + paginated here — so browsing a
@@ -134,6 +139,8 @@ export function ShopPLP({
       if (rawQ) return productsApi.search(rawQ, params);
       if (activeCategory === BEST_SELLING_FILTER_VALUE)
         return productsApi.bestSellers(params);
+      if (activeCategory === NEW_ARRIVALS_FILTER_VALUE)
+        return productsApi.newArrivals(params);
       if (activeCategory)
         return productsApi.listByCategory(activeCategory, params);
       return productsApi.list(params);
@@ -226,9 +233,11 @@ export function ShopPLP({
   const categoryTitle =
     filter.category === BEST_SELLING_FILTER_VALUE
       ? t("shop.bestSelling")
-      : filter.category
-        ? categories.find((c) => c.slug === filter.category)?.title ?? filter.category
-        : undefined;
+      : filter.category === NEW_ARRIVALS_FILTER_VALUE
+        ? t("shop.newArrivals")
+        : filter.category
+          ? categories.find((c) => c.slug === filter.category)?.title ?? filter.category
+          : undefined;
 
   const filterKey = `${activeCategory ?? "all"}|${filter.sort ?? "featured"}|${filter.inStock ? 1 : 0}|${filter.minPrice ?? ""}|${filter.maxPrice ?? ""}|${selectedColors.join(",")}|${q}`;
 

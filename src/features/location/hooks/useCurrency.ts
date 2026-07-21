@@ -6,6 +6,7 @@ import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { siteConfig } from "@/config/site";
 import { intlLocale } from "@/lib/format";
+import { getCallingCode } from "@/features/regions/countries";
 
 /**
  * Currency + region name for the storefront. The backend supports a per-region
@@ -20,6 +21,13 @@ import { intlLocale } from "@/lib/format";
  * formatting matches the rest of the localized UI. Arabic maps to
  * `ar-AE-u-nu-latn` (Latin digits, Arabic label conventions) — independent of
  * the region, which only drives the currency symbol.
+ *
+ * `dialCode` is the phone field's country-calling-code prefix (e.g. "+212"
+ * for Morocco), derived automatically from the region's `iso2` — never a
+ * manually-maintained per-region map, so a brand-new region (Pakistan,
+ * Morocco, ...) gets the right prefix the moment its `iso2` is set, with no
+ * extra admin step. Empty string when the region has no `iso2` set, matching
+ * how the phone field showed no prefix before this existed.
  */
 export function useCurrency() {
   const country = useAppSelector((s) => s.location.country);
@@ -35,5 +43,7 @@ export function useCurrency() {
     locale: intlLocale(uiLocale),
     countryCode: country,
     countryName: region?.name ?? country,
+    iso2: region?.iso2 ?? null,
+    dialCode: getCallingCode(region?.iso2) ?? "",
   };
 }

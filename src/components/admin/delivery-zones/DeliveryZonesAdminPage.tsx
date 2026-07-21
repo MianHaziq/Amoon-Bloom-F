@@ -61,6 +61,30 @@ export function DeliveryZonesAdminPage() {
     onError: (err) => toast.fromError(t("admin.deliveryZonesPage.toastDeleteError"), err),
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: (items: { id: string; sortOrder: number }[]) =>
+      deliveryZonesApi.reorder(items),
+    onSuccess: () => toast.success({ title: t("admin.deliveryZonesPage.toastOrderSaved") }),
+    onError: (err) => {
+      toast.fromError(t("admin.deliveryZonesPage.toastOrderError"), err);
+      queryClient.invalidateQueries({ queryKey: queryKeys.deliveryZones.all });
+    },
+  });
+
+  // Drag is only enabled when a single region is selected (see `sortable` below),
+  // so `next` holds exactly that region's zones in their new order. sortOrder is
+  // per-region, so we number them 0..n and merge the slice back into the cached
+  // full list (other regions' zones untouched) for an optimistic reorder.
+  const handleReorder = (next: ApiDeliveryZone[]) => {
+    const withOrder = next.map((z, i) => ({ ...z, sortOrder: i }));
+    const reorderedIds = new Set(withOrder.map((z) => z.id));
+    queryClient.setQueryData<ApiDeliveryZone[]>(queryKeys.deliveryZones.list(), (prev) => {
+      const others = (prev ?? []).filter((z) => !reorderedIds.has(z.id));
+      return [...others, ...withOrder];
+    });
+    reorderMutation.mutate(withOrder.map((z) => ({ id: z.id, sortOrder: z.sortOrder })));
+  };
+
   const columns: Column<ApiDeliveryZone>[] = [
     {
       key: "name",
@@ -154,6 +178,8 @@ export function DeliveryZonesAdminPage() {
         error={query.error}
         emptyTitle={t("admin.deliveryZonesPage.emptyTitle")}
         emptyDescription={t("admin.deliveryZonesPage.emptyDescription")}
+        sortable={Boolean(regionFilter) && !search.trim()}
+        onReorder={handleReorder}
         toolbar={
           <div className="flex flex-1 items-center gap-2">
             <div className="flex flex-1 items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5 sm:max-w-sm">
@@ -178,6 +204,11 @@ export function DeliveryZonesAdminPage() {
               ))}
             </select>
           </div>
+        }
+        footer={
+          !regionFilter && rows.length > 0 ? (
+            <p className="text-xs text-ink-500">{t("admin.deliveryZonesPage.reorderHint")}</p>
+          ) : undefined
         }
       />
 

@@ -9,6 +9,7 @@ import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { RegionBadges } from "@/components/admin/RegionBadges";
+import { Badge } from "@/components/ui";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { useToast } from "@/hooks/useToast";
@@ -74,7 +75,14 @@ export function SectionsAdminPage() {
       header: t("admin.sectionsPage.columnSection"),
       cell: (s) => (
         <div>
-          <p className="font-medium text-ink-900">{s.title}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-medium text-ink-900">{s.title}</p>
+            {s.kind === "BEST_SELLERS" ? (
+              <Badge tone="bloom">{t("admin.sectionForm.kindBestSellers")}</Badge>
+            ) : s.kind === "NEW_ARRIVALS" ? (
+              <Badge tone="bloom">{t("admin.sectionForm.kindNewArrivals")}</Badge>
+            ) : null}
+          </div>
           {s.title_ar ? <p className="text-xs text-ink-500" dir="rtl">{s.title_ar}</p> : null}
         </div>
       ),

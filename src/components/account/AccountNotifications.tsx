@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui";
 import { Spinner } from "@/components/ui/Loader";
 import { BellIcon } from "@/components/icons";
@@ -13,20 +13,26 @@ import type { ApiNotification } from "@/features/notifications/types";
 import { relativeTime } from "@/features/notifications/utils";
 import { useT } from "@/i18n/useT";
 
+const PAGE_SIZE = 20;
+
 /**
- * Full notification inbox for /account/notifications. Paginates with a "load
- * more" limit bump, marks a row read on click (and follows an in-app deep-link
- * if the payload carries one), and offers mark-all-read.
+ * Full notification inbox for /account/notifications. Paginates page-by-page
+ * (not by growing `limit`, which would eventually exceed the backend's
+ * limit<=100 cap and 400), marks a row read on click (and follows an in-app
+ * deep-link if the payload carries one), and offers mark-all-read.
  */
 export function AccountNotifications() {
   const { t, locale } = useT();
   const router = useRouter();
   const qc = useQueryClient();
-  const [limit, setLimit] = useState(20);
 
-  const query = useQuery({
-    queryKey: queryKeys.notifications.list({ limit }),
-    queryFn: () => notificationsApi.list({ limit }),
+  const query = useInfiniteQuery({
+    queryKey: queryKeys.notifications.list({ limit: PAGE_SIZE }),
+    queryFn: ({ pageParam }) =>
+      notificationsApi.list({ page: pageParam, limit: PAGE_SIZE }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
   });
 
   const markRead = useMutation({
@@ -47,6 +53,12 @@ export function AccountNotifications() {
     if (link && link.startsWith("/")) router.push(link);
   };
 
+  const items = useMemo(
+    () => query.data?.pages.flatMap((page) => page.items) ?? [],
+    [query.data]
+  );
+  const unread = query.data?.pages[0]?.unreadCount ?? 0;
+
   if (query.isPending) {
     return (
       <div className="flex justify-center py-16">
@@ -55,8 +67,16 @@ export function AccountNotifications() {
     );
   }
 
-  const items = query.data?.items ?? [];
-  const unread = query.data?.unreadCount ?? 0;
+  if (query.isError && items.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-3xl border border-dashed border-ink-200 bg-cream-50 px-6 py-16 text-center">
+        <p className="text-sm text-ink-500">{t("notifications.loadError")}</p>
+        <Button variant="outline" size="sm" onClick={() => query.refetch()}>
+          {t("error.retry")}
+        </Button>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -121,9 +141,13 @@ export function AccountNotifications() {
         ))}
       </ul>
 
-      {query.data && query.data.totalPages > 1 && items.length < query.data.total ? (
+      {query.hasNextPage ? (
         <div className="flex justify-center">
-          <Button variant="ghost" onClick={() => setLimit((l) => l + 20)}>
+          <Button
+            variant="ghost"
+            onClick={() => query.fetchNextPage()}
+            isLoading={query.isFetchingNextPage}
+          >
             {t("common.loadMore")}
           </Button>
         </div>

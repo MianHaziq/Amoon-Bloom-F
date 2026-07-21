@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { stripKnownCallingCode } from "@/features/regions/countries";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import type { MessageKey } from "@/i18n";
 import type {
@@ -21,15 +22,11 @@ import type {
   ApiAddressCreateInput,
 } from "@/features/addresses/types";
 
-// Mirrors CheckoutClient.tsx's dial-code convention exactly — same reasoning:
-// the field stores one E.164-ish string in the existing `phone` column, no
-// backend schema change. Kept in sync manually since it's a 2-entry map.
-const DIAL_CODE: Record<string, string> = { UAE: "+971", SA: "+966" };
-function stripDialCode(phone: string | null | undefined): string {
-  if (!phone) return "";
-  const known = Object.values(DIAL_CODE).find((code) => phone.startsWith(code));
-  return known ? phone.slice(known.length) : phone.replace(/^\+/, "");
-}
+// Mirrors CheckoutClient.tsx's dial-code convention exactly: the field stores
+// one E.164-ish string in the existing `phone` column (no backend schema
+// change). The prefix itself comes from useCurrency()'s `dialCode`, derived
+// automatically from the region's `iso2` — see countries.ts.
+const stripDialCode = stripKnownCallingCode;
 
 type TranslateFn = (key: MessageKey) => string;
 
@@ -195,9 +192,8 @@ function AddressFormModal({ open, onClose, initial, title }: AddressFormModalPro
   const toast = useToast();
   const queryClient = useQueryClient();
   const { t, locale: uiLocale } = useT();
-  const { countryCode } = useCurrency();
+  const { countryCode, dialCode } = useCurrency();
   const regionCode = countryCode;
-  const dialCode = DIAL_CODE[regionCode] ?? "";
 
   const zonesQuery = useQuery({
     queryKey: queryKeys.deliveryZones.list(regionCode),

@@ -46,13 +46,15 @@ export function RegionEditPage({ id }: { id: string }) {
   // region and the storefront shows nothing in it": link the WHOLE existing
   // catalog at once instead of editing every product/category by hand.
   const bulkAssignMutation = useMutation({
-    mutationFn: () => regionsApi.bulkAssign(id, { products: true, categories: true }),
-    onSuccess: ({ productsLinked, categoriesLinked }) => {
+    mutationFn: () =>
+      regionsApi.bulkAssign(id, { products: true, categories: true, sections: true }),
+    onSuccess: ({ productsLinked, categoriesLinked, sectionsLinked }) => {
       toast.success({
         title: t("admin.regionsPage.toastBulkAssigned"),
         description: t("admin.regionsPage.toastBulkAssignedDescription", {
           products: productsLinked,
           categories: categoriesLinked,
+          sections: sectionsLinked,
         }),
       });
       setConfirmBulkAssign(false);

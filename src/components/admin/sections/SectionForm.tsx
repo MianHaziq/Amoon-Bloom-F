@@ -39,6 +39,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
         image: z.string().url().nullable(),
         sortOrder: z.number().int().nonnegative(),
         status: z.enum(["DRAFT", "PUBLISHED"]),
+        kind: z.enum(["CUSTOM", "BEST_SELLERS", "NEW_ARRIVALS"]),
         regionIds: z.array(z.string()),
         productIds: z.array(z.string()),
         categoryIds: z.array(z.string()),
@@ -73,6 +74,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       image: null,
       sortOrder: 0,
       status: "PUBLISHED",
+      kind: "CUSTOM",
       regionIds: [],
       productIds: [],
       categoryIds: [],
@@ -87,6 +89,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       image: initial.image,
       sortOrder: initial.sortOrder,
       status: initial.status ?? "PUBLISHED",
+      kind: initial.kind ?? "CUSTOM",
       regionIds: initial.regionIds ?? [],
       productIds: initial.products.map((p) => p.id),
       categoryIds: initial.categories.map((c) => c.id),
@@ -114,6 +117,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       image: v.image,
       sortOrder: v.sortOrder,
       status: v.status,
+      kind: v.kind,
       regionIds: v.regionIds,
       productIds: v.productIds,
       categoryIds: v.categoryIds,
@@ -178,6 +182,30 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
               />
             )}
           />
+
+          <label className="mb-1.5 mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
+            {t("admin.sectionForm.kindLabel")}
+          </label>
+          <Controller
+            control={control}
+            name="kind"
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                onChange={field.onChange}
+                triggerClassName="w-full rounded-lg py-2 justify-between"
+                aria-label={t("admin.sectionForm.kindLabel")}
+                options={[
+                  { value: "CUSTOM", label: t("admin.sectionForm.kindCustom") },
+                  { value: "BEST_SELLERS", label: t("admin.sectionForm.kindBestSellers") },
+                  { value: "NEW_ARRIVALS", label: t("admin.sectionForm.kindNewArrivals") },
+                ]}
+              />
+            )}
+          />
+          <p className="mb-1 mt-1.5 text-xs text-ink-500">
+            {t("admin.sectionForm.kindHint")}
+          </p>
 
           <label className="mb-1.5 mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
             {t("admin.sectionForm.sortOrderLabel")}

@@ -33,8 +33,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       title: localized("1. Product Representations", "1. عرض المنتجات", locale),
       blocks: [
         P(
-          "Amoon Bloom Trading LLC takes pride in presenting our products as accurately as possible. However, you acknowledge that:",
-          "تفخر أمون بلوم للتجارة ذ.م.م بعرض منتجاتنا بأكبر قدر ممكن من الدقة. ومع ذلك، فإنك تقر بما يلي:"
+          `${contact.legalEntity} takes pride in presenting our products as accurately as possible. However, you acknowledge that:`,
+          `تفخر ${contact.legalEntity} بعرض منتجاتنا بأكبر قدر ممكن من الدقة. ومع ذلك، فإنك تقر بما يلي:`
         ),
         L([
           [
@@ -169,8 +169,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       title: localized("7. General Limitation", "7. تحديد عام للمسؤولية", locale),
       blocks: [
         P(
-          `Amoon Bloom Trading LLC makes no warranties, express or implied, beyond those required by ${contact.consumerProtectionLawName} and the applicable laws. Our products are sold as gifts and are not intended for medical, therapeutic, or professional use unless explicitly stated.`,
-          `لا تقدّم شركة أمون بلوم للتجارة ذ.م.م أي ضمانات، صريحة أو ضمنية، تتجاوز ما يقتضيه ${contact.consumerProtectionLawName} والقوانين المعمول بها الأخرى. وتُباع منتجاتنا كهدايا وليست مخصصة للاستخدام الطبي أو العلاجي أو المهني ما لم يُذكر ذلك صراحةً.`
+          `${contact.legalEntity} makes no warranties, express or implied, beyond those required by ${contact.consumerProtectionLawName} and the applicable laws. Our products are sold as gifts and are not intended for medical, therapeutic, or professional use unless explicitly stated.`,
+          `لا تقدّم ${contact.legalEntity} أي ضمانات، صريحة أو ضمنية، تتجاوز ما يقتضيه ${contact.consumerProtectionLawName} والقوانين المعمول بها الأخرى. وتُباع منتجاتنا كهدايا وليست مخصصة للاستخدام الطبي أو العلاجي أو المهني ما لم يُذكر ذلك صراحةً.`
         ),
       ],
     },
@@ -217,8 +217,8 @@ export default async function ProductDisclaimerPage() {
       eyebrow={localized("Policies", "السياسات", locale)}
       title={localized("Product Disclaimer", "إخلاء مسؤولية المنتج", locale)}
       intro={localized(
-        "Please read this Product Disclaimer to understand how we present our products and the limitations that apply to perishable, personalised, and gift items sold by Amoon Bloom Trading LLC.",
-        "يُرجى قراءة إخلاء مسؤولية المنتج هذا لفهم كيفية عرضنا لمنتجاتنا والقيود التي تنطبق على المنتجات القابلة للتلف والمخصصة والهدايا التي تبيعها أمون بلوم للتجارة ذ.م.م.",
+        `Please read this Product Disclaimer to understand how we present our products and the limitations that apply to perishable, personalised, and gift items sold by ${contact.legalEntity}.`,
+        `يُرجى قراءة إخلاء مسؤولية المنتج هذا لفهم كيفية عرضنا لمنتجاتنا والقيود التي تنطبق على المنتجات القابلة للتلف والمخصصة والهدايا التي تبيعها ${contact.legalEntity}.`,
         locale
       )}
       badge={localized("Product Disclaimer", "إخلاء مسؤولية المنتج", locale)}

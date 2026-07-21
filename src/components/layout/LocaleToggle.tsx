@@ -19,7 +19,15 @@ const LOCALES: { value: Locale; nativeLabel: string }[] = [
   { value: "ar", nativeLabel: "العربية" },
 ];
 
-export function LocaleToggle({ className }: { className?: string }) {
+export function LocaleToggle({
+  className,
+  variant = "pill",
+}: {
+  className?: string;
+  /** "pill" is the labelled desktop trigger; "icon" is a compact globe-only
+   *  button for the mobile header's icon row. */
+  variant?: "pill" | "icon";
+}) {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const locale = useAppSelector((s) => s.ui.locale);
@@ -47,6 +55,39 @@ export function LocaleToggle({ className }: { className?: string }) {
 
   const currentLabel = locale === "ar" ? "العربية" : "English";
 
+  const items = LOCALES.map((opt) => {
+    const active = locale === opt.value;
+    return (
+      <MenuItem
+        key={opt.value}
+        onSelect={() => choose(opt.value)}
+        trailing={
+          active ? <CheckIcon size={14} className="text-bloom-600" /> : undefined
+        }
+        className={active ? "font-semibold text-ink-900" : undefined}
+      >
+        {opt.nativeLabel}
+      </MenuItem>
+    );
+  });
+
+  if (variant === "icon") {
+    return (
+      <Menu className={className}>
+        <MenuTrigger
+          label={t("common.language")}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all duration-200 hover:bg-bloom-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50 aria-expanded:bg-bloom-600 aria-expanded:text-white"
+        >
+          <GlobeIcon size={20} />
+        </MenuTrigger>
+
+        <MenuContent align="end" className="min-w-36">
+          {items}
+        </MenuContent>
+      </Menu>
+    );
+  }
+
   return (
     <Menu className={className} openOnHover>
       <MenuTrigger
@@ -62,23 +103,7 @@ export function LocaleToggle({ className }: { className?: string }) {
       </MenuTrigger>
 
       <MenuContent align="end" className="min-w-36">
-        {LOCALES.map((opt) => {
-          const active = locale === opt.value;
-          return (
-            <MenuItem
-              key={opt.value}
-              onSelect={() => choose(opt.value)}
-              trailing={
-                active ? (
-                  <CheckIcon size={14} className="text-bloom-600" />
-                ) : undefined
-              }
-              className={active ? "font-semibold text-ink-900" : undefined}
-            >
-              {opt.nativeLabel}
-            </MenuItem>
-          );
-        })}
+        {items}
       </MenuContent>
     </Menu>
   );

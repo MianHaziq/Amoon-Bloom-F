@@ -89,8 +89,10 @@ export function ProductCarousel({
         className={cn(
           // Bleed to the screen edges on mobile so the last card peeks past the
           // gutter (a visual cue that the row scrolls); align to the container on lg+.
+          // scroll-ps/pe matches the px so snap doesn't scroll the leading gutter
+          // out of view on load (browsers snap flush to the scrollport otherwise).
           "-mx-4 flex snap-x snap-mandatory gap-x-3 overflow-x-auto scroll-smooth px-4 pb-1",
-          "no-scrollbar sm:gap-x-6 lg:mx-0 lg:px-0"
+          "scroll-ps-4 scroll-pe-4 no-scrollbar sm:gap-x-6 lg:mx-0 lg:px-0 lg:scroll-ps-0 lg:scroll-pe-0"
         )}
       >
         {products.map((product, i) => (

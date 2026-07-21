@@ -33,8 +33,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       title: localized("1. Introduction", "1. مقدمة", locale),
       blocks: [
         P(
-          `Amoon Bloom Trading LLC ("we", "us", or "our") is committed to protecting your personal data in accordance with ${contact.dataProtectionLawName} and applicable regulations. This Privacy Policy explains how we collect, use, store, and protect your information when you visit or make a purchase on our website.`,
-          `تلتزم شركة أمون بلوم للتجارة ذ.م.م ("نحن" أو "لنا") بحماية بياناتك الشخصية بموجب ${contact.dataProtectionLawName} واللوائح المعمول بها. توضح سياسة الخصوصية هذه كيفية جمعنا واستخدامنا وتخزيننا وحمايتنا لمعلوماتك عند زيارتك لموقعنا أو الشراء منه.`
+          `${contact.legalEntity} ("we", "us", or "our") is committed to protecting your personal data in accordance with ${contact.dataProtectionLawName} and applicable regulations. This Privacy Policy explains how we collect, use, store, and protect your information when you visit or make a purchase on our website.`,
+          `تلتزم ${contact.legalEntity} ("نحن" أو "لنا") بحماية بياناتك الشخصية بموجب ${contact.dataProtectionLawName} واللوائح المعمول بها. توضح سياسة الخصوصية هذه كيفية جمعنا واستخدامنا وتخزيننا وحمايتنا لمعلوماتك عند زيارتك لموقعنا أو الشراء منه.`
         ),
       ],
     },
@@ -282,8 +282,8 @@ export default async function PrivacyPage() {
       eyebrow={localized("Policies", "السياسات", locale)}
       title={localized("Privacy Policy", "سياسة الخصوصية", locale)}
       intro={localized(
-        "Amoon Bloom Trading LLC is committed to protecting your personal data. Please review this Privacy Policy before using our website or placing an order with Amoonis Boutique.",
-        "تلتزم أمون بلوم للتجارة ذ.م.م بحماية بياناتك الشخصية. يُرجى مراجعة سياسة الخصوصية هذه قبل استخدام موقعنا أو إتمام أي طلب مع أموونيس بوتيك.",
+        `${contact.legalEntity} is committed to protecting your personal data. Please review this Privacy Policy before using our website or placing an order with Amoonis Boutique.`,
+        `تلتزم ${contact.legalEntity} بحماية بياناتك الشخصية. يُرجى مراجعة سياسة الخصوصية هذه قبل استخدام موقعنا أو إتمام أي طلب مع أموونيس بوتيك.`,
         locale
       )}
       badge={localized("Privacy Policy", "سياسة الخصوصية", locale)}

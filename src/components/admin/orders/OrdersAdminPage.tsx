@@ -12,7 +12,7 @@ import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Pagination } from "@/components/admin/Pagination";
 import { Select } from "@/components/admin/Select";
 import { DownloadIcon } from "@/components/icons";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 import {
   ORDER_STATUSES,
@@ -105,6 +105,16 @@ export function OrdersAdminPage() {
           <span className="text-xs font-medium text-ink-700">{o.region.code}</span>
         ) : (
           <span className="text-ink-300">—</span>
+        ),
+    },
+    {
+      key: "delivery",
+      header: t("admin.ordersPage.columnDelivery"),
+      cell: (o) =>
+        o.deliveryType === "SCHEDULED" && o.scheduledDeliveryAt ? (
+          <span className="text-xs text-ink-700">{formatDateTime(o.scheduledDeliveryAt)}</span>
+        ) : (
+          <span className="text-xs text-ink-500">{t("admin.ordersPage.standardDelivery")}</span>
         ),
     },
     {

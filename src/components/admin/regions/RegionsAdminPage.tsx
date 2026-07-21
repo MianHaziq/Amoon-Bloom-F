@@ -50,6 +50,23 @@ export function RegionsAdminPage() {
     onError: (err) => toast.fromError(t("admin.regionsPage.toastDeleteError"), err),
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: (items: { id: string; sortOrder: number }[]) => regionsApi.reorder(items),
+    onSuccess: () => toast.success({ title: t("admin.regionsPage.toastOrderSaved") }),
+    onError: (err) => {
+      toast.fromError(t("admin.regionsPage.toastOrderError"), err);
+      queryClient.invalidateQueries({ queryKey: queryKeys.regions.all });
+    },
+  });
+
+  // Optimistically write the new order to the cache, then persist sortOrder = index.
+  // Reorder only reflects a true global order when the full list is shown, so it's
+  // disabled while a search filter is narrowing the rows (see `sortable` below).
+  const handleReorder = (next: ApiRegion[]) => {
+    queryClient.setQueryData(queryKeys.regions.list(), next);
+    reorderMutation.mutate(next.map((r, i) => ({ id: r.id, sortOrder: i })));
+  };
+
   const columns: Column<ApiRegion>[] = [
     {
       key: "code",
@@ -164,6 +181,8 @@ export function RegionsAdminPage() {
         error={query.error}
         emptyTitle={t("admin.regionsPage.emptyTitle")}
         emptyDescription={t("admin.regionsPage.emptyDescription")}
+        sortable={!search.trim()}
+        onReorder={handleReorder}
         toolbar={
           <div className="flex flex-1 items-center gap-2 sm:max-w-sm">
             <div className="flex flex-1 items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5">

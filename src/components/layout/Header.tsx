@@ -176,6 +176,8 @@ export function Header() {
                   <SearchIcon size={20} />
                 </IconButton>
 
+                <LocaleToggle variant="icon" />
+
                 <button
                   type="button"
                   onClick={() => dispatch(toggleCartDrawer(true))}

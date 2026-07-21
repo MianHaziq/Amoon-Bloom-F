@@ -62,6 +62,20 @@ export const productsApi = {
     return data;
   },
 
+  /**
+   * Newest-published products (`/products/new-arrivals`), pure createdAt-desc
+   * order — ignores the admin's manual catalogue sortOrder, unlike `list()`.
+   */
+  async newArrivals(
+    params: ApiProductListParams = {}
+  ): Promise<PaginatedResponse<ApiProduct>> {
+    const { data } = await http.get<PaginatedResponse<ApiProduct>>(
+      "/products/new-arrivals",
+      { params }
+    );
+    return data;
+  },
+
   async getById(id: string, region?: string): Promise<ApiProduct> {
     const { data } = await http.get<ApiResponse<ApiProduct>>(`/products/${id}`, {
       params: region ? { region } : undefined,

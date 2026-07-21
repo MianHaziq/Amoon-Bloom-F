@@ -25,7 +25,7 @@ import {
   ChatIcon,
 } from "@/components/icons";
 import type { ComponentType, SVGProps } from "react";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatCompactCurrency } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 import { customerLabel, isGuestOrder } from "@/components/admin/orders/orderCustomer";
 
@@ -146,8 +146,9 @@ export function AdminDashboard() {
               ? "—"
               : revenueQuery.isPending
               ? null
-              : formatCurrency(summary?.revenue ?? 0, currency)
+              : formatCompactCurrency(summary?.revenue ?? 0, currency)
           }
+          title={canSeeRevenue ? formatCurrency(summary?.revenue ?? 0, currency) : undefined}
           loading={canSeeRevenue && revenueQuery.isPending}
         />
         <KpiCard
@@ -318,9 +319,11 @@ interface KpiCardProps {
   label: string;
   value: string | null;
   loading?: boolean;
+  /** Exact figure shown on hover — useful when `value` is abbreviated (e.g. "AED 11.9K"). */
+  title?: string;
 }
 
-function KpiCard({ label, value, loading }: KpiCardProps) {
+function KpiCard({ label, value, loading, title }: KpiCardProps) {
   return (
     <m.div
       variants={subtleRise}
@@ -333,7 +336,9 @@ function KpiCard({ label, value, loading }: KpiCardProps) {
         {loading || value === null ? (
           <Skeleton className="h-8 w-2/3" />
         ) : (
-          <p className="font-display text-3xl text-ink-900">{value}</p>
+          <p className="font-display text-3xl text-ink-900" title={title}>
+            {value}
+          </p>
         )}
       </div>
     </m.div>

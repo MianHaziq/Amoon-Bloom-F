@@ -33,8 +33,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       title: localized("1. Delivery Coverage", "1. نطاق التوصيل", locale),
       blocks: [
         P(
-          `Amoon Bloom Trading LLC delivers across ${contact.countryName}. We currently do not offer international shipping.`,
-          `تقوم أمون بلوم للتجارة ذ.م.م بالتوصيل داخل دولة ${contact.countryName}، ولا نقدّم حاليًا خدمة الشحن الدولي.`
+          `${contact.legalEntity} delivers across ${contact.countryName}. We currently do not offer international shipping.`,
+          `تقوم ${contact.legalEntity} بالتوصيل داخل دولة ${contact.countryName}، ولا نقدّم حاليًا خدمة الشحن الدولي.`
         ),
       ],
     },
@@ -219,8 +219,8 @@ export default async function ShippingPolicyPage() {
       eyebrow={localized("Policies", "السياسات", locale)}
       title={localized("Shipping Policy", "سياسة الشحن", locale)}
       intro={localized(
-        `Learn how Amoon Bloom Trading LLC delivers orders across ${contact.countryName}, including delivery options, charges, and what to expect on delivery day.`,
-        `تعرّف على كيفية توصيل أمون بلوم للتجارة ذ.م.م للطلبات داخل دولة ${contact.countryName}، بما في ذلك خيارات التوصيل والرسوم وما يمكن توقعه في يوم التسليم.`,
+        `Learn how ${contact.legalEntity} delivers orders across ${contact.countryName}, including delivery options, charges, and what to expect on delivery day.`,
+        `تعرّف على كيفية توصيل ${contact.legalEntity} للطلبات داخل دولة ${contact.countryName}، بما في ذلك خيارات التوصيل والرسوم وما يمكن توقعه في يوم التسليم.`,
         locale
       )}
       badge={localized("Shipping Policy", "سياسة الشحن", locale)}

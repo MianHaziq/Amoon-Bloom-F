@@ -25,5 +25,7 @@ export function downloadBlob(blob: Blob, filename: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  // Safari can abort a same-tick download if the blob URL is revoked before
+  // it has finished reading it, so defer the revoke to the next tick.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }

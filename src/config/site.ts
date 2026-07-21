@@ -11,7 +11,7 @@ export const siteConfig = {
   tagline: "Composed gift boxes for the moments that matter",
   description:
     "Amoonis Boutique — curated gift boxes, hand-tied flowers, and same-day delivery in the UAE. Composed by hand for graduations, Eid, newborns, and every quiet celebration in between.",
-  url: "https://amoonis-boutique.com",
+  url: "https://amoon-bloom-f.vercel.app",
   ogImage: "/images/og-image.png",
   // Single store currency. The backend stores one price per product in one
   // currency (it has no per-region pricing and no public currency endpoint),

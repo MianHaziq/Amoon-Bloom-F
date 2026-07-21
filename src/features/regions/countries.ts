@@ -75,12 +75,83 @@ const CURRENCY_BY_ISO2: Record<string, string> = {
   VN: "VND", VU: "VUV", WF: "XPF", WS: "WST", YE: "YER", YT: "EUR", ZA: "ZAR", ZM: "ZMW", ZW: "ZWL",
 };
 
+/** ISO 3166-1 alpha-2 -> international calling code (E.164 country code,
+ *  with a leading "+", digits only after that). Several codes are shared by
+ *  more than one country/territory (e.g. "+1" for the whole NANP zone,
+ *  "+7" for Russia and Kazakhstan) — that's correct, not a collision, since
+ *  the calling code alone doesn't need to be unique per country. Drives the
+ *  checkout/account phone field's dial-code prefix automatically from the
+ *  region's `iso2` (see getCallingCode below) — deliberately NOT a per-region
+ *  admin field, since the calling code is a property of the country, not a
+ *  business choice like currency or shipping rate. Left blank (absent from
+ *  this map) only for a handful of uninhabited/disputed codes, mirroring
+ *  CURRENCY_BY_ISO2's "don't guess" rule. */
+const CALLING_CODE_BY_ISO2: Record<string, string> = {
+  AD: "+376", AE: "+971", AF: "+93", AG: "+1", AI: "+1", AL: "+355", AM: "+374", AO: "+244", AR: "+54",
+  AS: "+1", AT: "+43", AU: "+61", AW: "+297", AX: "+358", AZ: "+994", BA: "+387", BB: "+1", BD: "+880",
+  BE: "+32", BF: "+226", BG: "+359", BH: "+973", BI: "+257", BJ: "+229", BM: "+1", BN: "+673", BO: "+591",
+  BQ: "+599", BR: "+55", BS: "+1", BT: "+975", BW: "+267", BY: "+375", BZ: "+501", CA: "+1", CC: "+61",
+  CD: "+243", CF: "+236", CG: "+242", CH: "+41", CI: "+225", CK: "+682", CL: "+56", CM: "+237", CN: "+86",
+  CO: "+57", CR: "+506", CU: "+53", CV: "+238", CW: "+599", CX: "+61", CY: "+357", CZ: "+420", DE: "+49",
+  DJ: "+253", DK: "+45", DM: "+1", DO: "+1", DZ: "+213", EC: "+593", EE: "+372", EG: "+20", EH: "+212",
+  ER: "+291", ES: "+34", ET: "+251", FI: "+358", FJ: "+679", FK: "+500", FM: "+691", FO: "+298", FR: "+33",
+  GA: "+241", GB: "+44", GD: "+1", GE: "+995", GF: "+594", GG: "+44", GH: "+233", GI: "+350", GL: "+299",
+  GM: "+220", GN: "+224", GP: "+590", GQ: "+240", GR: "+30", GS: "+500", GT: "+502", GU: "+1", GW: "+245",
+  GY: "+592", HK: "+852", HM: "+672", HN: "+504", HR: "+385", HT: "+509", HU: "+36", ID: "+62", IE: "+353",
+  IL: "+972", IM: "+44", IN: "+91", IO: "+246", IQ: "+964", IR: "+98", IS: "+354", IT: "+39", JE: "+44",
+  JM: "+1", JO: "+962", JP: "+81", KE: "+254", KG: "+996", KH: "+855", KI: "+686", KM: "+269", KN: "+1",
+  KP: "+850", KR: "+82", KW: "+965", KY: "+1", KZ: "+7", LA: "+856", LB: "+961", LC: "+1", LI: "+423",
+  LK: "+94", LR: "+231", LS: "+266", LT: "+370", LU: "+352", LV: "+371", LY: "+218", MA: "+212", MC: "+377",
+  MD: "+373", ME: "+382", MF: "+590", MG: "+261", MH: "+692", MK: "+389", ML: "+223", MM: "+95", MN: "+976",
+  MO: "+853", MP: "+1", MQ: "+596", MR: "+222", MS: "+1", MT: "+356", MU: "+230", MV: "+960", MW: "+265",
+  MX: "+52", MY: "+60", MZ: "+258", NA: "+264", NC: "+687", NE: "+227", NF: "+672", NG: "+234", NI: "+505",
+  NL: "+31", NO: "+47", NP: "+977", NR: "+674", NU: "+683", NZ: "+64", OM: "+968", PA: "+507", PE: "+51",
+  PF: "+689", PG: "+675", PH: "+63", PK: "+92", PL: "+48", PM: "+508", PN: "+64", PR: "+1", PS: "+970",
+  PT: "+351", PW: "+680", PY: "+595", QA: "+974", RE: "+262", RO: "+40", RS: "+381", RU: "+7", RW: "+250",
+  SA: "+966", SB: "+677", SC: "+248", SD: "+249", SE: "+46", SG: "+65", SH: "+290", SI: "+386", SJ: "+47",
+  SK: "+421", SL: "+232", SM: "+378", SN: "+221", SO: "+252", SR: "+597", SS: "+211", ST: "+239", SV: "+503",
+  SX: "+1", SY: "+963", SZ: "+268", TC: "+1", TD: "+235", TG: "+228", TH: "+66", TJ: "+992", TK: "+690",
+  TL: "+670", TM: "+993", TN: "+216", TO: "+676", TR: "+90", TT: "+1", TV: "+688", TW: "+886", TZ: "+255",
+  UA: "+380", UG: "+256", US: "+1", UY: "+598", UZ: "+998", VA: "+379", VC: "+1", VE: "+58", VG: "+1",
+  VI: "+1", VN: "+84", VU: "+678", WF: "+681", WS: "+685", YE: "+967", YT: "+262", ZA: "+27", ZM: "+260",
+  ZW: "+263",
+};
+
+/** All distinct calling codes in the map above, longest-first, so a prefix
+ *  scan (see stripKnownCallingCode) matches the longest code before a
+ *  shorter one that happens to also match (e.g. checks "+299" before "+2"). */
+const KNOWN_CALLING_CODES = Array.from(new Set(Object.values(CALLING_CODE_BY_ISO2))).sort(
+  (a, b) => b.length - a.length
+);
+
+/** The dial-code prefix for a region, derived from its `iso2` — e.g. "+212"
+ *  for Morocco, "+92" for Pakistan. Returns null when `iso2` is unset or not
+ *  in the map (a region without `iso2` set shows no prefix, same as before). */
+export function getCallingCode(iso2: string | null | undefined): string | null {
+  if (!iso2) return null;
+  return CALLING_CODE_BY_ISO2[iso2.toUpperCase()] ?? null;
+}
+
+/** Strips a leading, RECOGNIZED calling code from a stored E.164-ish phone
+ *  string (e.g. "+212612345678" -> "612345678"), regardless of the customer's
+ *  CURRENT region — a saved number may have been entered under a different
+ *  region than the one being viewed now. Falls back to stripping a bare "+"
+ *  when no known code matches, so an unrecognized prefix still displays
+ *  without a stray leading plus. */
+export function stripKnownCallingCode(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const known = KNOWN_CALLING_CODES.find((code) => phone.startsWith(code));
+  return known ? phone.slice(known.length) : phone.replace(/^\+/, "");
+}
+
 export interface CountryOption {
   iso2: string;
   nameEn: string;
   nameAr: string;
   /** ISO 4217 code, or null when we don't have a confident default. */
   currency: string | null;
+  /** International dial code (e.g. "+212"), or null when we don't have one. */
+  callingCode: string | null;
 }
 
 let cache: CountryOption[] | null = null;
@@ -117,6 +188,7 @@ export function getCountryOptions(): CountryOption[] {
       nameEn,
       nameAr: nameAr && nameAr !== code ? nameAr : nameEn,
       currency: CURRENCY_BY_ISO2[code] ?? null,
+      callingCode: CALLING_CODE_BY_ISO2[code] ?? null,
     });
   }
   options.sort((a, b) => a.nameEn.localeCompare(b.nameEn));

@@ -33,8 +33,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       title: localized("1. Our Commitment", "1. التزامنا", locale),
       blocks: [
         P(
-          "At Amoon Bloom Trading LLC, we take great care in preparing and delivering every order. If your order arrives damaged, incorrect, or defective, we will make it right.",
-          "في أمون بلوم للتجارة ذ.م.م، نولي عناية كبيرة بتجهيز وتوصيل كل طلب. وإذا وصل طلبك تالفًا أو غير مطابق أو معيبًا، فسنعمل على تصحيح الأمر."
+          `At ${contact.legalEntity}, we take great care in preparing and delivering every order. If your order arrives damaged, incorrect, or defective, we will make it right.`,
+          `في ${contact.legalEntity}، نولي عناية كبيرة بتجهيز وتوصيل كل طلب. وإذا وصل طلبك تالفًا أو غير مطابق أو معيبًا، فسنعمل على تصحيح الأمر.`
         ),
       ],
     },

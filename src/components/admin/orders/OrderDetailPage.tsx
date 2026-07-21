@@ -6,7 +6,7 @@ import { queryKeys } from "@/services/queryKeys";
 import { Badge } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Spinner } from "@/components/ui/Loader";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTime, addDays } from "@/lib/format";
 import {
   ORDER_STATUSES,
   ORDER_STATUS_LABEL_KEY,
@@ -205,6 +205,27 @@ export function OrderDetailPage({ id }: { id: string }) {
                 {t("admin.orderDetailPage.inventoryDeductedNote")}
               </p>
             ) : null}
+          </section>
+
+          <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+            <h3 className="mb-3 font-display text-lg text-ink-900">{t("admin.orderDetailPage.deliveryHeading")}</h3>
+            {order.deliveryType === "SCHEDULED" && order.scheduledDeliveryAt ? (
+              <div className="text-sm text-ink-700">
+                <p className="font-medium text-ink-900">{t("checkout.scheduledDelivery")}</p>
+                <p className="mt-1">{formatDateTime(order.scheduledDeliveryAt)}</p>
+              </div>
+            ) : (
+              <div className="text-sm text-ink-700">
+                <p className="font-medium text-ink-900">{t("checkout.standardDelivery")}</p>
+                {order.estimatedDeliveryDays != null ? (
+                  <p className="mt-1">
+                    {t("admin.orderDetailPage.estimatedArrival", {
+                      date: formatDate(addDays(order.createdAt, order.estimatedDeliveryDays)),
+                    })}
+                  </p>
+                ) : null}
+              </div>
+            )}
           </section>
 
           {order.shippingAddress ? (

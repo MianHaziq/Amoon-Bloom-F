@@ -17,6 +17,11 @@ import type { Product } from "./types";
  *  data-fetching (calls `productsApi.bestSellers` instead of a category/list query). */
 export const BEST_SELLING_FILTER_VALUE = "__best-selling__";
 
+/** Sentinel `ProductFilter.category` value that selects the "New Arrivals" source
+ *  (pure createdAt-desc order) instead of a real category — same mechanism as
+ *  BEST_SELLING_FILTER_VALUE, used by the homepage's New Arrivals "View all" link. */
+export const NEW_ARRIVALS_FILTER_VALUE = "__new-arrivals__";
+
 /** Normalise an option label/value for matching: trimmed, lowercased, spaces
  *  and separators collapsed. Handles EN + AR. */
 const norm = (s: string): string =>

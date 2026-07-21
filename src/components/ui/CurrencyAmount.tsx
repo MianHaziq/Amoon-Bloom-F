@@ -29,7 +29,14 @@ export function CurrencyAmount({
   const Icon = CURRENCY_ICONS[currency];
   return (
     <span className={className}>
-      {Icon ? <Icon style={{ marginInlineEnd: "0.2em" }} /> : `${currency} `}
+      {Icon ? (
+        <Icon
+          size="0.68em"
+          style={{ marginInlineEnd: "0.12em", verticalAlign: "0" }}
+        />
+      ) : (
+        `${currency} `
+      )}
       {formatAmount(amount, locale)}
     </span>
   );

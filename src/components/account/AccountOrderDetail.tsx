@@ -13,15 +13,10 @@ import { useCurrency } from "@/features/location/hooks/useCurrency";
 import {
   ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
+  ORDER_PROGRESS_STEPS,
+  ORDER_TERMINAL_NOTE_KEY,
+  ORDER_PAUSED_NOTE_KEY,
 } from "@/features/orders/constants";
-
-const PROGRESS_ORDER = [
-  "PENDING",
-  "CONFIRMED",
-  "PROCESSING",
-  "SHIPPED",
-  "DELIVERED",
-] as const;
 
 export function AccountOrderDetail({ id }: { id: string }) {
   const { t, locale } = useT();
@@ -51,8 +46,9 @@ export function AccountOrderDetail({ id }: { id: string }) {
   }
 
   const order = query.data;
-  const cancelled = order.status === "CANCELLED";
-  const currentIdx = (PROGRESS_ORDER as readonly string[]).indexOf(order.status);
+  const currentIdx = ORDER_PROGRESS_STEPS.findIndex((s) => s.key === order.status);
+  const inFlow = currentIdx >= 0;
+  const offFlowNoteKey = ORDER_TERMINAL_NOTE_KEY[order.status] ?? ORDER_PAUSED_NOTE_KEY[order.status];
   const itemsTotal = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
 
   return (
@@ -81,13 +77,13 @@ export function AccountOrderDetail({ id }: { id: string }) {
         </Badge>
       </header>
 
-      {!cancelled ? (
+      {inFlow ? (
         <section className="rounded-2xl border border-ink-100 bg-white p-4 sm:p-5">
-          <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-            {PROGRESS_ORDER.map((s, i) => {
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+            {ORDER_PROGRESS_STEPS.map((s, i) => {
               const reached = i <= currentIdx;
               return (
-                <div key={s} className="flex min-w-0 flex-col items-center gap-1.5">
+                <div key={s.key} className="flex min-w-0 flex-col items-center gap-1.5">
                   <div
                     className={
                       "h-1.5 w-full rounded-full " +
@@ -100,12 +96,16 @@ export function AccountOrderDetail({ id }: { id: string }) {
                       (reached ? "text-bloom-700" : "text-ink-400")
                     }
                   >
-                    {t(ORDER_STATUS_LABEL_KEY[s])}
+                    {t(s.labelKey)}
                   </span>
                 </div>
               );
             })}
           </div>
+        </section>
+      ) : offFlowNoteKey ? (
+        <section className="rounded-2xl border border-ink-100 bg-white p-4 sm:p-5">
+          <p className="text-sm text-ink-600">{t(offFlowNoteKey)}</p>
         </section>
       ) : null}
 

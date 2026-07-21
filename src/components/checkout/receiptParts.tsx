@@ -16,7 +16,7 @@ import {
 } from "@/components/icons";
 import { staggerContainer, staggerItem, EASE_OUT } from "@/lib/motion";
 import { useQuery } from "@tanstack/react-query";
-import { formatCurrency, intlLocale } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTime, addDays, intlLocale } from "@/lib/format";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
 import { siteConfig } from "@/config/site";
@@ -25,6 +25,13 @@ import { queryKeys } from "@/services/queryKeys";
 import { resolveRegionContact } from "@/features/location/regionContact";
 import type { MessageKey } from "@/i18n";
 import type { ApiOrder, OrderStatus, PaymentStatus } from "@/features/orders/types";
+import {
+  ORDER_PROGRESS_STEPS,
+  ORDER_STATUS_LABEL_KEY,
+  ORDER_TERMINAL_NOTE_KEY,
+  ORDER_PAUSED_NOTE_KEY,
+  isTerminalOrderStatus,
+} from "@/features/orders/constants";
 
 /**
  * Shared post-order pieces. `ReceiptCard` renders a professional, print-ready
@@ -34,14 +41,6 @@ import type { ApiOrder, OrderStatus, PaymentStatus } from "@/features/orders/typ
  * (GuestOrderSuccess). `ConfirmationHero`/`ReceiptStage` frame it with the
  * on-screen success moment (excluded from print).
  */
-
-const STEPS: { key: OrderStatus; labelKey: MessageKey }[] = [
-  { key: "PENDING", labelKey: "order.stepPlaced" },
-  { key: "CONFIRMED", labelKey: "order.stepConfirmed" },
-  { key: "PROCESSING", labelKey: "order.stepPreparing" },
-  { key: "SHIPPED", labelKey: "order.stepOnTheWay" },
-  { key: "DELIVERED", labelKey: "order.stepDelivered" },
-];
 
 // Shared column template so the items table header and every row stay aligned.
 // Mobile collapses to "details | amount"; sm+ expands to the full four columns.
@@ -213,8 +212,13 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
   const vatAmount = order.vatAmount ?? order.taxAmount ?? 0;
   const showVat = order.vatRatePercent != null && vatAmount > 0;
   const shipping = order.shippingAmount ?? 0;
-  const stepIndex = STEPS.findIndex((s) => s.key === order.status);
-  const cancelled = order.status === "CANCELLED";
+  const stepIndex = ORDER_PROGRESS_STEPS.findIndex((s) => s.key === order.status);
+  const inFlow = stepIndex >= 0;
+  // True terminal outcomes only (CANCELLED/REFUNDED/FAILED) — gates the COD cash-ready
+  // reminder below. ON_HOLD/DRAFT are not terminal: the order may still resume and the
+  // COD reminder still applies, unlike inFlow which is purely "has a stepper position."
+  const terminal = isTerminalOrderStatus(order.status);
+  const offFlowNoteKey = ORDER_TERMINAL_NOTE_KEY[order.status] ?? ORDER_PAUSED_NOTE_KEY[order.status];
   const orderRef = order.orderNumber ? `#${order.orderNumber}` : `#${order.id.slice(0, 8)}`;
   const dateStr = new Date(order.createdAt).toLocaleDateString(intlLocale(locale), {
     day: "numeric",
@@ -311,19 +315,29 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
 
         <div>
           <SectionLabel>{t("order.orderDetails")}</SectionLabel>
-          <dl className="mt-2.5 space-y-1.5 text-sm">
+          <dl className="mt-2.5 space-y-3 text-sm">
             <MetaRow label={t("order.orderNumber")} value={<span className="tabular-nums">{orderRef}</span>} />
             <MetaRow label={t("account.placedOn")} value={dateStr} />
             <MetaRow
               label={t("order.status")}
-              value={<StatusBadge tone={orderStatusTone(order.status)} label={t(statusLabelKey(order.status))} />}
+              value={<StatusBadge tone={orderStatusTone(order.status)} label={t(ORDER_STATUS_LABEL_KEY[order.status])} />}
+            />
+            <MetaRow
+              label={t("order.deliveryDate")}
+              value={
+                order.deliveryType === "SCHEDULED" && order.scheduledDeliveryAt
+                  ? formatDateTime(order.scheduledDeliveryAt)
+                  : order.estimatedDeliveryDays != null
+                  ? formatDate(addDays(order.createdAt, order.estimatedDeliveryDays))
+                  : t("checkout.standardDelivery")
+              }
             />
           </dl>
         </div>
 
         <div>
           <SectionLabel>{t("order.paymentDetails")}</SectionLabel>
-          <dl className="mt-2.5 space-y-1.5 text-sm">
+          <dl className="mt-2.5 space-y-3 text-sm">
             <MetaRow
               label={t("order.method")}
               value={order.paymentMethod === "COD" ? t("checkout.cod") : order.paymentMethod}
@@ -342,7 +356,7 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
       </div>
 
       {/* COD callout */}
-      {order.paymentMethod === "COD" && order.paymentStatus !== "PAID" && !cancelled && (
+      {order.paymentMethod === "COD" && order.paymentStatus !== "PAID" && !terminal && (
         <div className="mx-6 mt-6 flex items-start gap-3 rounded-xl border border-bloom-100 bg-bloom-50/60 p-4 sm:mx-9">
           <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cream-50 text-bloom-700 shadow-(--shadow-soft)">
             <TruckIcon size={18} />
@@ -439,12 +453,12 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
                   ? t("order.vatIncludedLabel", { rate: order.vatRatePercent! })
                   : t("order.vatLabel", { rate: order.vatRatePercent! })
               }
-              value={
-                <>
-                  {order.vatInclusive ? "" : "+ "}
-                  {price(vatAmount)}
-                </>
-              }
+              // Inclusive VAT is already baked into the item prices above — its
+              // extracted amount is a different number than the same rate would
+              // add on an exclusive order, which reads as a calculation error.
+              // Only the label is shown for inclusive; the figure still shows
+              // when VAT is added on top.
+              value={order.vatInclusive ? null : <>+ {price(vatAmount)}</>}
             />
           )}
           <TotalRow
@@ -461,7 +475,7 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
       </div>
 
       {/* Order tracker — helpful on screen, omitted from the printed invoice */}
-      {!cancelled && stepIndex >= 0 && (
+      {inFlow && (
         <div className="no-print border-t border-ink-100 px-6 py-6 sm:px-9">
           <SectionLabel>{t("order.whatsNext")}</SectionLabel>
           <div className="mt-4">
@@ -470,9 +484,15 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
         </div>
       )}
 
-      {cancelled && (
+      {!inFlow && offFlowNoteKey && (
         <div className="border-t border-ink-100 px-6 py-4 sm:px-9">
-          <p className="text-sm font-medium text-(--color-danger)">{t("order.cancelledNote")}</p>
+          <p
+            className={
+              "text-sm font-medium " + (terminal ? "text-(--color-danger)" : "text-ink-600")
+            }
+          >
+            {t(offFlowNoteKey)}
+          </p>
         </div>
       )}
 
@@ -540,7 +560,7 @@ export function ReceiptActions({ children }: { children?: ReactNode }) {
 function Tracker({ stepIndex, t }: { stepIndex: number; t: (k: MessageKey) => string }) {
   return (
     <ol className="flex items-center">
-      {STEPS.map((s, i) => {
+      {ORDER_PROGRESS_STEPS.map((s, i) => {
         const done = i <= stepIndex;
         const current = i === stepIndex;
         return (
@@ -565,7 +585,7 @@ function Tracker({ stepIndex, t }: { stepIndex: number; t: (k: MessageKey) => st
               <span
                 className={
                   "h-0.5 flex-1 " +
-                  (i === STEPS.length - 1
+                  (i === ORDER_PROGRESS_STEPS.length - 1
                     ? "bg-transparent"
                     : i < stepIndex
                     ? "bg-bloom-500"
@@ -598,9 +618,9 @@ export function SectionLabel({ children }: { children: ReactNode }) {
 
 function MetaRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-col gap-0.5">
       <dt className="text-ink-500">{label}</dt>
-      <dd className="text-end font-medium text-ink-900">{value}</dd>
+      <dd className="font-medium text-ink-900">{value}</dd>
     </div>
   );
 }
@@ -647,8 +667,9 @@ function StatusBadge({ tone, label }: { tone: BadgeTone; label: string }) {
 }
 
 function orderStatusTone(status: OrderStatus): BadgeTone {
-  if (status === "DELIVERED") return "success";
-  if (status === "CANCELLED") return "danger";
+  if (status === "COMPLETED") return "success";
+  if (status === "CANCELLED" || status === "REFUNDED" || status === "FAILED") return "danger";
+  // PENDING_PAYMENT, PROCESSING, ON_HOLD, DRAFT
   return "neutral";
 }
 
@@ -662,9 +683,4 @@ function paymentLabelKey(status: PaymentStatus): MessageKey {
   if (status === "PAID") return "order.paid";
   if (status === "FAILED") return "order.failed";
   return "order.unpaid";
-}
-
-function statusLabelKey(status: OrderStatus): MessageKey {
-  const found = STEPS.find((s) => s.key === status);
-  return found ? found.labelKey : "order.stepPlaced";
 }

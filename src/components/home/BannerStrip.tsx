@@ -21,7 +21,7 @@ export async function BannerStrip() {
       <Container>
         <div
           aria-label="Featured promotions"
-          className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 scroll-smooth md:mx-0 md:gap-6 md:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 scroll-smooth scroll-ps-4 scroll-pe-4 md:mx-0 md:gap-6 md:px-0 md:scroll-ps-0 md:scroll-pe-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
           {sorted.map((b, i) => (
             <div
