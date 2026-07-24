@@ -160,6 +160,40 @@ html[dir="rtl"] .font-display {
   outline: none;
 }
 
+/* =====================================================================
+   Mobile input zoom prevention
+   --------------------------------------------------------------------
+   iOS Safari zooms the whole page in when a focused input/textarea/select
+   has a computed font-size under 16px, and doesn't reliably zoom back out
+   on blur — the page is left stuck zoomed in. Force 16px on form controls
+   below the md breakpoint (max-width: 767px); larger screens keep their normal
+   text-sm/text-xs sizing.
+   ===================================================================== */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* =====================================================================
+   Autofill styling
+   --------------------------------------------------------------------
+   Browsers paint autofilled inputs with their own background (yellow on
+   Chrome, blue on the selected-suggestion state) that ignores our design
+   tokens; the box-shadow inset trick is the only reliable way to override
+   it. Combined with the `overflow-hidden` wrapper in Input.tsx, this also
+   keeps the fill from poking its square corners past the rounded input.
+   ===================================================================== */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: var(--color-ink-900);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 /* Hide scrollbar utility */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

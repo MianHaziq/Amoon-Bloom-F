@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
+  Badge,
   Container,
   Section,
   Input,
@@ -38,6 +39,7 @@ import { regionsApi } from "@/features/regions/api/regions.api";
 import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { queryKeys } from "@/services/queryKeys";
 import { useCart } from "@/features/cart/hooks/useCart";
+import { DeliveryDatePicker } from "./DeliveryDatePicker";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { stripKnownCallingCode } from "@/features/regions/countries";
 import { ROUTES } from "@/constants/routes";
@@ -47,7 +49,7 @@ import { cn } from "@/lib/cn";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDayCount } from "@/lib/format";
 import { useAppSelector } from "@/store";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n";
@@ -100,24 +102,22 @@ function tzOffsetMinutes(date: Date, timeZone: string): number {
   return (asUTC - date.getTime()) / 60000;
 }
 
-/** UTC instant for midnight, `daysFromNow` days out, on the calendar in BUSINESS_TIMEZONE. */
-function startOfDayPlusDays(daysFromNow: number): Date {
+/** The BUSINESS_TIMEZONE (Dubai) wall-calendar day, `daysFromNow` days out, as a
+ *  "YYYY-MM-DD" string. Used to bound DeliveryDatePicker so its selectable window is
+ *  Dubai-anchored end-to-end — the picker compares plain date keys, so this stays
+ *  correct no matter what timezone the customer's own device is in (the earlier native
+ *  <input type="datetime-local"> min/max were read through local getters and drifted a
+ *  day for any browser west of Dubai, e.g. the live Riyadh region). */
+function businessDateKey(daysFromNow: number): string {
   const now = new Date();
   const offsetMin = tzOffsetMinutes(now, BUSINESS_TIMEZONE);
   const zonedNow = new Date(now.getTime() + offsetMin * 60000);
-  const y = zonedNow.getUTCFullYear();
-  const m = zonedNow.getUTCMonth();
-  const d = zonedNow.getUTCDate();
-  return new Date(Date.UTC(y, m, d + daysFromNow) - offsetMin * 60000);
-}
-
-/** Formats a Date as the "YYYY-MM-DDTHH:mm" string <input type="datetime-local"> expects,
- * in local time — same convention PromoCodeForm.tsx uses for its date fields. */
-function toDatetimeLocalValue(date: Date): string {
+  // Normalize via UTC arithmetic so month/year roll over correctly.
+  const d = new Date(
+    Date.UTC(zonedNow.getUTCFullYear(), zonedNow.getUTCMonth(), zonedNow.getUTCDate() + daysFromNow)
+  );
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
-    date.getHours()
-  )}:${pad(date.getMinutes())}`;
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
 }
 
 // The delivery region's dial code (e.g. "+212" for Morocco) is derived
@@ -169,6 +169,10 @@ export function CheckoutClient() {
     hydrated && !isAuthed && Boolean(storage.get<string>(STORAGE_KEYS.authToken));
   const { currency, locale, countryName, countryCode, dialCode } = useCurrency();
   const regionCode = countryCode;
+  // The city/emirate the customer already picked in the header's "Deliver to"
+  // selector (a delivery zone's `name` — see location.slice.ts) — prefilled
+  // into the checkout zone dropdown below instead of forcing a re-pick.
+  const selectedCity = useAppSelector((s) => s.location.city);
   const { t, tc } = useT();
 
   const [explicitSelection, setExplicitSelection] = useState<
@@ -181,9 +185,16 @@ export function CheckoutClient() {
     useState<ApiPromoValidationResult | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Set the instant an order succeeds, before cart.clear() fires — cart.clear()
+  // re-renders this page with an empty cart on the same tick that router.push()
+  // starts its (async) client-side transition to /order/success, so without this
+  // flag the empty-cart guard below flashes for a frame while the transition
+  // finishes.
+  const [orderPlaced, setOrderPlaced] = useState(false);
   const [deliveryType, setDeliveryType] = useState<"STANDARD" | "SCHEDULED">("STANDARD");
-  // Raw <input type="datetime-local"> value (local time, no timezone) — converted
-  // to a UTC ISO string only at submit time, same as PromoCodeForm's date fields.
+  // Date-only "YYYY-MM-DD" from DeliveryDatePicker (or "" for no selection) — the
+  // business only ever needs a day, not a time-of-day; converted to a UTC ISO
+  // datetime (fixed local noon) only at submit time, see placeOrderMutation below.
   const [scheduledDeliveryAt, setScheduledDeliveryAt] = useState("");
 
   // Saved addresses are an authenticated-only feature (GET /user/addresses).
@@ -244,13 +255,32 @@ export function CheckoutClient() {
     },
   });
 
-  // A stale zone selection from a since-switched delivery region must never be
-  // silently submitted — the backend rejects it anyway, but clearing it here
-  // avoids a confusing "delivery zone not found" error for a field the user
-  // never touched this session.
+  // Prefill the zone dropdown from the city the customer already chose in the header's
+  // "Deliver to" selector, and clear a stale zone when the delivery region changes.
+  // Guarded by a per-region ref so it runs EXACTLY ONCE per region and only fills an
+  // EMPTY field — a React Query background refetch (which hands `zonesQuery.data` a new
+  // reference) must never silently wipe a zone the customer manually picked.
+  const prefilledZoneForRegion = useRef<string | null>(null);
   useEffect(() => {
-    setNewAddrValue("deliveryZoneId", "");
-  }, [regionCode, setNewAddrValue]);
+    // Region switched since we last prefilled: the old zone id belongs to the previous
+    // region and would be rejected at checkout — drop it and allow a fresh prefill.
+    if (
+      prefilledZoneForRegion.current !== null &&
+      prefilledZoneForRegion.current !== regionCode
+    ) {
+      setNewAddrValue("deliveryZoneId", "");
+      prefilledZoneForRegion.current = null;
+    }
+    const currentZones = zonesQuery.data ?? [];
+    if (currentZones.length > 0 && prefilledZoneForRegion.current !== regionCode) {
+      // Only prefill if the user hasn't already chosen a zone this session.
+      if (!getNewAddrValues().deliveryZoneId) {
+        const matched = currentZones.find((z) => z.name === selectedCity)?.id;
+        if (matched) setNewAddrValue("deliveryZoneId", matched);
+      }
+      prefilledZoneForRegion.current = regionCode;
+    }
+  }, [regionCode, zonesQuery.data, selectedCity, setNewAddrValue, getNewAddrValues]);
 
   const zoneValue = watchNewAddr("deliveryZoneId") ?? "";
   const onZoneChange = (id: string) =>
@@ -355,9 +385,13 @@ export function CheckoutClient() {
       if (deliveryType === "SCHEDULED" && !scheduledDeliveryAt) {
         throw new Error(t("checkout.chooseDeliveryDateError"));
       }
+      // Only a date is collected (no time-of-day input) — pin it to noon UTC so the
+      // resulting instant safely sits within the same calendar day in any timezone
+      // the backend's BUSINESS_TIMEZONE day-boundary check might use, rather than
+      // relying on implicit UTC-midnight parsing of a bare "YYYY-MM-DD" string.
       const scheduledDeliveryAtIso =
         deliveryType === "SCHEDULED"
-          ? new Date(scheduledDeliveryAt).toISOString()
+          ? new Date(`${scheduledDeliveryAt}T12:00:00Z`).toISOString()
           : undefined;
 
       let resolvedAddressId: string | undefined;
@@ -418,6 +452,7 @@ export function CheckoutClient() {
       });
     },
     onSuccess: (order) => {
+      setOrderPlaced(true);
       cart.clear();
       queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
 
@@ -466,8 +501,10 @@ export function CheckoutClient() {
     );
   }
 
-  // Empty cart guard
-  if (cart.items.length === 0) {
+  // Empty cart guard — suppressed once an order has just succeeded (see
+  // `orderPlaced`) so this doesn't flash between cart.clear() and the
+  // redirect to /order/success actually landing.
+  if (cart.items.length === 0 && !orderPlaced) {
     return (
       <Container className="flex min-h-[60vh] flex-col items-center justify-center py-24 text-center">
         <h1 className="font-display text-4xl text-ink-900">
@@ -964,7 +1001,7 @@ interface OrderReviewCardProps {
   isPlacing: boolean;
   deliveryType: "STANDARD" | "SCHEDULED";
   onDeliveryTypeChange: (v: "STANDARD" | "SCHEDULED") => void;
-  /** Raw <input type="datetime-local"> value. */
+  /** Date-only "YYYY-MM-DD" from DeliveryDatePicker, or "" for no selection. */
   scheduledDeliveryAt: string;
   onScheduledDeliveryAtChange: (v: string) => void;
   /** Region's Standard Delivery lead time, if configured. */
@@ -1000,16 +1037,34 @@ function OrderReviewCard({
   standardDeliveryDays,
 }: OrderReviewCardProps) {
   const { currency, locale } = useCurrency();
-  const { t } = useT();
+  const { t, locale: appLocale } = useT();
 
   // Mirrors the backend's window (order.service.js SCHEDULED_DELIVERY_MIN_LEAD_DAYS /
-  // MAX_WINDOW_DAYS) — just a UX hint; the backend re-validates regardless.
-  const minScheduledDeliveryAt = toDatetimeLocalValue(startOfDayPlusDays(1));
-  // Last moment of day 60 (backend rejects at/after the start of day 61), so the
-  // picker's native max doesn't cut off the final day's later hours.
-  const maxScheduledDeliveryAt = toDatetimeLocalValue(
-    new Date(startOfDayPlusDays(61).getTime() - 60_000)
+  // MAX_WINDOW_DAYS) — just a UX hint; the backend re-validates regardless. Computed as
+  // Dubai-anchored date-key strings (memoized: businessDateKey() builds an Intl
+  // formatter each call) so the picker's window matches the backend day boundary for
+  // customers in any timezone.
+  const { minScheduledKey, maxScheduledKey, todayScheduledKey } = useMemo(
+    () => ({
+      minScheduledKey: businessDateKey(1),
+      maxScheduledKey: businessDateKey(60),
+      todayScheduledKey: businessDateKey(0),
+    }),
+    []
   );
+
+  // Mirrors order.service.js's estimatedDeliveryDays formula exactly (the LATER of the
+  // region's courier transit time and the slowest cart line's own prep/booking lead
+  // time) so this pre-purchase hint matches what the order will actually show after
+  // checkout. A client-side preview only — the backend remains authoritative.
+  const maxCartItemLeadDays = Math.max(
+    0,
+    ...cartItems.map((i) => i.deliveryLeadDays ?? 0)
+  );
+  const effectiveStandardDeliveryDays =
+    standardDeliveryDays != null || maxCartItemLeadDays > 0
+      ? Math.max(standardDeliveryDays ?? 0, maxCartItemLeadDays)
+      : null;
 
   return (
     <aside className="flex flex-col gap-4">
@@ -1039,11 +1094,17 @@ function OrderReviewCard({
                 <div className="min-w-0">
                   <p className="truncate font-medium text-ink-900">{item.title}</p>
                   <p className="text-xs text-ink-500">{t("common.qty")} {item.quantity}</p>
-                  {(item.giftCardSelected || item.customName) && (
-                    <p className="truncate text-xs text-bloom-700">
-                      {[item.giftCardSelected ? t("product.giftCardBadge") : null, item.customName]
-                        .filter(Boolean)
-                        .join(" · ")}
+                  {item.giftCardSelected && (
+                    <Badge tone="ink" uppercase={false} className="mt-1">
+                      {t("admin.orderDetailPage.giftCardLabel")}
+                    </Badge>
+                  )}
+                  {item.customName && (
+                    <p className="truncate text-xs text-ink-600">
+                      <span className="font-semibold text-ink-500">
+                        {t("admin.orderDetailPage.customNameLabel")}:
+                      </span>{" "}
+                      {item.customName}
                     </p>
                   )}
                 </div>
@@ -1186,14 +1247,13 @@ function OrderReviewCard({
             <div>
               <p className="font-medium text-ink-900">{t("checkout.standardDelivery")}</p>
               <p className="text-sm text-ink-500">
-                {standardDeliveryDays != null
-                  ? t(
-                      standardDeliveryDays === 1
-                        ? "checkout.standardDeliveryEtaOne"
-                        : "checkout.standardDeliveryEtaOther",
-                      { days: standardDeliveryDays }
-                    )
-                  : t("checkout.standardDeliveryEtaUnknown")}
+                {effectiveStandardDeliveryDays == null
+                  ? t("checkout.standardDeliveryEtaUnknown")
+                  : effectiveStandardDeliveryDays === 0
+                    ? t("checkout.standardDeliveryEtaZero")
+                    : t("checkout.standardDeliveryEta", {
+                        days: formatDayCount(effectiveStandardDeliveryDays, appLocale),
+                      })}
               </p>
             </div>
           </label>
@@ -1208,18 +1268,20 @@ function OrderReviewCard({
             />
             <div className="flex-1">
               <p className="font-medium text-ink-900">{t("checkout.scheduledDelivery")}</p>
-              <p className="text-sm text-ink-500">{t("checkout.scheduledDeliveryHint")}</p>
               {deliveryType === "SCHEDULED" ? (
-                <Input
-                  type="datetime-local"
-                  aria-label={t("checkout.scheduledDelivery")}
-                  min={minScheduledDeliveryAt}
-                  max={maxScheduledDeliveryAt}
-                  value={scheduledDeliveryAt}
-                  onChange={(e) => onScheduledDeliveryAtChange(e.target.value)}
-                  containerClassName="mt-3"
-                  onClick={(e) => e.stopPropagation()}
-                />
+                <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                  <DeliveryDatePicker
+                    aria-label={t("checkout.scheduledDelivery")}
+                    minKey={minScheduledKey}
+                    maxKey={maxScheduledKey}
+                    todayKey={todayScheduledKey}
+                    value={scheduledDeliveryAt}
+                    onChange={onScheduledDeliveryAtChange}
+                  />
+                  <p className="mt-2 text-xs text-ink-500">
+                    {t("checkout.scheduledDeliveryHint")}
+                  </p>
+                </div>
               ) : null}
             </div>
           </label>

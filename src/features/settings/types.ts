@@ -9,6 +9,9 @@ export interface ApiSettings {
   hiddenPages: string[];
   /** Master switch for the reviews feature. When false, only signed-in customers can submit a review. */
   allowGuestReviews: boolean;
+  /** Fallback "ships within N day(s)" prep/booking lead time (whole days) used when
+   *  a product has no Category.deliveryLeadDays/Product.deliveryLeadDays override. */
+  defaultDeliveryLeadDays: number;
   updatedAt: string;
 }
 
@@ -27,4 +30,5 @@ export interface ApiSettingsUpdateInput {
   maintenanceMode?: boolean;
   hiddenPages?: string[];
   allowGuestReviews?: boolean;
+  defaultDeliveryLeadDays?: number;
 }

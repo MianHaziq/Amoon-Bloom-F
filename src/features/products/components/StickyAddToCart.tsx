@@ -6,7 +6,7 @@ import { Button, CurrencyAmount } from "@/components/ui";
 import { BagIcon } from "@/components/icons";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useAppDispatch } from "@/store";
-import { toggleCartDrawer } from "@/store/slices/ui.slice";
+import { toggleCartDrawer, setStickyAddToCartMounted } from "@/store/slices/ui.slice";
 import { cn } from "@/lib/cn";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
@@ -36,6 +36,17 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Tell the global WhatsApp float button to lift clear of this bar for as
+  // long as this PDP is mounted — tied to mount, not `visible`, so the button
+  // doesn't hop up and down every time the bar slides in/out on scroll.
+  useEffect(() => {
+    dispatch(setStickyAddToCartMounted(true));
+    return () => {
+      dispatch(setStickyAddToCartMounted(false));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAdd = async () => {

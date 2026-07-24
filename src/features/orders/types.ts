@@ -92,6 +92,10 @@ export interface ApiOrderItem {
   /** This line's VAT rate/amount, snapshotted at order time. 0 when the line wasn't taxable. */
   vatRatePercent?: number;
   vatAmount?: number;
+  /** Resolved "ships within N day(s)" prep/booking lead time, snapshotted at order
+   *  creation time (product -> category -> site default). Null for legacy orders
+   *  placed before this feature existed. */
+  resolvedLeadDays?: number | null;
 }
 
 export interface ApiOrderListUser {

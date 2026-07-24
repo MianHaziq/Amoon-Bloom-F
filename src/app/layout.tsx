@@ -6,6 +6,10 @@ import {
   Noto_Sans_Arabic,
 } from "next/font/google";
 import { dehydrate } from "@tanstack/react-query";
+import {
+  GoogleTagManagerScript,
+  GoogleTagManagerNoScript,
+} from "@/components/layout/GoogleTagManager";
 import { StoreProvider } from "@/store/providers/StoreProvider";
 import { QueryProvider } from "@/store/providers/QueryProvider";
 import { MotionProvider } from "@/components/motion/MotionProvider";
@@ -133,6 +137,8 @@ export default async function RootLayout({
       className={`${jakarta.variable} ${fraunces.variable} ${ibmPlexArabic.variable} ${notoArabic.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream-50 text-ink-900 font-sans">
+        <GoogleTagManagerNoScript />
+        <GoogleTagManagerScript />
         <StoreProvider
           initialLocale={locale}
           initialCountry={initialCountry}

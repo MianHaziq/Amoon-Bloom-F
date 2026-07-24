@@ -43,7 +43,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `${contact.legalEntity} is an online e-commerce business registered and operating in ${contact.registrationCity ? `${contact.registrationCity}, ${contact.countryName}` : contact.countryName}, offering gift boxes, flower bouquets, flower mugs, newborn gifts, natural oil, and other gift items.`,
-          `${contact.legalEntity} هي متجر إلكتروني مسجل ويعمل في ${contact.registrationCity ? `${contact.registrationCity}، ${contact.countryName}` : contact.countryName}، ويقدّم صناديق الهدايا وباقات الزهور وأكواب الزهور وهدايا المواليد والزيوت الطبيعية ومنتجات الهدايا الأخرى.`
+          `${contact.legalEntity} هي متجر إلكتروني مسجل ويعمل في ${contact.registrationCity ? `${contact.registrationCity}، ${contact.countryName}` : contact.countryName}، ويقدم صناديق الهدايا وباقات الزهور وأكواب الزهور وهدايا المواليد والزيوت الطبيعية ومنتجات الهدايا الأخرى.`
         ),
         LL([
           ["Address", contact.address, "العنوان", contact.address],
@@ -66,11 +66,11 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "Product images are for illustrative purposes. Minor variations in colour, wrapping, or arrangement may occur due to the handcrafted and perishable nature of our products.",
-            "صور المنتجات لأغراض توضيحية فقط، وقد تحدث اختلافات طفيفة في اللون أو التغليف أو التنسيق نظرًا للطبيعة اليدوية والقابلة للتلف لمنتجاتنا.",
+            "صور المنتجات لأغراض توضيحية فقط، وقد تحدث اختلافات طفيفة في اللون أو التغليف أو التنسيق نظرا للطبيعة اليدوية والقابلة للتلف لمنتجاتنا.",
           ],
           [
             `Prices are displayed in ${contact.currencyDisplayName} and are inclusive of VAT where applicable, in accordance with ${contact.vatLawName}.`,
-            `تُعرض الأسعار ب${contact.currencyDisplayName} وتشمل ضريبة القيمة المضافة حيثما ينطبق ذلك، بموجب ${contact.vatLawName}.`,
+            `تعرض الأسعار ب${contact.currencyDisplayName} وتشمل ضريبة القيمة المضافة حيثما ينطبق ذلك، بموجب ${contact.vatLawName}.`,
           ],
           [
             "We reserve the right to modify prices at any time without prior notice, except for confirmed orders.",
@@ -97,11 +97,11 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "By placing an order, you confirm that all information provided is accurate and that you are authorised to use the payment method selected.",
-            "بتقديمك للطلب، فإنك تؤكد أن جميع المعلومات المقدَّمة صحيحة وأنك مخوَّل لاستخدام طريقة الدفع المختارة.",
+            "بتقديمك للطلب، فإنك تؤكد أن جميع المعلومات المقدمة صحيحة وأنك مخول لاستخدام طريقة الدفع المختارة.",
           ],
           [
             "Order confirmations will be sent to the email address provided at checkout.",
-            "تُرسل تأكيدات الطلبات إلى عنوان البريد الإلكتروني المقدَّم عند إتمام الطلب.",
+            "ترسل تأكيدات الطلبات إلى عنوان البريد الإلكتروني المقدم عند إتمام الطلب.",
           ],
         ]),
       ],
@@ -115,16 +115,16 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "Many of our products include personalised elements (e.g. gift boxes, flower bouquets, name cards, engraving). For personalised orders:",
-          "يتضمّن العديد من منتجاتنا عناصر مخصصة (مثل صناديق الهدايا وباقات الزهور وبطاقات الأسماء والنقش). بالنسبة للطلبات المخصصة:"
+          "يتضمن العديد من منتجاتنا عناصر مخصصة (مثل صناديق الهدايا وباقات الزهور وبطاقات الأسماء والنقش). بالنسبة للطلبات المخصصة:"
         ),
         L([
           [
             "Please ensure all details submitted are accurate. We are not responsible for errors in personalisation details provided by the customer.",
-            "يُرجى التأكد من دقة جميع التفاصيل المقدَّمة. لا نتحمل مسؤولية الأخطاء في تفاصيل التخصيص المقدَّمة من العميل.",
+            "يرجى التأكد من دقة جميع التفاصيل المقدمة. لا نتحمل مسؤولية الأخطاء في تفاصيل التخصيص المقدمة من العميل.",
           ],
           [
             "Personalised and custom orders cannot be cancelled once production has commenced.",
-            "لا يمكن إلغاء الطلبات المخصصة والمعدّة حسب الطلب بعد بدء الإنتاج.",
+            "لا يمكن إلغاء الطلبات المخصصة والمعدة حسب الطلب بعد بدء الإنتاج.",
           ],
           [
             "Production timelines for custom orders will be communicated at the time of purchase.",
@@ -147,7 +147,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `All content on the ${contact.legalEntity} website including text, images, logos, and product designs is the intellectual property of ${contact.legalEntity} or its licensors and is protected under ${contact.ipLawName}. Reproduction, distribution, or commercial use without written permission is strictly prohibited.`,
-          `يُعد كل محتوى موقع ${contact.legalEntity}، بما في ذلك النصوص والصور والشعارات وتصاميم المنتجات، ملكية فكرية للشركة أو مرخّصيها، ويخضع للحماية بموجب ${contact.ipLawName}. ويُحظر نسخه أو توزيعه أو استخدامه تجاريًا دون إذن كتابي.`
+          `يعد كل محتوى موقع ${contact.legalEntity}، بما في ذلك النصوص والصور والشعارات وتصاميم المنتجات، ملكية فكرية للشركة أو مرخصيها، ويخضع للحماية بموجب ${contact.ipLawName}. ويحظر نسخه أو توزيعه أو استخدامه تجاريا دون إذن كتابي.`
         ),
       ],
     },
@@ -169,7 +169,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `These Terms and Conditions are governed by the laws of ${contact.countryName}. Any disputes arising shall first be attempted to be resolved amicably. If unresolved, disputes shall be referred to the competent courts of ${contact.registrationCity ? `${contact.registrationCity}, ${contact.countryShort}` : contact.countryName}.`,
-          `تخضع هذه الشروط والأحكام لقوانين دولة ${contact.countryName}. وتتم أولاً محاولة تسوية أي نزاع ودّيًا، وفي حال تعذّر ذلك، تُحال المنازعات إلى المحاكم المختصة في ${contact.registrationCity || contact.countryName}.`
+          `تخضع هذه الشروط والأحكام لقوانين دولة ${contact.countryName}. وتتم أولا محاولة تسوية أي نزاع وديا، وفي حال تعذر ذلك، تحال المنازعات إلى المحاكم المختصة في ${contact.registrationCity || contact.countryName}.`
         ),
       ],
     },
@@ -178,7 +178,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "We reserve the right to update these Terms and Conditions at any time. The current version will always be published on our website. Continued use of the website following any update constitutes acceptance of the amended terms.",
-          "نحتفظ بحق تحديث هذه الشروط والأحكام في أي وقت، وستُنشر النسخة الحالية دائمًا على موقعنا. ويُعدّ استمرار استخدام الموقع بعد أي تحديث بمثابة موافقة على الشروط المعدّلة."
+          "نحتفظ بحق تحديث هذه الشروط والأحكام في أي وقت، وستنشر النسخة الحالية دائما على موقعنا. ويعد استمرار استخدام الموقع بعد أي تحديث بمثابة موافقة على الشروط المعدلة."
         ),
       ],
     },
@@ -187,7 +187,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "For any queries regarding this policy, please contact us:",
-          "لأي استفسارات بخصوص هذه السياسة، يُرجى التواصل معنا:"
+          "لأي استفسارات بخصوص هذه السياسة، يرجى التواصل معنا:"
         ),
         LL([
           ["Email", contact.email, "البريد الإلكتروني", contact.email],
@@ -208,7 +208,7 @@ export default async function TermsPage() {
       title={localized("Terms & Conditions", "الشروط والأحكام", locale)}
       intro={localized(
         `Please review these Terms and Conditions before accessing our website or placing an order with Amoonis Boutique, operated by ${contact.legalEntity}.`,
-        `يُرجى مراجعة هذه الشروط والأحكام قبل الدخول إلى موقعنا أو إتمام أي طلب مع أموونيس بوتيك، التي تديرها ${contact.legalEntity}.`,
+        `يرجى مراجعة هذه الشروط والأحكام قبل الدخول إلى موقعنا أو إتمام أي طلب مع أموونيس بوتيك، التي تديرها ${contact.legalEntity}.`,
         locale
       )}
       badge={localized("Terms & Conditions", "الشروط والأحكام", locale)}

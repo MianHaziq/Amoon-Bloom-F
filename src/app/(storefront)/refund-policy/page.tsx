@@ -34,7 +34,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `At ${contact.legalEntity}, we take great care in preparing and delivering every order. If your order arrives damaged, incorrect, or defective, we will make it right.`,
-          `في ${contact.legalEntity}، نولي عناية كبيرة بتجهيز وتوصيل كل طلب. وإذا وصل طلبك تالفًا أو غير مطابق أو معيبًا، فسنعمل على تصحيح الأمر.`
+          `في ${contact.legalEntity}، نولي عناية كبيرة بتجهيز وتوصيل كل طلب. وإذا وصل طلبك تالفا أو غير مطابق أو معيبا، فسنعمل على تصحيح الأمر.`
         ),
       ],
     },
@@ -52,19 +52,19 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
         L([
           [
             "The product received is materially different from what was ordered",
-            "المنتج المستلَم مختلف جوهريًا عمّا تم طلبه",
+            "المنتج المستلم مختلف جوهريا عما تم طلبه",
           ],
           [
             "The product arrives in a damaged or defective condition",
-            "وصل المنتج تالفًا أو بحالة معيبة",
+            "وصل المنتج تالفا أو بحالة معيبة",
           ],
           [
             "The order was not delivered within the agreed timeframe due to our error",
-            "لم يُسلَّم الطلب ضمن المدة المتفق عليها بسبب خطأ من جانبنا",
+            "لم يسلم الطلب ضمن المدة المتفق عليها بسبب خطأ من جانبنا",
           ],
           [
             "The product poses a safety concern",
-            "يشكّل المنتج مصدر قلق يتعلق بالسلامة",
+            "يشكل المنتج مصدر قلق يتعلق بالسلامة",
           ],
         ]),
       ],
@@ -78,7 +78,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "Due to the perishable and personalised nature of our products, the following cannot be returned or refunded:",
-          "نظرًا للطبيعة القابلة للتلف والمخصصة لمنتجاتنا، لا يمكن إرجاع أو استرداد قيمة ما يلي:"
+          "نظرا للطبيعة القابلة للتلف والمخصصة لمنتجاتنا، لا يمكن إرجاع أو استرداد قيمة ما يلي:"
         ),
         L([
           [
@@ -99,7 +99,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "Items where the return request is made more than 24 hours after delivery",
-            "الحالات التي يُقدَّم فيها طلب الإرجاع بعد مرور أكثر من 24 ساعة على التسليم",
+            "الحالات التي يقدم فيها طلب الإرجاع بعد مرور أكثر من 24 ساعة على التسليم",
           ],
         ]),
       ],
@@ -119,7 +119,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "Provide your order number, a description of the issue, and clear photographs of the product and packaging",
-            "قدّم رقم طلبك ووصفًا للمشكلة وصورًا واضحة للمنتج والتغليف",
+            "قدم رقم طلبك ووصفا للمشكلة وصورا واضحة للمنتج والتغليف",
           ],
           [
             "Our customer care team will review your request within one (1) business day",
@@ -142,7 +142,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "Where a full refund is not applicable, we may offer a store credit or replacement product of equal value at our discretion.",
-            "في حال عدم انطباق الاسترداد الكامل، يجوز لنا تقديم رصيد للمتجر أو منتج بديل بقيمة معادلة وفقًا لتقديرنا.",
+            "في حال عدم انطباق الاسترداد الكامل، يجوز لنا تقديم رصيد للمتجر أو منتج بديل بقيمة معادلة وفقا لتقديرنا.",
           ],
           [
             "Shipping charges are non-refundable unless the return is due to our error.",
@@ -165,7 +165,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             `To cancel an order, contact us immediately via WhatsApp at ${contact.whatsappNumber}.`,
-            `لإلغاء طلب، تواصل معنا فورًا عبر واتساب على ${contact.whatsappNumber}.`,
+            `لإلغاء طلب، تواصل معنا فورا عبر واتساب على ${contact.whatsappNumber}.`,
           ],
           [
             "Cancellations approved before dispatch will receive a full refund.",
@@ -179,7 +179,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "We do not offer product exchanges. If you have received a defective or incorrect item, please follow the return process outlined above, and we will provide a replacement or refund accordingly.",
-          "لا نقدّم خدمة استبدال المنتجات. وفي حال استلامك منتجًا معيبًا أو غير مطابق، يُرجى اتباع إجراء الإرجاع الموضح أعلاه، وسنوفر لك بديلاً أو استردادًا وفقًا لذلك."
+          "لا نقدم خدمة استبدال المنتجات. وفي حال استلامك منتجا معيبا أو غير مطابق، يرجى اتباع إجراء الإرجاع الموضح أعلاه، وسنوفر لك بديلا أو استردادا وفقا لذلك."
         ),
       ],
     },
@@ -188,7 +188,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `Nothing in this policy limits or excludes your rights as a consumer under ${contact.consumerProtectionLawName} and the applicable laws. In the event of a dispute, you may also refer your complaint to the ${contact.consumerProtectionAuthority}.`,
-          `لا يحد أي بند في هذه السياسة من حقوقك كمستهلك بموجب ${contact.consumerProtectionLawName} والقوانين المعمول بها الأخرى، أو يستثنيها. وفي حال وجود نزاع، يمكنك أيضًا إحالة شكواك إلى ${contact.consumerProtectionAuthority}.`
+          `لا يحد أي بند في هذه السياسة من حقوقك كمستهلك بموجب ${contact.consumerProtectionLawName} والقوانين المعمول بها الأخرى، أو يستثنيها. وفي حال وجود نزاع، يمكنك أيضا إحالة شكواك إلى ${contact.consumerProtectionAuthority}.`
         ),
       ],
     },

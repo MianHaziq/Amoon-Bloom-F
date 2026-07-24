@@ -37,6 +37,11 @@ export function SettingsAdminPage() {
         currency: z.string().min(3, t("admin.settingsPage.currencyRequired")),
         maintenanceMode: z.boolean(),
         allowGuestReviews: z.boolean(),
+        defaultDeliveryLeadDays: z
+          .number({ message: t("admin.settingsPage.defaultDeliveryLeadDaysInvalid") })
+          .int(t("admin.settingsPage.defaultDeliveryLeadDaysInvalid"))
+          .min(0, t("admin.settingsPage.defaultDeliveryLeadDaysInvalid"))
+          .max(30, t("admin.settingsPage.defaultDeliveryLeadDaysInvalid")),
         hiddenPagesText: z.string(),
       }),
     [t]
@@ -65,6 +70,7 @@ export function SettingsAdminPage() {
       currency: "AED",
       maintenanceMode: false,
       allowGuestReviews: true,
+      defaultDeliveryLeadDays: 1,
       hiddenPagesText: "",
     },
   });
@@ -80,6 +86,7 @@ export function SettingsAdminPage() {
       currency: s.currency,
       maintenanceMode: s.maintenanceMode,
       allowGuestReviews: s.allowGuestReviews,
+      defaultDeliveryLeadDays: s.defaultDeliveryLeadDays,
       hiddenPagesText: (s.hiddenPages ?? []).join("\n"),
     });
   }, [settingsQuery.data, reset]);
@@ -106,6 +113,7 @@ export function SettingsAdminPage() {
       currency: v.currency,
       maintenanceMode: v.maintenanceMode,
       allowGuestReviews: v.allowGuestReviews,
+      defaultDeliveryLeadDays: v.defaultDeliveryLeadDays,
       hiddenPages,
     });
   });
@@ -175,6 +183,17 @@ export function SettingsAdminPage() {
                 hint={t("admin.settingsPage.currencyHint")}
                 error={errors.currency?.message}
                 {...register("currency")}
+              />
+              <Input
+                type="number"
+                min={0}
+                max={30}
+                step={1}
+                containerClassName="mt-4"
+                label={t("admin.settingsPage.defaultDeliveryLeadDaysLabel")}
+                hint={t("admin.settingsPage.defaultDeliveryLeadDaysHint")}
+                error={errors.defaultDeliveryLeadDays?.message}
+                {...register("defaultDeliveryLeadDays", { valueAsNumber: true })}
               />
               <div className="mt-4">
                 <label className="flex cursor-pointer items-center gap-3">

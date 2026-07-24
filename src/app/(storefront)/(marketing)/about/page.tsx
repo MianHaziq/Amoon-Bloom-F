@@ -13,10 +13,10 @@ export const metadata = { title: "About us" };
 
 const principles = (locale: Locale, regionCopy: RegionCopy) => [
   {
-    title: localized("Composed, not assembled.", "مؤلَّفة بعناية، لا مجمّعة.", locale),
+    title: localized("Composed, not assembled.", "مؤلفة بعناية، لا مجمعة.", locale),
     body: localized(
       "Every Amoonis Boutique box is hand-packed in our {city} studio the morning of delivery — no pre-made gift sets, no shortcuts.",
-      "تُغلَّف كل علبة من أموونيس بوتيك يدويًا في استوديونا في {city} صباح يوم التسليم — دون مجموعات هدايا جاهزة، ودون اختصارات.",
+      "تغلف كل علبة من أموونيس بوتيك يدويا في استوديونا في {city} صباح يوم التسليم — دون مجموعات هدايا جاهزة، ودون اختصارات.",
       locale,
       { city: regionCopy.city }
     ),
@@ -25,7 +25,7 @@ const principles = (locale: Locale, regionCopy: RegionCopy) => [
     title: localized("A box for the moment.", "علبة تليق باللحظة.", locale),
     body: localized(
       "From graduations to Eid, newborns to anniversaries — we curate each box for the occasion, not the lowest common denominator.",
-      "من حفلات التخرّج إلى العيد، ومن المواليد الجدد إلى ذكرى الزواج — ننسّق كل علبة لتناسب المناسبة، لا لتلائم أدنى قاسم مشترك.",
+      "من حفلات التخرج إلى العيد، ومن المواليد الجدد إلى ذكرى الزواج — ننسق كل علبة لتناسب المناسبة، لا لتلائم أدنى قاسم مشترك.",
       locale
     ),
   },
@@ -33,7 +33,7 @@ const principles = (locale: Locale, regionCopy: RegionCopy) => [
     title: localized("Quietly thoughtful.", "لمسات صادقة بلا ضجيج.", locale),
     body: localized(
       "A printed message card, a hand-tied ribbon, recycled wraps. The details are always free, and always considered.",
-      "بطاقة رسالة مطبوعة، وشريطة معقودة يدويًا، وأغلفة قابلة لإعادة التدوير. التفاصيل مجانية دائمًا، ومدروسة دائمًا.",
+      "بطاقة رسالة مطبوعة، وشريطة معقودة يدويا، وأغلفة قابلة لإعادة التدوير. التفاصيل مجانية دائما، ومدروسة دائما.",
       locale
     ),
   },
@@ -49,7 +49,7 @@ const milestones = (locale: Locale, regionCopy: RegionCopy) => [
       { city: regionCopy.city }
     ),
   },
-  { year: "2022", title: localized("Newborn & graduation editions launch", "إطلاق إصدارَي المواليد والتخرّج", locale) },
+  { year: "2022", title: localized("Newborn & graduation editions launch", "إطلاق إصداري المواليد والتخرج", locale) },
   {
     year: "2024",
     title: localized(
@@ -79,16 +79,16 @@ export default async function AboutPage() {
               {localized("About us", "من نحن", locale)}
             </p>
             <h1 className="mt-3 font-display text-4xl font-medium leading-[1.05] tracking-tight text-ink-900 sm:text-5xl md:text-6xl lg:text-7xl">
-              {localized("Hand-packed,", "مُغلَّفة يدويًا،", locale)}
+              {localized("Hand-packed,", "مغلفة يدويا،", locale)}
               <br />
               <span className="italic text-bloom-700">
-                {localized("always considered.", "ومدروسة دائمًا.", locale)}
+                {localized("always considered.", "ومدروسة دائما.", locale)}
               </span>
             </h1>
             <p className="mt-5 max-w-md text-lg text-ink-600">
               {localized(
                 "Amoonis Boutique began as a small atelier in {city} composing gift boxes for the moments that matter — graduations, Eid, newborns, and the quiet days in between. Today the boutique ships across {country}, but every box is still composed by hand.",
-                "بدأ أموونيس بوتيك ورشةً صغيرة في {city} تؤلّف علب الهدايا للحظات المهمة — التخرّج والعيد والمواليد الجدد والأيام الهادئة بينها. واليوم يوصّل البوتيك إلى جميع أنحاء {country}، لكن كل علبة لا تزال تُؤلَّف يدويًا.",
+                "بدأ أموونيس بوتيك ورشة صغيرة في {city} تؤلف علب الهدايا للحظات المهمة — التخرج والعيد والمواليد الجدد والأيام الهادئة بينها. واليوم يوصل البوتيك إلى جميع أنحاء {country}، لكن كل علبة لا تزال تؤلف يدويا.",
                 locale,
                 { city: regionCopy.city, country: regionCopy.country }
               )}
@@ -99,12 +99,12 @@ export default async function AboutPage() {
                   size="lg"
                   trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
                 >
-                  {localized("Shop the boutique", "تسوّق من البوتيك", locale)}
+                  {localized("Shop the boutique", "تسوق من البوتيك", locale)}
                 </Button>
               </Link>
               <Link href={ROUTES.branches} className="contents">
                 <Button size="lg" variant="outline">
-                  {localized("Visit a branch", "زُر أحد الفروع", locale)}
+                  {localized("Visit a branch", "زر أحد الفروع", locale)}
                 </Button>
               </Link>
             </div>
@@ -114,7 +114,7 @@ export default async function AboutPage() {
               src="https://ammon-pull-zone.b-cdn.net/uploads/981737f8-e7c8-4fd2-93c8-dd15f62cfef1.webp"
               alt={localized(
                 "Hand-composed Amoonis Boutique gift box",
-                "علبة هدايا من أموونيس بوتيك مؤلَّفة يدويًا",
+                "علبة هدايا من أموونيس بوتيك مؤلفة يدويا",
                 locale
               )}
               fill

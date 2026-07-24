@@ -17,6 +17,7 @@ import {
   PinIcon,
   ArrowRight,
 } from "@/components/icons";
+import { cn } from "@/lib/cn";
 import { contactApi } from "@/features/contact/api/contact.api";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { useAuth } from "@/features/auth/hooks/useAuth";
@@ -179,7 +180,8 @@ export default function ContactPage() {
               icon={<PhoneIcon size={18} />}
               title={t("contact.phoneTitle")}
               value={contact.phone}
-              href={`tel:${contact.phone.replace(/\s/g, "")}`}
+              href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
+              ltr
             />
             <ContactRow
               icon={<PinIcon size={18} />}
@@ -209,11 +211,14 @@ function ContactRow({
   title,
   value,
   href,
+  ltr,
 }: {
   icon: React.ReactNode;
   title: string;
   value: string;
   href?: string;
+  /** Force LTR + bidi isolation so a phone's leading "+" renders correctly in Arabic. */
+  ltr?: boolean;
 }) {
   const Wrapper = href ? "a" : "div";
   return (
@@ -228,7 +233,24 @@ function ContactRow({
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
           {title}
         </p>
-        <p className="mt-1 font-medium text-ink-900 wrap-break-word">{value}</p>
+        <p
+          className={cn(
+            "mt-1 font-medium wrap-break-word",
+            // Clickable contacts (email/phone) read as tappable in brand pink;
+            // non-links (address) stay neutral ink.
+            href ? "text-bloom-700" : "text-ink-900"
+          )}
+        >
+          {/* Isolate phone numbers as inline LTR so a leading "+" stays at the front
+              in Arabic, without left-aligning the whole line in an RTL layout. */}
+          {ltr ? (
+            <span dir="ltr" className="[unicode-bidi:isolate]">
+              {value}
+            </span>
+          ) : (
+            value
+          )}
+        </p>
       </div>
     </Wrapper>
   );

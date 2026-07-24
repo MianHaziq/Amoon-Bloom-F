@@ -7,6 +7,7 @@ import { BagIcon, HeartIcon, CheckIcon } from "@/components/icons";
 import { microTransition } from "@/lib/motion";
 import { QuantitySelector } from "./QuantitySelector";
 import { OptionPicker } from "./OptionPicker";
+import { ShippingLeadNote } from "./ShippingLeadNote";
 import { usePdpImage } from "./PdpImageContext";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
@@ -65,10 +66,9 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
   const [justAdded, setJustAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Gift card add-on: free personalized message, opted into per add-to-cart.
+  // Gift card add-on: a complimentary card, opted into with a simple Yes/No —
+  // no message field (the client's flow doesn't collect a card note here).
   const [giftCard, setGiftCard] = useState(false);
-  const [giftMessage, setGiftMessage] = useState("");
-  const [sendBlankCard, setSendBlankCard] = useState(false);
   // Custom name add-on: paid, requires a name once selected.
   const [customNameSelected, setCustomNameSelected] = useState(false);
   const [customName, setCustomName] = useState("");
@@ -97,7 +97,6 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
         giftCardSelected: product.giftCardEnabled ? giftCard : undefined,
         customName:
           product.customNameEnabled && customNameSelected ? customName.trim() : undefined,
-        message: product.giftCardEnabled && giftCard ? (sendBlankCard ? null : giftMessage.trim() || null) : undefined,
       }
     );
     if (!res.ok) return;
@@ -110,6 +109,10 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
 
   return (
     <div id="add-to-cart-panel" className="flex flex-col gap-5">
+      {product.deliveryLeadDays != null && (
+        <ShippingLeadNote days={product.deliveryLeadDays} />
+      )}
+
       {product.options && product.options.length > 0 && (
         <div className="flex flex-col gap-5">
           {product.options.map((opt) => (
@@ -134,27 +137,6 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
             </div>
             <YesNoToggle value={giftCard} onChange={setGiftCard} />
           </div>
-          {giftCard && (
-            <div className="flex flex-col gap-2 rounded-2xl border border-ink-100 bg-white p-4">
-              <textarea
-                value={giftMessage}
-                onChange={(e) => setGiftMessage(e.target.value)}
-                disabled={sendBlankCard}
-                placeholder={t("product.giftCardMessagePlaceholder")}
-                rows={3}
-                className="w-full resize-none rounded-xl border border-ink-200 p-3 text-sm text-ink-900 placeholder:text-ink-400 focus:border-bloom-400 focus:outline-none focus:ring-4 focus:ring-bloom-100 disabled:bg-ink-50 disabled:text-ink-400"
-              />
-              <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-ink-600">
-                <input
-                  type="checkbox"
-                  checked={sendBlankCard}
-                  onChange={(e) => setSendBlankCard(e.target.checked)}
-                  className="h-4 w-4 accent-bloom-600"
-                />
-                {t("product.giftCardBlankOption")}
-              </label>
-            </div>
-          )}
         </div>
       )}
 

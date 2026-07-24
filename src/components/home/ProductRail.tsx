@@ -23,6 +23,7 @@ export function ProductRail({
   spacing = "md",
   tone,
   id,
+  viewAllHref,
 }: {
   locale: Locale;
   eyebrowKey: MessageKey;
@@ -32,6 +33,10 @@ export function ProductRail({
   spacing?: "sm" | "md" | "lg";
   tone?: "default" | "cream";
   id?: string;
+  /** Where "View all" navigates. Defaults to the plain shop page; pass a
+   *  `/shop?category=<sentinel-or-slug>` href so the destination continues
+   *  the same product set shown in this rail instead of the full catalogue. */
+  viewAllHref?: string;
 }) {
   if (products.length === 0) return null;
   return (
@@ -42,7 +47,7 @@ export function ProductRail({
           title={t(locale, titleKey)}
           description={t(locale, descKey)}
           action={
-            <Link href={ROUTES.shop} className="contents">
+            <Link href={viewAllHref ?? ROUTES.shop} className="contents">
               <Button
                 variant="ghost"
                 trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}

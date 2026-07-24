@@ -18,10 +18,10 @@ const getBranches = (locale: Locale) => [
     name: localized("Downtown Dubai", "وسط مدينة دبي", locale),
     address: localized("Boulevard 1, Downtown Dubai", "بوليفارد 1، وسط مدينة دبي", locale),
     phone: siteConfig.contact.phone,
-    hours: localized("Daily · 10:00 — 22:00", "يوميًا · 10:00 — 22:00", locale),
+    hours: localized("Daily · 10:00 — 22:00", "يوميا · 10:00 — 22:00", locale),
     note: localized(
       "Flagship — full edit, gift wrapping, walk-ins welcome.",
-      "الفرع الرئيسي — التشكيلة الكاملة، وتغليف الهدايا، والزيارات دون موعد مرحّب بها.",
+      "الفرع الرئيسي — التشكيلة الكاملة، وتغليف الهدايا، والزيارات دون موعد مرحب بها.",
       locale
     ),
   },
@@ -30,10 +30,10 @@ const getBranches = (locale: Locale) => [
     name: localized("Dubai Marina", "مرسى دبي", locale),
     address: localized("Marina Walk, Dubai Marina", "ممشى المرسى، مرسى دبي", locale),
     phone: siteConfig.contact.phone,
-    hours: localized("Daily · 10:00 — 23:00", "يوميًا · 10:00 — 23:00", locale),
+    hours: localized("Daily · 10:00 — 23:00", "يوميا · 10:00 — 23:00", locale),
     note: localized(
       "Boxed gifting, flowers & same-day pickup.",
-      "هدايا معلَّبة وزهور واستلام في اليوم نفسه.",
+      "هدايا معلبة وزهور واستلام في اليوم نفسه.",
       locale
     ),
   },
@@ -42,7 +42,7 @@ const getBranches = (locale: Locale) => [
     name: localized("Abu Dhabi", "أبوظبي", locale),
     address: localized("Al Wahda, Abu Dhabi", "الوحدة، أبوظبي", locale),
     phone: siteConfig.contact.phone,
-    hours: localized("Daily · 10:00 — 22:00", "يوميًا · 10:00 — 22:00", locale),
+    hours: localized("Daily · 10:00 — 22:00", "يوميا · 10:00 — 22:00", locale),
     note: localized(
       "Full catalogue · personalisation in-store.",
       "التشكيلة الكاملة · تخصيص داخل المتجر.",
@@ -75,7 +75,7 @@ export default async function BranchesPage() {
               ? localized("Branches across the UAE.", "فروعنا في أنحاء الإمارات.", locale)
               : localized(
                   "We deliver across {country}.",
-                  "نوصّل إلى جميع أنحاء {country}.",
+                  "نوصل إلى جميع أنحاء {country}.",
                   locale,
                   { country: regionCopy.country }
                 )}
@@ -84,12 +84,12 @@ export default async function BranchesPage() {
             {hasPhysicalBranches
               ? localized(
                   "Composed boxes, flower bars, and the full Amoonis Boutique edit — visit us in person.",
-                  "علب مؤلَّفة بعناية، وأركان للزهور، وتشكيلة أموونيس بوتيك الكاملة — زورونا في المتجر.",
+                  "علب مؤلفة بعناية، وأركان للزهور، وتشكيلة أموونيس بوتيك الكاملة — زورونا في المتجر.",
                   locale
                 )
               : localized(
                   "We're online-only in {country} for now — composed boxes and flowers, delivered to your door. No walk-in branch yet.",
-                  "نحن حاليًا نعمل أونلاين فقط في {country} — علب وزهور مُنسّقة تصل إلى بابك. لا يوجد فرع للزيارة بعد.",
+                  "نحن حاليا نعمل أونلاين فقط في {country} — علب وزهور منسقة تصل إلى بابك. لا يوجد فرع للزيارة بعد.",
                   locale,
                   { country: regionCopy.country }
                 )}
@@ -106,21 +106,21 @@ export default async function BranchesPage() {
             <p className="text-sm leading-relaxed text-ink-500">
               {localized(
                 "Reach out and our team will help with delivery, custom arrangements, or anything else.",
-                "تواصل معنا وسيساعدك فريقنا في التوصيل أو التنسيقات المخصّصة أو أي استفسار آخر.",
+                "تواصل معنا وسيساعدك فريقنا في التوصيل أو التنسيقات المخصصة أو أي استفسار آخر.",
                 locale
               )}
             </p>
             <div className="mt-2 flex flex-col gap-2 text-sm">
               <a
-                href={`tel:${contact.phone.replace(/\s/g, "")}`}
-                className="inline-flex items-center gap-2 text-ink-700 hover:text-bloom-700"
+                href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
+                className="inline-flex items-center gap-2 font-medium text-bloom-700 hover:text-bloom-800"
               >
                 <PhoneIcon size={14} className="shrink-0" />
-                {contact.phone}
+                <span dir="ltr" className="[unicode-bidi:isolate]">{contact.phone}</span>
               </a>
               <a
                 href={`mailto:${contact.email}`}
-                className="inline-flex items-start gap-2 text-ink-700 hover:text-bloom-700"
+                className="inline-flex items-start gap-2 font-medium text-bloom-700 hover:text-bloom-800"
               >
                 <MailIcon size={14} className="mt-0.5 shrink-0" />
                 <span className="wrap-break-word">{contact.email}</span>
@@ -128,7 +128,7 @@ export default async function BranchesPage() {
             </div>
             <Link href={ROUTES.shop} className="contents">
               <Button size="lg" className="mt-3">
-                {localized("Shop the boutique", "تسوّق من البوتيك", locale)}
+                {localized("Shop the boutique", "تسوق من البوتيك", locale)}
               </Button>
             </Link>
           </Card>
@@ -155,18 +155,18 @@ export default async function BranchesPage() {
               </p>
               <div className="mt-4 flex flex-col gap-2 border-t border-ink-100 pt-4 text-sm">
                 <a
-                  href={`tel:${b.phone.replace(/\s/g, "")}`}
-                  className="inline-flex items-center gap-2 text-ink-700 hover:text-bloom-700"
+                  href={`tel:${b.phone.replace(/[^\d+]/g, "")}`}
+                  className="inline-flex items-center gap-2 font-medium text-bloom-700 hover:text-bloom-800"
                 >
                   <PhoneIcon size={14} className="shrink-0" />
-                  {b.phone}
+                  <span dir="ltr" className="[unicode-bidi:isolate]">{b.phone}</span>
                 </a>
                 <a
                   href={`mailto:${siteConfig.contact.email}`}
-                  className="inline-flex items-start gap-2 text-ink-700 hover:text-bloom-700"
+                  className="inline-flex items-start gap-2 font-medium text-bloom-700 hover:text-bloom-800"
                 >
                   <MailIcon size={14} className="mt-0.5 shrink-0" />
-                  <span className="wrap-break-word">{siteConfig.contact.email}</span>
+                  <span dir="ltr" className="wrap-break-word [unicode-bidi:isolate]">{siteConfig.contact.email}</span>
                 </a>
               </div>
             </Card>

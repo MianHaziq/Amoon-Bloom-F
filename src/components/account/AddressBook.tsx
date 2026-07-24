@@ -148,7 +148,9 @@ export function AddressBook() {
                   </div>
                 </div>
                 <p className="text-sm text-ink-700">{a.fullName}</p>
-                <p className="text-xs text-ink-500">{a.phone}</p>
+                <p className="text-xs text-ink-500">
+                  <span dir="ltr" className="[unicode-bidi:isolate]">{a.phone}</span>
+                </p>
                 <p className="mt-2 text-sm text-ink-700 wrap-break-word">{locationLine}</p>
               </div>
             );

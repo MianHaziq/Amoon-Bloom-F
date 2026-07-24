@@ -5,6 +5,7 @@ import {
   TikTokIcon,
   ThreadsIcon,
 } from "@/components/icons";
+import { EmailLink, PhoneLink } from "@/components/ui/ContactLink";
 import { siteConfig } from "@/config/site";
 import { ROUTES } from "@/constants/routes";
 import { getServerT } from "@/i18n/server";
@@ -123,11 +124,13 @@ export async function Footer() {
     currentRegion?.hours?.trim() ||
     t("footer.hoursTemplate", { city: regionCountryName ?? "" });
 
-  const contactLines = [
-    { href: `tel:${contactPhone.replace(/\s/g, "")}`, label: contactPhone.replace(/\s/g, "") },
-    { href: `mailto:${contactEmail}`, label: contactEmail },
-    { href: null, label: contactAddress },
-    { href: null, label: contactHours },
+  const contactLines: (
+    | { type: "phone" | "email" | "text"; value: string }
+  )[] = [
+    { type: "phone", value: contactPhone },
+    { type: "email", value: contactEmail },
+    { type: "text", value: contactAddress },
+    { type: "text", value: contactHours },
   ];
 
   const socials = [
@@ -188,14 +191,20 @@ export async function Footer() {
             </p>
             <ul className="mt-4 flex flex-col gap-2.5">
               {contactLines.map((line) => (
-                <li key={line.label} className="flex items-start gap-2 text-sm text-cream-100/80">
+                <li key={line.value} className="flex items-start gap-2 text-sm text-cream-100/80">
                   <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-cream-100/50" />
-                  {line.href ? (
-                    <a href={line.href} className="transition-colors hover:text-bloom-300">
-                      {line.label}
-                    </a>
+                  {line.type === "phone" ? (
+                    <PhoneLink
+                      phone={line.value}
+                      className="text-cream-100/80 no-underline hover:text-bloom-300"
+                    />
+                  ) : line.type === "email" ? (
+                    <EmailLink
+                      email={line.value}
+                      className="text-cream-100/80 no-underline hover:text-bloom-300"
+                    />
                   ) : (
-                    <span>{line.label}</span>
+                    <span>{line.value}</span>
                   )}
                 </li>
               ))}

@@ -5,6 +5,7 @@ import { m, AnimatePresence } from "motion/react";
 import { Button, Drawer, Divider, CurrencyAmount } from "@/components/ui";
 import { ArrowRight, BagIcon } from "@/components/icons";
 import { CartLineItem } from "./CartLineItem";
+import { OrderDeliveryNote, maxCartLeadDays } from "./OrderDeliveryNote";
 import { microTransition } from "@/lib/motion";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
@@ -23,6 +24,7 @@ export function CartDrawer() {
     (s, i) => s + i.unitPrice * i.quantity,
     0
   );
+  const orderLeadDays = maxCartLeadDays(items);
   const { currency, locale } = useCurrency();
 
   return (
@@ -54,6 +56,9 @@ export function CartDrawer() {
           </div>
 
           <footer className="border-t border-ink-100 bg-cream-50 px-6 py-5">
+            {orderLeadDays != null && (
+              <OrderDeliveryNote days={orderLeadDays} className="mb-4" />
+            )}
             <div className="flex items-baseline justify-between">
               <span className="text-sm text-ink-600">{t("common.subtotal")}</span>
               <m.span

@@ -133,9 +133,25 @@ export function AccountOrderDetail({ id }: { id: string }) {
                     <CurrencyAmount amount={item.price} currency={currency} locale={curLocale} />{" "}
                     × {item.quantity}
                   </p>
+                  {item.giftCardSelected && (
+                    <Badge tone="ink" uppercase={false} className="mt-1">
+                      {t("admin.orderDetailPage.giftCardLabel")}
+                    </Badge>
+                  )}
+                  {item.customName && (
+                    <p className="mt-1 text-xs text-ink-600 wrap-break-word">
+                      <span className="font-semibold text-ink-500">
+                        {t("admin.orderDetailPage.customNameLabel")}:
+                      </span>{" "}
+                      {item.customName}
+                    </p>
+                  )}
                   {item.perProductMessage ? (
-                    <p className="mt-1 text-xs italic text-ink-500 wrap-break-word">
-                      “{item.perProductMessage}”
+                    <p className="mt-1 text-xs text-ink-600 wrap-break-word">
+                      <span className="font-semibold text-ink-500">
+                        {t("admin.orderDetailPage.giftMessageLabel")}:
+                      </span>{" "}
+                      <span className="italic">“{item.perProductMessage}”</span>
                     </p>
                   ) : null}
                 </div>

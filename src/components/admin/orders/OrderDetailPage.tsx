@@ -6,7 +6,7 @@ import { queryKeys } from "@/services/queryKeys";
 import { Badge } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Spinner } from "@/components/ui/Loader";
-import { formatCurrency, formatDate, formatDateTime, addDays } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTime, addDays, formatDayCount } from "@/lib/format";
 import {
   ORDER_STATUSES,
   ORDER_STATUS_LABEL_KEY,
@@ -19,7 +19,7 @@ import type { OrderStatus } from "@/features/orders/types";
 export function OrderDetailPage({ id }: { id: string }) {
   const toast = useToast();
   const queryClient = useQueryClient();
-  const { t } = useT();
+  const { t, locale } = useT();
 
   const orderQuery = useQuery({
     queryKey: queryKeys.orders.detail(id),
@@ -108,18 +108,36 @@ export function OrderDetailPage({ id }: { id: string }) {
                       <p className="text-xs text-ink-500">
                         {formatCurrency(item.price)} × {item.quantity}
                       </p>
-                      {(item.giftCardSelected || item.customName) && (
-                        <p className="mt-1 text-xs font-medium text-bloom-700">
-                          {[item.giftCardSelected ? t("product.giftCardBadge") : null, item.customName]
-                            .filter(Boolean)
-                            .join(" · ")}
+                      {item.giftCardSelected && (
+                        <Badge tone="ink" uppercase={false} className="mt-1.5">
+                          {t("admin.orderDetailPage.giftCardLabel")}
+                        </Badge>
+                      )}
+                      {item.customName && (
+                        <p className="mt-1.5 text-xs text-ink-600">
+                          <span className="font-semibold text-ink-500">
+                            {t("admin.orderDetailPage.customNameLabel")}:
+                          </span>{" "}
+                          {item.customName}
                         </p>
                       )}
                       {item.perProductMessage ? (
-                        <p className="mt-1 text-xs italic text-ink-500">
-                          “{item.perProductMessage}”
+                        <p className="mt-1.5 text-xs text-ink-600">
+                          <span className="font-semibold text-ink-500">
+                            {t("admin.orderDetailPage.giftMessageLabel")}:
+                          </span>{" "}
+                          <span className="italic">“{item.perProductMessage}”</span>
                         </p>
                       ) : null}
+                      {item.resolvedLeadDays != null && (
+                        <p className="mt-1.5 text-xs text-ink-500">
+                          {item.resolvedLeadDays === 0
+                            ? t("admin.orderDetailPage.leadTimeZero")
+                            : t("admin.orderDetailPage.leadTime", {
+                                days: formatDayCount(item.resolvedLeadDays, locale),
+                              })}
+                        </p>
+                      )}
                     </div>
                     <p className="font-medium text-ink-900">
                       {formatCurrency(item.price * item.quantity)}
@@ -218,11 +236,20 @@ export function OrderDetailPage({ id }: { id: string }) {
               <div className="text-sm text-ink-700">
                 <p className="font-medium text-ink-900">{t("checkout.standardDelivery")}</p>
                 {order.estimatedDeliveryDays != null ? (
-                  <p className="mt-1">
-                    {t("admin.orderDetailPage.estimatedArrival", {
-                      date: formatDate(addDays(order.createdAt, order.estimatedDeliveryDays)),
-                    })}
-                  </p>
+                  <>
+                    <p className="mt-1">
+                      {order.estimatedDeliveryDays === 0
+                        ? t("admin.orderDetailPage.leadTimeZero")
+                        : t("admin.orderDetailPage.leadTime", {
+                            days: formatDayCount(order.estimatedDeliveryDays, locale),
+                          })}
+                    </p>
+                    <p className="mt-1">
+                      {t("admin.orderDetailPage.estimatedArrival", {
+                        date: formatDate(addDays(order.createdAt, order.estimatedDeliveryDays)),
+                      })}
+                    </p>
+                  </>
                 ) : null}
               </div>
             )}
@@ -240,8 +267,28 @@ export function OrderDetailPage({ id }: { id: string }) {
                     </span>
                   ) : null}
                 </p>
-                <p>{order.shippingAddress.phone}</p>
-                {order.guestEmail ? <p>{order.guestEmail}</p> : null}
+                {order.shippingAddress.phone ? (
+                  <p>
+                    <a
+                      href={`tel:${order.shippingAddress.phone.replace(/[^\d+]/g, "")}`}
+                      dir="ltr"
+                      className="inline-block [unicode-bidi:isolate] transition-colors hover:text-bloom-700"
+                    >
+                      {order.shippingAddress.phone}
+                    </a>
+                  </p>
+                ) : null}
+                {order.guestEmail ? (
+                  <p>
+                    <a
+                      href={`mailto:${order.guestEmail}`}
+                      dir="ltr"
+                      className="[unicode-bidi:isolate] transition-colors hover:text-bloom-700"
+                    >
+                      {order.guestEmail}
+                    </a>
+                  </p>
+                ) : null}
                 {/* Area/zone is the current checkout's primary location field —
                     fall back to the legacy street/city/country lines for orders
                     placed before this feature existed. */}

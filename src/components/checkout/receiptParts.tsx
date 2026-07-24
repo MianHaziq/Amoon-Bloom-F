@@ -3,7 +3,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { m } from "motion/react";
-import { Button, CurrencyAmount } from "@/components/ui";
+import { Badge, Button, CurrencyAmount } from "@/components/ui";
 import {
   CheckIcon,
   TruckIcon,
@@ -301,13 +301,25 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
             {addr?.phone && (
               <p className="flex items-center gap-1.5 sm:justify-start">
                 <PhoneIcon size={12} className="shrink-0 text-ink-400" />
-                <span className="tabular-nums">{addr.phone}</span>
+                <a
+                  href={`tel:${addr.phone.replace(/[^\d+]/g, "")}`}
+                  dir="ltr"
+                  className="tabular-nums [unicode-bidi:isolate] transition-colors hover:text-bloom-700"
+                >
+                  {addr.phone}
+                </a>
               </p>
             )}
             {email && (
               <p className="flex items-center gap-1.5">
                 <MailIcon size={12} className="shrink-0 text-ink-400" />
-                <span className="truncate">{email}</span>
+                <a
+                  href={`mailto:${email}`}
+                  dir="ltr"
+                  className="min-w-0 truncate [unicode-bidi:isolate] transition-colors hover:text-bloom-700"
+                >
+                  {email}
+                </a>
               </p>
             )}
           </div>
@@ -404,11 +416,25 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
                   <p className="wrap-break-word text-sm font-medium leading-snug text-ink-900">
                     {item.product?.title ?? t("order.itemFallback")}
                   </p>
-                  {(item.giftCardSelected || item.customName) && (
-                    <p className="mt-0.5 wrap-break-word text-xs text-bloom-700">
-                      {[item.giftCardSelected ? t("product.giftCardBadge") : null, item.customName]
-                        .filter(Boolean)
-                        .join(" · ")}
+                  {item.giftCardSelected && (
+                    <Badge tone="ink" uppercase={false} className="mt-1">
+                      {t("admin.orderDetailPage.giftCardLabel")}
+                    </Badge>
+                  )}
+                  {item.customName && (
+                    <p className="mt-1 wrap-break-word text-xs text-ink-600">
+                      <span className="font-semibold text-ink-500">
+                        {t("admin.orderDetailPage.customNameLabel")}:
+                      </span>{" "}
+                      {item.customName}
+                    </p>
+                  )}
+                  {item.perProductMessage && (
+                    <p className="mt-1 wrap-break-word text-xs text-ink-600">
+                      <span className="font-semibold text-ink-500">
+                        {t("admin.orderDetailPage.giftMessageLabel")}:
+                      </span>{" "}
+                      <span className="italic">“{item.perProductMessage}”</span>
                     </p>
                   )}
                   {/* Mobile-only per-unit breakdown (columns are hidden on mobile) */}

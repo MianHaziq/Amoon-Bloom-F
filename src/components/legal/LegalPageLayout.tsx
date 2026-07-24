@@ -1,4 +1,5 @@
 import { Container, Section } from "@/components/ui";
+import { linkifyContacts } from "@/components/ui/ContactLink";
 
 export interface LegalListItem {
   label?: string;
@@ -40,11 +41,11 @@ function Bullet() {
 }
 
 function ListItemContent({ item }: { item: string | LegalListItem }) {
-  if (typeof item === "string") return <span>{item}</span>;
+  if (typeof item === "string") return <span>{linkifyContacts(item)}</span>;
   return (
     <span>
       <span className="font-semibold text-ink-900">{item.label}: </span>
-      {item.text}
+      {linkifyContacts(item.text)}
     </span>
   );
 }
@@ -55,7 +56,7 @@ function Blocks({ blocks }: { blocks: LegalBlock[] }) {
       {blocks.map((b, i) =>
         b.type === "p" ? (
           <p key={i} className="mt-3 text-base leading-relaxed text-ink-600">
-            {b.text}
+            {linkifyContacts(b.text)}
           </p>
         ) : (
           <ul key={i} className="mt-3 flex flex-col gap-2.5">

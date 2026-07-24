@@ -89,6 +89,14 @@ function useProductFormSchema() {
         .number()
         .int(t("admin.productForm.quantityWhole"))
         .nonnegative(t("admin.productForm.quantityMin")),
+      // Overrides Category.deliveryLeadDays / Settings.defaultDeliveryLeadDays for
+      // this product specifically. Null = no override (falls through the chain).
+      deliveryLeadDays: z
+        .number()
+        .int()
+        .min(0, t("admin.productForm.deliveryLeadDaysInvalid"))
+        .max(30, t("admin.productForm.deliveryLeadDaysInvalid"))
+        .nullable(),
       categoryId: z.string().optional().nullable(),
       status: z.enum(["DRAFT", "PUBLISHED"]),
       regionIds: z.array(z.string()),
@@ -121,6 +129,7 @@ const emptyDefaults: ProductFormValues = {
   customNameEnabled: false,
   customNamePrice: null,
   quantity: 0,
+  deliveryLeadDays: null,
   categoryId: null,
   status: "PUBLISHED",
   regionIds: [],
@@ -180,6 +189,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       customNameEnabled: initial.customNameEnabled ?? false,
       customNamePrice: initial.customNamePrice ?? null,
       quantity: initial.quantity,
+      deliveryLeadDays: initial.deliveryLeadDays ?? null,
       categoryId: initial.categoryId,
       status: initial.status ?? "PUBLISHED",
       regionIds: initial.regionIds ?? [],
@@ -297,6 +307,10 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           ? null
           : Number(values.customNamePrice),
       quantity: values.quantity,
+      deliveryLeadDays:
+        values.deliveryLeadDays === null || values.deliveryLeadDays === undefined
+          ? null
+          : Number(values.deliveryLeadDays),
       categoryId: values.categoryId || null,
       status: values.status,
       regionIds: values.regionIds,
@@ -364,6 +378,19 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               min="0"
               error={errors.quantity?.message}
               {...register("quantity", { valueAsNumber: true })}
+            />
+            <Input
+              label={t("admin.productForm.deliveryLeadDaysLabel")}
+              type="number"
+              step="1"
+              min="0"
+              max="30"
+              placeholder={t("admin.productForm.deliveryLeadDaysPlaceholder")}
+              hint={t("admin.productForm.deliveryLeadDaysHint")}
+              error={errors.deliveryLeadDays?.message}
+              {...register("deliveryLeadDays", {
+                setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+              })}
             />
           </div>
 

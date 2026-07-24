@@ -7,6 +7,8 @@ import {
 import { toUiProducts } from "@/features/products/adapters";
 import { getServerRegion } from "@/services/serverRegion";
 import { getServerLocale } from "@/i18n/server";
+import { BEST_SELLING_FILTER_VALUE } from "@/features/products/facets";
+import { ROUTES } from "@/constants/routes";
 
 /**
  * Best Sellers — mirrors the client homepage's "Best Selling Products" row,
@@ -40,6 +42,7 @@ export async function BestSellers() {
       descKey="home.bestSellersDesc"
       products={products}
       tone="cream"
+      viewAllHref={`${ROUTES.shop}?category=${encodeURIComponent(BEST_SELLING_FILTER_VALUE)}`}
     />
   );
 }

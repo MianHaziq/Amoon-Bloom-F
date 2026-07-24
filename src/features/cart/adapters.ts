@@ -29,6 +29,7 @@ export function apiCartToCartItems(cart: ApiCart): CartItem[] {
       selectedOptions: it.selectedOptions ?? null,
       giftCardSelected: it.giftCardSelected ?? false,
       customName: it.customName ?? null,
+      deliveryLeadDays: it.product.resolvedDeliveryLeadDays ?? undefined,
     };
   });
 }

@@ -231,7 +231,7 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
         example:
           "Amoon Bloom Trading LLC is an online e-commerce business registered and operating in Dubai, United Arab Emirates, offering gift boxes, flower bouquets, flower mugs, newborn gifts, natural oil, and other gift items.",
         exampleAr:
-          "شركة أمون بلوم للتجارة ذ.م.م هي متجر إلكتروني مسجل ويعمل في دبي، الإمارات العربية المتحدة، ويقدّم صناديق الهدايا وباقات الزهور وأكواب الزهور وهدايا المواليد والزيوت الطبيعية ومنتجات الهدايا الأخرى.",
+          "شركة أمون بلوم للتجارة ذ.م.م هي متجر إلكتروني مسجل ويعمل في دبي، الإمارات العربية المتحدة، ويقدم صناديق الهدايا وباقات الزهور وأكواب الزهور وهدايا المواليد والزيوت الطبيعية ومنتجات الهدايا الأخرى.",
         alsoUsedIn: "9. Governing Law & Dispute Resolution",
       },
       {
@@ -242,7 +242,7 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
         example:
           "Prices are displayed in UAE Dirhams (AED) and are inclusive of VAT where applicable, in accordance with UAE Federal Decree-Law on Value Added Tax.",
         exampleAr:
-          "تُعرض الأسعار بالدرهم الإماراتي وتشمل ضريبة القيمة المضافة حيثما ينطبق ذلك، بموجب المرسوم بقانون اتحادي بشأن ضريبة القيمة المضافة.",
+          "تعرض الأسعار بالدرهم الإماراتي وتشمل ضريبة القيمة المضافة حيثما ينطبق ذلك، بموجب المرسوم بقانون اتحادي بشأن ضريبة القيمة المضافة.",
       },
       {
         kind: "field",
@@ -252,7 +252,7 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
         example:
           "All content on the Amoon Bloom Trading LLC website including text, images, logos, and product designs is the intellectual property of Amoon Bloom Trading LLC or its licensors and is protected under UAE Federal Law No. 38 of 2021 on Intellectual Property Rights. Reproduction, distribution, or commercial use without written permission is strictly prohibited.",
         exampleAr:
-          "يُعد كل محتوى موقع أمون بلوم للتجارة ذ.م.م، بما في ذلك النصوص والصور والشعارات وتصاميم المنتجات، ملكية فكرية للشركة أو مرخّصيها، ويخضع للحماية بموجب القانون الاتحادي رقم 38 لسنة 2021 بشأن الحقوق المعنوية. ويُحظر نسخه أو توزيعه أو استخدامه تجاريًا دون إذن كتابي.",
+          "يعد كل محتوى موقع أمون بلوم للتجارة ذ.م.م، بما في ذلك النصوص والصور والشعارات وتصاميم المنتجات، ملكية فكرية للشركة أو مرخصيها، ويخضع للحماية بموجب القانون الاتحادي رقم 38 لسنة 2021 بشأن الحقوق المعنوية. ويحظر نسخه أو توزيعه أو استخدامه تجاريا دون إذن كتابي.",
       },
     ],
   },
@@ -297,7 +297,7 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
         example:
           "Nothing in this policy limits or excludes your rights as a consumer under UAE Federal Law No. 15 of 2020 on Consumer Protection and the applicable laws. In the event of a dispute, you may also refer your complaint to the UAE Ministry of Economy Consumer Protection Department.",
         exampleAr:
-          "لا يحد أي بند في هذه السياسة من حقوقك كمستهلك بموجب القانون الاتحادي الإماراتي رقم 15 لسنة 2020 بشأن حماية المستهلك والقوانين المعمول بها الأخرى، أو يستثنيها. وفي حال وجود نزاع، يمكنك أيضًا إحالة شكواك إلى إدارة حماية المستهلك في وزارة الاقتصاد الإماراتية.",
+          "لا يحد أي بند في هذه السياسة من حقوقك كمستهلك بموجب القانون الاتحادي الإماراتي رقم 15 لسنة 2020 بشأن حماية المستهلك والقوانين المعمول بها الأخرى، أو يستثنيها. وفي حال وجود نزاع، يمكنك أيضا إحالة شكواك إلى إدارة حماية المستهلك في وزارة الاقتصاد الإماراتية.",
       },
     ],
   },
@@ -314,7 +314,7 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
         example:
           "In the event of a delivery failure caused by us (not attributable to customer error or force majeure), we will re-deliver at no additional charge or issue a full refund at the customer's election, in accordance with UAE Federal Law No. 15 of 2020 on Consumer Protection.",
         exampleAr:
-          "في حال حدوث فشل في التسليم بسبب خطأ من جانبنا (وليس بسبب خطأ من العميل أو ظرف قاهر)، سنقوم بإعادة التسليم دون أي رسوم إضافية أو نصدر استردادًا كاملًا حسب اختيار العميل، بموجب القانون الاتحادي الإماراتي رقم 15 لسنة 2020 بشأن حماية المستهلك.",
+          "في حال حدوث فشل في التسليم بسبب خطأ من جانبنا (وليس بسبب خطأ من العميل أو ظرف قاهر)، سنقوم بإعادة التسليم دون أي رسوم إضافية أو نصدر استردادا كاملا حسب اختيار العميل، بموجب القانون الاتحادي الإماراتي رقم 15 لسنة 2020 بشأن حماية المستهلك.",
         referencesGroupKey: "refund",
       },
     ],
@@ -332,7 +332,7 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
         example:
           "Amoon Bloom Trading LLC makes no warranties, express or implied, beyond those required by UAE Federal Law No. 15 of 2020 on Consumer Protection and the applicable laws. Our products are sold as gifts and are not intended for medical, therapeutic, or professional use unless explicitly stated.",
         exampleAr:
-          "لا تقدّم شركة أمون بلوم للتجارة ذ.م.م أي ضمانات، صريحة أو ضمنية، تتجاوز ما يقتضيه القانون الاتحادي الإماراتي رقم 15 لسنة 2020 بشأن حماية المستهلك والقوانين المعمول بها الأخرى. وتُباع منتجاتنا كهدايا وليست مخصصة للاستخدام الطبي أو العلاجي أو المهني ما لم يُذكر ذلك صراحةً.",
+          "لا تقدم شركة أمون بلوم للتجارة ذ.م.م أي ضمانات، صريحة أو ضمنية، تتجاوز ما يقتضيه القانون الاتحادي الإماراتي رقم 15 لسنة 2020 بشأن حماية المستهلك والقوانين المعمول بها الأخرى. وتباع منتجاتنا كهدايا وليست مخصصة للاستخدام الطبي أو العلاجي أو المهني ما لم يذكر ذلك صراحة.",
         referencesGroupKey: "refund",
       },
       {
@@ -343,7 +343,7 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
         example:
           "All products sold by Amoonis Boutique are sourced from suppliers who comply with applicable laws and standards in United Arab Emirates. We are committed to consumer safety and adhere to the requirements of the Emirates Authority for Standardisation and Metrology (ESMA) where applicable.",
         exampleAr:
-          "يتم توريد جميع المنتجات التي تبيعها أموونيس بوتيك من موردين يلتزمون بالقوانين والمعايير المعمول بها في الإمارات العربية المتحدة. ونحن ملتزمون بسلامة المستهلك ونتقيّد بمتطلبات هيئة الإمارات للمواصفات والمقاييس (ESMA) حيثما ينطبق ذلك.",
+          "يتم توريد جميع المنتجات التي تبيعها أموونيس بوتيك من موردين يلتزمون بالقوانين والمعايير المعمول بها في الإمارات العربية المتحدة. ونحن ملتزمون بسلامة المستهلك ونتقيد بمتطلبات هيئة الإمارات للمواصفات والمقاييس (ESMA) حيثما ينطبق ذلك.",
       },
     ],
   },
@@ -357,7 +357,7 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
         example:
           "Gift boxes, floral bouquets, newborn keepsakes, and occasion gifts - thoughtfully curated and prepared with care at Amoon Boutique in United Arab Emirates.",
         exampleAr:
-          "علب هدايا، وباقات ورد، وهدايا للمواليد، وهدايا المناسبات - مُنسّقة ومُجهّزة بعناية في Amoon Boutique في الإمارات العربية المتحدة.",
+          "علب هدايا، وباقات ورد، وهدايا للمواليد، وهدايا المناسبات - منسقة ومجهزة بعناية في Amoon Boutique في الإمارات العربية المتحدة.",
       },
     ],
   },
@@ -755,7 +755,7 @@ export function RegionForm({
             <Input
               label={t("admin.regionForm.hoursArLabel")}
               dir="rtl"
-              placeholder="يوميًا · 10:00 — 00:00 بتوقيت دبي"
+              placeholder="يوميا · 10:00 — 00:00 بتوقيت دبي"
               {...register("hours_ar")}
             />
           </div>

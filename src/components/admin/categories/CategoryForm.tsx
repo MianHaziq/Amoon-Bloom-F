@@ -32,6 +32,12 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
         description_ar: z.string().optional().nullable(),
         image: z.string().url().nullable(),
         status: z.enum(["DRAFT", "PUBLISHED"]),
+        deliveryLeadDays: z
+          .number()
+          .int()
+          .min(0, t("admin.categoryForm.deliveryLeadDaysInvalid"))
+          .max(30, t("admin.categoryForm.deliveryLeadDaysInvalid"))
+          .nullable(),
         regionIds: z.array(z.string()),
       }),
     [t]
@@ -54,6 +60,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       description_ar: "",
       image: null,
       status: "PUBLISHED",
+      deliveryLeadDays: null,
       regionIds: [],
     },
   });
@@ -67,6 +74,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       description_ar: initial.description_ar ?? "",
       image: initial.image,
       status: initial.status ?? "PUBLISHED",
+      deliveryLeadDays: initial.deliveryLeadDays ?? null,
       regionIds: initial.regionIds ?? [],
     });
   }, [initial, reset]);
@@ -79,6 +87,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       description_ar: values.description_ar?.trim() || null,
       image: values.image,
       status: values.status,
+      deliveryLeadDays: values.deliveryLeadDays,
       regionIds: values.regionIds,
     });
   });
@@ -138,6 +147,26 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
                 ]}
               />
             )}
+          />
+        </section>
+
+        <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+          <h3 className="mb-1 font-display text-lg text-ink-900">
+            {t("admin.categoryForm.deliveryLeadDaysHeading")}
+          </h3>
+          <p className="mb-3 text-xs text-ink-500">
+            {t("admin.categoryForm.deliveryLeadDaysHint")}
+          </p>
+          <Input
+            type="number"
+            min={0}
+            max={30}
+            step={1}
+            placeholder={t("admin.categoryForm.deliveryLeadDaysPlaceholder")}
+            error={errors.deliveryLeadDays?.message}
+            {...register("deliveryLeadDays", {
+              setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+            })}
           />
         </section>
 

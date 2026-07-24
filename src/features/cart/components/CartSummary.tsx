@@ -12,6 +12,7 @@ import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
+import { OrderDeliveryNote, maxCartLeadDays } from "./OrderDeliveryNote";
 import { useT } from "@/i18n/useT";
 
 interface CartSummaryProps {
@@ -27,6 +28,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
     (sum, i) => sum + i.unitPrice * i.quantity,
     0
   );
+  const orderLeadDays = maxCartLeadDays(items);
 
   // Flat shipping fee for the current region — same query key as
   // CheckoutClient so this is served from cache, not a second request.
@@ -79,6 +81,8 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
           </dd>
         </div>
       </dl>
+
+      {orderLeadDays != null && <OrderDeliveryNote days={orderLeadDays} />}
 
       <Divider />
 

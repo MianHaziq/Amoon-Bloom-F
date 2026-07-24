@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Container, Button } from "@/components/ui";
 import { Skeleton } from "@/components/ui/Loader";
@@ -9,6 +10,7 @@ import { ordersApi } from "@/features/orders/api/orders.api";
 import { queryKeys } from "@/services/queryKeys";
 import { ROUTES } from "@/constants/routes";
 import { useT } from "@/i18n/useT";
+import { trackPurchase } from "@/lib/gtm";
 import type { MessageKey } from "@/i18n";
 import { ReceiptStage, ConfirmationHero, ReceiptCard, ReceiptActions } from "./receiptParts";
 
@@ -26,6 +28,10 @@ export function OrderReceipt({ orderId }: { orderId?: string }) {
     enabled: Boolean(orderId),
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (query.data) trackPurchase(query.data);
+  }, [query.data]);
 
   return (
     <ReceiptStage>

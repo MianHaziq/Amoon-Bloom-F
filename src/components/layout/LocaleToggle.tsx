@@ -12,7 +12,7 @@ import {
   MenuContent,
   MenuItem,
 } from "@/components/ui";
-import { CheckIcon, ChevronDown, GlobeIcon } from "@/components/icons";
+import { CheckIcon, ChevronDown, GlobeIcon, TranslateIcon } from "@/components/icons";
 
 const LOCALES: { value: Locale; nativeLabel: string }[] = [
   { value: "en", nativeLabel: "English" },
@@ -78,7 +78,7 @@ export function LocaleToggle({
           label={t("common.language")}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all duration-200 hover:bg-bloom-600 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50 aria-expanded:bg-bloom-600 aria-expanded:text-white"
         >
-          <GlobeIcon size={20} />
+          <TranslateIcon size={20} />
         </MenuTrigger>
 
         <MenuContent align="end" className="min-w-36">

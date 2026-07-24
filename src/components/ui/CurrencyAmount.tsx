@@ -30,9 +30,20 @@ export function CurrencyAmount({
   return (
     <span className={className}>
       {Icon ? (
+        // Size the glyph to the font's exact cap height (`1cap`) with auto width, so its
+        // visual height matches the digits regardless of the sign's viewBox aspect ratio
+        // — AED's Dirham mark is wider than tall, so a square box (the old size="0.68em")
+        // shrank its height ~13% and it read as smaller than the price. `verticalAlign:
+        // baseline` sits it on the text baseline like the digits. The `size` attribute is
+        // a fallback height for the rare browser without `cap`-unit support.
         <Icon
-          size="0.68em"
-          style={{ marginInlineEnd: "0.12em", verticalAlign: "0" }}
+          size="0.82em"
+          style={{
+            height: "1cap",
+            width: "auto",
+            marginInlineEnd: "0.12em",
+            verticalAlign: "baseline",
+          }}
         />
       ) : (
         `${currency} `

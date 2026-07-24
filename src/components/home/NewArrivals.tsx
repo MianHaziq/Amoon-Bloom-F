@@ -3,6 +3,8 @@ import { getCachedProductList } from "@/services/catalogCache";
 import { toUiProducts } from "@/features/products/adapters";
 import { getServerRegion } from "@/services/serverRegion";
 import { getServerLocale } from "@/i18n/server";
+import { NEW_ARRIVALS_FILTER_VALUE } from "@/features/products/facets";
+import { ROUTES } from "@/constants/routes";
 
 /**
  * New Arrivals — the newest products (backend default order is newest-first).
@@ -26,6 +28,7 @@ export async function NewArrivals() {
       titleKey="home.newArrivalsTitle"
       descKey="home.newArrivalsDesc"
       products={products}
+      viewAllHref={`${ROUTES.shop}?category=${encodeURIComponent(NEW_ARRIVALS_FILTER_VALUE)}`}
     />
   );
 }

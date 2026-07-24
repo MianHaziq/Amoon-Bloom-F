@@ -48,7 +48,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       )}
       <div
         className={cn(
-          "group flex items-center rounded-2xl border transition-all",
+          // overflow-hidden clips the browser's autofill background (painted as a
+          // sharp-cornered rect on the <input> itself) to the wrapper's rounded shape.
+          "group flex items-center overflow-hidden rounded-2xl border transition-all",
           locked
             ? "cursor-not-allowed border-ink-100 bg-ink-50"
             : "bg-white focus-within:border-bloom-400 focus-within:ring-4 focus-within:ring-bloom-100",

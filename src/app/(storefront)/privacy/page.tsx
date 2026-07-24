@@ -45,7 +45,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
         {
           title: localized(
             "2.1 Information You Provide",
-            "2.1 المعلومات التي تقدّمها",
+            "2.1 المعلومات التي تقدمها",
             locale
           ),
           blocks: [
@@ -72,7 +72,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
         {
           title: localized(
             "2.2 Information Collected Automatically",
-            "2.2 المعلومات التي يتم جمعها تلقائيًا",
+            "2.2 المعلومات التي يتم جمعها تلقائيا",
             locale
           ),
           blocks: [
@@ -87,7 +87,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
               ],
               [
                 "Referral source and search terms used to find our website",
-                "مصدر الإحالة ومصطلحات البحث المستخدَمة للوصول إلى موقعنا",
+                "مصدر الإحالة ومصطلحات البحث المستخدمة للوصول إلى موقعنا",
               ],
             ]),
           ],
@@ -138,7 +138,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `We process your data on the basis of: (a) contractual necessity to fulfil your order; (b) your explicit consent for marketing communications; and (c) compliance with applicable legal obligations in ${contact.countryName}.`,
-          `نعالج بياناتك استنادًا إلى: (أ) الضرورة التعاقدية لتنفيذ طلبك؛ (ب) موافقتك الصريحة على المراسلات التسويقية؛ و(ج) الامتثال للالتزامات القانونية المعمول بها في ${contact.countryName}.`
+          `نعالج بياناتك استنادا إلى: (أ) الضرورة التعاقدية لتنفيذ طلبك؛ (ب) موافقتك الصريحة على المراسلات التسويقية؛ و(ج) الامتثال للالتزامات القانونية المعمول بها في ${contact.countryName}.`
         ),
       ],
     },
@@ -152,11 +152,11 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
         L([
           [
             "Delivery and logistics partners solely for order fulfilment",
-            "شركاء التوصيل والخدمات اللوجستية، حصريًا لغرض تنفيذ الطلبات",
+            "شركاء التوصيل والخدمات اللوجستية، حصريا لغرض تنفيذ الطلبات",
           ],
           [
             "Payment processors operating under applicable security standards",
-            "معالِجي المدفوعات العاملين وفق معايير الأمان المعمول بها",
+            "معالجي المدفوعات العاملين وفق معايير الأمان المعمول بها",
           ],
           [
             `Government authorities when required by ${contact.countryShort} law`,
@@ -214,7 +214,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "Our website uses cookies to enhance your browsing experience and analyse site traffic. You may manage your cookie preferences through your browser settings. Disabling certain cookies may affect website functionality.",
-          "يستخدم موقعنا ملفات تعريف الارتباط لتحسين تجربة التصفح وتحليل حركة الزيارات. ويمكنك إدارة تفضيلاتك الخاصة بملفات تعريف الارتباط من إعدادات متصفحك. علمًا بأن تعطيل بعض هذه الملفات قد يؤثر على وظائف الموقع."
+          "يستخدم موقعنا ملفات تعريف الارتباط لتحسين تجربة التصفح وتحليل حركة الزيارات. ويمكنك إدارة تفضيلاتك الخاصة بملفات تعريف الارتباط من إعدادات متصفحك. علما بأن تعطيل بعض هذه الملفات قد يؤثر على وظائف الموقع."
         ),
       ],
     },
@@ -223,7 +223,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `We implement appropriate technical and organisational measures to safeguard your personal data against unauthorised access, loss, or disclosure, in accordance with Article 16 of the ${contact.dataProtectionLawName}.`,
-          `نطبّق التدابير التقنية والتنظيمية المناسبة لحماية بياناتك الشخصية من الوصول غير المصرح به أو الفقدان أو الإفصاح، وذلك بموجب المادة 16 من ${contact.dataProtectionLawName}.`
+          `نطبق التدابير التقنية والتنظيمية المناسبة لحماية بياناتك الشخصية من الوصول غير المصرح به أو الفقدان أو الإفصاح، وذلك بموجب المادة 16 من ${contact.dataProtectionLawName}.`
         ),
       ],
     },
@@ -232,7 +232,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "We may update this Privacy Policy periodically. Changes will be published on our website with an updated effective date. Continued use of our website after changes constitutes acceptance of the revised policy.",
-          "قد نقوم بتحديث سياسة الخصوصية هذه بشكل دوري. وسيتم نشر أي تغييرات على موقعنا مع تحديث تاريخ السريان. ويُعدّ استمرار استخدام موقعنا بعد إجراء أي تغييرات بمثابة موافقة على السياسة المعدَّلة."
+          "قد نقوم بتحديث سياسة الخصوصية هذه بشكل دوري. وسيتم نشر أي تغييرات على موقعنا مع تحديث تاريخ السريان. ويعد استمرار استخدام موقعنا بعد إجراء أي تغييرات بمثابة موافقة على السياسة المعدلة."
         ),
       ],
     },
@@ -245,7 +245,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "Registered customers may request deletion of their website account and associated personal data at any time.",
-          "يمكن للعملاء المسجَّلين طلب حذف حسابهم على الموقع وبياناتهم الشخصية المرتبطة به في أي وقت."
+          "يمكن للعملاء المسجلين طلب حذف حسابهم على الموقع وبياناتهم الشخصية المرتبطة به في أي وقت."
         ),
         P(
           `You may request account deletion by contacting us at ${contact.email} or via WhatsApp at ${contact.whatsappNumber}.`,
@@ -262,7 +262,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "For privacy-related inquiries, please contact Amoonis Boutique:",
-          "لأي استفسارات متعلقة بالخصوصية، يُرجى التواصل مع أموونيس بوتيك:"
+          "لأي استفسارات متعلقة بالخصوصية، يرجى التواصل مع أموونيس بوتيك:"
         ),
         LL([
           ["Email", contact.email, "البريد الإلكتروني", contact.email],
@@ -283,7 +283,7 @@ export default async function PrivacyPage() {
       title={localized("Privacy Policy", "سياسة الخصوصية", locale)}
       intro={localized(
         `${contact.legalEntity} is committed to protecting your personal data. Please review this Privacy Policy before using our website or placing an order with Amoonis Boutique.`,
-        `تلتزم ${contact.legalEntity} بحماية بياناتك الشخصية. يُرجى مراجعة سياسة الخصوصية هذه قبل استخدام موقعنا أو إتمام أي طلب مع أموونيس بوتيك.`,
+        `تلتزم ${contact.legalEntity} بحماية بياناتك الشخصية. يرجى مراجعة سياسة الخصوصية هذه قبل استخدام موقعنا أو إتمام أي طلب مع أموونيس بوتيك.`,
         locale
       )}
       badge={localized("Privacy Policy", "سياسة الخصوصية", locale)}

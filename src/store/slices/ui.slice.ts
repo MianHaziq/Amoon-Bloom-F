@@ -15,6 +15,11 @@ export interface UiState {
   locale: Locale;
   isMobileNavOpen: boolean;
   isCartDrawerOpen: boolean;
+  /** True while a PDP's mobile sticky add-to-cart bar is mounted, so the
+   *  global WhatsApp float button (rendered in the shared layout, with no
+   *  DOM relationship to the PDP) can lift itself clear of the bar instead
+   *  of overlapping it. */
+  isStickyAddToCartMounted: boolean;
   toasts: Toast[];
 }
 
@@ -23,6 +28,7 @@ const initialState: UiState = {
   locale: "en",
   isMobileNavOpen: false,
   isCartDrawerOpen: false,
+  isStickyAddToCartMounted: false,
   toasts: [],
 };
 
@@ -41,6 +47,9 @@ const uiSlice = createSlice({
     },
     toggleCartDrawer(state, action: PayloadAction<boolean | undefined>) {
       state.isCartDrawerOpen = action.payload ?? !state.isCartDrawerOpen;
+    },
+    setStickyAddToCartMounted(state, action: PayloadAction<boolean>) {
+      state.isStickyAddToCartMounted = action.payload;
     },
     pushToast(state, action: PayloadAction<Omit<Toast, "id"> & { id?: string }>) {
       const id =
@@ -61,6 +70,7 @@ export const {
   setLocale,
   toggleMobileNav,
   toggleCartDrawer,
+  setStickyAddToCartMounted,
   pushToast,
   dismissToast,
 } = uiSlice.actions;

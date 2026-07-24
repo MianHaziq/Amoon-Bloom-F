@@ -50,6 +50,9 @@ export interface Product {
   /** Paid "add a custom name" add-on, offered only on select products. */
   customNameEnabled?: boolean;
   customNamePrice?: number;
+  /** Fully-resolved "ships within N day(s)" prep/booking lead time (product ->
+   *  category -> site default). Always present on real API-adapted products. */
+  deliveryLeadDays?: number;
 }
 
 export interface ProductFilter {

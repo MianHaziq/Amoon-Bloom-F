@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Container, Button } from "@/components/ui";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
@@ -8,6 +8,7 @@ import { CheckIcon, ArrowRight, SparkleIcon } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { useT } from "@/i18n/useT";
+import { trackPurchase } from "@/lib/gtm";
 import type { MessageKey } from "@/i18n";
 import type { ApiOrder } from "@/features/orders/types";
 import { ReceiptStage, ConfirmationHero, ReceiptCard, ReceiptActions } from "./receiptParts";
@@ -39,6 +40,10 @@ export function GuestOrderSuccess() {
       return null;
     }
   }, [hydrated]);
+
+  useEffect(() => {
+    if (order) trackPurchase(order);
+  }, [order]);
 
   return (
     <ReceiptStage>

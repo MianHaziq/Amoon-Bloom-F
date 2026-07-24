@@ -109,6 +109,7 @@ export function toUiProduct(api: ApiProduct, opts: ToUiProductOptions = {}): Pro
     giftCardExtraPrice: api.giftCardExtraPrice ?? undefined,
     customNameEnabled: api.customNameEnabled ?? false,
     customNamePrice: api.customNamePrice ?? undefined,
+    deliveryLeadDays: api.resolvedDeliveryLeadDays ?? undefined,
     rating: api.avgRating ?? undefined,
     reviewCount: api.reviewCount ?? undefined,
   };

@@ -91,12 +91,12 @@ export function CartLineItem({
         {(item.giftCardSelected || item.customName) && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {item.giftCardSelected && (
-              <span className="inline-flex items-center rounded-full bg-blush-100 px-2 py-0.5 text-[11px] font-medium text-bloom-700">
+              <span className="inline-flex items-center rounded-full bg-ink-900 px-2 py-0.5 text-[11px] font-medium text-white">
                 {t("product.giftCardBadge")}
               </span>
             )}
             {item.customName && (
-              <span className="inline-flex items-center rounded-full bg-blush-100 px-2 py-0.5 text-[11px] font-medium text-bloom-700">
+              <span className="inline-flex items-center rounded-full bg-ink-900 px-2 py-0.5 text-[11px] font-medium text-white">
                 {item.customName}
               </span>
             )}

@@ -98,3 +98,25 @@ export function addDays(value: string | number | Date, days: number): Date {
 export function pluralize(count: number, singular: string, plural?: string) {
   return `${count} ${count === 1 ? singular : plural ?? `${singular}s`}`;
 }
+
+/**
+ * A grammatically-correct "N day(s)" phrase for the app locale, INCLUDING the unit word.
+ * English is trivial (1 day / N days), but Arabic "يوم" (day) inflects across CLDR's
+ * one/two/few/many buckets — a plain one/other split renders "2 أيام" where the dual
+ * "يومين" is required, and "15 أيام" where the accusative singular "15 يوماً" is. Callers
+ * interpolate the whole returned phrase into a sentence template (e.g. "shipped within
+ * {days}"), so the sentence needs only ONE key per locale instead of a form per bucket.
+ */
+export function formatDayCount(n: number, locale: Locale = "en"): string {
+  if (locale !== "ar") return n === 1 ? "1 day" : `${n} days`;
+  // Modern Standard Arabic day forms:
+  switch (n) {
+    case 1:
+      return "يوم واحد";
+    case 2:
+      return "يومين";
+    default:
+      // 3–10 take the plural "أيام"; 11+ take the accusative singular "يوماً".
+      return n >= 3 && n <= 10 ? `${n} أيام` : `${n} يوماً`;
+  }
+}

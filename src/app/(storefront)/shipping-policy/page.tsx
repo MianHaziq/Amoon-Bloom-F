@@ -34,7 +34,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `${contact.legalEntity} delivers across ${contact.countryName}. We currently do not offer international shipping.`,
-          `تقوم ${contact.legalEntity} بالتوصيل داخل دولة ${contact.countryName}، ولا نقدّم حاليًا خدمة الشحن الدولي.`
+          `تقوم ${contact.legalEntity} بالتوصيل داخل دولة ${contact.countryName}، ولا نقدم حاليا خدمة الشحن الدولي.`
         ),
       ],
     },
@@ -56,7 +56,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
               ],
               [
                 "Same-day delivery charges apply and are displayed at checkout",
-                "تُطبَّق رسوم التوصيل في نفس اليوم وتظهر عند إتمام الطلب",
+                "تطبق رسوم التوصيل في نفس اليوم وتظهر عند إتمام الطلب",
               ],
             ]),
           ],
@@ -86,7 +86,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
               ],
               [
                 "We will make reasonable efforts to honour your selected slot; however, delivery times are estimates and cannot be guaranteed",
-                "نبذل جهودًا معقولة للالتزام بالموعد الذي اخترته، إلا أن أوقات التسليم تقديرية ولا يمكن ضمانها",
+                "نبذل جهودا معقولة للالتزام بالموعد الذي اخترته، إلا أن أوقات التسليم تقديرية ولا يمكن ضمانها",
               ],
             ]),
           ],
@@ -108,7 +108,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
         L([
           [
             "A confirmation message will be sent to you once your order has been dispatched",
-            "تُرسل إليك رسالة تأكيد فور شحن طلبك",
+            "ترسل إليك رسالة تأكيد فور شحن طلبك",
           ],
           [
             "Our delivery team will contact you prior to arrival",
@@ -116,11 +116,11 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "Please ensure someone is available to receive the order at the specified delivery address",
-            "يُرجى التأكد من وجود شخص لاستلام الطلب في عنوان التسليم المحدد",
+            "يرجى التأكد من وجود شخص لاستلام الطلب في عنوان التسليم المحدد",
           ],
           [
             "If a delivery attempt is unsuccessful due to the recipient's unavailability, a second attempt will be arranged; additional charges may apply",
-            "في حال تعذّر التسليم بسبب عدم توفر المستلم، سيتم ترتيب محاولة ثانية، وقد تُطبَّق رسوم إضافية",
+            "في حال تعذر التسليم بسبب عدم توفر المستلم، سيتم ترتيب محاولة ثانية، وقد تطبق رسوم إضافية",
           ],
         ]),
       ],
@@ -130,7 +130,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "Floral arrangements and perishable gift items require timely receipt upon delivery. We are not responsible for deterioration of perishable products due to:",
-          "تتطلب التنسيقات الزهرية ومنتجات الهدايا القابلة للتلف استلامًا في وقته عند التسليم. ولا نتحمل مسؤولية تلف المنتجات القابلة للتلف الناتج عن:"
+          "تتطلب التنسيقات الزهرية ومنتجات الهدايا القابلة للتلف استلاما في وقته عند التسليم. ولا نتحمل مسؤولية تلف المنتجات القابلة للتلف الناتج عن:"
         ),
         L([
           [
@@ -139,7 +139,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "Incorrect delivery address provided by the customer",
-            "عنوان تسليم غير صحيح مقدَّم من العميل",
+            "عنوان تسليم غير صحيح مقدم من العميل",
           ],
           [
             "Delays caused by circumstances beyond our control",
@@ -167,7 +167,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "We reserve the right to decline delivery to locations that are inaccessible or pose safety concerns.",
-            "نحتفظ بحق رفض التسليم إلى المواقع التي يتعذر الوصول إليها أو التي تشكّل مخاوف تتعلق بالسلامة.",
+            "نحتفظ بحق رفض التسليم إلى المواقع التي يتعذر الوصول إليها أو التي تشكل مخاوف تتعلق بالسلامة.",
           ],
         ]),
       ],
@@ -181,7 +181,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `In the event of a delivery failure caused by us (not attributable to customer error or force majeure), we will re-deliver at no additional charge or issue a full refund at the customer's election, in accordance with ${contact.consumerProtectionLawName}.`,
-          `في حال حدوث فشل في التسليم بسبب خطأ من جانبنا (وليس بسبب خطأ من العميل أو ظرف قاهر)، سنقوم بإعادة التسليم دون أي رسوم إضافية أو نصدر استردادًا كاملًا حسب اختيار العميل، بموجب ${contact.consumerProtectionLawName}.`
+          `في حال حدوث فشل في التسليم بسبب خطأ من جانبنا (وليس بسبب خطأ من العميل أو ظرف قاهر)، سنقوم بإعادة التسليم دون أي رسوم إضافية أو نصدر استردادا كاملا حسب اختيار العميل، بموجب ${contact.consumerProtectionLawName}.`
         ),
       ],
     },
@@ -220,7 +220,7 @@ export default async function ShippingPolicyPage() {
       title={localized("Shipping Policy", "سياسة الشحن", locale)}
       intro={localized(
         `Learn how ${contact.legalEntity} delivers orders across ${contact.countryName}, including delivery options, charges, and what to expect on delivery day.`,
-        `تعرّف على كيفية توصيل ${contact.legalEntity} للطلبات داخل دولة ${contact.countryName}، بما في ذلك خيارات التوصيل والرسوم وما يمكن توقعه في يوم التسليم.`,
+        `تعرف على كيفية توصيل ${contact.legalEntity} للطلبات داخل دولة ${contact.countryName}، بما في ذلك خيارات التوصيل والرسوم وما يمكن توقعه في يوم التسليم.`,
         locale
       )}
       badge={localized("Shipping Policy", "سياسة الشحن", locale)}

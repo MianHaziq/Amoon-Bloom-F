@@ -16,6 +16,9 @@ export interface CartItem {
   /** Gift-card/custom-name add-on selections. `unitPrice` already includes their cost. */
   giftCardSelected?: boolean;
   customName?: string | null;
+  /** Snapshot of the product's resolved "ships within N day(s)" lead time at add-to-cart
+   *  time, for display only (cart drawer/page, checkout review). */
+  deliveryLeadDays?: number;
 }
 
 /** Mirrors the backend's productService.optionExtraCharge exactly — only counts a
@@ -64,6 +67,7 @@ const cartSlice = createSlice({
         if (giftCardSelected !== undefined) existing.giftCardSelected = giftCardSelected;
         if (customName !== undefined) existing.customName = customName;
         if (message !== undefined) existing.message = message;
+        existing.deliveryLeadDays = product.deliveryLeadDays;
         existing.unitPrice =
           product.price.amount + optionExtraCharge(product, existing.giftCardSelected, existing.customName);
         return;
@@ -80,6 +84,7 @@ const cartSlice = createSlice({
         giftCardSelected: giftCardSelected ?? false,
         customName: customName ?? null,
         message: message ?? null,
+        deliveryLeadDays: product.deliveryLeadDays,
       });
     },
     updateQuantity(

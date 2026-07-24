@@ -31,6 +31,9 @@ export interface ApiProductCategoryRef {
   id: string;
   title: string;
   title_ar?: string | null;
+  /** Overrides Settings.defaultDeliveryLeadDays for products in this category with no
+   *  own Product.deliveryLeadDays. Null = no override. */
+  deliveryLeadDays?: number | null;
 }
 
 export interface ApiProductRegionRef {
@@ -65,6 +68,12 @@ export interface ApiProduct {
   customNameEnabled?: boolean;
   customNamePrice?: number | null;
   quantity: number;
+  /** Overrides Category.deliveryLeadDays / Settings.defaultDeliveryLeadDays for this
+   *  product specifically. Null = no override (falls through the resolution chain). */
+  deliveryLeadDays?: number | null;
+  /** Fully-resolved "ships within N day(s)" lead time (product -> category -> global
+   *  default) — always a number, never null. Present on every public product read. */
+  resolvedDeliveryLeadDays?: number;
   categoryId: string | null;
   category?: ApiProductCategoryRef | null;
   /** Publish state. Storefront only ever sees PUBLISHED; staff reads include DRAFT. */
@@ -118,6 +127,7 @@ export interface ApiProductCreateInput {
   customNameEnabled?: boolean;
   customNamePrice?: number | null;
   quantity?: number;
+  deliveryLeadDays?: number | null;
   categoryId?: string | null;
   descriptions?: ApiProductDescriptionInput[];
   images?: string[];

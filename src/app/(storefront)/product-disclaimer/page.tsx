@@ -39,7 +39,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
         L([
           [
             "Product images on our website are for illustrative purposes only. Actual products may vary slightly in colour, size, arrangement, or presentation due to the handcrafted and seasonal nature of our items.",
-            "صور المنتجات على موقعنا هي لأغراض توضيحية فقط. وقد تختلف المنتجات الفعلية قليلاً في اللون أو الحجم أو التنسيق أو الشكل النهائي نظرًا للطبيعة اليدوية والموسمية لمنتجاتنا.",
+            "صور المنتجات على موقعنا هي لأغراض توضيحية فقط. وقد تختلف المنتجات الفعلية قليلا في اللون أو الحجم أو التنسيق أو الشكل النهائي نظرا للطبيعة اليدوية والموسمية لمنتجاتنا.",
           ],
           [
             "Flower varieties and colours are subject to seasonal availability. We reserve the right to substitute flowers or components of equal or greater value while maintaining the overall aesthetic of the arrangement.",
@@ -70,7 +70,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "Care instructions, where provided, should be followed to extend the life of your product.",
-            "يُرجى اتباع تعليمات العناية، عند توفرها، لإطالة عمر المنتج.",
+            "يرجى اتباع تعليمات العناية، عند توفرها، لإطالة عمر المنتج.",
           ],
         ]),
       ],
@@ -85,7 +85,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
         L([
           [
             "Personalised items are produced based on information provided by the customer. We accept no responsibility for errors in personalisation arising from inaccurate customer-submitted details.",
-            "تُنتج العناصر المخصصة بناءً على المعلومات التي يقدّمها العميل، ولا نتحمل أي مسؤولية عن أخطاء التخصيص الناتجة عن معلومات غير دقيقة مقدَّمة من العميل.",
+            "تنتج العناصر المخصصة بناء على المعلومات التي يقدمها العميل، ولا نتحمل أي مسؤولية عن أخطاء التخصيص الناتجة عن معلومات غير دقيقة مقدمة من العميل.",
           ],
           [
             "Minor variations in font style, sizing, or positioning of personalised elements may occur.",
@@ -93,17 +93,17 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "Custom and personalised products cannot be returned unless they are defective or materially different from what was agreed.",
-            "لا يمكن إرجاع المنتجات المخصصة والمصممة حسب الطلب إلا إذا كانت معيبة أو مختلفة جوهريًا عمّا تم الاتفاق عليه.",
+            "لا يمكن إرجاع المنتجات المخصصة والمصممة حسب الطلب إلا إذا كانت معيبة أو مختلفة جوهريا عما تم الاتفاق عليه.",
           ],
         ]),
       ],
     },
     {
-      title: localized("4. Baby & Children's Products", "4. منتجات الأطفال والرضّع", locale),
+      title: localized("4. Baby & Children's Products", "4. منتجات الأطفال والرضع", locale),
       blocks: [
         P(
           "Our newborn and children's gift products are intended as gifts for adult recipients to present to children. Please note:",
-          "منتجات هدايا المواليد والأطفال لدينا مخصصة كهدايا يقدمها البالغون للأطفال. يُرجى ملاحظة ما يلي:"
+          "منتجات هدايا المواليد والأطفال لدينا مخصصة كهدايا يقدمها البالغون للأطفال. يرجى ملاحظة ما يلي:"
         ),
         L([
           [
@@ -112,11 +112,11 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "Items such as balloons and small accessories may present a choking or suffocation hazard. Keep out of reach of children under 3 years of age.",
-            "قد تشكّل عناصر مثل البالونات والإكسسوارات الصغيرة خطر اختناق. يُرجى إبقاؤها بعيدًا عن متناول الأطفال دون سن 3 سنوات.",
+            "قد تشكل عناصر مثل البالونات والإكسسوارات الصغيرة خطر اختناق. يرجى إبقاؤها بعيدا عن متناول الأطفال دون سن 3 سنوات.",
           ],
           [
             "Adult supervision is required when presenting balloon gifts to infants and young children.",
-            "يلزم إشراف شخص بالغ عند تقديم هدايا البالونات للرضّع وصغار الأطفال.",
+            "يلزم إشراف شخص بالغ عند تقديم هدايا البالونات للرضع وصغار الأطفال.",
           ],
           [
             "Amoonis Boutique is not liable for any injury resulting from misuse or failure to follow safety guidelines.",
@@ -139,7 +139,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
         L([
           [
             "We recommend that recipients check product ingredient lists for potential allergens before use.",
-            "نوصي بأن يتحقق مستلمو الهدايا من قائمة مكونات المنتج بحثًا عن أي مسببات حساسية محتملة قبل الاستخدام.",
+            "نوصي بأن يتحقق مستلمو الهدايا من قائمة مكونات المنتج بحثا عن أي مسببات حساسية محتملة قبل الاستخدام.",
           ],
           [
             "We are not liable for adverse reactions arising from individual sensitivities or allergies.",
@@ -147,7 +147,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
           ],
           [
             "Products included in gift boxes are intended for personal use and should be used in accordance with their individual packaging instructions.",
-            "المنتجات المدرجة في صناديق الهدايا مخصصة للاستخدام الشخصي، ويجب استخدامها وفقًا لتعليمات التغليف الخاصة بكل منتج.",
+            "المنتجات المدرجة في صناديق الهدايا مخصصة للاستخدام الشخصي، ويجب استخدامها وفقا لتعليمات التغليف الخاصة بكل منتج.",
           ],
         ]),
       ],
@@ -161,7 +161,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "Products included in men's gift cups and grooming sets are for personal use. Please follow the usage instructions provided by the respective product manufacturer.",
-          "المنتجات المدرجة في أكواب الهدايا ومجموعات العناية الرجالية مخصصة للاستخدام الشخصي. يُرجى اتباع تعليمات الاستخدام المقدَّمة من الشركة المصنعة لكل منتج."
+          "المنتجات المدرجة في أكواب الهدايا ومجموعات العناية الرجالية مخصصة للاستخدام الشخصي. يرجى اتباع تعليمات الاستخدام المقدمة من الشركة المصنعة لكل منتج."
         ),
       ],
     },
@@ -170,7 +170,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `${contact.legalEntity} makes no warranties, express or implied, beyond those required by ${contact.consumerProtectionLawName} and the applicable laws. Our products are sold as gifts and are not intended for medical, therapeutic, or professional use unless explicitly stated.`,
-          `لا تقدّم ${contact.legalEntity} أي ضمانات، صريحة أو ضمنية، تتجاوز ما يقتضيه ${contact.consumerProtectionLawName} والقوانين المعمول بها الأخرى. وتُباع منتجاتنا كهدايا وليست مخصصة للاستخدام الطبي أو العلاجي أو المهني ما لم يُذكر ذلك صراحةً.`
+          `لا تقدم ${contact.legalEntity} أي ضمانات، صريحة أو ضمنية، تتجاوز ما يقتضيه ${contact.consumerProtectionLawName} والقوانين المعمول بها الأخرى. وتباع منتجاتنا كهدايا وليست مخصصة للاستخدام الطبي أو العلاجي أو المهني ما لم يذكر ذلك صراحة.`
         ),
       ],
     },
@@ -179,7 +179,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           `All products sold by Amoonis Boutique are sourced from suppliers who comply with applicable laws and standards in ${contact.countryName}. We are committed to consumer safety and adhere to the requirements of the ${contact.standardsAuthority} where applicable.`,
-          `يتم توريد جميع المنتجات التي تبيعها أموونيس بوتيك من موردين يلتزمون بالقوانين والمعايير المعمول بها في ${contact.countryName}. ونحن ملتزمون بسلامة المستهلك ونتقيّد بمتطلبات ${contact.standardsAuthority} حيثما ينطبق ذلك.`
+          `يتم توريد جميع المنتجات التي تبيعها أموونيس بوتيك من موردين يلتزمون بالقوانين والمعايير المعمول بها في ${contact.countryName}. ونحن ملتزمون بسلامة المستهلك ونتقيد بمتطلبات ${contact.standardsAuthority} حيثما ينطبق ذلك.`
         ),
       ],
     },
@@ -188,7 +188,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "This Product Disclaimer may be updated periodically. The current version will always be available on our website at amoonis.sawatech.ae.",
-          "قد يتم تحديث إخلاء المسؤولية هذا بشكل دوري. وستكون النسخة الحالية متاحة دائمًا على موقعنا الإلكتروني على amoonis.sawatech.ae."
+          "قد يتم تحديث إخلاء المسؤولية هذا بشكل دوري. وستكون النسخة الحالية متاحة دائما على موقعنا الإلكتروني على amoonis.sawatech.ae."
         ),
       ],
     },
@@ -197,7 +197,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       blocks: [
         P(
           "For any queries regarding this policy, please contact us:",
-          "لأي استفسارات بخصوص هذه السياسة، يُرجى التواصل معنا:"
+          "لأي استفسارات بخصوص هذه السياسة، يرجى التواصل معنا:"
         ),
         LL([
           ["Email", contact.email, "البريد الإلكتروني", contact.email],
@@ -218,7 +218,7 @@ export default async function ProductDisclaimerPage() {
       title={localized("Product Disclaimer", "إخلاء مسؤولية المنتج", locale)}
       intro={localized(
         `Please read this Product Disclaimer to understand how we present our products and the limitations that apply to perishable, personalised, and gift items sold by ${contact.legalEntity}.`,
-        `يُرجى قراءة إخلاء مسؤولية المنتج هذا لفهم كيفية عرضنا لمنتجاتنا والقيود التي تنطبق على المنتجات القابلة للتلف والمخصصة والهدايا التي تبيعها ${contact.legalEntity}.`,
+        `يرجى قراءة إخلاء مسؤولية المنتج هذا لفهم كيفية عرضنا لمنتجاتنا والقيود التي تنطبق على المنتجات القابلة للتلف والمخصصة والهدايا التي تبيعها ${contact.legalEntity}.`,
         locale
       )}
       badge={localized("Product Disclaimer", "إخلاء مسؤولية المنتج", locale)}
