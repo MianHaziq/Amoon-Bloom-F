@@ -22,6 +22,24 @@ export const BEST_SELLING_FILTER_VALUE = "__best-selling__";
  *  BEST_SELLING_FILTER_VALUE, used by the homepage's New Arrivals "View all" link. */
 export const NEW_ARRIVALS_FILTER_VALUE = "__new-arrivals__";
 
+/** Prefix marking a `ProductFilter.category` value as a Section source rather than
+ *  a real category. Every admin-managed Section (Best Sellers, New Arrivals, and
+ *  any CUSTOM rail) surfaces as a shop filter via `__section__:<id>`; ShopPLP shows
+ *  that section's curated products first (home-rail order) then the rest of the
+ *  catalogue. Keeps the single `category` slot so seeding/chips/clearAll all work. */
+export const SECTION_FILTER_PREFIX = "__section__:";
+
+/** Build the sentinel filter value for a section id. */
+export const sectionFilterValue = (id: string): string =>
+  `${SECTION_FILTER_PREFIX}${id}`;
+
+/** Extract the section id from a `category` filter value, or null if it isn't a
+ *  section sentinel. */
+export const parseSectionFilter = (value: string | undefined): string | null =>
+  value && value.startsWith(SECTION_FILTER_PREFIX)
+    ? value.slice(SECTION_FILTER_PREFIX.length)
+    : null;
+
 /** Normalise an option label/value for matching: trimmed, lowercased, spaces
  *  and separators collapsed. Handles EN + AR. */
 const norm = (s: string): string =>

@@ -5,7 +5,7 @@ import { useT } from "@/i18n/useT";
 import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 
 export function AnnouncementBar() {
-  const { t } = useT();
+  const { t, dir } = useT();
   const regionCopy = useRegionCopy();
   const items = [
     { icon: TruckIcon, label: t("announcement.sameDay", { city: regionCopy.city }) },
@@ -29,10 +29,16 @@ export function AnnouncementBar() {
 
       {/* Continuous scrolling ticker — content is duplicated so the loop is seamless */}
       <div className="flex h-full items-center">
-        <div className="flex shrink-0 animate-marquee items-center whitespace-nowrap [animation-duration:26s] group-hover:[animation-play-state:paused]">
+        {/* key={dir}: remount the scrolling row when the language flips so the
+            CSS marquee restarts in the new direction (its direction is fixed at
+            mount under <html dir>, which a live switch alone doesn't re-establish). */}
+        <div
+          key={dir}
+          className="flex shrink-0 animate-marquee items-center whitespace-nowrap [animation-duration:26s] group-hover:[animation-play-state:paused]"
+        >
           {[0, 1].map((rep) => (
             <div key={rep} className="flex shrink-0 items-center" aria-hidden={rep === 1 || undefined}>
-              {items.map(({ icon: Icon, label }, i) => (
+              {items.map(({ icon: Icon, label }) => (
                 <span key={`${rep}-${label}`} className="inline-flex shrink-0 items-center gap-2 px-6 text-xs">
                   <Icon size={14} className="text-bloom-300" />
                   <span className="tracking-wide text-cream-100/85">{label}</span>

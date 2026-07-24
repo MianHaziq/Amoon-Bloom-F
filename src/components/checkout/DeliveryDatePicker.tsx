@@ -92,21 +92,36 @@ export function DeliveryDatePicker({
     return WEEKDAY_REFERENCE.map((d) => fmt.format(d));
   }, [tag]);
 
+  // The stored `view` can fall outside the selectable window if that window shifts while
+  // the picker is mounted (e.g. the cart's lead time changes, moving minKey into a later
+  // month). Clamp to the nearest in-range month for display so the grid is never entirely
+  // disabled — a pure render-time derivation (no effect/setState) that also keeps month
+  // navigation relative to what's actually shown.
+  const rawDaysInMonth = new Date(view.year, view.month0 + 1, 0).getDate();
+  const rawFirstKey = dateKey(view.year, view.month0, 1);
+  const rawLastKey = dateKey(view.year, view.month0, rawDaysInMonth);
+  const displayView =
+    rawLastKey < minKey
+      ? partsOf(minKey)
+      : rawFirstKey > maxKey
+        ? partsOf(maxKey)
+        : view;
+
   const monthLabel = useMemo(
     () =>
       new Intl.DateTimeFormat(tag, { month: "long", year: "numeric" }).format(
-        new Date(view.year, view.month0, 1)
+        new Date(displayView.year, displayView.month0, 1)
       ),
-    [tag, view.year, view.month0]
+    [tag, displayView.year, displayView.month0]
   );
 
-  const daysInMonth = new Date(view.year, view.month0 + 1, 0).getDate();
+  const daysInMonth = new Date(displayView.year, displayView.month0 + 1, 0).getDate();
   // Day-of-week of the 1st: constructed and read in the same (local) frame, so the
   // weekday is the true weekday of that calendar date regardless of timezone.
-  const leadingBlanks = new Date(view.year, view.month0, 1).getDay();
+  const leadingBlanks = new Date(displayView.year, displayView.month0, 1).getDay();
 
-  const firstOfViewKey = dateKey(view.year, view.month0, 1);
-  const lastOfViewKey = dateKey(view.year, view.month0, daysInMonth);
+  const firstOfViewKey = dateKey(displayView.year, displayView.month0, 1);
+  const lastOfViewKey = dateKey(displayView.year, displayView.month0, daysInMonth);
   const canGoPrev = firstOfViewKey > minKey;
   const canGoNext = lastOfViewKey < maxKey;
 
@@ -117,8 +132,8 @@ export function DeliveryDatePicker({
     : t("checkout.selectDatePlaceholder");
 
   const goMonth = (delta: number) =>
-    setView((v) => {
-      const next = new Date(v.year, v.month0 + delta, 1);
+    setView(() => {
+      const next = new Date(displayView.year, displayView.month0 + delta, 1);
       return { year: next.getFullYear(), month0: next.getMonth() };
     });
 
@@ -186,7 +201,7 @@ export function DeliveryDatePicker({
                 <span key={`blank-${i}`} />
               ))}
               {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-                const key = dateKey(view.year, view.month0, day);
+                const key = dateKey(displayView.year, displayView.month0, day);
                 const disabled = key < minKey || key > maxKey;
                 const selected = key === value;
                 const isToday = key === todayKey;

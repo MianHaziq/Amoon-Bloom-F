@@ -6,15 +6,27 @@ import { CurrencyAmount } from "@/components/ui";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { PriceRangeSlider } from "./PriceRangeSlider";
 import type { ProductFilter } from "../types";
-import { BEST_SELLING_FILTER_VALUE, type ColorFacet, type PriceBounds } from "../facets";
+import { sectionFilterValue, type ColorFacet, type PriceBounds } from "../facets";
 import type { Category } from "@/features/categories/types";
 import { useT } from "@/i18n/useT";
+import { localized } from "@/i18n";
+
+/** An admin Section rendered as a category-sidebar filter. `products` is only
+ *  used for the count badge. */
+interface SectionFilterOption {
+  id: string;
+  title: string;
+  title_ar: string | null;
+  products: unknown[];
+}
 
 interface ProductFiltersProps {
   filter: ProductFilter;
   onChange: (next: ProductFilter) => void;
   resultCount: number;
   categories: Category[];
+  /** Admin Sections, listed inside the category block (curated feeds). */
+  sections?: SectionFilterOption[];
   colorFacets: ColorFacet[];
   priceBounds: PriceBounds | null;
   className?: string;
@@ -34,12 +46,13 @@ export function ProductFilters({
   onChange,
   resultCount,
   categories,
+  sections = [],
   colorFacets,
   priceBounds,
   className,
 }: ProductFiltersProps) {
   const stockId = useId();
-  const { t } = useT();
+  const { t, locale: uiLocale } = useT();
   const { currency, locale } = useCurrency();
 
   const selectedColors = filter.colors ?? [];
@@ -56,8 +69,6 @@ export function ProductFilters({
       : [...selectedColors, value];
     onChange({ ...filter, colors: next.length ? next : undefined });
   };
-
-  const bestSellingActive = filter.category === BEST_SELLING_FILTER_VALUE;
 
   return (
     <div
@@ -94,35 +105,42 @@ export function ProductFilters({
               {resultCount}
             </span>
           </button>
-          <button
-            type="button"
-            onClick={() =>
-              onChange({
-                ...filter,
-                category: bestSellingActive ? undefined : BEST_SELLING_FILTER_VALUE,
-              })
-            }
-            className={cn(
-              "flex items-center justify-between rounded-xl px-3 py-2.5 text-start text-sm transition-colors",
-              bestSellingActive
-                ? "bg-bloom-50 font-semibold text-bloom-700"
-                : "text-ink-600 hover:bg-cream-50 hover:text-ink-900"
-            )}
-          >
-            <span>{t("shop.bestSelling")}</span>
-          </button>
+          {sections.map((section) => {
+            const value = sectionFilterValue(section.id);
+            const active = filter.category === value;
+            return (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => onChange({ ...filter, category: value })}
+                className={cn(
+                  "flex items-center justify-between rounded-xl px-3 py-2.5 text-start text-sm transition-colors",
+                  active
+                    ? "bg-bloom-50 font-semibold text-bloom-700"
+                    : "text-ink-600 hover:bg-cream-50 hover:text-ink-900"
+                )}
+              >
+                <span>{localized(section.title, section.title_ar, uiLocale)}</span>
+                {section.products.length > 0 && (
+                  <span
+                    className={cn(
+                      "text-xs tabular-nums",
+                      active ? "text-bloom-500" : "text-ink-400"
+                    )}
+                  >
+                    {section.products.length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
           {categories.map((cat) => {
             const active = filter.category === cat.slug;
             return (
               <button
                 key={cat.id}
                 type="button"
-                onClick={() =>
-                  onChange({
-                    ...filter,
-                    category: active ? undefined : cat.slug,
-                  })
-                }
+                onClick={() => onChange({ ...filter, category: cat.slug })}
                 className={cn(
                   "flex items-center justify-between rounded-xl px-3 py-2.5 text-start text-sm transition-colors",
                   active

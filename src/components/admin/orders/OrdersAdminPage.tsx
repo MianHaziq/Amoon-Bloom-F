@@ -12,7 +12,7 @@ import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Pagination } from "@/components/admin/Pagination";
 import { Select } from "@/components/admin/Select";
 import { DownloadIcon } from "@/components/icons";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
+import { formatCurrency, formatDate, addDays } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 import {
   ORDER_STATUSES,
@@ -110,12 +110,22 @@ export function OrdersAdminPage() {
     {
       key: "delivery",
       header: t("admin.ordersPage.columnDelivery"),
-      cell: (o) =>
-        o.deliveryType === "SCHEDULED" && o.scheduledDeliveryAt ? (
-          <span className="text-xs text-ink-700">{formatDateTime(o.scheduledDeliveryAt)}</span>
-        ) : (
-          <span className="text-xs text-ink-500">{t("admin.ordersPage.standardDelivery")}</span>
-        ),
+      cell: (o) => {
+        // Scheduled orders show the customer's chosen date (date only, no time).
+        if (o.deliveryType === "SCHEDULED" && o.scheduledDeliveryAt) {
+          return <span className="text-xs text-ink-700">{formatDate(o.scheduledDeliveryAt)}</span>;
+        }
+        // Standard orders show the estimated arrival date (createdAt + ETA snapshot),
+        // matching the order-detail page. Legacy orders with no ETA fall back to the label.
+        if (o.estimatedDeliveryDays != null) {
+          return (
+            <span className="text-xs text-ink-700">
+              {formatDate(addDays(o.createdAt, o.estimatedDeliveryDays))}
+            </span>
+          );
+        }
+        return <span className="text-xs text-ink-500">{t("admin.ordersPage.standardDelivery")}</span>;
+      },
     },
     {
       key: "date",

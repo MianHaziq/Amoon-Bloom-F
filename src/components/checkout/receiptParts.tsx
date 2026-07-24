@@ -3,7 +3,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { m } from "motion/react";
-import { Badge, Button, CurrencyAmount } from "@/components/ui";
+import { Button, CurrencyAmount } from "@/components/ui";
 import {
   CheckIcon,
   TruckIcon,
@@ -16,13 +16,16 @@ import {
 } from "@/components/icons";
 import { staggerContainer, staggerItem, EASE_OUT } from "@/lib/motion";
 import { useQuery } from "@tanstack/react-query";
-import { formatCurrency, formatDate, formatDateTime, addDays, intlLocale } from "@/lib/format";
+import { formatCurrency, formatDate, intlLocale } from "@/lib/format";
+import { getOrderDeliveryView } from "@/features/orders/delivery";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
 import { siteConfig } from "@/config/site";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { resolveRegionContact } from "@/features/location/regionContact";
+import { SelectedOptions } from "@/features/products/components/SelectedOptions";
+import { OrderItemExtras } from "@/features/orders/components/OrderItemExtras";
 import type { MessageKey } from "@/i18n";
 import type { ApiOrder, OrderStatus, PaymentStatus } from "@/features/orders/types";
 import {
@@ -226,6 +229,9 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
     year: "numeric",
   });
 
+  const delivery = getOrderDeliveryView(order);
+  const il = intlLocale(locale);
+
   const price = (n: number) => (
     <CurrencyAmount amount={n} currency={currency} locale={locale} />
   );
@@ -335,15 +341,31 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
               value={<StatusBadge tone={orderStatusTone(order.status)} label={t(ORDER_STATUS_LABEL_KEY[order.status])} />}
             />
             <MetaRow
-              label={t("order.deliveryDate")}
+              label={t("checkout.deliveryTypeLabel")}
               value={
-                order.deliveryType === "SCHEDULED" && order.scheduledDeliveryAt
-                  ? formatDateTime(order.scheduledDeliveryAt)
-                  : order.estimatedDeliveryDays != null
-                  ? formatDate(addDays(order.createdAt, order.estimatedDeliveryDays))
+                delivery.isScheduled
+                  ? t("checkout.reservedDelivery")
                   : t("checkout.standardDelivery")
               }
             />
+            {delivery.expectedDate ? (
+              <MetaRow
+                label={t("checkout.expectedDeliveryDate")}
+                value={formatDate(delivery.expectedDate, il)}
+              />
+            ) : null}
+            {delivery.reservedDate ? (
+              <MetaRow
+                label={t("checkout.customerReservedDate")}
+                value={formatDate(delivery.reservedDate, il)}
+              />
+            ) : null}
+            {delivery.finalDate ? (
+              <MetaRow
+                label={t("checkout.finalDeliveryDate")}
+                value={formatDate(delivery.finalDate, il)}
+              />
+            ) : null}
           </dl>
         </div>
 
@@ -402,10 +424,10 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
             <li key={item.id} className={`${ITEM_COLS} py-3.5`}>
               <div className="flex min-w-0 flex-col gap-2">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-blush-50 ring-1 ring-ink-100">
-                  {item.product?.image ? (
+                  {item.selectedImage ?? item.product?.image ? (
                     <Image
-                      src={item.product.image}
-                      alt={item.product.title}
+                      src={(item.selectedImage ?? item.product?.image) as string}
+                      alt={item.product?.title ?? ""}
                       fill
                       sizes="64px"
                       className="object-cover"
@@ -416,27 +438,13 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
                   <p className="wrap-break-word text-sm font-medium leading-snug text-ink-900">
                     {item.product?.title ?? t("order.itemFallback")}
                   </p>
-                  {item.giftCardSelected && (
-                    <Badge tone="ink" uppercase={false} className="mt-1">
-                      {t("admin.orderDetailPage.giftCardLabel")}
-                    </Badge>
-                  )}
-                  {item.customName && (
-                    <p className="mt-1 wrap-break-word text-xs text-ink-600">
-                      <span className="font-semibold text-ink-500">
-                        {t("admin.orderDetailPage.customNameLabel")}:
-                      </span>{" "}
-                      {item.customName}
-                    </p>
-                  )}
-                  {item.perProductMessage && (
-                    <p className="mt-1 wrap-break-word text-xs text-ink-600">
-                      <span className="font-semibold text-ink-500">
-                        {t("admin.orderDetailPage.giftMessageLabel")}:
-                      </span>{" "}
-                      <span className="italic">“{item.perProductMessage}”</span>
-                    </p>
-                  )}
+                  <SelectedOptions options={item.selectedOptions} className="mt-1" />
+                  <OrderItemExtras
+                    giftCardSelected={item.giftCardSelected}
+                    customName={item.customName}
+                    message={item.perProductMessage}
+                    className="mt-1.5"
+                  />
                   {/* Mobile-only per-unit breakdown (columns are hidden on mobile) */}
                   <p className="mt-0.5 text-xs text-ink-500 tabular-nums sm:hidden">
                     {t("common.qty")} {item.quantity} · {price(item.price)}

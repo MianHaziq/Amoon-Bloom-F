@@ -86,6 +86,8 @@ export interface ApiOrderItem {
   price: number;
   /** Chosen variant, e.g. {"Colour":"Pink"}. Null for orders placed before this was captured. */
   selectedOptions?: Record<string, string> | null;
+  /** Photo of the chosen variant (backend-derived), or null to use the product snapshot's image. */
+  selectedImage?: string | null;
   /** Gift-card/custom-name add-ons chosen at add-to-cart time, snapshotted at order time. */
   giftCardSelected?: boolean;
   customName?: string | null;

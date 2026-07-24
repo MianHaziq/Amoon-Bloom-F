@@ -7,6 +7,7 @@ import { IconButton, CurrencyAmount } from "@/components/ui";
 import { TrashIcon } from "@/components/icons";
 import { listItem, microTransition } from "@/lib/motion";
 import { QuantitySelector } from "@/features/products/components/QuantitySelector";
+import { SelectedOptions } from "@/features/products/components/SelectedOptions";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useAppDispatch } from "@/store";
@@ -88,6 +89,7 @@ export function CartLineItem({
           <CurrencyAmount amount={item.unitPrice} currency={currency} locale={locale} />{" "}
           {t("cart.each")}
         </p>
+        <SelectedOptions options={item.selectedOptions} className="mt-1.5" />
         {(item.giftCardSelected || item.customName) && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {item.giftCardSelected && (
@@ -107,14 +109,14 @@ export function CartLineItem({
             size="sm"
             value={item.quantity}
             onChange={(q) =>
-              dispatch(setCartQuantity(item.productId, q))
+              dispatch(setCartQuantity(item.productId, q, item.variantKey))
             }
           />
           <IconButton
             label={t("common.remove")}
             variant="ghost"
             size="sm"
-            onClick={() => dispatch(removeFromCart(item.productId))}
+            onClick={() => dispatch(removeFromCart(item.productId, item.variantKey))}
             className="text-ink-400"
           >
             <TrashIcon size={16} />

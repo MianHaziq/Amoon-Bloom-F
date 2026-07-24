@@ -86,14 +86,45 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
       setCustomNameError(true);
       return;
     }
+    // `selected` is keyed by option-group id (needed for the gallery image
+    // swap), but the cart/order stores the selection keyed by the human option
+    // TITLE (e.g. {"Colour":"Pink"}) so every downstream surface — cart,
+    // receipt, order views — can label it. Map id → title here at capture.
+    const selectedByTitle = (product.options ?? []).reduce<Record<string, string>>(
+      (acc, opt) => {
+        const value = selected[opt.id];
+        if (value && value.trim()) acc[opt.title] = value;
+        return acc;
+      },
+      {}
+    );
+    // Representative photo of the currently selected variant (the colour's first
+    // image), so the cart line shows that colour rather than the default image.
+    // Derived from the option group that carries images, matching the gallery.
+    const variantImage = (() => {
+      const group = product.options?.find(
+        (o) =>
+          o.optionImages?.some((u) => u?.trim()) ||
+          o.optionImageSets?.some((set) => set.some((u) => u?.trim()))
+      );
+      if (!group) return undefined;
+      const idx = group.options.indexOf(selected[group.id] ?? "");
+      if (idx < 0) return undefined;
+      const set = (group.optionImageSets?.[idx] ?? [])
+        .map((u) => u?.trim())
+        .filter(Boolean) as string[];
+      const single = group.optionImages?.[idx]?.trim();
+      return (set.length ? set[0] : single) || undefined;
+    })();
     // Only confirm (open drawer + "Added ✓") once the mutation succeeds. For
     // signed-in users the server enforces stock and the thunk toasts the
     // reason on rejection; guests always succeed locally.
     const res = await add(
       product,
       qty,
-      Object.keys(selected).length > 0 ? selected : null,
+      Object.keys(selectedByTitle).length > 0 ? selectedByTitle : null,
       {
+        variantImage,
         giftCardSelected: product.giftCardEnabled ? giftCard : undefined,
         customName:
           product.customNameEnabled && customNameSelected ? customName.trim() : undefined,

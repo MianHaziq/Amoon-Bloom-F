@@ -52,10 +52,15 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
   const handleAdd = async () => {
     if (!product.inStock) return;
     // This bar does a 1-click add with no option selection UI of its own. A
-    // product with a gift-card/custom-name add-on needs that selection (custom
-    // name is required once toggled on), so instead of silently skipping it,
-    // scroll up to the main panel where those toggles live.
-    if (product.giftCardEnabled || product.customNameEnabled) {
+    // product with a variant (colour/size), a gift-card, or a custom-name add-on
+    // needs that selection made explicitly (and a variant must be recorded so it
+    // shows in the cart/order), so instead of silently skipping it, scroll up to
+    // the main panel where those pickers live.
+    if (
+      (product.options && product.options.length > 0) ||
+      product.giftCardEnabled ||
+      product.customNameEnabled
+    ) {
       document.getElementById("add-to-cart-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }

@@ -14,6 +14,11 @@ export interface ApiCartItem {
   message: string | null;
   /** Chosen variant, e.g. {"Colour":"Pink"} — keyed by the option group title. */
   selectedOptions?: Record<string, string> | null;
+  /** Normalized variant discriminator for this line — echo back on quantity/remove
+   *  to target this exact line when a product has several variant lines. */
+  variantKey?: string;
+  /** Photo of the chosen variant (backend-derived), or null to use the product's primary image. */
+  selectedImage?: string | null;
   giftCardSelected?: boolean;
   customName?: string | null;
   lineTotal: number;
@@ -38,11 +43,14 @@ export interface ApiCartAddInput {
 export interface ApiCartQuantityInput {
   productId: string;
   quantity: number;
+  /** Target a specific variant line; omit for legacy single-line behaviour. */
+  variantKey?: string;
 }
 
 export interface ApiCartItemMessageInput {
   productId: string;
   message?: string | null;
+  variantKey?: string;
 }
 
 export interface ApiCartSuggestionSection {

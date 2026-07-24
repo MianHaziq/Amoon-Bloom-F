@@ -45,9 +45,10 @@ export function useCart() {
       selectedOptions?: Record<string, string> | null,
       extras?: CartExtras
     ) => dispatch(addToCart(product, quantity, selectedOptions, extras)),
-    remove: (productId: string) => dispatch(removeFromCart(productId)),
-    setQuantity: (productId: string, quantity: number) =>
-      dispatch(setCartQuantity(productId, quantity)),
+    remove: (productId: string, variantKey?: string) =>
+      dispatch(removeFromCart(productId, variantKey)),
+    setQuantity: (productId: string, quantity: number, variantKey?: string) =>
+      dispatch(setCartQuantity(productId, quantity, variantKey)),
     clear: () => dispatch(emptyCart()),
   };
 }

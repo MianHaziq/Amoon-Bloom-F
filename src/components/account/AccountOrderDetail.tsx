@@ -17,6 +17,9 @@ import {
   ORDER_TERMINAL_NOTE_KEY,
   ORDER_PAUSED_NOTE_KEY,
 } from "@/features/orders/constants";
+import { OrderDeliveryInfo } from "@/features/orders/components/OrderDeliveryInfo";
+import { SelectedOptions } from "@/features/products/components/SelectedOptions";
+import { OrderItemExtras } from "@/features/orders/components/OrderItemExtras";
 
 export function AccountOrderDetail({ id }: { id: string }) {
   const { t, locale } = useT();
@@ -114,10 +117,10 @@ export function AccountOrderDetail({ id }: { id: string }) {
         <ul className="divide-y divide-ink-100">
           {order.items.map((item) => (
             <li key={item.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
-              {item.product?.image ? (
+              {item.selectedImage ?? item.product?.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={item.product.image}
+                  src={(item.selectedImage ?? item.product?.image) as string}
                   alt=""
                   className="h-16 w-16 rounded-lg object-cover"
                 />
@@ -133,27 +136,13 @@ export function AccountOrderDetail({ id }: { id: string }) {
                     <CurrencyAmount amount={item.price} currency={currency} locale={curLocale} />{" "}
                     × {item.quantity}
                   </p>
-                  {item.giftCardSelected && (
-                    <Badge tone="ink" uppercase={false} className="mt-1">
-                      {t("admin.orderDetailPage.giftCardLabel")}
-                    </Badge>
-                  )}
-                  {item.customName && (
-                    <p className="mt-1 text-xs text-ink-600 wrap-break-word">
-                      <span className="font-semibold text-ink-500">
-                        {t("admin.orderDetailPage.customNameLabel")}:
-                      </span>{" "}
-                      {item.customName}
-                    </p>
-                  )}
-                  {item.perProductMessage ? (
-                    <p className="mt-1 text-xs text-ink-600 wrap-break-word">
-                      <span className="font-semibold text-ink-500">
-                        {t("admin.orderDetailPage.giftMessageLabel")}:
-                      </span>{" "}
-                      <span className="italic">“{item.perProductMessage}”</span>
-                    </p>
-                  ) : null}
+                  <SelectedOptions options={item.selectedOptions} className="mt-1.5" />
+                  <OrderItemExtras
+                    giftCardSelected={item.giftCardSelected}
+                    customName={item.customName}
+                    message={item.perProductMessage}
+                    className="mt-2"
+                  />
                 </div>
                 <p className="shrink-0 font-medium text-ink-900">
                   <CurrencyAmount
@@ -221,6 +210,8 @@ export function AccountOrderDetail({ id }: { id: string }) {
           </p>
         ) : null}
       </section>
+
+      <OrderDeliveryInfo order={order} />
 
       {order.shippingAddress ? (
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">

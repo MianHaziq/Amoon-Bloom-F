@@ -71,6 +71,9 @@ export interface CartExtras {
   customName?: string | null;
   /** Gift-card personalized message. Reuses the cart's existing message field. */
   message?: string | null;
+  /** Photo of the chosen variant, for the optimistic/guest local cart line. The
+   *  server derives its own on reconcile, so this isn't sent to the API. */
+  variantImage?: string | null;
 }
 
 export const addToCart =
@@ -86,6 +89,7 @@ export const addToCart =
         product,
         quantity,
         selectedOptions,
+        variantImage: extras?.variantImage,
         giftCardSelected: extras?.giftCardSelected,
         customName: extras?.customName,
         message: extras?.message,
@@ -109,16 +113,16 @@ export const addToCart =
   };
 
 export const setCartQuantity =
-  (productId: string, quantity: number): AppThunk<Promise<CartMutationResult>> =>
+  (productId: string, quantity: number, variantKey?: string): AppThunk<Promise<CartMutationResult>> =>
   async (dispatch, getState) => {
-    dispatch(updateQuantity({ productId, quantity }));
+    dispatch(updateQuantity({ productId, quantity, variantKey }));
     if (!isAuthed(getState)) return { ok: true };
     try {
-      // Server treats quantity <= 0 as a remove.
+      // Server treats quantity <= 0 as a remove. variantKey targets the exact line.
       const server =
         quantity <= 0
-          ? await cartApi.removeItem(productId)
-          : await cartApi.setQuantity({ productId, quantity });
+          ? await cartApi.removeItem(productId, variantKey)
+          : await cartApi.setQuantity({ productId, quantity, variantKey });
       dispatch(setItems(apiCartToCartItems(server)));
       return { ok: true };
     } catch (err) {
@@ -127,12 +131,12 @@ export const setCartQuantity =
   };
 
 export const removeFromCart =
-  (productId: string): AppThunk<Promise<CartMutationResult>> =>
+  (productId: string, variantKey?: string): AppThunk<Promise<CartMutationResult>> =>
   async (dispatch, getState) => {
-    dispatch(removeItem(productId));
+    dispatch(removeItem({ productId, variantKey }));
     if (!isAuthed(getState)) return { ok: true };
     try {
-      const server = await cartApi.removeItem(productId);
+      const server = await cartApi.removeItem(productId, variantKey);
       dispatch(setItems(apiCartToCartItems(server)));
       return { ok: true };
     } catch (err) {
@@ -178,11 +182,20 @@ export const hydrateServerCart = (): AppThunk<Promise<void>> => async (dispatch,
         // is guaranteed to exist before the rest fire concurrently — otherwise
         // a brand-new user's first-ever sync could race N parallel "create
         // cart" attempts against that unique constraint.
+        // Carry the full per-line detail across the merge — not just
+        // productId/quantity — so a guest's chosen variant, gift-card/custom-name
+        // add-ons and message survive sign-in instead of being silently dropped.
+        const mergePayload = (it: CartItem) => ({
+          productId: it.productId,
+          quantity: it.quantity,
+          selectedOptions: it.selectedOptions,
+          giftCardSelected: it.giftCardSelected,
+          customName: it.customName,
+          message: it.message,
+        });
         const [first, ...rest] = guest;
-        await cartApi.add({ productId: first.productId, quantity: first.quantity });
-        await Promise.all(
-          rest.map((it) => cartApi.add({ productId: it.productId, quantity: it.quantity }))
-        );
+        await cartApi.add(mergePayload(first));
+        await Promise.all(rest.map((it) => cartApi.add(mergePayload(it))));
         storage.remove(STORAGE_KEYS.cart);
       }
       const server = await cartApi.get();

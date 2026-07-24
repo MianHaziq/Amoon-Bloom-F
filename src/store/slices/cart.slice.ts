@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { Product } from "@/features/products/types";
+import { variantKeyOf } from "@/features/cart/variantKey";
 
 export interface CartItem {
   productId: string;
@@ -13,6 +14,9 @@ export interface CartItem {
   message?: string | null;
   /** Chosen variant, e.g. {"Colour":"Pink"} — keyed by the option group title. */
   selectedOptions?: Record<string, string> | null;
+  /** Normalized variant discriminator (see variantKeyOf). Two lines of the same
+   *  product with different variants have different keys → separate cart lines. */
+  variantKey: string;
   /** Gift-card/custom-name add-on selections. `unitPrice` already includes their cost. */
   giftCardSelected?: boolean;
   customName?: string | null;
@@ -51,19 +55,25 @@ const cartSlice = createSlice({
         product: Product;
         quantity?: number;
         selectedOptions?: Record<string, string> | null;
+        /** Photo of the chosen variant (colour), so the cart line shows it instead
+         *  of the product's default primary image. Falls back to the primary. */
+        variantImage?: string | null;
         giftCardSelected?: boolean;
         customName?: string | null;
         message?: string | null;
       }>
     ) {
-      const { product, quantity = 1, selectedOptions, giftCardSelected, customName, message } = action.payload;
-      const existing = state.items.find((i) => i.productId === product.id);
+      const { product, quantity = 1, selectedOptions, variantImage, giftCardSelected, customName, message } = action.payload;
+      const resolvedImage = variantImage ?? product.images[0]?.url;
+      const variantKey = variantKeyOf(selectedOptions);
+      // Variant-aware: merge only into the SAME variant line; a different variant
+      // of the same product becomes its own line (Amazon/Shopify-style).
+      const existing = state.items.find(
+        (i) => i.productId === product.id && i.variantKey === variantKey
+      );
       if (existing) {
         existing.quantity += quantity;
-        // Cart lines are still one-per-product, not variant-aware — adding a
-        // different variant of an already-cart'd product overwrites the
-        // selection on that single line (last wins), mirroring the backend.
-        if (selectedOptions !== undefined) existing.selectedOptions = selectedOptions;
+        if (variantImage !== undefined) existing.imageUrl = resolvedImage ?? existing.imageUrl;
         if (giftCardSelected !== undefined) existing.giftCardSelected = giftCardSelected;
         if (customName !== undefined) existing.customName = customName;
         if (message !== undefined) existing.message = message;
@@ -76,11 +86,12 @@ const cartSlice = createSlice({
         productId: product.id,
         slug: product.slug,
         title: product.title,
-        imageUrl: product.images[0]?.url,
+        imageUrl: resolvedImage,
         unitPrice: product.price.amount + optionExtraCharge(product, giftCardSelected, customName),
         currency: product.price.currency,
         quantity,
         selectedOptions: selectedOptions ?? null,
+        variantKey,
         giftCardSelected: giftCardSelected ?? false,
         customName: customName ?? null,
         message: message ?? null,
@@ -89,22 +100,26 @@ const cartSlice = createSlice({
     },
     updateQuantity(
       state,
-      action: PayloadAction<{ productId: string; quantity: number }>
+      action: PayloadAction<{ productId: string; quantity: number; variantKey?: string }>
     ) {
-      const item = state.items.find(
-        (i) => i.productId === action.payload.productId
-      );
-      if (!item) return;
-      if (action.payload.quantity <= 0) {
-        state.items = state.items.filter(
-          (i) => i.productId !== action.payload.productId
-        );
+      const { productId, quantity, variantKey } = action.payload;
+      // Match the exact variant line when a key is given; else (legacy caller)
+      // the first line for the product.
+      const matches = (i: CartItem) =>
+        i.productId === productId && (variantKey === undefined || i.variantKey === variantKey);
+      if (quantity <= 0) {
+        state.items = state.items.filter((i) => !matches(i));
         return;
       }
-      item.quantity = action.payload.quantity;
+      const item = state.items.find(matches);
+      if (item) item.quantity = quantity;
     },
-    removeItem(state, action: PayloadAction<string>) {
-      state.items = state.items.filter((i) => i.productId !== action.payload);
+    removeItem(state, action: PayloadAction<{ productId: string; variantKey?: string }>) {
+      const { productId, variantKey } = action.payload;
+      state.items = state.items.filter(
+        (i) =>
+          !(i.productId === productId && (variantKey === undefined || i.variantKey === variantKey))
+      );
     },
     clearCart(state) {
       state.items = [];

@@ -43,8 +43,12 @@ export const cartApi = {
     return data.data;
   },
 
-  async removeItem(productId: string): Promise<ApiCart> {
-    const { data } = await http.delete<ApiResponse<ApiCart>>(`/cart/item/${productId}`);
+  async removeItem(productId: string, variantKey?: string): Promise<ApiCart> {
+    const { data } = await http.delete<ApiResponse<ApiCart>>(
+      `/cart/item/${productId}`,
+      // Target one variant line when known; omitted → backend removes all of the product.
+      variantKey !== undefined ? { params: { variantKey } } : undefined
+    );
     return data.data;
   },
 

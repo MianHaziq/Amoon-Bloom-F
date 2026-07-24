@@ -15,7 +15,7 @@ import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useShowVatInclusive } from "@/features/vat/hooks/useShowVatInclusive";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n";
-import { productColorSwatches } from "../facets";
+import { isColorGroupTitle, productColorSwatches } from "../facets";
 import type { Product } from "../types";
 
 interface ProductCardProps {
@@ -44,6 +44,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     product.compareAtPrice &&
     product.compareAtPrice.amount > product.price.amount;
   const colors = productColorSwatches(product);
+  const colorGroup = product.options?.find((g) => isColorGroupTitle(g.title));
   const showVatInclusive = useShowVatInclusive();
 
   // Colour-variant image swap: hovering a dot previews its image, clicking pins
@@ -57,9 +58,24 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     e.preventDefault();
     e.stopPropagation();
     if (!product.inStock) return;
+    // If the shopper pinned a colour swatch on the card, quick-add records THAT
+    // colour (keyed by the colour group's title, e.g. {"Colour":"Pink"}) so the
+    // cart/receipt/order show the swatch they chose. No pin → no colour is
+    // fabricated (they made no explicit choice here); they can pick on the PDP.
+    const pinnedColor = pinnedImg
+      ? colors.find((c) => c.image === pinnedImg)?.value
+      : undefined;
+    const selectedOptions =
+      colorGroup && pinnedColor ? { [colorGroup.title]: pinnedColor } : null;
     // Open the cart drawer only once the mutation is confirmed; the thunk
     // raises its own error toast (e.g. "Only 3 in stock") if the server rejects.
-    const res = await dispatch(addToCart(product, 1));
+    // When a colour is pinned, its swatch image (pinnedImg) is the variant photo
+    // to show on the cart line.
+    const res = await dispatch(
+      addToCart(product, 1, selectedOptions, {
+        variantImage: selectedOptions && pinnedImg ? pinnedImg : undefined,
+      })
+    );
     if (res.ok) {
       dispatch(toggleCartDrawer(true));
     }

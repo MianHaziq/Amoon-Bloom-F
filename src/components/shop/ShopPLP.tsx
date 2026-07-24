@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { m, AnimatePresence } from "motion/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -13,7 +13,11 @@ import {
 } from "@/features/products/facets";
 import { productsApi } from "@/features/products/api/products.api";
 import { toUiProducts } from "@/features/products/adapters";
-import { BEST_SELLING_FILTER_VALUE, NEW_ARRIVALS_FILTER_VALUE } from "@/features/products/facets";
+import {
+  BEST_SELLING_FILTER_VALUE,
+  NEW_ARRIVALS_FILTER_VALUE,
+  parseSectionFilter,
+} from "@/features/products/facets";
 import {
   Drawer,
   Button,
@@ -32,14 +36,23 @@ import type { ApiProduct } from "@/features/products/api-types";
 import type { PaginatedResponse, ResponseMeta } from "@/types/api";
 import type { Category } from "@/features/categories/types";
 import { useT } from "@/i18n/useT";
-import type { MessageKey } from "@/i18n";
+import { localized, type MessageKey } from "@/i18n";
+
+/** An admin Section surfaced as a shop filter. `products` is the curated,
+ *  ordered set (same order the home rail shows); it seeds the "curated first"
+ *  feed and the sidebar count. */
+export interface ShopSection {
+  id: string;
+  title: string;
+  title_ar: string | null;
+  products: ApiProduct[];
+}
 
 const SORTS: {
   value: NonNullable<ProductFilter["sort"]>;
   labelKey: MessageKey;
 }[] = [
   { value: "featured", labelKey: "shop.sortFeatured" },
-  { value: "newest", labelKey: "shop.sortNewest" },
   { value: "price-asc", labelKey: "shop.sortPriceAsc" },
   { value: "price-desc", labelKey: "shop.sortPriceDesc" },
 ];
@@ -49,6 +62,8 @@ interface ShopPLPProps {
   initialProducts: ApiProduct[];
   initialMeta?: ResponseMeta;
   categories: Category[];
+  /** Admin Sections (with products), shown as filters in the category sidebar. */
+  sections?: ShopSection[];
   /** Full catalogue size, for the "Everything" sidebar count. */
   catalogTotal?: number;
   /** Page size used by the server's first page + each "Load more" fetch. */
@@ -96,6 +111,7 @@ export function ShopPLP({
   initialProducts,
   initialMeta,
   categories,
+  sections = [],
   catalogTotal,
   pageSize = 12,
   lockedCategorySlug,
@@ -103,15 +119,32 @@ export function ShopPLP({
   const searchParams = useSearchParams();
   const rawQ = (searchParams.get("q") ?? "").trim();
   const q = rawQ.toLowerCase();
-  const [filter, setFilter] = useState<ProductFilter>(() => ({
-    sort: "featured",
-    // Seed the data source from the `?category=` URL param on mount, so the
-    // homepage's Best Sellers / New Arrivals "View all" links (which navigate to
-    // /shop?category=<sentinel>) — and any shared /shop?category=<slug> URL —
-    // land on the intended feed instead of the default catalogue. The
-    // /shop/category/[slug] route's lockedCategorySlug always wins when present.
-    category: lockedCategorySlug ?? searchParams.get("category") ?? undefined,
-  }));
+  // Seed the ENTIRE filter set from the URL on mount (Amazon/Shopify pattern):
+  // category/sort/price/colour/stock all live in `?…` so a shared or refreshed
+  // shop URL restores the exact view. The homepage "View all" links land here
+  // pre-filtered the same way. `lockedCategorySlug` (the /shop/category/[slug]
+  // route) always wins for the category.
+  const [filter, setFilter] = useState<ProductFilter>(() => {
+    const num = (k: string) => {
+      const n = Number(searchParams.get(k));
+      return Number.isFinite(n) && searchParams.get(k) != null ? n : undefined;
+    };
+    const rawSort = searchParams.get("sort");
+    const sort = (
+      ["featured", "price-asc", "price-desc", "newest"] as const
+    ).includes(rawSort as never)
+      ? (rawSort as NonNullable<ProductFilter["sort"]>)
+      : "featured";
+    const colors = searchParams.getAll("color");
+    return {
+      sort,
+      category: lockedCategorySlug ?? searchParams.get("category") ?? undefined,
+      inStock: searchParams.get("inStock") === "1" || undefined,
+      minPrice: num("minPrice"),
+      maxPrice: num("maxPrice"),
+      colors: colors.length ? colors : undefined,
+    };
+  });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { t, tc, locale: uiLocale } = useT();
   const { currency, locale } = useCurrency();
@@ -123,6 +156,12 @@ export function ShopPLP({
   // on the first page. Price/colour/stock/sort are client refinements layered
   // on top of the loaded source. staleTime mirrors the catalogue cache.
   const activeCategory = lockedCategorySlug ?? filter.category;
+  // A Section filter (`__section__:<id>`) is a curated feed, not a real category:
+  // fetch the whole catalogue, then reorder so the section's products lead.
+  const activeSectionId = parseSectionFilter(activeCategory ?? undefined);
+  const activeSection = activeSectionId
+    ? sections.find((s) => s.id === activeSectionId) ?? null
+    : null;
   // The SSR seed corresponds to "no user-selected category" (+ current ?q=).
   const seedable = (activeCategory ?? null) === (lockedCategorySlug ?? null);
 
@@ -137,6 +176,9 @@ export function ShopPLP({
     queryFn: ({ pageParam }): Promise<PaginatedResponse<ApiProduct>> => {
       const params = { page: pageParam, limit: pageSize };
       if (rawQ) return productsApi.search(rawQ, params);
+      // A section shows its curated products first, then the rest of the whole
+      // catalogue — so the "others" source is the plain catalogue list.
+      if (activeSectionId) return productsApi.list(params);
       if (activeCategory === BEST_SELLING_FILTER_VALUE)
         return productsApi.bestSellers(params);
       if (activeCategory === NEW_ARRIVALS_FILTER_VALUE)
@@ -171,10 +213,37 @@ export function ShopPLP({
     data?.pages[0]?.meta?.pagination?.total ?? loaded.length;
   const everythingCount = catalogTotal ?? sourceTotal;
 
-  // Facets derive from the loaded source, so price bounds / swatches reflect the
-  // current category and widen as more pages load.
-  const priceBounds = useMemo(() => derivePriceBounds(loaded), [loaded]);
-  const colorFacets = useMemo(() => deriveColorFacets(loaded), [loaded]);
+  // Curated products for the active section, converted once. They lead the feed
+  // in the admin's curated order — identical to the home rail — before the rest
+  // of the catalogue streams in below.
+  const curated = useMemo(
+    () =>
+      activeSection
+        ? toUiProducts(activeSection.products, { locale: uiLocale, currency })
+        : [],
+    [activeSection, uiLocale, currency]
+  );
+
+  // Section-aware source: curated first, then every other loaded catalogue
+  // product, deduped by id. Plain catalogue/category feeds pass through
+  // unchanged; a search (rawQ) always wins, so we never prepend curated products
+  // onto search results even if a section filter lingers in the URL.
+  const baseList = useMemo(() => {
+    if (!activeSection || rawQ) return loaded;
+    const seen = new Set<string>();
+    const out: typeof loaded = [];
+    for (const p of [...curated, ...loaded]) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
+      out.push(p);
+    }
+    return out;
+  }, [activeSection, curated, loaded, rawQ]);
+
+  // Facets derive from the visible source, so price bounds / swatches reflect the
+  // current category (or section) and widen as more pages load.
+  const priceBounds = useMemo(() => derivePriceBounds(baseList), [baseList]);
+  const colorFacets = useMemo(() => deriveColorFacets(baseList), [baseList]);
 
   const selectedColors = filter.colors ?? [];
   const priceTouched =
@@ -196,13 +265,48 @@ export function ShopPLP({
   };
 
   const setFilterSafe = (next: ProductFilter) =>
-    setFilter({ ...next, category: lockedCategorySlug ?? next.category });
+    setFilter((prev) => {
+      const category = lockedCategorySlug ?? next.category;
+      // Switching the category/section resets the sort back to Featured, so the
+      // new set shows "fresh" — exactly as if it were just selected — instead of
+      // carrying over a Price sort from the previous view. Sort/price/colour
+      // changes (same category) keep whatever the user picked.
+      const categoryChanged = category !== prev.category;
+      return {
+        ...next,
+        category,
+        sort: categoryChanged ? "featured" : next.sort,
+      };
+    });
+
+  // Mirror the active filters + sort into the URL (Amazon/Shopify pattern): the
+  // address bar is shareable, a refresh restores the exact view, and Back works.
+  // `history.replaceState` keeps this purely client-side — no navigation, no
+  // server refetch — so `filter` above stays the single source of truth. The
+  // /shop/category/[slug] route owns its own URL, so we skip it there.
+  useEffect(() => {
+    if (lockedCategorySlug || typeof window === "undefined") return;
+    const params = new URLSearchParams();
+    if (rawQ) params.set("q", rawQ);
+    if (filter.category) params.set("category", filter.category);
+    if (filter.sort && filter.sort !== "featured") params.set("sort", filter.sort);
+    if (filter.inStock) params.set("inStock", "1");
+    if (filter.minPrice != null) params.set("minPrice", String(filter.minPrice));
+    if (filter.maxPrice != null) params.set("maxPrice", String(filter.maxPrice));
+    for (const c of filter.colors ?? []) params.append("color", c);
+    const qs = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+    );
+  }, [filter, rawQ, lockedCategorySlug]);
 
   const filtered = useMemo(() => {
     // Category & text search are applied server-side (they define the query
     // source), so we do NOT re-filter them here. Everything below is a client
-    // refinement over the loaded source.
-    let list = [...loaded];
+    // refinement over the (section-aware) loaded source.
+    let list = [...baseList];
     if (filter.inStock) {
       list = list.filter((p) => p.inStock);
     }
@@ -223,15 +327,31 @@ export function ShopPLP({
       case "price-desc":
         list.sort((a, b) => b.price.amount - a.price.amount);
         break;
+      case "newest":
+        // "New arrivals" sort — newest-created first, applied on top of whatever
+        // source is active (Everything, a section, or a category). So e.g.
+        // Best Sellers + this sort = the best-seller set re-sorted by newest.
+        list.sort(
+          (a, b) =>
+            new Date(b.createdAt ?? 0).getTime() -
+            new Date(a.createdAt ?? 0).getTime()
+        );
+        break;
       default:
+        // "featured" — keep the source order (for a section that's the curated,
+        // home-rail order).
         break;
     }
     return list;
-  }, [loaded, filter]);
+  }, [baseList, filter]);
 
-  // Category slug → title, for the active-filter chip label.
-  const categoryTitle =
-    filter.category === BEST_SELLING_FILTER_VALUE
+  // Category slug → title, for the active-filter chip label. A section shows its
+  // (localized) admin title; otherwise a real category or a legacy sentinel.
+  const categoryTitle = activeSectionId
+    ? activeSection
+      ? localized(activeSection.title, activeSection.title_ar, uiLocale)
+      : undefined
+    : filter.category === BEST_SELLING_FILTER_VALUE
       ? t("shop.bestSelling")
       : filter.category === NEW_ARRIVALS_FILTER_VALUE
         ? t("shop.newArrivals")
@@ -247,6 +367,7 @@ export function ShopPLP({
       onChange={setFilterSafe}
       resultCount={everythingCount}
       categories={categories}
+      sections={sections}
       colorFacets={colorFacets}
       priceBounds={priceBounds}
     />
@@ -262,8 +383,8 @@ export function ShopPLP({
         </p>
 
         <div className="flex items-center gap-2.5">
-          {/* Sort — custom Menu dropdown */}
-          <Menu className="flex-1 sm:flex-none" openOnHover>
+          {/* Sort — custom Menu dropdown (click to open) */}
+          <Menu className="flex-1 sm:flex-none">
             <MenuTrigger
               label={t("shop.sortBy")}
               className="group inline-flex min-h-10 w-full items-center justify-between gap-2 rounded-full border border-ink-200 bg-white ps-4 pe-3 text-sm font-medium text-ink-900 transition-colors hover:bg-cream-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-400 sm:w-auto sm:justify-start"

@@ -8,6 +8,7 @@ import { CartLineItem } from "@/features/cart/components/CartLineItem";
 import { CartSummary } from "@/features/cart/components/CartSummary";
 import { CartSuggestions } from "@/features/cart/components/CartSuggestions";
 import { useCart } from "@/features/cart/hooks/useCart";
+import { cartLineKey } from "@/features/cart/variantKey";
 import { ROUTES } from "@/constants/routes";
 import { useT } from "@/i18n/useT";
 
@@ -59,7 +60,7 @@ export default function CartPage() {
               <AnimatePresence initial={false}>
                 {items.map((item) => (
                   <CartLineItem
-                    key={item.productId}
+                    key={cartLineKey(item.productId, item.variantKey)}
                     item={item}
                     variant="page"
                   />

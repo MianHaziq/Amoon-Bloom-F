@@ -5,6 +5,7 @@ import { m, AnimatePresence } from "motion/react";
 import { Button, Drawer, Divider, CurrencyAmount } from "@/components/ui";
 import { ArrowRight, BagIcon } from "@/components/icons";
 import { CartLineItem } from "./CartLineItem";
+import { cartLineKey } from "@/features/cart/variantKey";
 import { OrderDeliveryNote, maxCartLeadDays } from "./OrderDeliveryNote";
 import { microTransition } from "@/lib/motion";
 import { ROUTES } from "@/constants/routes";
@@ -47,7 +48,7 @@ export function CartDrawer() {
             <AnimatePresence initial={false}>
               {items.map((item) => (
                 <CartLineItem
-                  key={item.productId}
+                  key={cartLineKey(item.productId, item.variantKey)}
                   item={item}
                   onNavigate={close}
                 />

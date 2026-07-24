@@ -4,6 +4,7 @@ import { productsApi } from "@/features/products/api/products.api";
 import {
   getCachedProductList,
   getCachedCategories,
+  getCachedSections,
 } from "@/services/catalogCache";
 import { toUiCategories } from "@/features/categories/adapters";
 import { getServerRegion } from "@/services/serverRegion";
@@ -32,7 +33,7 @@ export default async function ShopPage(props: PageProps<"/shop">) {
   // First page only — the client "Load more" control in ShopPLP fetches the
   // rest incrementally so the initial catalogue paint stays fast.
   const PAGE_SIZE = 12;
-  const [productPage, apiCategories] = await Promise.all([
+  const [productPage, apiCategories, apiSections] = await Promise.all([
     // Search results vary per query and are inherently uncacheable; the plain
     // catalog listing goes through the region-cached data layer.
     (q
@@ -40,9 +41,24 @@ export default async function ShopPage(props: PageProps<"/shop">) {
       : getCachedProductList(region, 1, PAGE_SIZE)
     ).catch(() => ({ data: [], meta: {} })),
     getCachedCategories(region).catch(() => []),
+    getCachedSections(region).catch(() => []),
   ]);
 
   const categories = toUiCategories(apiCategories, locale);
+
+  // Every admin-managed Section with products becomes a shop filter (same
+  // sortOrder as the home rails). Selecting one shows its curated products first
+  // (home-rail order) then the rest of the catalogue — see ShopPLP. Category-only
+  // sections have nothing to list here, so they're skipped, matching the home.
+  const sections = [...apiSections]
+    .filter((s) => s.products && s.products.length > 0)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      title_ar: s.title_ar,
+      products: s.products,
+    }));
   const total =
     (productPage.meta as { pagination?: { total?: number } } | undefined)
       ?.pagination?.total ?? productPage.data.length;
@@ -68,6 +84,7 @@ export default async function ShopPage(props: PageProps<"/shop">) {
           initialProducts={productPage.data}
           initialMeta={productPage.meta}
           categories={categories}
+          sections={sections}
           catalogTotal={total}
           pageSize={PAGE_SIZE}
         />

@@ -53,6 +53,8 @@ export interface Product {
   /** Fully-resolved "ships within N day(s)" prep/booking lead time (product ->
    *  category -> site default). Always present on real API-adapted products. */
   deliveryLeadDays?: number;
+  /** ISO creation timestamp — drives the "New arrivals" (newest-first) sort. */
+  createdAt?: string;
 }
 
 export interface ProductFilter {

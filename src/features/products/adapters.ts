@@ -110,6 +110,7 @@ export function toUiProduct(api: ApiProduct, opts: ToUiProductOptions = {}): Pro
     customNameEnabled: api.customNameEnabled ?? false,
     customNamePrice: api.customNamePrice ?? undefined,
     deliveryLeadDays: api.resolvedDeliveryLeadDays ?? undefined,
+    createdAt: api.createdAt,
     rating: api.avgRating ?? undefined,
     reviewCount: api.reviewCount ?? undefined,
   };

@@ -367,6 +367,12 @@ export const messages = {
       scheduledDelivery: "Scheduled Delivery",
       scheduledDeliveryHint:
         "Leave this empty if you want delivery on the estimated date shown above. Select a date only for future reservation.",
+      deliveryInformation: "Delivery Information",
+      deliveryTypeLabel: "Delivery Type",
+      reservedDelivery: "Reserved Delivery",
+      expectedDeliveryDate: "Expected Delivery Date",
+      customerReservedDate: "Customer Reserved Date",
+      finalDeliveryDate: "Final Delivery Date",
       chooseDeliveryDateError: "Please choose a delivery date.",
       selectDatePlaceholder: "Select a date",
       clearDate: "Clear date",
@@ -432,7 +438,7 @@ export const messages = {
       confirmed: "Order confirmed",
       thankYou: "Thank you for your order.",
       thankYouBody:
-        "We’ve received your order and our florists are getting to work. A confirmation has been sent to your email.",
+        "Thank you for your order! It’s confirmed and now being processed. We’ve emailed you the details.",
       orderNumber: "Order number",
       orderLabel: "Order",
       codReady:
@@ -470,7 +476,7 @@ export const messages = {
       messageConcierge: "Message our concierge",
       placedTitle: "Your order has been placed",
       guestThankYouBody:
-        "We've received your order and our florists are getting to work. A confirmation has been sent to your email.",
+        "Thank you for your order! It's confirmed and now being processed. We've emailed you the details.",
       createAccountTitle: "Create an account to easily:",
       benefitTrack: "Track your orders",
       benefitHistory: "View your order history",
@@ -1930,6 +1936,12 @@ export const messages = {
       scheduledDelivery: "توصيل مجدول",
       scheduledDeliveryHint:
         "اترك هذا الحقل فارغا إذا كنت تريد التوصيل في التاريخ المتوقع المذكور أعلاه. اختر تاريخا فقط لحجز موعد مستقبلي.",
+      deliveryInformation: "معلومات التوصيل",
+      deliveryTypeLabel: "نوع التوصيل",
+      reservedDelivery: "توصيل محجوز",
+      expectedDeliveryDate: "تاريخ التوصيل المتوقع",
+      customerReservedDate: "تاريخ الحجز من العميل",
+      finalDeliveryDate: "تاريخ التوصيل النهائي",
       chooseDeliveryDateError: "يرجى اختيار تاريخ التوصيل.",
       selectDatePlaceholder: "اختر تاريخا",
       clearDate: "مسح التاريخ",
@@ -1995,7 +2007,7 @@ export const messages = {
       confirmed: "تم تأكيد الطلب",
       thankYou: "شكرا لطلبك.",
       thankYouBody:
-        "لقد استلمنا طلبك وبدأ منسقونا العمل عليه. تم إرسال تأكيد إلى بريدك الإلكتروني.",
+        "شكرا لطلبك! تم تأكيده وجارٍ الآن تجهيزه. أرسلنا التفاصيل إلى بريدك الإلكتروني.",
       orderNumber: "رقم الطلب",
       orderLabel: "طلب",
       codReady:
@@ -2033,7 +2045,7 @@ export const messages = {
       messageConcierge: "راسل خدمة العملاء",
       placedTitle: "تم تقديم طلبك بنجاح",
       guestThankYouBody:
-        "لقد استلمنا طلبك وبدأ فريقنا بالعمل عليه. تم إرسال تأكيد إلى بريدك الإلكتروني.",
+        "شكرا لطلبك! تم تأكيده وجارٍ الآن تجهيزه. أرسلنا التفاصيل إلى بريدك الإلكتروني.",
       createAccountTitle: "أنشئ حسابا لتتمكن بسهولة من:",
       benefitTrack: "تتبع طلباتك",
       benefitHistory: "عرض سجل طلباتك",

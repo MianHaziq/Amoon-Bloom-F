@@ -1,6 +1,7 @@
 "use client";
 
 import { TruckIcon, ShieldIcon, SparkleIcon, HeartIcon } from "@/components/icons";
+import { useT } from "@/i18n/useT";
 
 const ICONS = [TruckIcon, SparkleIcon, HeartIcon, ShieldIcon];
 
@@ -14,6 +15,12 @@ interface Props {
 }
 
 export function TrustStripMarquee({ items }: Props) {
+  // The scroll direction is purely CSS + the ancestor <html dir> mirroring, so
+  // it's established when the animated row mounts. On a live language switch the
+  // running animation isn't re-established under the new direction (only a
+  // refresh remounts it) — so subscribe to the locale's `dir` and key the row on
+  // it, remounting the strip so it restarts in the correct direction.
+  const { dir } = useT();
   const rich = items.map((item, i) => ({ ...item, Icon: ICONS[i] }));
   const doubled = [...rich, ...rich];
 
@@ -25,6 +32,7 @@ export function TrustStripMarquee({ items }: Props) {
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-ink-900 to-transparent" />
 
       <div
+        key={dir}
         className="flex w-max animate-marquee hover:[animation-play-state:paused]"
         style={{ animationDuration: "26s" }}
       >

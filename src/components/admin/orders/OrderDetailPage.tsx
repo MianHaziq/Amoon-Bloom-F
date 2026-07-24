@@ -6,12 +6,15 @@ import { queryKeys } from "@/services/queryKeys";
 import { Badge } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Spinner } from "@/components/ui/Loader";
-import { formatCurrency, formatDate, formatDateTime, addDays, formatDayCount } from "@/lib/format";
+import { formatCurrency, formatDate, formatDayCount } from "@/lib/format";
+import { OrderDeliveryInfo } from "@/features/orders/components/OrderDeliveryInfo";
 import {
   ORDER_STATUSES,
   ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
 } from "./orderStatus";
+import { SelectedOptions } from "@/features/products/components/SelectedOptions";
+import { OrderItemExtras } from "@/features/orders/components/OrderItemExtras";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
 import type { OrderStatus } from "@/features/orders/types";
@@ -90,10 +93,10 @@ export function OrderDetailPage({ id }: { id: string }) {
             <ul className="divide-y divide-ink-100">
               {order.items.map((item) => (
                 <li key={item.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
-                  {item.product?.image ? (
+                  {item.selectedImage ?? item.product?.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={item.product.image}
+                      src={(item.selectedImage ?? item.product?.image) as string}
                       alt=""
                       className="h-14 w-14 rounded-lg object-cover"
                     />
@@ -108,27 +111,13 @@ export function OrderDetailPage({ id }: { id: string }) {
                       <p className="text-xs text-ink-500">
                         {formatCurrency(item.price)} × {item.quantity}
                       </p>
-                      {item.giftCardSelected && (
-                        <Badge tone="ink" uppercase={false} className="mt-1.5">
-                          {t("admin.orderDetailPage.giftCardLabel")}
-                        </Badge>
-                      )}
-                      {item.customName && (
-                        <p className="mt-1.5 text-xs text-ink-600">
-                          <span className="font-semibold text-ink-500">
-                            {t("admin.orderDetailPage.customNameLabel")}:
-                          </span>{" "}
-                          {item.customName}
-                        </p>
-                      )}
-                      {item.perProductMessage ? (
-                        <p className="mt-1.5 text-xs text-ink-600">
-                          <span className="font-semibold text-ink-500">
-                            {t("admin.orderDetailPage.giftMessageLabel")}:
-                          </span>{" "}
-                          <span className="italic">“{item.perProductMessage}”</span>
-                        </p>
-                      ) : null}
+                      <SelectedOptions options={item.selectedOptions} className="mt-1.5" />
+                      <OrderItemExtras
+                        giftCardSelected={item.giftCardSelected}
+                        customName={item.customName}
+                        message={item.perProductMessage}
+                        className="mt-2"
+                      />
                       {item.resolvedLeadDays != null && (
                         <p className="mt-1.5 text-xs text-ink-500">
                           {item.resolvedLeadDays === 0
@@ -225,35 +214,7 @@ export function OrderDetailPage({ id }: { id: string }) {
             ) : null}
           </section>
 
-          <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-            <h3 className="mb-3 font-display text-lg text-ink-900">{t("admin.orderDetailPage.deliveryHeading")}</h3>
-            {order.deliveryType === "SCHEDULED" && order.scheduledDeliveryAt ? (
-              <div className="text-sm text-ink-700">
-                <p className="font-medium text-ink-900">{t("checkout.scheduledDelivery")}</p>
-                <p className="mt-1">{formatDateTime(order.scheduledDeliveryAt)}</p>
-              </div>
-            ) : (
-              <div className="text-sm text-ink-700">
-                <p className="font-medium text-ink-900">{t("checkout.standardDelivery")}</p>
-                {order.estimatedDeliveryDays != null ? (
-                  <>
-                    <p className="mt-1">
-                      {order.estimatedDeliveryDays === 0
-                        ? t("admin.orderDetailPage.leadTimeZero")
-                        : t("admin.orderDetailPage.leadTime", {
-                            days: formatDayCount(order.estimatedDeliveryDays, locale),
-                          })}
-                    </p>
-                    <p className="mt-1">
-                      {t("admin.orderDetailPage.estimatedArrival", {
-                        date: formatDate(addDays(order.createdAt, order.estimatedDeliveryDays)),
-                      })}
-                    </p>
-                  </>
-                ) : null}
-              </div>
-            )}
-          </section>
+          <OrderDeliveryInfo order={order} />
 
           {order.shippingAddress ? (
             <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">

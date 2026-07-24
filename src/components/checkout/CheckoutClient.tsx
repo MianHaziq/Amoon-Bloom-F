@@ -23,6 +23,8 @@ import {
   MenuItem,
 } from "@/components/ui";
 import { Spinner } from "@/components/ui/Loader";
+import { SelectedOptions } from "@/features/products/components/SelectedOptions";
+import { cartLineKey } from "@/features/cart/variantKey";
 import {
   ChevronRight,
   ChevronDown,
@@ -73,6 +75,13 @@ function round2(n: number) {
 // rejects as still today. Mirroring the same Dubai-anchored boundary here keeps both
 // sides in agreement.
 const BUSINESS_TIMEZONE = "Asia/Dubai";
+
+// Mirrors order.service.js SCHEDULED_DELIVERY_MAX_WINDOW_DAYS — the furthest out a
+// scheduled delivery may be booked. The scheduled window's minimum is clamped to this,
+// so a region with a very long standardDeliveryDays (validated up to 90) can never push
+// the calendar's earliest selectable day past its latest — which would otherwise leave
+// zero selectable days and a date the backend would reject anyway.
+const SCHEDULED_MAX_WINDOW_DAYS = 60;
 
 /** The UTC offset (in minutes) of `timeZone` at instant `date`, via Intl. */
 function tzOffsetMinutes(date: Date, timeZone: string): number {
@@ -1039,20 +1048,6 @@ function OrderReviewCard({
   const { currency, locale } = useCurrency();
   const { t, locale: appLocale } = useT();
 
-  // Mirrors the backend's window (order.service.js SCHEDULED_DELIVERY_MIN_LEAD_DAYS /
-  // MAX_WINDOW_DAYS) — just a UX hint; the backend re-validates regardless. Computed as
-  // Dubai-anchored date-key strings (memoized: businessDateKey() builds an Intl
-  // formatter each call) so the picker's window matches the backend day boundary for
-  // customers in any timezone.
-  const { minScheduledKey, maxScheduledKey, todayScheduledKey } = useMemo(
-    () => ({
-      minScheduledKey: businessDateKey(1),
-      maxScheduledKey: businessDateKey(60),
-      todayScheduledKey: businessDateKey(0),
-    }),
-    []
-  );
-
   // Mirrors order.service.js's estimatedDeliveryDays formula exactly (the LATER of the
   // region's courier transit time and the slowest cart line's own prep/booking lead
   // time) so this pre-purchase hint matches what the order will actually show after
@@ -1066,6 +1061,39 @@ function OrderReviewCard({
       ? Math.max(standardDeliveryDays ?? 0, maxCartItemLeadDays)
       : null;
 
+  // Earliest a scheduled delivery can be booked. Standard delivery already covers the
+  // whole lead window, so scheduling only makes sense for dates strictly AFTER it: the
+  // floor is effective-lead-days + 1. A 1-day product hides tomorrow (earliest = day 2);
+  // a 2-day product hides through day 2 (earliest = day 3). Unknown lead falls back to
+  // tomorrow (day 1). Clamped to the max window so an unusually long lead time can never
+  // invert the calendar (min > max) — always between 1 and SCHEDULED_MAX_WINDOW_DAYS.
+  const minScheduledLeadDays = Math.min(
+    (effectiveStandardDeliveryDays ?? 0) + 1,
+    SCHEDULED_MAX_WINDOW_DAYS
+  );
+
+  // Mirrors the backend's window (order.service.js SCHEDULED_DELIVERY_MIN_LEAD_DAYS /
+  // MAX_WINDOW_DAYS) — a UX hint; the backend re-validates regardless. Computed as
+  // Dubai-anchored date-key strings (memoized: businessDateKey() builds an Intl
+  // formatter each call) so the picker's window matches the backend day boundary for
+  // customers in any timezone.
+  const { minScheduledKey, maxScheduledKey, todayScheduledKey } = useMemo(
+    () => ({
+      minScheduledKey: businessDateKey(minScheduledLeadDays),
+      maxScheduledKey: businessDateKey(SCHEDULED_MAX_WINDOW_DAYS),
+      todayScheduledKey: businessDateKey(0),
+    }),
+    [minScheduledLeadDays]
+  );
+
+  // If the cart changes so the current pick is now earlier than the minimum (e.g. a
+  // longer-lead item was added), clear it so the customer must re-select a valid day.
+  useEffect(() => {
+    if (scheduledDeliveryAt && scheduledDeliveryAt < minScheduledKey) {
+      onScheduledDeliveryAtChange("");
+    }
+  }, [scheduledDeliveryAt, minScheduledKey, onScheduledDeliveryAtChange]);
+
   return (
     <aside className="flex flex-col gap-4">
       <Card variant="elevated" padding="lg" className="flex flex-col gap-4">
@@ -1077,7 +1105,7 @@ function OrderReviewCard({
         <ul className="divide-y divide-ink-100">
           {cartItems.map((item) => (
             <li
-              key={item.productId}
+              key={cartLineKey(item.productId, item.variantKey)}
               className="flex gap-3 py-3 first:pt-0 last:pb-0"
             >
               {item.imageUrl ? (
@@ -1094,18 +1122,20 @@ function OrderReviewCard({
                 <div className="min-w-0">
                   <p className="truncate font-medium text-ink-900">{item.title}</p>
                   <p className="text-xs text-ink-500">{t("common.qty")} {item.quantity}</p>
-                  {item.giftCardSelected && (
-                    <Badge tone="ink" uppercase={false} className="mt-1">
-                      {t("admin.orderDetailPage.giftCardLabel")}
-                    </Badge>
-                  )}
-                  {item.customName && (
-                    <p className="truncate text-xs text-ink-600">
-                      <span className="font-semibold text-ink-500">
-                        {t("admin.orderDetailPage.customNameLabel")}:
-                      </span>{" "}
-                      {item.customName}
-                    </p>
+                  <SelectedOptions options={item.selectedOptions} className="mt-1" />
+                  {(item.giftCardSelected || item.customName) && (
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {item.giftCardSelected && (
+                        <Badge tone="ink" uppercase={false}>
+                          {t("admin.orderDetailPage.giftCardLabel")}
+                        </Badge>
+                      )}
+                      {item.customName && (
+                        <Badge tone="ink" uppercase={false} className="max-w-full truncate">
+                          {t("admin.orderDetailPage.customNameLabel")}: {item.customName}
+                        </Badge>
+                      )}
+                    </div>
                   )}
                 </div>
                 <p className="shrink-0 font-medium tabular-nums">
