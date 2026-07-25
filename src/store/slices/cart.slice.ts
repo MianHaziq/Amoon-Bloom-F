@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { Product } from "@/features/products/types";
-import { variantKeyOf } from "@/features/cart/variantKey";
+import { lineVariantKey } from "@/features/cart/variantKey";
 
 export interface CartItem {
   productId: string;
@@ -65,9 +65,12 @@ const cartSlice = createSlice({
     ) {
       const { product, quantity = 1, selectedOptions, variantImage, giftCardSelected, customName, message } = action.payload;
       const resolvedImage = variantImage ?? product.images[0]?.url;
-      const variantKey = variantKeyOf(selectedOptions);
-      // Variant-aware: merge only into the SAME variant line; a different variant
-      // of the same product becomes its own line (Amazon/Shopify-style).
+      // Line identity = variant (colour/size) + personalized custom name. Merge
+      // only into a line with the SAME variant AND SAME name; a different variant
+      // OR a different name becomes its own line (Amazon/Shopify-style). This is
+      // what lets a customer buy the same product with 4 different gift names as
+      // 4 lines instead of the last name overwriting the rest.
+      const variantKey = lineVariantKey(selectedOptions, customName, giftCardSelected);
       const existing = state.items.find(
         (i) => i.productId === product.id && i.variantKey === variantKey
       );
