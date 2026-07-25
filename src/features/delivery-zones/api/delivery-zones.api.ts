@@ -2,6 +2,8 @@ import { http } from "@/services/http";
 import type { ApiResponse, PaginatedResponse } from "@/types";
 import type {
   ApiDeliveryZone,
+  ApiDeliveryZoneBulkInput,
+  ApiDeliveryZoneBulkResult,
   ApiDeliveryZoneCreateInput,
   ApiDeliveryZoneUpdateInput,
 } from "../types";
@@ -24,6 +26,15 @@ export const deliveryZonesApi = {
   // --- Admin / Manager (DELIVERY_ZONES) ---
   async create(payload: ApiDeliveryZoneCreateInput): Promise<ApiDeliveryZone> {
     const { data } = await http.post<ApiResponse<ApiDeliveryZone>>("/delivery-zones", payload);
+    return data.data;
+  },
+
+  /** Create several zones for one region at once. Duplicate names are skipped server-side. */
+  async createBulk(payload: ApiDeliveryZoneBulkInput): Promise<ApiDeliveryZoneBulkResult> {
+    const { data } = await http.post<ApiResponse<ApiDeliveryZoneBulkResult>>(
+      "/delivery-zones/bulk",
+      payload
+    );
     return data.data;
   },
 

@@ -40,10 +40,6 @@ export function DeliveryZoneForm({
         regionId: z.string().min(1, t("admin.deliveryZoneForm.regionRequired")),
         name: z.string().min(1, t("admin.deliveryZoneForm.nameRequired")),
         name_ar: z.string().optional().nullable(),
-        sortOrder: z
-          .number()
-          .int(t("admin.regionForm.sortOrderWhole"))
-          .min(0, t("admin.regionForm.sortOrderMin")),
         isActive: z.boolean(),
       }),
     [t]
@@ -62,7 +58,6 @@ export function DeliveryZoneForm({
       regionId: defaultRegionId ?? "",
       name: "",
       name_ar: "",
-      sortOrder: 0,
       isActive: true,
     },
   });
@@ -73,7 +68,6 @@ export function DeliveryZoneForm({
       regionId: initial.regionId,
       name: initial.name,
       name_ar: initial.name_ar ?? "",
-      sortOrder: initial.sortOrder,
       isActive: initial.isActive,
     });
   }, [initial, reset]);
@@ -83,7 +77,6 @@ export function DeliveryZoneForm({
       regionId: v.regionId,
       name: v.name.trim(),
       name_ar: v.name_ar?.trim() || null,
-      sortOrder: v.sortOrder,
       isActive: v.isActive,
     });
   });
@@ -123,15 +116,6 @@ export function DeliveryZoneForm({
                 <p className="text-xs text-bloom-700">{errors.regionId.message}</p>
               ) : null}
             </div>
-            <Input
-              label={t("admin.regionForm.sortOrderLabel")}
-              type="number"
-              step="1"
-              min="0"
-              hint={t("admin.regionForm.sortOrderHint")}
-              error={errors.sortOrder?.message}
-              {...register("sortOrder", { valueAsNumber: true })}
-            />
             <Input
               label={t("admin.regionForm.nameEnLabel")}
               placeholder="Dubai"
