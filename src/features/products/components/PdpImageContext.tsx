@@ -1,7 +1,23 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Product } from "../types";
+
+/** Result of an add-to-cart attempt driven from the shared PDP selection. */
+export interface PdpAddResult {
+  ok: boolean;
+  /** True when a required custom name is toggled on but left empty — the caller
+   *  (e.g. the sticky bar) should surface the panel's name input to fill it. */
+  needsName?: boolean;
+}
 
 export interface GalleryPhoto {
   /** The option group this photo belongs to (e.g. the "Colour" option's id), or "" for a plain product photo with no variant. */
@@ -24,6 +40,13 @@ interface PdpImageCtx {
   gallery: GalleryPhoto[];
   /** The option group driving the gallery (has photos), or null if the product has none. */
   visualOptionId: string | null;
+  /** AddToCartPanel registers its add-to-cart handler here so the mobile sticky
+   *  bar (rendered elsewhere in the tree) can trigger the SAME add with the live
+   *  colour / name / gift-card / quantity selection. Pass null on unmount. */
+  registerAddHandler: (fn: (() => Promise<PdpAddResult>) | null) => void;
+  /** Run the registered add-to-cart handler. Resolves { ok:false } if none is
+   *  registered yet (e.g. the panel hasn't mounted). */
+  requestAdd: () => Promise<PdpAddResult>;
 }
 
 const Ctx = createContext<PdpImageCtx | null>(null);
@@ -117,6 +140,20 @@ export function PdpImageProvider({
     gallery[0]?.url ??
     null;
 
+  // Bridge so the sticky bar can reuse the panel's exact add-to-cart logic
+  // (which owns qty / gift-card / custom-name state) instead of duplicating it.
+  const addHandlerRef = useRef<(() => Promise<PdpAddResult>) | null>(null);
+  const registerAddHandler = useCallback(
+    (fn: (() => Promise<PdpAddResult>) | null) => {
+      addHandlerRef.current = fn;
+    },
+    []
+  );
+  const requestAdd = useCallback(
+    () => (addHandlerRef.current ? addHandlerRef.current() : Promise.resolve({ ok: false })),
+    []
+  );
+
   const selectOption = (optionId: string, value: string) => {
     setSelected((prev) => ({ ...prev, [optionId]: value }));
     setUrlOverride(null);
@@ -136,9 +173,11 @@ export function PdpImageProvider({
       setActiveUrl,
       gallery,
       visualOptionId: visualOption?.id ?? null,
+      registerAddHandler,
+      requestAdd,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selected, activeUrl, gallery, visualOption]
+    [selected, activeUrl, gallery, visualOption, registerAddHandler, requestAdd]
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

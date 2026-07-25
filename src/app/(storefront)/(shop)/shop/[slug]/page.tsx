@@ -75,7 +75,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   return (
-    <>
+    // Wraps the WHOLE page (not just the gallery/panel) so the mobile
+    // StickyAddToCart at the bottom shares the same variant selection — it reads
+    // the active variant photo and triggers the panel's add-to-cart.
+    <PdpImageProvider product={product}>
       <section className="bg-cream-50 pt-8 pb-4">
         <Container>
           <nav
@@ -103,7 +106,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </section>
 
       <Section spacing="sm" tone="cream">
-        <PdpImageProvider product={product}>
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           <div className="flex flex-col gap-6">
             <ProductGallery title={product.title} />
@@ -152,7 +154,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
             body={t(locale, "product.valuePersonalBody")}
           />
         </div>
-        </PdpImageProvider>
       </Section>
 
       {/* Description · Additional information · Reviews (tabbed, like client) */}
@@ -180,7 +181,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       )}
 
       <StickyAddToCart product={product} />
-    </>
+    </PdpImageProvider>
   );
 }
 

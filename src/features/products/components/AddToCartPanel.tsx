@@ -8,7 +8,7 @@ import { microTransition } from "@/lib/motion";
 import { QuantitySelector } from "./QuantitySelector";
 import { OptionPicker } from "./OptionPicker";
 import { ShippingLeadNote } from "./ShippingLeadNote";
-import { usePdpImage } from "./PdpImageContext";
+import { usePdpImage, type PdpAddResult } from "./PdpImageContext";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { formatCurrency } from "@/lib/format";
@@ -58,7 +58,9 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
   const { currency, locale } = useCurrency();
   // Selection is owned by PdpImageProvider (shared with ProductGallery) so picking a
   // colour here and clicking its photo in the gallery are the same action.
-  const { selected, selectOption } = usePdpImage();
+  // `registerAddHandler` lets the mobile sticky bar trigger this panel's exact
+  // add-to-cart with the live colour/name/gift-card/qty (it lives elsewhere in the tree).
+  const { selected, selectOption, registerAddHandler } = usePdpImage();
   const wishlisted = useAppSelector((s) =>
     s.wishlist.items.some((i) => i.productId === product.id)
   );
@@ -80,11 +82,11 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
     };
   }, []);
 
-  const handleAdd = async () => {
-    if (!product.inStock) return;
+  const handleAdd = async (): Promise<PdpAddResult> => {
+    if (!product.inStock) return { ok: false };
     if (product.customNameEnabled && customNameSelected && !customName.trim()) {
       setCustomNameError(true);
-      return;
+      return { ok: false, needsName: true };
     }
     // `selected` is keyed by option-group id (needed for the gallery image
     // swap), but the cart/order stores the selection keyed by the human option
@@ -130,13 +132,30 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
           product.customNameEnabled && customNameSelected ? customName.trim() : undefined,
       }
     );
-    if (!res.ok) return;
+    if (!res.ok) return { ok: false };
     dispatch(toggleCartDrawer(true));
     // Brief inline acknowledgement on the button itself.
     setJustAdded(true);
     if (addedTimer.current) clearTimeout(addedTimer.current);
     addedTimer.current = setTimeout(() => setJustAdded(false), 1600);
+    return { ok: true };
   };
+
+  // Expose this panel's add handler to the shared PDP context via a stable
+  // wrapper that always calls the latest `handleAdd` (which closes over the
+  // current qty/colour/name/gift-card state). Lets the mobile sticky bar run the
+  // exact same add — no duplicated selection logic. Cleared on unmount.
+  const latestAdd = useRef(handleAdd);
+  // Keep the ref pointing at the newest closure (runs after every render).
+  useEffect(() => {
+    latestAdd.current = handleAdd;
+  });
+  // Register a STABLE wrapper once so the sticky bar always calls the latest add.
+  useEffect(() => {
+    const stable = () => latestAdd.current();
+    registerAddHandler(stable);
+    return () => registerAddHandler(null);
+  }, [registerAddHandler]);
 
   return (
     <div id="add-to-cart-panel" className="flex flex-col gap-5">
@@ -190,6 +209,7 @@ export function AddToCartPanel({ product }: AddToCartPanelProps) {
           {customNameSelected && (
             <div>
               <input
+                id="custom-name-input"
                 type="text"
                 value={customName}
                 onChange={(e) => {

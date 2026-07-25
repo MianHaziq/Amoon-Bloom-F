@@ -4,9 +4,9 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button, CurrencyAmount } from "@/components/ui";
 import { BagIcon } from "@/components/icons";
-import { useCart } from "@/features/cart/hooks/useCart";
+import { usePdpImage } from "./PdpImageContext";
 import { useAppDispatch } from "@/store";
-import { toggleCartDrawer, setStickyAddToCartMounted } from "@/store/slices/ui.slice";
+import { setStickyAddToCartMounted } from "@/store/slices/ui.slice";
 import { cn } from "@/lib/cn";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useT } from "@/i18n/useT";
@@ -23,7 +23,10 @@ interface StickyAddToCartProps {
  */
 export function StickyAddToCart({ product }: StickyAddToCartProps) {
   const dispatch = useAppDispatch();
-  const { add } = useCart();
+  // Shares the PDP's live selection: `activeUrl` is the currently-shown variant
+  // photo (so this bar's thumbnail follows the chosen colour), and `requestAdd`
+  // runs the main panel's exact add-to-cart with that same selection.
+  const { activeUrl, requestAdd } = usePdpImage();
   const { currency, locale } = useCurrency();
   const { t } = useT();
   const [visible, setVisible] = useState(false);
@@ -51,26 +54,24 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
 
   const handleAdd = async () => {
     if (!product.inStock) return;
-    // This bar does a 1-click add with no option selection UI of its own. A
-    // product with a variant (colour/size), a gift-card, or a custom-name add-on
-    // needs that selection made explicitly (and a variant must be recorded so it
-    // shows in the cart/order), so instead of silently skipping it, scroll up to
-    // the main panel where those pickers live.
-    if (
-      (product.options && product.options.length > 0) ||
-      product.giftCardEnabled ||
-      product.customNameEnabled
-    ) {
-      document.getElementById("add-to-cart-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
+    // Run the main panel's add with the current colour/name/gift-card/qty. It
+    // opens the cart drawer and raises its own stock error toast on success/fail.
+    const res = await requestAdd();
+    // Only case the bar can't complete: a required custom name was toggled on but
+    // left empty. Send the shopper to the panel's name field to fill it in.
+    if (res.needsName) {
+      document
+        .getElementById("add-to-cart-panel")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Focus after the smooth scroll so the keyboard opens on the right field.
+      window.setTimeout(() => {
+        document.getElementById("custom-name-input")?.focus();
+      }, 450);
     }
-    // Open the drawer only once the mutation is confirmed; the thunk raises
-    // its own error toast (e.g. "Only 3 in stock") if the server rejects.
-    const res = await add(product, 1);
-    if (res.ok) dispatch(toggleCartDrawer(true));
   };
 
-  const primaryImage = product.images[0];
+  // Follows the selected variant photo (falls back to the product's primary image).
+  const imageUrl = activeUrl ?? product.images[0]?.url ?? null;
 
   return (
     <>
@@ -87,10 +88,10 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
         )}
       >
       <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        {primaryImage && (
+        {imageUrl && (
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-blush-50">
             <Image
-              src={primaryImage.url}
+              src={imageUrl}
               alt=""
               fill
               sizes="48px"
