@@ -217,15 +217,28 @@ export function CheckoutClient() {
   const defaultAddressId: string | "new" | null = (() => {
     if (!isAuthed) return "new";
     if (!addressesQuery.data) return null;
-    if (addressesQuery.data.length === 0) return "new";
-    const def =
-      addressesQuery.data.find((a) => a.isDefault) ?? addressesQuery.data[0];
+    // Only offer addresses that belong to the region being shopped — a saved UAE
+    // address isn't a valid default while checking out in KSA. None in-region →
+    // start on the "new address" form.
+    const inRegion = addressesQuery.data.filter((a) => isAddressInRegion(a, regionCode));
+    if (inRegion.length === 0) return "new";
+    const def = inRegion.find((a) => a.isDefault) ?? inRegion[0];
     return def.id;
   })();
 
-  // Guests can only ever use the inline "new address" form.
+  // Guests can only ever use the inline "new address" form. For authed users, an
+  // explicit pick is honoured only while it's still in-region — switching region
+  // after selecting an address drops back to the in-region default so a
+  // wrong-region address can never stay selected.
   const selectedAddressId = isAuthed
-    ? explicitSelection ?? defaultAddressId
+    ? (() => {
+        if (explicitSelection == null) return defaultAddressId;
+        if (explicitSelection === "new") return "new";
+        const picked = addressesQuery.data?.find((a) => a.id === explicitSelection);
+        return picked && isAddressInRegion(picked, regionCode)
+          ? explicitSelection
+          : defaultAddressId;
+      })()
     : "new";
 
   // The Emirate-style dropdown, scoped to the current delivery region. A
@@ -755,6 +768,8 @@ function BillingShippingCard({
                 address={a}
                 selected={selectedAddressId === a.id}
                 onSelect={() => onSelect(a.id)}
+                // Saved in a different region → shown but not selectable here.
+                disabled={!isAddressInRegion(a, regionCode)}
               />
             ))}
             <button
@@ -932,19 +947,61 @@ function BillingShippingCard({
   );
 }
 
+/**
+ * A saved address is offered at checkout only while shopping in its own region.
+ * A null region (legacy rows saved before region capture) stays available
+ * everywhere so we never hide an address we can't classify.
+ */
+function isAddressInRegion(address: ApiAddress, regionCode: string): boolean {
+  return !address.region || address.region.code === regionCode;
+}
+
 function AddressOption({
   address,
   selected,
   onSelect,
+  disabled = false,
 }: {
   address: ApiAddress;
   selected: boolean;
   onSelect: () => void;
+  disabled?: boolean;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const locationLine = address.area
     ? `${address.area}${address.deliveryZone ? `, ${address.deliveryZone.name}` : ""}`
     : `${address.streetAddress}${address.apartment ? `, ${address.apartment}` : ""}, ${address.city}`;
+
+  // Out-of-region: greyed, not clickable, with a clear reason so the shopper
+  // understands why their saved address isn't selectable here.
+  if (disabled) {
+    const regionName = address.region
+      ? locale === "ar" && address.region.name_ar
+        ? address.region.name_ar
+        : address.region.name
+      : null;
+    return (
+      <div
+        aria-disabled="true"
+        className="flex items-start gap-3 rounded-2xl border border-ink-100 bg-ink-50/60 p-4 text-start opacity-70"
+      >
+        <span className="mt-1 inline-flex h-4 w-4 shrink-0 rounded-full border border-ink-200" />
+        <span className="flex-1">
+          <span className="block font-medium text-ink-500">
+            {address.label || address.fullName}
+          </span>
+          <span className="block text-sm text-ink-400">{address.fullName}</span>
+          <span className="block text-xs text-ink-400">{locationLine}</span>
+          <span className="mt-1 block text-xs font-medium text-amber-600">
+            {regionName
+              ? t("checkout.addressOtherRegion", { region: regionName })
+              : t("checkout.addressOtherRegionNoName")}
+          </span>
+        </span>
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"

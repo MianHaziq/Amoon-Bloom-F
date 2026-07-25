@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { stripKnownCallingCode } from "@/features/regions/countries";
-import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
+import { PencilIcon, PinIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import type { MessageKey } from "@/i18n";
 import type {
   ApiAddress,
@@ -47,7 +47,7 @@ type FormValues = z.infer<ReturnType<typeof makeAddressSchema>>;
 export function AddressBook() {
   const toast = useToast();
   const queryClient = useQueryClient();
-  const { t } = useT();
+  const { t, locale } = useT();
   const [editing, setEditing] = useState<ApiAddress | null>(null);
   const [creating, setCreating] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<ApiAddress | null>(null);
@@ -77,8 +77,17 @@ export function AddressBook() {
 
   if (query.isError) {
     return (
-      <div className="rounded-xl border border-bloom-200 bg-bloom-50 p-6 text-bloom-700">
-        {t("address.loadError")}
+      <div className="rounded-2xl border border-bloom-200 bg-bloom-50 p-8 text-center">
+        <p className="text-sm text-bloom-700">{t("address.loadError")}</p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={() => query.refetch()}
+          disabled={query.isFetching}
+        >
+          {t("error.retry")}
+        </Button>
       </div>
     );
   }
@@ -87,22 +96,36 @@ export function AddressBook() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <Button
-          leadingIcon={<PlusIcon size={14} />}
-          size="sm"
-          onClick={() => setCreating(true)}
-        >
-          {t("address.addAddress")}
-        </Button>
-      </div>
+      {/* Header "Add" button only when there are addresses — the empty state has
+          its own prominent CTA below, so we don't show two add buttons at once. */}
+      {addresses.length > 0 && (
+        <div className="flex justify-end">
+          <Button
+            leadingIcon={<PlusIcon size={14} />}
+            size="sm"
+            onClick={() => setCreating(true)}
+          >
+            {t("address.addAddress")}
+          </Button>
+        </div>
+      )}
 
       {addresses.length === 0 ? (
-        <div className="rounded-2xl border border-ink-100 bg-white p-10 text-center">
-          <p className="font-display text-xl text-ink-700">{t("address.emptyTitle")}</p>
-          <p className="mt-1 text-sm text-ink-500">
+        <div className="rounded-2xl border border-ink-100 bg-white px-6 py-12 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-bloom-50 text-bloom-600">
+            <PinIcon size={24} />
+          </div>
+          <p className="font-display text-xl text-ink-900">{t("address.emptyTitle")}</p>
+          <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-500">
             {t("address.emptyBody")}
           </p>
+          <Button
+            leadingIcon={<PlusIcon size={16} />}
+            className="mt-6"
+            onClick={() => setCreating(true)}
+          >
+            {t("address.addAddress")}
+          </Button>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -122,11 +145,23 @@ export function AddressBook() {
                     <p className="text-sm font-semibold text-ink-900 wrap-break-word">
                       {a.label || a.fullName}
                     </p>
-                    {a.isDefault ? (
-                      <span className="mt-1 inline-block rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-bloom-700">
-                        {t("common.default")}
-                      </span>
-                    ) : null}
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      {a.isDefault ? (
+                        <span className="inline-block rounded-full bg-bloom-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-bloom-700">
+                          {t("common.default")}
+                        </span>
+                      ) : null}
+                      {/* Region badge so a shopper can tell which region each saved
+                          address belongs to (it's only selectable at checkout in
+                          that region). */}
+                      {a.region ? (
+                        <span className="inline-block rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-ink-600">
+                          {locale === "ar" && a.region.name_ar
+                            ? a.region.name_ar
+                            : a.region.name}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     <button
