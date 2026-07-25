@@ -70,7 +70,9 @@ export function ProductCarousel({
       ro.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [recompute, readActivePage, products.length]);
+    // `dir` is included so that when the scroller remounts on a language switch
+    // (key={dir} below), the listener + ResizeObserver re-attach to the fresh node.
+  }, [recompute, readActivePage, products.length, dir]);
 
   const goToPage = (page: number) => {
     const el = scrollerRef.current;
@@ -83,6 +85,10 @@ export function ProductCarousel({
   return (
     <div className={className}>
       <div
+        // Remount the scroller when direction flips: iOS Safari won't re-resolve
+        // an existing overflow-x container's RTL/LTR scroll origin on a live
+        // language switch (works on Android/desktop), so rebuild the node instead.
+        key={dir}
         ref={scrollerRef}
         role="region"
         aria-label="Products — scroll horizontally to see more"

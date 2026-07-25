@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Section, SectionHeader } from "@/components/ui";
+import { Section, SectionHeader, DirScroll } from "@/components/ui";
 import { occasions, type Occasion } from "@/features/occasions/data/occasions.mock";
 import { cn } from "@/lib/cn";
 
@@ -19,7 +19,7 @@ export function OccasionRail() {
         title="A gift for every occasion."
         description="From the quietly thoughtful to the unforgettable celebration — composed by our team for the moment."
       />
-      <div className="mt-10 -mx-4 overflow-x-auto pb-4 px-4 no-scrollbar lg:mx-0 lg:px-0">
+      <DirScroll className="mt-10 -mx-4 overflow-x-auto pb-4 px-4 no-scrollbar lg:mx-0 lg:px-0">
         <ul className="flex gap-5 lg:grid lg:grid-cols-7 lg:gap-4">
           {occasions.map((occasion) => (
             <li key={occasion.id} className="shrink-0">
@@ -53,7 +53,7 @@ export function OccasionRail() {
             </li>
           ))}
         </ul>
-      </div>
+      </DirScroll>
     </Section>
   );
 }

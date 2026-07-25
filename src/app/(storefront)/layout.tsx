@@ -9,6 +9,7 @@ import { WishlistPersistence } from "@/features/wishlist/components/WishlistPers
 import { LocationPersistence } from "@/features/location/components/LocationPersistence";
 import { LocationOnboarding } from "@/features/location/components/LocationOnboarding";
 import { AuthHydrator } from "@/features/auth/components/AuthHydrator";
+import { ScrollManager } from "@/components/layout/ScrollManager";
 import { getServerLocale } from "@/i18n/server";
 import { t } from "@/i18n";
 
@@ -18,6 +19,7 @@ export default async function StorefrontLayout({
   const locale = await getServerLocale();
   return (
     <>
+      <ScrollManager />
       <AuthHydrator />
       <CartPersistence />
       <CartSync />

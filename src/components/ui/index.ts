@@ -3,6 +3,7 @@ export type { ButtonProps } from "./Button";
 export { IconButton } from "./IconButton";
 export { Container } from "./Container";
 export { Section, SectionHeader } from "./Section";
+export { DirScroll } from "./DirScroll";
 export { Card } from "./Card";
 export { Badge } from "./Badge";
 export { Input } from "./Input";

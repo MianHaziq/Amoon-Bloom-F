@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { ScrollManager } from "@/components/layout/ScrollManager";
 
 export const metadata: Metadata = {
   title: "Admin · Amoon Bloom",
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLayout({ children }: Readonly<{ children: ReactNode }>) {
-  return <AdminShell>{children}</AdminShell>;
+  return (
+    <>
+      <ScrollManager />
+      <AdminShell>{children}</AdminShell>
+    </>
+  );
 }
