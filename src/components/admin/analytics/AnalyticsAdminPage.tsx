@@ -17,6 +17,8 @@ import { formatCurrency, formatCompactCurrency } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n/messages";
 
+const ALL_REGIONS = "ALL";
+
 const PRESETS = [
   { value: "today", labelKey: "admin.analyticsPage.presetToday" },
   { value: "week", labelKey: "admin.analyticsPage.presetWeek" },
@@ -31,8 +33,24 @@ export function AnalyticsAdminPage() {
   const { t } = useT();
   const toast = useToast();
   const [preset, setPreset] = useState<Preset>("month");
-  const [region, setRegion] = useState<string>("ALL");
-  const regionParam = region === "ALL" ? {} : { region };
+  const [region, setRegion] = useState<string>(ALL_REGIONS);
+
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+  });
+  const regionsList = regionsQuery.data ?? [];
+
+  // If the selected region disappears (deleted/deactivated, or a stale code),
+  // fall back to the combined per-region view instead of a blank page. Derived
+  // during render — never downgrade while the list is still loading.
+  const selectedRegionMissing =
+    region !== ALL_REGIONS &&
+    regionsList.length > 0 &&
+    !regionsList.some((r) => r.code === region);
+  const effectiveRegion = selectedRegionMissing ? ALL_REGIONS : region;
+  const regionParam =
+    effectiveRegion === ALL_REGIONS ? {} : { region: effectiveRegion };
 
   const exportMutation = useMutation({
     mutationFn: (format: "xlsx" | "pdf" | "csv") =>
@@ -44,48 +62,6 @@ export function AnalyticsAdminPage() {
     onError: (err) => toast.fromError(t("admin.analyticsPage.exportError"), err),
   });
 
-  const regionsQuery = useQuery({
-    queryKey: queryKeys.regions.list(),
-    queryFn: () => regionsApi.list(),
-  });
-
-  const revenueQuery = useQuery({
-    queryKey: queryKeys.analytics.revenue({ preset, ...regionParam }),
-    queryFn: () => analyticsApi.revenue({ preset, ...regionParam }),
-  });
-  const byCategoryQuery = useQuery({
-    queryKey: queryKeys.analytics.revenueByCategory({ preset, ...regionParam }),
-    queryFn: () => analyticsApi.revenueByCategory({ preset, ...regionParam }),
-  });
-  const dailyQuery = useQuery({
-    queryKey: queryKeys.analytics.salesByDay({ preset, ...regionParam }),
-    queryFn: () => analyticsApi.salesByDay({ preset, ...regionParam }),
-  });
-
-  const summary = revenueQuery.data?.summary;
-  const currency = revenueQuery.data?.currency ?? "AED";
-
-  const series = useMemo(
-    () => (Array.isArray(dailyQuery.data?.points) ? dailyQuery.data!.points : []),
-    [dailyQuery.data]
-  );
-  const max = useMemo(
-    () => Math.max(1, ...series.map((d) => Number(d.netRevenue) || 0)),
-    [series]
-  );
-
-  const categories = useMemo(
-    () =>
-      Array.isArray(byCategoryQuery.data?.categories)
-        ? byCategoryQuery.data!.categories
-        : [],
-    [byCategoryQuery.data]
-  );
-  const totalCategoryRevenue = useMemo(
-    () => categories.reduce((s, r) => s + (Number(r.revenue) || 0), 0),
-    [categories]
-  );
-
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
@@ -94,13 +70,13 @@ export function AnalyticsAdminPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Select
-              value={region}
+              value={effectiveRegion}
               onChange={setRegion}
               triggerClassName="text-xs py-1.5"
               aria-label={t("admin.analyticsPage.allRegionsOption")}
               options={[
-                { value: "ALL", label: t("admin.analyticsPage.allRegionsOption") },
-                ...(regionsQuery.data ?? []).map((r) => ({
+                { value: ALL_REGIONS, label: t("admin.analyticsPage.allRegionsOption") },
+                ...regionsList.map((r) => ({
                   value: r.code,
                   label: r.name,
                 })),
@@ -168,9 +144,104 @@ export function AnalyticsAdminPage() {
         }
       />
 
-      {revenueQuery.isError ? (
-        <ErrorBanner error={revenueQuery.error} />
+      {/* Regions each have their own currency with no FX rate between them, so a
+          single combined view would sum AED + SAR into one meaningless figure.
+          The "All regions" view instead renders one full analytics block per
+          region, each in its own currency; a specific selection shows just that
+          region. */}
+      {effectiveRegion === ALL_REGIONS ? (
+        regionsQuery.isPending ? (
+          <div className="flex justify-center py-16">
+            <Spinner />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-10">
+            {regionsList.map((r) => (
+              <RegionAnalytics
+                key={r.code}
+                preset={preset}
+                regionCode={r.code}
+                heading={r.name}
+                currencyFallback={r.currency}
+              />
+            ))}
+          </div>
+        )
+      ) : (
+        <RegionAnalytics preset={preset} regionCode={effectiveRegion} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * The full analytics body (KPIs + sales-by-day + revenue-by-category) scoped to
+ * ONE region, always shown in that region's currency. Rendered once per region
+ * in the combined view and once on its own for a specific selection.
+ */
+function RegionAnalytics({
+  preset,
+  regionCode,
+  heading,
+  currencyFallback,
+}: {
+  preset: Preset;
+  regionCode: string;
+  heading?: string;
+  currencyFallback?: string;
+}) {
+  const { t } = useT();
+  const params = { preset, region: regionCode };
+
+  const revenueQuery = useQuery({
+    queryKey: queryKeys.analytics.revenue(params),
+    queryFn: () => analyticsApi.revenue(params),
+  });
+  const byCategoryQuery = useQuery({
+    queryKey: queryKeys.analytics.revenueByCategory(params),
+    queryFn: () => analyticsApi.revenueByCategory(params),
+  });
+  const dailyQuery = useQuery({
+    queryKey: queryKeys.analytics.salesByDay(params),
+    queryFn: () => analyticsApi.salesByDay(params),
+  });
+
+  const summary = revenueQuery.data?.summary;
+  const currency = revenueQuery.data?.currency ?? currencyFallback ?? "AED";
+
+  const series = useMemo(
+    () => (Array.isArray(dailyQuery.data?.points) ? dailyQuery.data!.points : []),
+    [dailyQuery.data]
+  );
+  const max = useMemo(
+    () => Math.max(1, ...series.map((d) => Number(d.netRevenue) || 0)),
+    [series]
+  );
+
+  const categories = useMemo(
+    () =>
+      Array.isArray(byCategoryQuery.data?.categories)
+        ? byCategoryQuery.data!.categories
+        : [],
+    [byCategoryQuery.data]
+  );
+  const totalCategoryRevenue = useMemo(
+    () => categories.reduce((s, r) => s + (Number(r.revenue) || 0), 0),
+    [categories]
+  );
+
+  return (
+    <div>
+      {heading ? (
+        <div className="mb-4 flex items-center gap-2">
+          <h2 className="font-display text-xl text-ink-900">{heading}</h2>
+          <span className="rounded-full bg-cream-100 px-2 py-0.5 text-xs font-medium text-ink-600">
+            {currency}
+          </span>
+        </div>
       ) : null}
+
+      {revenueQuery.isError ? <ErrorBanner error={revenueQuery.error} /> : null}
 
       <section className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Kpi

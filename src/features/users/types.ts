@@ -87,6 +87,9 @@ export interface ApiUserUpdateInput {
   firstName?: string;
   lastName?: string;
   email?: string;
+  /** Optional password reset. Only send it when the admin actually typed a new
+   *  one — the backend re-hashes and overwrites the user's current password. */
+  password?: string;
   role?: UserRoleEnum;
   managerTitle?: string;
   managerPermissions?: ManagerPermission[];

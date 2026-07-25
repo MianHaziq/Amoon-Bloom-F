@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { m } from "motion/react";
@@ -10,11 +11,14 @@ import { analyticsApi } from "@/features/analytics/api/analytics.api";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { usersApi } from "@/features/users/api/users.api";
 import { contactApi } from "@/features/contact/api/contact.api";
+import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
+import { Select } from "@/components/admin/Select";
 import { Skeleton } from "@/components/ui/Loader";
 import { Badge } from "@/components/ui/Badge";
 import { ApiError } from "@/services/http";
 import type { ManagerPermission } from "@/features/users/types";
+import type { ApiRegion } from "@/features/regions/types";
 import {
   ArrowRight,
   DocumentIcon,
@@ -29,6 +33,11 @@ import { formatCurrency, formatCompactCurrency } from "@/lib/format";
 import { useT } from "@/i18n/useT";
 import { customerLabel, isGuestOrder } from "@/components/admin/orders/orderCustomer";
 
+/** Sentinel dropdown value for the combined (per-region) view. */
+const ALL_REGIONS = "ALL";
+
+type RevenueQuery = ReturnType<typeof useRevenueByRegion>[number];
+
 function hasPerm(
   role: string | undefined,
   permissions: ManagerPermission[] | undefined,
@@ -37,6 +46,19 @@ function hasPerm(
   if (role === "ADMIN") return true;
   if (role !== "MANAGER") return false;
   return (permissions ?? []).includes(needed);
+}
+
+// One revenue query per region shown. Regions each have their own currency and
+// there is NO FX/conversion rate between them, so revenue is never summed across
+// regions — each region is fetched and displayed on its own (in its currency).
+function useRevenueByRegion(regions: ApiRegion[], enabled: boolean) {
+  return useQueries({
+    queries: regions.map((r) => ({
+      queryKey: queryKeys.analytics.revenue({ preset: "month", region: r.code }),
+      queryFn: () => analyticsApi.revenue({ preset: "month", region: r.code }),
+      enabled,
+    })),
+  });
 }
 
 export function AdminDashboard() {
@@ -51,6 +73,10 @@ export function AdminDashboard() {
   const canSeeOrders = role === "ADMIN" || hasPerm(role, perms, "ORDERS");
   const canSeeUsers = role === "ADMIN" || hasPerm(role, perms, "USERS");
   const canSeeContact = role === "ADMIN" || hasPerm(role, perms, "CONTACT");
+
+  // The region filter drives both the revenue KPIs and the latest-orders list.
+  const canFilterByRegion = canSeeRevenue || canSeeOrders;
+  const [region, setRegion] = useState<string>(ALL_REGIONS);
 
   // Quick actions — only the shortcuts the current user is actually allowed to
   // reach. Admins see all; managers see only areas they hold the permission for.
@@ -93,15 +119,37 @@ export function AdminDashboard() {
     },
   ].filter((a) => a.show);
 
-  const revenueQuery = useQuery({
-    queryKey: queryKeys.analytics.revenue({ preset: "month" }),
-    queryFn: () => analyticsApi.revenue({ preset: "month" }),
-    enabled: canSeeRevenue,
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+    enabled: canFilterByRegion,
   });
+  const regions = regionsQuery.data ?? [];
 
+  // If the selected region isn't in the loaded list (deleted/deactivated in
+  // another tab, or a stale code), fall back to the combined view instead of
+  // showing blank KPIs. Derived during render — never downgrade while the list
+  // is still loading (regions is empty until then).
+  const selectedRegionMissing =
+    region !== ALL_REGIONS &&
+    regions.length > 0 &&
+    !regions.some((r) => r.code === region);
+  const effectiveRegion = selectedRegionMissing ? ALL_REGIONS : region;
+  const regionParam =
+    effectiveRegion === ALL_REGIONS ? {} : { region: effectiveRegion };
+
+  // Which regions get their own KPI block: every region in the combined view,
+  // or just the selected one.
+  const kpiRegions =
+    effectiveRegion === ALL_REGIONS
+      ? regions
+      : regions.filter((r) => r.code === effectiveRegion);
+  const revenueQueries = useRevenueByRegion(kpiRegions, canSeeRevenue);
+
+  const recentOrdersParams = { page: 1, limit: 5, ...regionParam };
   const recentOrdersQuery = useQuery({
-    queryKey: queryKeys.orders.adminList({ page: 1, limit: 5 }),
-    queryFn: () => ordersApi.listAdmin({ page: 1, limit: 5 }),
+    queryKey: queryKeys.orders.adminList(recentOrdersParams),
+    queryFn: () => ordersApi.listAdmin(recentOrdersParams),
     enabled: canSeeOrders,
   });
 
@@ -119,83 +167,77 @@ export function AdminDashboard() {
     enabled: canSeeContact && !canSeeUsers,
   });
 
-  const summary = revenueQuery.data?.summary;
-  const currency = revenueQuery.data?.currency ?? "AED";
-
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-8">
-      <header>
-        <h2 className="font-display text-2xl text-ink-900">
-          {user?.firstName
-            ? t("admin.dashboardPage.welcomeBackName", { name: user.firstName })
-            : t("admin.dashboardPage.welcomeBack")}
-        </h2>
-        <p className="mt-1 text-sm text-ink-500">{t("admin.dashboardPage.subtitle")}</p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="font-display text-2xl text-ink-900">
+            {user?.firstName
+              ? t("admin.dashboardPage.welcomeBackName", { name: user.firstName })
+              : t("admin.dashboardPage.welcomeBack")}
+          </h2>
+          <p className="mt-1 text-sm text-ink-500">{t("admin.dashboardPage.subtitle")}</p>
+        </div>
+        {canFilterByRegion && regions.length > 1 ? (
+          <Select
+            value={effectiveRegion}
+            onChange={setRegion}
+            triggerClassName="text-xs py-1.5"
+            aria-label={t("admin.dashboardPage.regionFilterLabel")}
+            options={[
+              { value: ALL_REGIONS, label: t("admin.dashboardPage.allRegionsOption") },
+              ...regions.map((r) => ({ value: r.code, label: r.name })),
+            ]}
+          />
+        ) : null}
       </header>
 
-      <m.section
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-        variants={staggerContainer(0.06)}
-        initial="hidden"
-        animate="show"
-      >
-        <KpiCard
-          label={t("admin.dashboardPage.kpiRevenue")}
-          value={
-            !canSeeRevenue
-              ? "—"
-              : revenueQuery.isPending
-              ? null
-              : formatCompactCurrency(summary?.revenue ?? 0, currency)
-          }
-          title={canSeeRevenue ? formatCurrency(summary?.revenue ?? 0, currency) : undefined}
-          loading={canSeeRevenue && revenueQuery.isPending}
-        />
-        <KpiCard
-          label={t("admin.dashboardPage.kpiOrders")}
-          value={
-            !canSeeRevenue
-              ? "—"
-              : revenueQuery.isPending
-              ? null
-              : String(summary?.activeOrderCount ?? 0)
-          }
-          loading={canSeeRevenue && revenueQuery.isPending}
-        />
-        <KpiCard
-          label={t("admin.dashboardPage.kpiAvgOrderValue")}
-          value={
-            !canSeeRevenue
-              ? "—"
-              : revenueQuery.isPending
-              ? null
-              : formatCurrency(summary?.averageOrderValue ?? 0, currency)
-          }
-          loading={canSeeRevenue && revenueQuery.isPending}
-        />
-        <KpiCard
-          label={
-            canSeeUsers
-              ? t("admin.dashboardPage.kpiActiveCustomers")
-              : t("admin.dashboardPage.kpiNewMessages")
-          }
-          value={
-            canSeeUsers
-              ? userStatsQuery.isPending
-                ? null
-                : String(userStatsQuery.data?.customers ?? 0)
-              : canSeeContact
-              ? contactNewQuery.isPending
+      {canSeeRevenue ? (
+        <div className="flex flex-col gap-6">
+          {regionsQuery.isPending ? (
+            <RegionKpiGroupSkeleton />
+          ) : (
+            kpiRegions.map((r, i) => (
+              <RegionKpiGroup
+                key={r.code}
+                name={r.name}
+                currencyFallback={r.currency}
+                query={revenueQueries[i]}
+              />
+            ))
+          )}
+        </div>
+      ) : null}
+
+      {canSeeUsers || canSeeContact ? (
+        <m.section
+          className="grid gap-4 sm:grid-cols-3"
+          variants={staggerContainer(0.06)}
+          initial="hidden"
+          animate="show"
+        >
+          <KpiCard
+            label={
+              canSeeUsers
+                ? t("admin.dashboardPage.kpiActiveCustomers")
+                : t("admin.dashboardPage.kpiNewMessages")
+            }
+            value={
+              canSeeUsers
+                ? userStatsQuery.isPending
+                  ? null
+                  : String(userStatsQuery.data?.customers ?? 0)
+                : contactNewQuery.isPending
                 ? null
                 : String(contactNewQuery.data?.meta.pagination?.total ?? 0)
-              : "—"
-          }
-          loading={
-            (canSeeUsers && userStatsQuery.isPending) ||
-            (!canSeeUsers && canSeeContact && contactNewQuery.isPending)
-          }
-        />
-      </m.section>
+            }
+            loading={
+              (canSeeUsers && userStatsQuery.isPending) ||
+              (!canSeeUsers && canSeeContact && contactNewQuery.isPending)
+            }
+          />
+        </m.section>
+      ) : null}
 
       {quickActions.length > 0 ? (
         <m.section variants={fadeInUp} initial="hidden" animate="show">
@@ -294,7 +336,7 @@ export function AdminDashboard() {
                         <Badge tone="ink">{order.status}</Badge>
                       </td>
                       <td className="px-4 py-3 text-end text-ink-900">
-                        {formatCurrency(order.totalAmount, currency)}
+                        {formatCurrency(order.totalAmount, order.currency ?? "AED")}
                       </td>
                     </tr>
                   ))}
@@ -313,6 +355,73 @@ interface QuickAction {
   href: string;
   icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
   show: boolean;
+}
+
+/**
+ * Revenue / orders / AOV for one region, always shown in THAT region's currency.
+ * Prices differ per region with no FX rate, so figures are never combined across
+ * regions — each region owns its own block.
+ */
+function RegionKpiGroup({
+  name,
+  currencyFallback,
+  query,
+}: {
+  name: string;
+  currencyFallback: string;
+  query: RevenueQuery | undefined;
+}) {
+  const { t } = useT();
+  const summary = query?.data?.summary;
+  const currency = query?.data?.currency ?? currencyFallback ?? "AED";
+  const pending = query?.isPending ?? true;
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <h3 className="font-display text-lg text-ink-900">{name}</h3>
+        <Badge tone="neutral">{currency}</Badge>
+      </div>
+      <m.div
+        className="grid gap-4 sm:grid-cols-3"
+        variants={staggerContainer(0.06)}
+        initial="hidden"
+        animate="show"
+      >
+        <KpiCard
+          label={t("admin.dashboardPage.kpiRevenue")}
+          value={pending ? null : formatCompactCurrency(summary?.revenue ?? 0, currency)}
+          title={formatCurrency(summary?.revenue ?? 0, currency)}
+          loading={pending}
+        />
+        <KpiCard
+          label={t("admin.dashboardPage.kpiOrders")}
+          value={pending ? null : String(summary?.activeOrderCount ?? 0)}
+          loading={pending}
+        />
+        <KpiCard
+          label={t("admin.dashboardPage.kpiAvgOrderValue")}
+          value={pending ? null : formatCurrency(summary?.averageOrderValue ?? 0, currency)}
+          loading={pending}
+        />
+      </m.div>
+    </div>
+  );
+}
+
+function RegionKpiGroupSkeleton() {
+  return (
+    <div>
+      <Skeleton className="mb-3 h-6 w-32" />
+      <div className="grid gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="rounded-2xl border border-ink-100 bg-white p-5">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="mt-4 h-8 w-2/3" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 interface KpiCardProps {

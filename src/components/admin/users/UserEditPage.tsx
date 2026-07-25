@@ -82,6 +82,11 @@ export function UserEditPage({ id }: { id: string }) {
                   : undefined,
               avatar: v.avatar,
             };
+            // Blank = keep current password; a filled field resets it (admin's
+            // reset always wins over the manager's own password).
+            if (v.password) {
+              payload.password = v.password;
+            }
             await updateMutation.mutateAsync(payload);
           }}
         />

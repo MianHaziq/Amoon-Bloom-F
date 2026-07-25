@@ -162,8 +162,10 @@ export function OrderDetailPage({ id }: { id: string }) {
                       : t("order.vatLabel", { rate: order.vatRatePercent! })}
                   </dt>
                   <dd>
-                    {order.vatInclusive ? "" : "+ "}
-                    {formatCurrency(vatAmount)}
+                    {/* Inclusive VAT is already inside the item prices; showing its
+                        extracted amount alongside a "VAT Inclusive" label only
+                        confuses, so the figure is shown for exclusive VAT only. */}
+                    {order.vatInclusive ? null : <>+ {formatCurrency(vatAmount)}</>}
                   </dd>
                 </div>
               ) : null}

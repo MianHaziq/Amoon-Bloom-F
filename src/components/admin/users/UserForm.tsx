@@ -55,10 +55,21 @@ function useUserFormSchemas() {
     };
 
     const createSchema = baseSchema
-      .extend({ password: z.string().min(6, t("admin.userForm.passwordMin")) })
+      .extend({ password: z.string().min(8, t("admin.userForm.passwordMin")) })
       .superRefine(requireManagerFields);
 
-    const editSchema = baseSchema.superRefine(requireManagerFields);
+    // On edit the password is optional: an empty field means "keep the current
+    // password", while a filled one resets it (overriding whatever the manager
+    // set) and must still clear the same 8-char bar as login.
+    const editSchema = baseSchema
+      .extend({
+        password: z
+          .string()
+          .refine((v) => v.length === 0 || v.length >= 8, {
+            message: t("admin.userForm.passwordMin"),
+          }),
+      })
+      .superRefine(requireManagerFields);
     return { createSchema, editSchema };
   }, [t]);
 }
@@ -188,11 +199,23 @@ export function UserForm({
               containerClassName="sm:col-span-2"
               {...register("email")}
             />
-            {mode === "create" ? (
+            {/* Create always needs an initial password. On edit, the reset
+                field is a manager-only capability — hidden when editing a
+                customer. */}
+            {mode === "create" || role === "MANAGER" ? (
               <Input
-                label={t("admin.userForm.tempPasswordLabel")}
+                label={
+                  mode === "create"
+                    ? t("admin.userForm.tempPasswordLabel")
+                    : t("admin.userForm.editPasswordLabel")
+                }
                 type="password"
-                hint={t("admin.userForm.tempPasswordHint")}
+                autoComplete="new-password"
+                hint={
+                  mode === "create"
+                    ? t("admin.userForm.tempPasswordHint")
+                    : t("admin.userForm.editPasswordHint")
+                }
                 error={errors.password?.message}
                 containerClassName="sm:col-span-2"
                 {...register("password")}
