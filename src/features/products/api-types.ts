@@ -49,6 +49,8 @@ export interface ApiProductRegionPrice {
   regionId: string;
   price: number | null;
   discountedPrice: number | null;
+  /** Per-region "ships within N days" override for this product (null = none). */
+  deliveryLeadDays?: number | null;
 }
 
 export interface ApiProduct {

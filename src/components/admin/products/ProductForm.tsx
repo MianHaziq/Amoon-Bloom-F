@@ -77,6 +77,13 @@ function useProductFormSchema() {
         z.object({
           price: z.number().nonnegative().nullable(),
           discountedPrice: z.number().nonnegative().nullable(),
+          // Per-region "ships within N days" override for this product.
+          deliveryLeadDays: z
+            .number()
+            .int(t("admin.productForm.deliveryLeadDaysInvalid"))
+            .min(0, t("admin.productForm.deliveryLeadDaysInvalid"))
+            .max(30, t("admin.productForm.deliveryLeadDaysInvalid"))
+            .nullable(),
         })
       ),
       // Gift card add-on — free personalized message, toggled per product.
@@ -181,7 +188,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       regionPrices: Object.fromEntries(
         (initial.regionPrices ?? []).map((rp) => [
           rp.regionId,
-          { price: rp.price, discountedPrice: rp.discountedPrice },
+          { price: rp.price, discountedPrice: rp.discountedPrice, deliveryLeadDays: rp.deliveryLeadDays ?? null },
         ])
       ),
       giftCardEnabled: initial.giftCardEnabled ?? false,
@@ -295,6 +302,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         regionId,
         price: v.price ?? null,
         discountedPrice: v.discountedPrice ?? null,
+        deliveryLeadDays: v.deliveryLeadDays ?? null,
       })),
       giftCardEnabled: values.giftCardEnabled,
       giftCardExtraPrice:
@@ -405,7 +413,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               <p className="mb-3 text-xs text-ink-500">
                 {t("admin.productForm.regionalPricingHint", { currency: region.currency })}
               </p>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <Input
                   label={t("admin.productForm.regionPriceLabel", { currency: region.currency })}
                   type="number"
@@ -434,6 +442,24 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                     )?.[region.id]?.discountedPrice?.message
                   }
                   {...register(`regionPrices.${region.id}.discountedPrice`, {
+                    setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+                  })}
+                />
+                <Input
+                  label={t("admin.productForm.regionLeadDaysLabel")}
+                  type="number"
+                  step="1"
+                  min="0"
+                  max="30"
+                  hint={t("admin.productForm.regionLeadDaysHint")}
+                  error={
+                    (
+                      errors.regionPrices as
+                        | Record<string, { deliveryLeadDays?: { message?: string } }>
+                        | undefined
+                    )?.[region.id]?.deliveryLeadDays?.message
+                  }
+                  {...register(`regionPrices.${region.id}.deliveryLeadDays`, {
                     setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
                   })}
                 />

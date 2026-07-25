@@ -21,8 +21,16 @@ export interface ApiCategory {
   /** Overrides Settings.defaultDeliveryLeadDays for every product in this category
    *  that doesn't set its own Product.deliveryLeadDays. Null = no override. */
   deliveryLeadDays?: number | null;
+  /** Per-region overrides of the category lead time (staff reads). One entry per
+   *  region the category is in; deliveryLeadDays null = no override for that region. */
+  regionLeadDays?: ApiCategoryRegionLead[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ApiCategoryRegionLead {
+  regionId: string;
+  deliveryLeadDays: number | null;
 }
 
 export interface ApiCategoryDetail extends ApiCategory {
@@ -39,6 +47,8 @@ export interface ApiCategoryCreateInput {
   /** Regions this category should be visible in. Defaults to the default region (UAE) if omitted. */
   regionIds?: string[];
   deliveryLeadDays?: number | null;
+  /** Per-region lead-time overrides: [{ regionId, deliveryLeadDays }]. */
+  regionLeadDays?: ApiCategoryRegionLead[];
 }
 
 export type ApiCategoryUpdateInput = Partial<ApiCategoryCreateInput>;

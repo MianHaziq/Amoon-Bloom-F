@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
 import { Button, Input, Textarea } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { RegionPicker } from "@/components/admin/RegionPicker";
 import { Select } from "@/components/admin/Select";
+import { regionsApi } from "@/features/regions/api/regions.api";
+import { queryKeys } from "@/services/queryKeys";
 import { useT } from "@/i18n/useT";
 import type {
   ApiCategory,
@@ -39,6 +42,16 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
           .max(30, t("admin.categoryForm.deliveryLeadDaysInvalid"))
           .nullable(),
         regionIds: z.array(z.string()),
+        // Per-region lead-time overrides, keyed by regionId (null = no override).
+        regionLeadDays: z.record(
+          z.string(),
+          z
+            .number()
+            .int(t("admin.categoryForm.deliveryLeadDaysInvalid"))
+            .min(0, t("admin.categoryForm.deliveryLeadDaysInvalid"))
+            .max(30, t("admin.categoryForm.deliveryLeadDaysInvalid"))
+            .nullable()
+        ),
       }),
     [t]
   );
@@ -48,6 +61,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
   const {
     register,
     control,
+    watch,
     handleSubmit,
     reset,
     formState: { errors },
@@ -62,11 +76,30 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       status: "PUBLISHED",
       deliveryLeadDays: null,
       regionIds: [],
+      regionLeadDays: {},
     },
   });
 
+  // Regions the category is in (from the picker) drive which per-region lead-day
+  // inputs to show, and we need their names for the labels.
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+  });
+  const selectedRegionIds = watch("regionIds");
+  const selectedRegions = (regionsQuery.data ?? []).filter((r) =>
+    selectedRegionIds?.includes(r.id)
+  );
+
+  // Reset the form ONLY when a different category loads — not on every `initial`
+  // reference change. A background refetch (react-query window-focus / staleness)
+  // returning a fresh object would otherwise re-run reset() and wipe unsaved edits,
+  // e.g. a per-region delivery day the admin just typed but hasn't saved.
+  const initedForId = useRef<string | null>(null);
   useEffect(() => {
     if (!initial) return;
+    if (initedForId.current === initial.id) return;
+    initedForId.current = initial.id;
     reset({
       title: initial.title,
       title_ar: initial.title_ar ?? "",
@@ -76,6 +109,9 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       status: initial.status ?? "PUBLISHED",
       deliveryLeadDays: initial.deliveryLeadDays ?? null,
       regionIds: initial.regionIds ?? [],
+      regionLeadDays: Object.fromEntries(
+        (initial.regionLeadDays ?? []).map((rl) => [rl.regionId, rl.deliveryLeadDays])
+      ),
     });
   }, [initial, reset]);
 
@@ -89,6 +125,13 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       status: values.status,
       deliveryLeadDays: values.deliveryLeadDays,
       regionIds: values.regionIds,
+      // Send every per-region lead the form holds; the backend only applies the
+      // ones for regions the category is actually in (targetRegionIds). We do NOT
+      // filter here by values.regionIds — an id-format mismatch would silently
+      // drop the override and the backend would keep the stale value.
+      regionLeadDays: Object.entries(values.regionLeadDays ?? {}).map(
+        ([regionId, days]) => ({ regionId, deliveryLeadDays: days ?? null })
+      ),
     });
   });
 
@@ -180,6 +223,43 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
             )}
           />
         </section>
+
+        {selectedRegions.length > 0 && (
+          <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+            <h3 className="mb-1 font-display text-lg text-ink-900">
+              {t("admin.categoryForm.regionLeadDaysHeading")}
+            </h3>
+            <p className="mb-3 text-xs text-ink-500">
+              {t("admin.categoryForm.regionLeadDaysHint")}
+            </p>
+            <div className="flex flex-col gap-3">
+              {selectedRegions.map((region) => (
+                <Controller
+                  key={region.id}
+                  control={control}
+                  name={`regionLeadDays.${region.id}`}
+                  render={({ field }) => (
+                    <Input
+                      label={region.name}
+                      type="number"
+                      min={0}
+                      max={30}
+                      step={1}
+                      placeholder={t("admin.categoryForm.deliveryLeadDaysPlaceholder")}
+                      // Fully controlled so the typed value is always captured into
+                      // form state — no register/mount-timing gaps for these
+                      // conditionally-rendered per-region fields.
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(e.target.value === "" ? null : Number(e.target.value))
+                      }
+                    />
+                  )}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
           <h3 className="mb-4 font-display text-lg text-ink-900">{t("admin.categoryForm.coverImageHeading")}</h3>
