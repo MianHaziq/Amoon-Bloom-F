@@ -180,6 +180,30 @@ export function AccountOrderDetail({ id }: { id: string }) {
               </dd>
             </div>
           ) : null}
+          {order.vatRatePercent != null &&
+          (order.vatAmount ?? order.taxAmount ?? 0) > 0 ? (
+            <div className="flex justify-between text-ink-500">
+              <dt>
+                {order.vatInclusive
+                  ? t("order.vatIncludedLabel", { rate: order.vatRatePercent })
+                  : t("order.vatLabel", { rate: order.vatRatePercent })}
+              </dt>
+              <dd>
+                {/* Inclusive VAT is already inside the item prices — label only,
+                    no figure; exclusive VAT is added on top, so it shows. */}
+                {order.vatInclusive ? null : (
+                  <>
+                    +{" "}
+                    <CurrencyAmount
+                      amount={order.vatAmount ?? order.taxAmount ?? 0}
+                      currency={currency}
+                      locale={curLocale}
+                    />
+                  </>
+                )}
+              </dd>
+            </div>
+          ) : null}
           <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">
             <dt>{t("common.total")}</dt>
             <dd><CurrencyAmount amount={order.totalAmount} currency={currency} locale={curLocale} /></dd>

@@ -57,7 +57,7 @@ export function GuestOrderSuccess() {
         {order ? (
           <>
             <ReceiptCard order={order} />
-            <ReceiptActions />
+            <ReceiptActions order={order} />
           </>
         ) : null}
 

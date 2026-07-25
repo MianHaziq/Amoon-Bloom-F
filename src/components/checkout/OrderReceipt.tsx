@@ -49,7 +49,7 @@ export function OrderReceipt({ orderId }: { orderId?: string }) {
         ) : (
           <>
             <ReceiptCard order={query.data} />
-            <ReceiptActions>
+            <ReceiptActions order={query.data}>
               <Link href={ROUTES.shop} className="contents">
                 <Button size="lg" variant="outline" fullWidth className="sm:w-auto">
                   {t("common.continueShopping")}
