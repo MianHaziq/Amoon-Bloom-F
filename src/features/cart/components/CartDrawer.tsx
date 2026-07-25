@@ -7,6 +7,8 @@ import { ArrowRight, BagIcon } from "@/components/icons";
 import { CartLineItem } from "./CartLineItem";
 import { cartLineKey } from "@/features/cart/variantKey";
 import { OrderDeliveryNote, maxCartLeadDays } from "./OrderDeliveryNote";
+import { usePublicVat } from "@/features/vat/hooks/usePublicVat";
+import { vatHint } from "@/features/vat/vatDisplay";
 import { microTransition } from "@/lib/motion";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
@@ -27,6 +29,7 @@ export function CartDrawer() {
   );
   const orderLeadDays = maxCartLeadDays(items);
   const { currency, locale } = useCurrency();
+  const hint = vatHint(usePublicVat());
 
   return (
     <Drawer
@@ -75,6 +78,13 @@ export function CartDrawer() {
             <p className="mt-1 text-xs text-ink-500">
               {t("cart.deliveryNote")}
             </p>
+            {hint ? (
+              <p className="mt-1 text-xs text-ink-500">
+                {hint.kind === "inclusive"
+                  ? t("product.vatInclusive")
+                  : t("product.vatExclusiveNote", { rate: hint.rate })}
+              </p>
+            ) : null}
             <div className="mt-4 flex flex-col gap-2">
               <Link
                 href={ROUTES.checkout}

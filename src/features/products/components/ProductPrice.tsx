@@ -2,7 +2,9 @@
 
 import { CurrencyAmount } from "@/components/ui";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
-import { useShowVatInclusive } from "@/features/vat/hooks/useShowVatInclusive";
+import { usePublicVat } from "@/features/vat/hooks/usePublicVat";
+import { vatHint } from "@/features/vat/vatDisplay";
+import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { useT } from "@/i18n/useT";
 import { cn } from "@/lib/cn";
 import type { Product } from "../types";
@@ -26,10 +28,18 @@ export function ProductPrice({ product, size = "lg", className }: ProductPricePr
     product.compareAtPrice &&
     product.compareAtPrice.amount > product.price.amount;
 
-  // Same public VAT config the checkout preview reads (§ CheckoutClient.tsx) —
-  // only announce "VAT Inclusive" on the price when the region's VAT is both
-  // turned on and actually baked into catalogue prices.
-  const showVatInclusive = useShowVatInclusive();
+  // Same public VAT config the checkout preview reads (§ CheckoutClient.tsx).
+  // Inclusive regions announce "VAT Inclusive" (no amount); exclusive regions
+  // (whole-catalogue scope) announce "+ X% VAT" so the addition is visible
+  // before checkout.
+  //
+  // The config is client-fetched (react-query), so it's absent during SSR but may
+  // be present (cached) on the first client render — rendering it immediately
+  // caused a hydration mismatch. Gate it behind mount so SSR and the first client
+  // render agree (no hint), then reveal it after hydration.
+  const vat = usePublicVat();
+  const hydrated = useIsHydrated();
+  const hint = hydrated ? vatHint(vat) : null;
 
   return (
     <div className={cn("flex items-baseline gap-3", className)}>
@@ -53,9 +63,13 @@ export function ProductPrice({ product, size = "lg", className }: ProductPricePr
           )}
         />
       ) : null}
-      {showVatInclusive ? (
+      {hint?.kind === "inclusive" ? (
         <span className="text-sm font-medium text-bloom-600">
           {t("product.vatInclusive")}
+        </span>
+      ) : hint?.kind === "exclusive" ? (
+        <span className="text-sm font-medium text-ink-500">
+          {t("product.vatExclusiveNote", { rate: hint.rate })}
         </span>
       ) : null}
     </div>

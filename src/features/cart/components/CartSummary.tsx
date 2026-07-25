@@ -13,6 +13,8 @@ import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { OrderDeliveryNote, maxCartLeadDays } from "./OrderDeliveryNote";
+import { usePublicVat } from "@/features/vat/hooks/usePublicVat";
+import { vatHint } from "@/features/vat/vatDisplay";
 import { useT } from "@/i18n/useT";
 
 interface CartSummaryProps {
@@ -47,6 +49,13 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
       ? Number(currentRegion.shippingFlatRate)
       : 0;
   const total = subtotal + shipping;
+
+  // VAT is only resolved for real at checkout, but the region's public config is
+  // enough to tell the shopper up front whether prices are VAT-inclusive or a
+  // "+ X% VAT" will be added. Shown on the cart page only (the checkout page has
+  // its own live VAT line, so we don't duplicate it there).
+  const vatConfig = usePublicVat();
+  const hint = variant === "page" ? vatHint(vatConfig) : null;
 
   return (
     <aside
@@ -98,6 +107,14 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
           <CurrencyAmount amount={total} currency={currency} locale={locale} />
         </m.span>
       </div>
+
+      {hint ? (
+        <p className="-mt-2 text-xs text-ink-500">
+          {hint.kind === "inclusive"
+            ? t("product.vatInclusive")
+            : t("product.vatExclusiveNote", { rate: hint.rate })}
+        </p>
+      ) : null}
 
       {variant === "page" && (
         <Link href={ROUTES.checkout} className="contents">

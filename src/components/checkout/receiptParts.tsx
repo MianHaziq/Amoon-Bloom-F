@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { m } from "motion/react";
 import { Button, CurrencyAmount } from "@/components/ui";
 import {
@@ -26,6 +26,7 @@ import { queryKeys } from "@/services/queryKeys";
 import { resolveRegionContact } from "@/features/location/regionContact";
 import { SelectedOptions } from "@/features/products/components/SelectedOptions";
 import { OrderItemExtras } from "@/features/orders/components/OrderItemExtras";
+import { downloadReceiptPdf } from "@/features/orders/receiptPdf";
 import type { MessageKey } from "@/i18n";
 import type { ApiOrder, OrderStatus, PaymentStatus } from "@/features/orders/types";
 import {
@@ -542,16 +543,50 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
 }
 
 /**
- * Print / Download-PDF toolbar. Both actions route through the browser's native
- * print dialog (whose "Save as PDF" destination produces the download), so no
- * new dependency or business logic is introduced. Optional `children` render
- * before the print controls for context actions (Back, Track, …).
+ * Print / Download-PDF toolbar. "Download PDF" generates a real PDF file
+ * client-side from the rendered receipt (see `downloadReceiptPdf`) so it
+ * downloads directly on every device — mobile browsers can't produce a file
+ * from `window.print()`. "Print" stays a desktop-only affordance (the native
+ * print dialog is awkward on touch devices), so it's hidden on phones/tablets.
+ * Optional `children` render before the controls for context actions
+ * (Back, Track, …).
  */
-export function ReceiptActions({ children }: { children?: ReactNode }) {
+export function ReceiptActions({
+  order,
+  children,
+}: {
+  order?: ApiOrder;
+  children?: ReactNode;
+}) {
   const { t } = useT();
+  const [generating, setGenerating] = useState(false);
+
   const handlePrint = () => {
     if (typeof window !== "undefined") window.print();
   };
+
+  const handleDownloadPdf = async () => {
+    if (typeof document === "undefined") return;
+    const node = document.querySelector<HTMLElement>(".receipt-print-area");
+    // No receipt on the page (shouldn't happen) — fall back to the print dialog.
+    if (!node) {
+      handlePrint();
+      return;
+    }
+    setGenerating(true);
+    try {
+      const ref = order?.orderNumber || order?.id?.slice(0, 8) || "receipt";
+      await downloadReceiptPdf(node, `receipt-${ref}.pdf`);
+    } catch (err) {
+      // If capture/encoding fails on some device, degrade to the native print
+      // dialog (whose "Save as PDF" still works) rather than doing nothing.
+      console.error("[receipt] PDF generation failed; falling back to print", err);
+      handlePrint();
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <m.div
       className="no-print mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center"
@@ -564,7 +599,9 @@ export function ReceiptActions({ children }: { children?: ReactNode }) {
           {children}
         </m.div>
       ) : null}
-      <m.div variants={staggerItem}>
+      {/* Desktop-only: printing is clumsy on touch devices, where the PDF
+          download below is the primary action. */}
+      <m.div variants={staggerItem} className="hidden lg:block">
         <Button
           size="lg"
           variant="outline"
@@ -581,8 +618,9 @@ export function ReceiptActions({ children }: { children?: ReactNode }) {
           size="lg"
           fullWidth
           className="sm:w-auto"
+          isLoading={generating}
           leadingIcon={<DownloadIcon size={16} />}
-          onClick={handlePrint}
+          onClick={handleDownloadPdf}
         >
           {t("order.downloadPdf")}
         </Button>

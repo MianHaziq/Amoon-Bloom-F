@@ -1,8 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { vatApi } from "../api/vat.api";
-import { queryKeys } from "@/services/queryKeys";
+import { usePublicVat } from "./usePublicVat";
 
 /**
  * True when the current region's VAT is enabled AND baked into catalogue prices
@@ -11,10 +9,6 @@ import { queryKeys } from "@/services/queryKeys";
  * both read the same region-wide public config.
  */
 export function useShowVatInclusive(): boolean {
-  const vatQuery = useQuery({
-    queryKey: queryKeys.vat.public(),
-    queryFn: () => vatApi.getPublic(),
-    staleTime: 5 * 60_000,
-  });
-  return Boolean(vatQuery.data?.enabled && vatQuery.data?.inclusive);
+  const config = usePublicVat();
+  return Boolean(config?.enabled && config?.inclusive);
 }
