@@ -120,3 +120,23 @@ export function formatDayCount(n: number, locale: Locale = "en"): string {
       return n >= 3 && n <= 10 ? `${n} أيام` : `${n} يوماً`;
   }
 }
+
+/**
+ * Format a "HH:mm" (24h) cutoff time into a localized clock label — e.g. "6 PM" / "٦ م"
+ * for "18:00", "6:30 PM" for "18:30". Minutes are omitted when zero. Used for the
+ * same-day delivery cutoff shown across the storefront (announcement bar, cart). Returns
+ * the input unchanged if it isn't a valid HH:mm string.
+ */
+export function formatCutoffTime(hhmm: string, locale: string = "en-AE"): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
+  if (!m) return hhmm;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return hhmm;
+  const d = new Date(2000, 0, 1, h, min);
+  return new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    ...(min ? { minute: "2-digit" } : {}),
+    hour12: true,
+  }).format(d);
+}

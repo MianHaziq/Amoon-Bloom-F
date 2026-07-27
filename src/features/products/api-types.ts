@@ -53,6 +53,14 @@ export interface ApiProductRegionPrice {
   deliveryLeadDays?: number | null;
 }
 
+/** Per-zone "ships within N days" override for this product. One entry per delivery
+ *  zone that has an override; deliveryLeadDays null = no override for that zone
+ *  (falls back to the region/product/category/default chain). */
+export interface ApiProductZoneLead {
+  zoneId: string;
+  deliveryLeadDays: number | null;
+}
+
 export interface ApiProduct {
   id: string;
   title: string;
@@ -63,6 +71,9 @@ export interface ApiProduct {
   discountedPrice: number | null;
   /** Per-region manual price overrides (admin-entered, no auto FX). Present on staff reads only. */
   regionPrices?: ApiProductRegionPrice[];
+  /** Per-zone lead-time overrides (staff reads). One entry per zone that has an
+   *  override; may be empty/absent when no zone overrides exist. */
+  zoneLeadDays?: ApiProductZoneLead[];
   /** Free gift-card message add-on, offered per product (most products have it). */
   giftCardEnabled?: boolean;
   giftCardExtraPrice?: number | null;
@@ -124,6 +135,9 @@ export interface ApiProductCreateInput {
   /** Per-region manual price overrides. One entry per region that needs an override —
    *  a region left out (or with null price/discountedPrice) falls back to the base price. */
   regionPrices?: ApiProductRegionPrice[];
+  /** Per-zone lead-time overrides: [{ zoneId, deliveryLeadDays }]. Full replace on update;
+   *  entries with a null/blank lead are dropped server-side. */
+  zoneLeadDays?: ApiProductZoneLead[];
   giftCardEnabled?: boolean;
   giftCardExtraPrice?: number | null;
   customNameEnabled?: boolean;

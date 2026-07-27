@@ -1,10 +1,24 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DEFAULT_REGION_CODE } from "@/features/location/region";
+import { siteConfig } from "@/config/site";
 
 export interface LocationState {
   /** The backend region's `code` (e.g. "UAE", "SA") — regions are admin-managed
    * data (`GET /regions`), not a fixed compile-time list. */
   country: string;
+  /**
+   * The active region's currency code (e.g. "AED", "SAR"), seeded server-side
+   * from the `region` cookie + live regions list (see `StoreProvider`'s
+   * `initialCurrency` prop). This is a HYDRATION-STABLE mirror of the currency:
+   * `useCurrency` reads it for the first render so SSR and the first client
+   * render always agree on the currency symbol, then switches to the live
+   * `GET /regions` lookup post-hydration (which resolves the same value, so no
+   * flash, but stays reactive to a client-side region switch). Without this,
+   * the currency was resolved purely from the react-query cache whose
+   * availability on the first client render could differ from SSR — flipping
+   * the AED/SAR sign and throwing a hydration mismatch on the price glyph.
+   */
+  currency: string;
   /** A delivery zone's `name` (e.g. "Dubai") — display/prefill convenience
    * only; never used for pricing or checkout validation (see DeliveryZone). */
   city: string;
@@ -23,6 +37,7 @@ export interface LocationState {
 
 const initialState: LocationState = {
   country: DEFAULT_REGION_CODE,
+  currency: siteConfig.currency,
   // No synchronous default city available now that zones are admin data —
   // left blank until live zone data resolves one (LocationSheet/DeliverToPill
   // both degrade gracefully to an empty string).
@@ -76,6 +91,16 @@ const locationSlice = createSlice({
       state.country = action.payload;
     },
     /**
+     * Seeds the active currency from the server-resolved region (see
+     * `StoreProvider`'s `initialCurrency`). SSR-seed only — mirrors
+     * `setCountryFromRegion`; the live `GET /regions` lookup in `useCurrency`
+     * takes over after hydration so a client-side region switch still updates
+     * the currency without a full reload.
+     */
+    setCurrencyFromRegion(state, action: PayloadAction<string>) {
+      if (action.payload) state.currency = action.payload;
+    },
+    /**
      * Refreshes which regions are currently active (SSR seed on every page
      * load, or the client's tab-refocus check — see `LocationPersistence`).
      * Also silently corrects `country` (and clears `city`, since it may no
@@ -103,6 +128,7 @@ export const {
   setLocation,
   setLocationFromStorage,
   setCountryFromRegion,
+  setCurrencyFromRegion,
   setActiveRegions,
 } = locationSlice.actions;
 export default locationSlice.reducer;

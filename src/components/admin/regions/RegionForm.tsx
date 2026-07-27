@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button, Input } from "@/components/ui";
-import { ChevronDown } from "@/components/icons";
+import { ChevronDown, PlusIcon, TrashIcon } from "@/components/icons";
 import { RegionFlag } from "@/features/location/components/RegionFlag";
 import { CountryPicker } from "./CountryPicker";
 import { useT } from "@/i18n/useT";
@@ -19,6 +19,39 @@ interface RegionFormProps {
   submitLabel: string;
   submitting?: boolean;
 }
+
+/** Curated IANA timezone list for the region picker — GCC first, since that's
+ *  where every live region operates today. Kept short on purpose: this drives
+ *  same-day cutoff / allowed-weekday / blackout math, so it's the operating
+ *  timezone, not a full tz database dump. */
+const TIMEZONE_OPTIONS = [
+  "Asia/Dubai",
+  "Asia/Riyadh",
+  "Asia/Qatar",
+  "Asia/Kuwait",
+  "Asia/Bahrain",
+  "Asia/Muscat",
+] as const;
+
+const DEFAULT_TIMEZONE = "Asia/Dubai";
+
+/** Matches the visual language of the `Input` component (rounded-2xl, bloom focus
+ *  ring) for the native controls (timezone <select>, blackout date/time inputs)
+ *  that the `Input` wrapper doesn't cover. */
+const NATIVE_CONTROL_CLASS =
+  "h-[50px] w-full rounded-2xl border border-ink-200 bg-white px-4 text-base text-ink-900 focus:border-bloom-400 focus:outline-none focus:ring-4 focus:ring-bloom-100";
+
+/** 0=Sun..6=Sat, matching the backend's `deliveryDays` convention. Each maps to
+ *  a short weekday i18n key rendered as a checkbox. */
+const WEEKDAYS: { day: number; labelKey: string }[] = [
+  { day: 0, labelKey: "weekdaySun" },
+  { day: 1, labelKey: "weekdayMon" },
+  { day: 2, labelKey: "weekdayTue" },
+  { day: 3, labelKey: "weekdayWed" },
+  { day: 4, labelKey: "weekdayThu" },
+  { day: 5, labelKey: "weekdayFri" },
+  { day: 6, labelKey: "weekdaySat" },
+];
 
 /** The 9 legal-citation base names — each gets an English + `_ar` field.
  *  Required on create (see createSchema below), optional on edit, mirroring
@@ -394,6 +427,29 @@ export function RegionForm({
         .int(t("admin.regionForm.standardDeliveryDaysWhole"))
         .nonnegative(t("admin.regionForm.standardDeliveryDaysMin"))
         .nullable(),
+      // City-level delivery configuration. Defaults live in `defaultValues`
+      // below (not `.default()` here) so the schema's input and output types
+      // stay identical — the resolver cast relies on that, exactly like the
+      // rest of this schema.
+      timezone: z.string().min(1),
+      freeDeliveryThreshold: z
+        .number()
+        .nonnegative(t("admin.regionForm.freeDeliveryThresholdMin"))
+        .nullable(),
+      deliveryDays: z.array(z.number().int().min(0).max(6)),
+      sameDayEnabled: z.boolean(),
+      // Kept as a plain string in form state ("" = none) to avoid a null in a
+      // controlled time input; normalized to null on submit.
+      sameDayCutoff: z.string(),
+      codEnabled: z.boolean(),
+      blackoutDates: z.array(
+        z.object({
+          id: z.string().optional(),
+          date: z.string(),
+          label: z.string(),
+          label_ar: z.string(),
+        })
+      ),
       iso2: z
         .string()
         .refine((v) => v === "" || /^[A-Za-z]{2}$/.test(v), t("admin.regionForm.iso2Invalid"))
@@ -460,6 +516,7 @@ export function RegionForm({
     reset,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(
@@ -473,6 +530,13 @@ export function RegionForm({
       legalEntity: "",
       shippingFlatRate: null,
       standardDeliveryDays: null,
+      timezone: DEFAULT_TIMEZONE,
+      freeDeliveryThreshold: null,
+      deliveryDays: [],
+      sameDayEnabled: false,
+      sameDayCutoff: "",
+      codEnabled: true,
+      blackoutDates: [],
       iso2: "",
       contactEmail: "",
       contactPhone: "",
@@ -490,6 +554,25 @@ export function RegionForm({
 
   const iso2Value = watch("iso2");
   const allValues = watch();
+  const sameDayEnabled = watch("sameDayEnabled");
+  const selectedDeliveryDays = watch("deliveryDays") ?? [];
+
+  const {
+    fields: blackoutFields,
+    append: appendBlackout,
+    remove: removeBlackout,
+  } = useFieldArray({ control, name: "blackoutDates" });
+
+  // deliveryDays is a number[] (0=Sun..6=Sat), not a set of boolean flags, so the
+  // weekday checkboxes are driven manually rather than via `register` (which would
+  // collect checked values as strings). Kept sorted so the payload is stable.
+  const toggleDeliveryDay = (day: number) => {
+    const current = watch("deliveryDays") ?? [];
+    const next = current.includes(day)
+      ? current.filter((d) => d !== day)
+      : [...current, day].sort((a, b) => a - b);
+    setValue("deliveryDays", next, { shouldDirty: true });
+  };
 
   // Only meaningful in edit mode — a create-mode field can never be empty at
   // this point (Zod already blocked submission). Flags a field left over from
@@ -561,6 +644,19 @@ export function RegionForm({
       legalEntity: initial.legalEntity ?? "",
       shippingFlatRate: initial.shippingFlatRate != null ? Number(initial.shippingFlatRate) : null,
       standardDeliveryDays: initial.standardDeliveryDays ?? null,
+      timezone: initial.timezone || DEFAULT_TIMEZONE,
+      freeDeliveryThreshold:
+        initial.freeDeliveryThreshold != null ? Number(initial.freeDeliveryThreshold) : null,
+      deliveryDays: initial.deliveryDays ?? [],
+      sameDayEnabled: initial.sameDayEnabled ?? false,
+      sameDayCutoff: initial.sameDayCutoff ?? "",
+      codEnabled: initial.codEnabled ?? true,
+      blackoutDates: (initial.blackoutDates ?? []).map((b) => ({
+        id: b.id,
+        date: b.date,
+        label: b.label ?? "",
+        label_ar: b.label_ar ?? "",
+      })),
       iso2: initial.iso2 ?? "",
       contactEmail: initial.contactEmail ?? "",
       contactPhone: initial.contactPhone ?? "",
@@ -600,6 +696,20 @@ export function RegionForm({
       legalEntity: v.legalEntity?.trim() || null,
       shippingFlatRate: v.shippingFlatRate,
       standardDeliveryDays: v.standardDeliveryDays,
+      timezone: v.timezone?.trim() || DEFAULT_TIMEZONE,
+      freeDeliveryThreshold: v.freeDeliveryThreshold,
+      deliveryDays: v.deliveryDays ?? [],
+      sameDayEnabled: v.sameDayEnabled,
+      sameDayCutoff: v.sameDayCutoff?.trim() ? v.sameDayCutoff.trim() : null,
+      codEnabled: v.codEnabled,
+      blackoutDates: (v.blackoutDates ?? [])
+        .filter((b) => b.date?.trim())
+        .map((b) => ({
+          ...(b.id ? { id: b.id } : {}),
+          date: b.date.trim(),
+          label: b.label?.trim() || null,
+          label_ar: b.label_ar?.trim() || null,
+        })),
       iso2: v.iso2?.trim() ? v.iso2.trim().toUpperCase() : null,
       contactEmail: v.contactEmail?.trim() || null,
       contactPhone: v.contactPhone?.trim() || null,
@@ -710,6 +820,156 @@ export function RegionForm({
                 className="mb-2.5 h-10 w-10"
               />
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+          <h3 className="mb-1 font-display text-lg text-ink-900">{t("admin.regionForm.deliveryConfigHeading")}</h3>
+          <p className="mb-4 text-xs text-ink-500">{t("admin.regionForm.deliveryConfigHint")}</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="region-timezone"
+                className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700"
+              >
+                {t("admin.regionForm.timezoneLabel")}
+              </label>
+              <select
+                id="region-timezone"
+                className={NATIVE_CONTROL_CLASS}
+                {...register("timezone")}
+              >
+                {TIMEZONE_OPTIONS.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-ink-500">{t("admin.regionForm.timezoneHint")}</p>
+            </div>
+            <Input
+              label={t("admin.regionForm.freeDeliveryThresholdLabel")}
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="200.00"
+              hint={t("admin.regionForm.freeDeliveryThresholdHint")}
+              error={errors.freeDeliveryThreshold?.message}
+              {...register("freeDeliveryThreshold", {
+                setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+              })}
+            />
+          </div>
+
+          <div className="mt-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
+              {t("admin.regionForm.deliveryDaysLabel")}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {WEEKDAYS.map(({ day, labelKey }) => {
+                const checked = selectedDeliveryDays.includes(day);
+                return (
+                  <label
+                    key={day}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
+                      checked
+                        ? "border-bloom-500 bg-bloom-50 text-bloom-700"
+                        : "border-ink-200 text-ink-700 hover:border-ink-300"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleDeliveryDay(day)}
+                      className="h-4 w-4 accent-bloom-600"
+                    />
+                    {t(`admin.regionForm.${labelKey}` as Parameters<typeof t>[0])}
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-xs text-ink-500">{t("admin.regionForm.deliveryDaysHint")}</p>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  {...register("sameDayEnabled")}
+                  className="h-5 w-5 accent-bloom-600"
+                />
+                <span className="text-sm text-ink-900">{t("admin.regionForm.sameDayEnabledLabel")}</span>
+              </label>
+              <p className="mt-1 text-xs text-ink-500">{t("admin.regionForm.sameDayEnabledHint")}</p>
+              <label className="mt-4 flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  {...register("codEnabled")}
+                  className="h-5 w-5 accent-bloom-600"
+                />
+                <span className="text-sm text-ink-900">{t("admin.regionForm.codEnabledLabel")}</span>
+              </label>
+              <p className="mt-1 text-xs text-ink-500">{t("admin.regionForm.codEnabledHint")}</p>
+            </div>
+            <Input
+              label={t("admin.regionForm.sameDayCutoffLabel")}
+              type="time"
+              disabled={!sameDayEnabled}
+              hint={t("admin.regionForm.sameDayCutoffHint")}
+              error={errors.sameDayCutoff?.message}
+              {...register("sameDayCutoff")}
+            />
+          </div>
+
+          <div className="mt-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
+              {t("admin.regionForm.blackoutDatesLabel")}
+            </p>
+            <p className="mt-1 mb-3 text-xs text-ink-500">{t("admin.regionForm.blackoutDatesHint")}</p>
+            {blackoutFields.length === 0 ? (
+              <p className="mb-3 text-sm text-ink-400">{t("admin.regionForm.blackoutEmpty")}</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {blackoutFields.map((field, i) => (
+                  <div key={field.id} className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      aria-label={t("admin.regionForm.blackoutDateLabel")}
+                      className={cn(NATIVE_CONTROL_CLASS, "w-auto shrink-0")}
+                      {...register(`blackoutDates.${i}.date`)}
+                    />
+                    <input
+                      className={NATIVE_CONTROL_CLASS}
+                      placeholder={t("admin.regionForm.blackoutLabelPlaceholder")}
+                      {...register(`blackoutDates.${i}.label`)}
+                    />
+                    <input
+                      className={NATIVE_CONTROL_CLASS}
+                      dir="rtl"
+                      placeholder={t("admin.regionForm.blackoutLabelArPlaceholder")}
+                      {...register(`blackoutDates.${i}.label_ar`)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeBlackout(i)}
+                      aria-label={t("admin.regionForm.blackoutRemoveRow")}
+                      className="shrink-0 rounded-md p-2 text-bloom-700 hover:bg-bloom-50"
+                    >
+                      <TrashIcon size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => appendBlackout({ date: "", label: "", label_ar: "" })}
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-bloom-700 hover:text-bloom-800"
+            >
+              <PlusIcon size={16} /> {t("admin.regionForm.blackoutAddRow")}
+            </button>
           </div>
         </section>
 

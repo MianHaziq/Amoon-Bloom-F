@@ -40,6 +40,11 @@ interface DeliveryDatePickerProps {
   maxKey: string;
   /** Today, as a business-timezone "YYYY-MM-DD" key (for the "today" ring only). */
   todayKey: string;
+  /** Selectable weekdays (0=Sun..6=Sat). Empty/undefined = every weekday allowed. Any
+   *  day whose weekday isn't listed is disabled (dimmed, non-selectable). */
+  allowedWeekdays?: number[];
+  /** Blackout day keys ("YYYY-MM-DD") that are disabled regardless of the window. */
+  blackoutKeys?: string[];
   "aria-label"?: string;
   hasError?: boolean;
 }
@@ -57,6 +62,8 @@ export function DeliveryDatePicker({
   minKey,
   maxKey,
   todayKey,
+  allowedWeekdays,
+  blackoutKeys,
   hasError,
   ...rest
 }: DeliveryDatePickerProps) {
@@ -202,7 +209,14 @@ export function DeliveryDatePicker({
               ))}
               {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
                 const key = dateKey(displayView.year, displayView.month0, day);
-                const disabled = key < minKey || key > maxKey;
+                // Constructed and read in the same local frame — the true weekday of
+                // that calendar date, matching the leadingBlanks computation above.
+                const weekday = new Date(displayView.year, displayView.month0, day).getDay();
+                const outOfWindow = key < minKey || key > maxKey;
+                const weekdayBlocked =
+                  Boolean(allowedWeekdays?.length) && !allowedWeekdays!.includes(weekday);
+                const blackedOut = Boolean(blackoutKeys?.includes(key));
+                const disabled = outOfWindow || weekdayBlocked || blackedOut;
                 const selected = key === value;
                 const isToday = key === todayKey;
                 return (

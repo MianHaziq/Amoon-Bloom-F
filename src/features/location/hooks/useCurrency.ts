@@ -4,9 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useAppSelector } from "@/store";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
-import { siteConfig } from "@/config/site";
 import { intlLocale } from "@/lib/format";
 import { getCallingCode } from "@/features/regions/countries";
+import { useIsHydrated } from "@/hooks/useIsHydrated";
 
 /**
  * Currency + region name for the storefront. The backend supports a per-region
@@ -32,14 +32,25 @@ import { getCallingCode } from "@/features/regions/countries";
 export function useCurrency() {
   const country = useAppSelector((s) => s.location.country);
   const uiLocale = useAppSelector((s) => s.ui.locale);
+  // Server-seeded, hydration-stable currency (cookie + regions list, resolved
+  // in RootLayout → StoreProvider). See location.slice.ts `currency`.
+  const seededCurrency = useAppSelector((s) => s.location.currency);
+  const hydrated = useIsHydrated();
   const query = useQuery({
     queryKey: queryKeys.regions.list(),
     queryFn: () => regionsApi.list(),
     staleTime: 5 * 60_000,
   });
   const region = query.data?.find((r) => r.code === country);
+  // Until hydrated, use the SSR-seeded currency so the first client render is
+  // byte-identical to the server HTML (the react-query cache's first-render
+  // availability can differ from SSR, which was flipping the AED/SAR glyph and
+  // throwing a hydration mismatch). After hydration, prefer the live lookup so
+  // a client-side region switch updates the currency without a full reload;
+  // both resolve the same value on a normal load, so there's no visible flash.
+  const liveCurrency = region?.currency ?? seededCurrency;
   return {
-    currency: region?.currency ?? siteConfig.currency,
+    currency: hydrated ? liveCurrency : seededCurrency,
     locale: intlLocale(uiLocale),
     countryCode: country,
     countryName: region?.name ?? country,

@@ -7,7 +7,7 @@ import { setLocationFromStorage, setLocation, setActiveRegions } from "@/store/s
 import type { LocationState } from "@/store/slices/location.slice";
 import { storage } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
-import { writeRegionCookie } from "@/features/location/region";
+import { writeRegionCookie, writeZoneCookie } from "@/features/location/region";
 import { deriveActiveRegions } from "@/features/location/activeRegions";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
@@ -46,6 +46,7 @@ export function LocationPersistence() {
       const priorCountry = store.getState().location.country;
       dispatch(setLocationFromStorage(stored));
       writeRegionCookie(store.getState().location.country);
+      writeZoneCookie(store.getState().location.city);
       if (stored.country && stored.country !== priorCountry) {
         router.refresh();
       }
@@ -54,6 +55,7 @@ export function LocationPersistence() {
     // Mirror the (possibly default) region into the cookie so SSR catalog
     // fetches and the axios X-Region interceptor agree on the same region.
     writeRegionCookie(store.getState().location.country);
+    writeZoneCookie(store.getState().location.city);
   }, [dispatch, store, router]);
 
   // When a user logs in (or the page loads with an active session), seed the
@@ -101,6 +103,7 @@ export function LocationPersistence() {
       lastSerialised = next;
       storage.set(STORAGE_KEYS.location, loc);
       writeRegionCookie(loc.country);
+      writeZoneCookie(loc.city);
     });
     return unsubscribe;
   }, [store]);

@@ -4,7 +4,11 @@ import { useState, type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { makeStore } from "@/store";
 import { setLocale, type Locale } from "@/store/slices/ui.slice";
-import { setCountryFromRegion, setActiveRegions } from "@/store/slices/location.slice";
+import {
+  setCountryFromRegion,
+  setCurrencyFromRegion,
+  setActiveRegions,
+} from "@/store/slices/location.slice";
 import { DEFAULT_REGION_CODE } from "@/features/location/region";
 
 interface StoreProviderProps {
@@ -18,6 +22,12 @@ interface StoreProviderProps {
    *  post-hydration (which throws a hydration mismatch for a returning
    *  visitor whose region is Saudi Arabia). */
   initialCountry?: string;
+  /** The active region's currency code (e.g. "SAR"), resolved server-side from
+   *  the `region` cookie + live regions list, so the price glyph (AED/SAR sign)
+   *  renders correctly on first paint. Without it the currency was resolved
+   *  purely from the react-query cache, whose first-render availability could
+   *  differ from SSR and flip the sign → hydration mismatch. */
+  initialCurrency?: string;
   /** Which regions are currently active (admin-controlled), resolved
    *  server-side so the picker/pill reflect a hidden region immediately on
    *  first paint instead of only after a client-side fetch. */
@@ -35,6 +45,7 @@ export function StoreProvider({
   children,
   initialLocale,
   initialCountry,
+  initialCurrency,
   initialActiveRegions,
   initialDefaultCountry,
 }: StoreProviderProps) {
@@ -45,6 +56,9 @@ export function StoreProvider({
     }
     if (initialCountry && initialCountry !== DEFAULT_REGION_CODE) {
       s.dispatch(setCountryFromRegion(initialCountry));
+    }
+    if (initialCurrency) {
+      s.dispatch(setCurrencyFromRegion(initialCurrency));
     }
     if (initialActiveRegions) {
       s.dispatch(

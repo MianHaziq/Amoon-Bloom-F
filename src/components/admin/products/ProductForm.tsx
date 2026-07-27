@@ -16,6 +16,7 @@ import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { regionsApi } from "@/features/regions/api/regions.api";
+import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { queryKeys } from "@/services/queryKeys";
 import { Button, Input, Textarea } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
@@ -86,6 +87,17 @@ function useProductFormSchema() {
             .nullable(),
         })
       ),
+      // Per-zone "ships within N days" overrides, keyed by zoneId (null/blank = no
+      // override — falls through the region/product/category/default chain).
+      zoneLeadDays: z.record(
+        z.string(),
+        z
+          .number()
+          .int(t("admin.productForm.deliveryLeadDaysInvalid"))
+          .min(0, t("admin.productForm.deliveryLeadDaysInvalid"))
+          .max(30, t("admin.productForm.deliveryLeadDaysInvalid"))
+          .nullable()
+      ),
       // Gift card add-on — free personalized message, toggled per product.
       giftCardEnabled: z.boolean(),
       giftCardExtraPrice: z.number().nonnegative().nullable(),
@@ -131,6 +143,7 @@ const emptyDefaults: ProductFormValues = {
   price: 0,
   discountedPrice: null,
   regionPrices: {},
+  zoneLeadDays: {},
   giftCardEnabled: false,
   giftCardExtraPrice: null,
   customNameEnabled: false,
@@ -161,6 +174,13 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
   // (not gated on the Regions visibility checkboxes) — matches the old fixed SAR
   // section's behavior, now extended to every region instead of just Saudi Arabia.
   const overrideRegions = (regionsQuery.data ?? []).filter((r) => !r.isDefault);
+  // All delivery zones (staff token returns every region's zones when no `region`
+  // is passed). Filtered per selected region below for the per-zone lead inputs.
+  const zonesQuery = useQuery({
+    queryKey: queryKeys.deliveryZones.list(),
+    queryFn: () => deliveryZonesApi.list(),
+  });
+  const allZones = zonesQuery.data ?? [];
 
   const {
     register,
@@ -190,6 +210,9 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           rp.regionId,
           { price: rp.price, discountedPrice: rp.discountedPrice, deliveryLeadDays: rp.deliveryLeadDays ?? null },
         ])
+      ),
+      zoneLeadDays: Object.fromEntries(
+        (initial.zoneLeadDays ?? []).map((zl) => [zl.zoneId, zl.deliveryLeadDays ?? null])
       ),
       giftCardEnabled: initial.giftCardEnabled ?? false,
       giftCardExtraPrice: initial.giftCardExtraPrice ?? null,
@@ -245,6 +268,12 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
   const images = watch("images");
   const giftCardEnabled = watch("giftCardEnabled");
   const customNameEnabled = watch("customNameEnabled");
+  // Regions the product is in (from the picker) decide which regions' zones get
+  // per-zone delivery-time inputs — only zones of selected regions are shown.
+  const selectedRegionIds = watch("regionIds");
+  const selectedRegions = (regionsQuery.data ?? []).filter((r) =>
+    selectedRegionIds?.includes(r.id)
+  );
 
   const submit = handleSubmit(async (values) => {
     const cleanedDescriptions = values.descriptions.map((d) => ({
@@ -304,6 +333,11 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         discountedPrice: v.discountedPrice ?? null,
         deliveryLeadDays: v.deliveryLeadDays ?? null,
       })),
+      // Per-zone overrides — drop blank/null entries (server treats a missing zone
+      // as "no override"). Full replace on the backend.
+      zoneLeadDays: Object.entries(values.zoneLeadDays ?? {})
+        .filter(([, days]) => days != null)
+        .map(([zoneId, days]) => ({ zoneId, deliveryLeadDays: Number(days) })),
       giftCardEnabled: values.giftCardEnabled,
       giftCardExtraPrice:
         values.giftCardExtraPrice === null || values.giftCardExtraPrice === undefined
@@ -521,6 +555,57 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
             </div>
           </div>
         </Card>
+
+        {selectedRegions.length > 0 ? (
+          <Card
+            title={t("admin.productForm.zoneLeadDaysHeading")}
+            description={t("admin.productForm.zoneLeadDaysHint")}
+          >
+            <div className="flex flex-col gap-4">
+              {selectedRegions.map((region) => {
+                const regionZones = allZones.filter((z) => z.regionId === region.id);
+                return (
+                  <div key={region.id} className="border-t border-ink-100 pt-4 first:border-t-0 first:pt-0">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
+                      {region.name}
+                    </p>
+                    {regionZones.length === 0 ? (
+                      <p className="text-xs text-ink-400">
+                        {t("admin.productForm.zoneNoZonesNote")}
+                      </p>
+                    ) : (
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {regionZones.map((zone) => (
+                          <Controller
+                            key={zone.id}
+                            control={control}
+                            name={`zoneLeadDays.${zone.id}`}
+                            render={({ field }) => (
+                              <Input
+                                label={zone.name}
+                                type="number"
+                                min="0"
+                                max="30"
+                                step="1"
+                                placeholder="—"
+                                value={field.value ?? ""}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    e.target.value === "" ? null : Number(e.target.value)
+                                  )
+                                }
+                              />
+                            )}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        ) : null}
 
         <Card
           title={t("admin.productForm.descriptionsHeading")}

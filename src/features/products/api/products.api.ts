@@ -76,9 +76,14 @@ export const productsApi = {
     return data;
   },
 
-  async getById(id: string, region?: string): Promise<ApiProduct> {
+  async getById(id: string, region?: string, zoneId?: string): Promise<ApiProduct> {
     const { data } = await http.get<ApiResponse<ApiProduct>>(`/products/${id}`, {
-      params: region ? { region } : undefined,
+      params: {
+        ...(region ? { region } : {}),
+        // Zone-accurate delivery-days estimate (falls back to region-level server-side if
+        // the id is stale/foreign). Only sent when a zone is known.
+        ...(zoneId ? { zoneId } : {}),
+      },
     });
     return data.data;
   },

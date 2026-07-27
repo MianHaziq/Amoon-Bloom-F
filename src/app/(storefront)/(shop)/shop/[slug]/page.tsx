@@ -13,11 +13,12 @@ import { PdpImageProvider } from "@/features/products/components/PdpImageContext
 import {
   getCachedProductById,
   getCachedProductsByCategory,
+  getCachedDeliveryZones,
 } from "@/services/catalogCache";
 import { toUiProduct, toUiProducts } from "@/features/products/adapters";
 import { ApiError } from "@/services/http";
 import { ROUTES } from "@/constants/routes";
-import { getServerRegion } from "@/services/serverRegion";
+import { getServerRegion, getServerZoneName } from "@/services/serverRegion";
 import { getServerLocale } from "@/i18n/server";
 import { t } from "@/i18n";
 
@@ -45,14 +46,24 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const [region, locale] = await Promise.all([
+  const [region, locale, zoneName] = await Promise.all([
     getServerRegion(),
     getServerLocale(),
+    getServerZoneName(),
   ]);
+
+  // Resolve the selected city/zone NAME (cookie) → zone id within this region, so the
+  // "shipped within N days" note reflects the zone's delivery time. Best-effort: a stale
+  // name (region switched) just yields no id → the estimate falls back to region-level.
+  let zoneId: string | undefined;
+  if (zoneName && region) {
+    const zones = await getCachedDeliveryZones(region).catch(() => []);
+    zoneId = zones.find((z) => z.name === zoneName)?.id;
+  }
 
   let api;
   try {
-    api = await getCachedProductById(region, slug);
+    api = await getCachedProductById(region, slug, zoneId);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       notFound();

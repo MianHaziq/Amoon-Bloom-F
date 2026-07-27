@@ -28,7 +28,12 @@ export interface OrderDeliveryView {
 
 type DeliveryOrderInput = Pick<
   ApiOrder,
-  "deliveryType" | "scheduledDeliveryAt" | "estimatedDeliveryDays" | "createdAt" | "items"
+  | "deliveryType"
+  | "scheduledDeliveryAt"
+  | "estimatedDeliveryDays"
+  | "estimatedDeliveryDate"
+  | "createdAt"
+  | "items"
 >;
 
 /**
@@ -49,8 +54,14 @@ export function getOrderDeliveryView(order: DeliveryOrderInput): OrderDeliveryVi
       ? order.estimatedDeliveryDays
       : maxResolvedLeadDays(order.items) || null;
 
-  const expectedDate =
-    effectiveLeadDays != null ? addDays(order.createdAt, effectiveLeadDays) : null;
+  // Prefer the concrete arrival-date snapshot (region-tz "YYYY-MM-DD") — pinned to noon UTC
+  // so formatting in any viewer timezone keeps the same calendar day (no ±1-day drift). Only
+  // legacy orders without the snapshot fall back to createdAt + lead-days (which can drift).
+  const expectedDate = order.estimatedDeliveryDate
+    ? new Date(`${order.estimatedDeliveryDate}T12:00:00Z`)
+    : effectiveLeadDays != null
+      ? addDays(order.createdAt, effectiveLeadDays)
+      : null;
   const reservedDate = isScheduled
     ? new Date(order.scheduledDeliveryAt as string)
     : null;

@@ -24,12 +24,20 @@ export interface ApiCategory {
   /** Per-region overrides of the category lead time (staff reads). One entry per
    *  region the category is in; deliveryLeadDays null = no override for that region. */
   regionLeadDays?: ApiCategoryRegionLead[];
+  /** Per-zone overrides of the category lead time (staff reads). One entry per zone
+   *  that has an override; may be empty/absent when no zone overrides exist. */
+  zoneLeadDays?: ApiCategoryZoneLead[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ApiCategoryRegionLead {
   regionId: string;
+  deliveryLeadDays: number | null;
+}
+
+export interface ApiCategoryZoneLead {
+  zoneId: string;
   deliveryLeadDays: number | null;
 }
 
@@ -49,6 +57,9 @@ export interface ApiCategoryCreateInput {
   deliveryLeadDays?: number | null;
   /** Per-region lead-time overrides: [{ regionId, deliveryLeadDays }]. */
   regionLeadDays?: ApiCategoryRegionLead[];
+  /** Per-zone lead-time overrides: [{ zoneId, deliveryLeadDays }]. Full replace on update;
+   *  entries with a null/blank lead are dropped server-side. */
+  zoneLeadDays?: ApiCategoryZoneLead[];
 }
 
 export type ApiCategoryUpdateInput = Partial<ApiCategoryCreateInput>;

@@ -5,6 +5,14 @@
  * the storefront/mobile clients.
  */
 
+/** A region-wide delivery blackout date (holiday/closure). `date` is a "YYYY-MM-DD" key. */
+export interface ApiBlackoutDate {
+  id?: string;
+  date: string;
+  label?: string | null;
+  label_ar?: string | null;
+}
+
 export interface ApiRegion {
   id: string;
   code: string;
@@ -22,6 +30,22 @@ export interface ApiRegion {
    * Null = not configured, so the storefront shows no ETA. Plain number — unlike
    * shippingFlatRate, this is a Prisma Int, not a Decimal, so no string quirk. */
   standardDeliveryDays: number | null;
+  /** IANA timezone the region operates in (e.g. "Asia/Dubai"). Drives same-day cutoff,
+   * "today", allowed weekdays and blackout-date math. Never null (defaults to Asia/Dubai). */
+  timezone: string;
+  /** Net order value at/above which delivery is free in this region. Null = no threshold.
+   * Serialized as a string (Prisma Decimal), like shippingFlatRate. */
+  freeDeliveryThreshold: string | null;
+  /** Allowed delivery weekdays, 0=Sun..6=Sat. Empty [] = every day allowed. */
+  deliveryDays: number[];
+  /** Whether same-day delivery is offered in this region. */
+  sameDayEnabled: boolean;
+  /** Daily same-day cutoff "HH:mm" in the region timezone (e.g. "18:00"). Null = no cutoff. */
+  sameDayCutoff: string | null;
+  /** Whether Cash on Delivery is offered in this region (default true). */
+  codEnabled: boolean;
+  /** Region-wide delivery blackout dates (holidays/closures). */
+  blackoutDates: ApiBlackoutDate[];
   /** ISO 3166-1 alpha-2 code (e.g. "AE") — renders this region's flag in the
    * storefront's country/region pickers. Null shows a neutral placeholder. */
   iso2: string | null;
@@ -79,6 +103,13 @@ export interface ApiRegionCreateInput {
   legalEntity?: string | null;
   shippingFlatRate?: number | null;
   standardDeliveryDays?: number | null;
+  timezone?: string;
+  freeDeliveryThreshold?: number | null;
+  deliveryDays?: number[];
+  sameDayEnabled?: boolean;
+  sameDayCutoff?: string | null;
+  codEnabled?: boolean;
+  blackoutDates?: ApiBlackoutDate[];
   iso2?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;

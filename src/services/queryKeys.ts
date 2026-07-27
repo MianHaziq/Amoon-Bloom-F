@@ -137,6 +137,12 @@ export const queryKeys = {
     list: (regionCode?: string) => [...queryKeys.deliveryZones.all, "list", regionCode ?? "all"] as const,
   },
 
+  deliveryConfig: {
+    all: ["delivery-config"] as const,
+    resolve: (regionCode?: string, zoneId?: string, subtotal?: number) =>
+      [...queryKeys.deliveryConfig.all, regionCode ?? "default", zoneId ?? "none", subtotal ?? 0] as const,
+  },
+
   vat: {
     all: ["vat"] as const,
     list: () => [...queryKeys.vat.all, "list"] as const,

@@ -10,6 +10,7 @@ import { ImageUpload } from "@/components/admin/ImageUpload";
 import { RegionPicker } from "@/components/admin/RegionPicker";
 import { Select } from "@/components/admin/Select";
 import { regionsApi } from "@/features/regions/api/regions.api";
+import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { queryKeys } from "@/services/queryKeys";
 import { useT } from "@/i18n/useT";
 import type {
@@ -52,6 +53,16 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
             .max(30, t("admin.categoryForm.deliveryLeadDaysInvalid"))
             .nullable()
         ),
+        // Per-zone lead-time overrides, keyed by zoneId (null/blank = no override).
+        zoneLeadDays: z.record(
+          z.string(),
+          z
+            .number()
+            .int(t("admin.categoryForm.deliveryLeadDaysInvalid"))
+            .min(0, t("admin.categoryForm.deliveryLeadDaysInvalid"))
+            .max(30, t("admin.categoryForm.deliveryLeadDaysInvalid"))
+            .nullable()
+        ),
       }),
     [t]
   );
@@ -77,6 +88,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       deliveryLeadDays: null,
       regionIds: [],
       regionLeadDays: {},
+      zoneLeadDays: {},
     },
   });
 
@@ -86,6 +98,13 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
     queryKey: queryKeys.regions.list(),
     queryFn: () => regionsApi.list(),
   });
+  // All delivery zones (staff token returns every region's zones when no `region`
+  // is passed). We filter per region below, mirroring the per-region lead pattern.
+  const zonesQuery = useQuery({
+    queryKey: queryKeys.deliveryZones.list(),
+    queryFn: () => deliveryZonesApi.list(),
+  });
+  const allZones = zonesQuery.data ?? [];
   const selectedRegionIds = watch("regionIds");
   const selectedRegions = (regionsQuery.data ?? []).filter((r) =>
     selectedRegionIds?.includes(r.id)
@@ -112,6 +131,9 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       regionLeadDays: Object.fromEntries(
         (initial.regionLeadDays ?? []).map((rl) => [rl.regionId, rl.deliveryLeadDays])
       ),
+      zoneLeadDays: Object.fromEntries(
+        (initial.zoneLeadDays ?? []).map((zl) => [zl.zoneId, zl.deliveryLeadDays ?? null])
+      ),
     });
   }, [initial, reset]);
 
@@ -132,6 +154,11 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       regionLeadDays: Object.entries(values.regionLeadDays ?? {}).map(
         ([regionId, days]) => ({ regionId, deliveryLeadDays: days ?? null })
       ),
+      // Per-zone overrides — drop blank/null entries (server treats a missing zone
+      // as "no override"). Full replace on the backend.
+      zoneLeadDays: Object.entries(values.zoneLeadDays ?? {})
+        .filter(([, days]) => days != null)
+        .map(([zoneId, days]) => ({ zoneId, deliveryLeadDays: Number(days) })),
     });
   });
 
@@ -232,31 +259,73 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
             <p className="mb-3 text-xs text-ink-500">
               {t("admin.categoryForm.regionLeadDaysHint")}
             </p>
-            <div className="flex flex-col gap-3">
-              {selectedRegions.map((region) => (
-                <Controller
-                  key={region.id}
-                  control={control}
-                  name={`regionLeadDays.${region.id}`}
-                  render={({ field }) => (
-                    <Input
-                      label={region.name}
-                      type="number"
-                      min={0}
-                      max={30}
-                      step={1}
-                      placeholder={t("admin.categoryForm.deliveryLeadDaysPlaceholder")}
-                      // Fully controlled so the typed value is always captured into
-                      // form state — no register/mount-timing gaps for these
-                      // conditionally-rendered per-region fields.
-                      value={field.value ?? ""}
-                      onChange={(e) =>
-                        field.onChange(e.target.value === "" ? null : Number(e.target.value))
-                      }
+            <div className="flex flex-col gap-4">
+              {selectedRegions.map((region) => {
+                const regionZones = allZones.filter((z) => z.regionId === region.id);
+                return (
+                  <div key={region.id} className="flex flex-col gap-2">
+                    <Controller
+                      control={control}
+                      name={`regionLeadDays.${region.id}`}
+                      render={({ field }) => (
+                        <Input
+                          label={region.name}
+                          type="number"
+                          min={0}
+                          max={30}
+                          step={1}
+                          placeholder={t("admin.categoryForm.deliveryLeadDaysPlaceholder")}
+                          // Fully controlled so the typed value is always captured into
+                          // form state — no register/mount-timing gaps for these
+                          // conditionally-rendered per-region fields.
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(e.target.value === "" ? null : Number(e.target.value))
+                          }
+                        />
+                      )}
                     />
-                  )}
-                />
-              ))}
+                    {/* Per-zone overrides, nested under the region so the hierarchy
+                        reads region → its zones. */}
+                    <div className="border-s-2 border-ink-100 ps-3">
+                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500">
+                        {t("admin.categoryForm.zoneLeadDaysHeading")}
+                      </p>
+                      {regionZones.length === 0 ? (
+                        <p className="text-[11px] text-ink-400">
+                          {t("admin.categoryForm.zoneNoZonesNote")}
+                        </p>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          {regionZones.map((zone) => (
+                            <Controller
+                              key={zone.id}
+                              control={control}
+                              name={`zoneLeadDays.${zone.id}`}
+                              render={({ field }) => (
+                                <Input
+                                  label={zone.name}
+                                  type="number"
+                                  min={0}
+                                  max={30}
+                                  step={1}
+                                  placeholder="—"
+                                  value={field.value ?? ""}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      e.target.value === "" ? null : Number(e.target.value)
+                                    )
+                                  }
+                                />
+                              )}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}

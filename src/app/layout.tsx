@@ -120,6 +120,12 @@ export default async function RootLayout({
   const { activeRegions, defaultCountry } = deriveActiveRegions(apiRegions);
   // `region` (the cookie value) already IS the region's code — no mapping step.
   const initialCountry = region && activeRegions.includes(region) ? region : defaultCountry;
+  // Resolve the currency server-side from the SAME regions list, so the price
+  // glyph (AED/SAR sign) renders correctly and identically on server + first
+  // client render (see StoreProvider.initialCurrency / useCurrency). Falls back
+  // to the store default when the region has no match.
+  const initialCurrency =
+    apiRegions.find((r) => r.code === initialCountry)?.currency ?? siteConfig.currency;
 
   // Seed the client query cache with the same regions list used above, so
   // client components resolving currency/country text from it (useCurrency,
@@ -142,6 +148,7 @@ export default async function RootLayout({
         <StoreProvider
           initialLocale={locale}
           initialCountry={initialCountry}
+          initialCurrency={initialCurrency}
           initialActiveRegions={activeRegions}
           initialDefaultCountry={defaultCountry}
         >

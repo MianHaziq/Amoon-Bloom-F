@@ -39,6 +39,7 @@ import { promoCodesApi } from "@/features/promo-codes/api/promo-codes.api";
 import { vatApi } from "@/features/vat/api/vat.api";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
+import { deliveryConfigApi } from "@/features/delivery-config/api/delivery-config.api";
 import { queryKeys } from "@/services/queryKeys";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { DeliveryDatePicker } from "./DeliveryDatePicker";
@@ -52,11 +53,19 @@ import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
 import { formatCurrency, formatDayCount } from "@/lib/format";
+import {
+  addDaysToKey,
+  daysBetweenKeys,
+  nextDeliverableKey,
+  parseHHmm,
+  nowMinutesInTz,
+} from "@/lib/deliveryDate";
 import { useAppSelector } from "@/store";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n";
 import type { ApiAddress } from "@/features/addresses/types";
 import type { ApiPromoValidationResult } from "@/features/promo-codes/types";
+import type { ResolvedDeliveryConfig } from "@/features/delivery-config/types";
 
 type TranslateFn = (
   key: MessageKey,
@@ -350,10 +359,44 @@ export function CheckoutClient() {
     queryFn: () => regionsApi.list(),
   });
   const currentRegion = regionsQuery.data?.find((r) => r.code === regionCode);
+
+  // The delivery zone that actually governs this order: the inline "new address"
+  // form's picked zone, or the saved address's own zone when one is selected.
+  const activeZoneId: string | undefined = (() => {
+    if (selectedAddressId === "new") return zoneValue || undefined;
+    const picked = addressesQuery.data?.find((a) => a.id === selectedAddressId);
+    return picked?.deliveryZoneId ?? undefined;
+  })();
+
+  // Fully-resolved (zone→region→default) delivery config for the active area,
+  // priced for the current subtotal. The backend is authoritative; this drives
+  // the fee, gates, date/slot picker and copy. Refetches when zone/subtotal change.
+  const deliveryConfigQuery = useQuery({
+    queryKey: queryKeys.deliveryConfig.resolve(regionCode, activeZoneId, subtotal),
+    queryFn: () =>
+      deliveryConfigApi.get({ region: regionCode, zoneId: activeZoneId, subtotal }),
+    enabled: Boolean(regionCode),
+  });
+  const deliveryConfig = deliveryConfigQuery.data;
+
+  // Prefer the resolved effective fee once loaded (0 → shown as FREE). Fall back to
+  // the region flat rate only while the config is still loading.
   const shipping =
-    currentRegion?.shippingFlatRate != null
-      ? Number(currentRegion.shippingFlatRate)
-      : 0;
+    deliveryConfig != null
+      ? deliveryConfig.effectiveFee
+      : currentRegion?.shippingFlatRate != null
+        ? Number(currentRegion.shippingFlatRate)
+        : 0;
+
+  // --- Delivery gates (all authoritative on the backend; mirrored here for UX) ---
+  // Never block purely because the config hasn't loaded — every gate reads a loaded
+  // value and stays false while `deliveryConfig` is undefined.
+  const codUnavailable = deliveryConfig?.codEnabled === false;
+  const minOrderAmount = deliveryConfig?.minOrderAmount ?? null;
+  const maxOrderAmount = deliveryConfig?.maxOrderAmount ?? null;
+  const belowMinOrder = minOrderAmount != null && subtotal < minOrderAmount;
+  const aboveMaxOrder = maxOrderAmount != null && subtotal > maxOrderAmount;
+  const placeOrderBlocked = codUnavailable || belowMinOrder || aboveMaxOrder;
 
   // VAT preview for the current region. The public endpoint intentionally omits the
   // SPECIFIC_PRODUCTS/SPECIFIC_CATEGORIES scope lists (that's catalog-scoping data, not
@@ -406,6 +449,22 @@ export function CheckoutClient() {
     mutationFn: async () => {
       if (deliveryType === "SCHEDULED" && !scheduledDeliveryAt) {
         throw new Error(t("checkout.chooseDeliveryDateError"));
+      }
+      // Delivery-config gates (backend re-validates all of these authoritatively).
+      if (codUnavailable) throw new Error(t("checkout.codUnavailable"));
+      if (belowMinOrder) {
+        throw new Error(
+          t("checkout.minOrderError", {
+            amount: formatCurrency(minOrderAmount!, currency, locale),
+          })
+        );
+      }
+      if (aboveMaxOrder) {
+        throw new Error(
+          t("checkout.maxOrderError", {
+            amount: formatCurrency(maxOrderAmount!, currency, locale),
+          })
+        );
       }
       // Only a date is collected (no time-of-day input) — pin it to noon UTC so the
       // resulting instant safely sits within the same calendar day in any timezone
@@ -620,11 +679,18 @@ export function CheckoutClient() {
             }}
             onPlaceOrder={placeOrder}
             isPlacing={placeOrderMutation.isPending}
+            placeOrderDisabled={placeOrderBlocked}
             deliveryType={deliveryType}
             onDeliveryTypeChange={setDeliveryType}
             scheduledDeliveryAt={scheduledDeliveryAt}
             onScheduledDeliveryAtChange={setScheduledDeliveryAt}
             standardDeliveryDays={currentRegion?.standardDeliveryDays ?? null}
+            deliveryConfig={deliveryConfig}
+            codUnavailable={codUnavailable}
+            belowMinOrder={belowMinOrder}
+            aboveMaxOrder={aboveMaxOrder}
+            minOrderAmount={minOrderAmount}
+            maxOrderAmount={maxOrderAmount}
           />
         </div>
       </Section>
@@ -1065,6 +1131,8 @@ interface OrderReviewCardProps {
   onClear: () => void;
   onPlaceOrder: () => void;
   isPlacing: boolean;
+  /** True when a delivery gate (COD/min/max/slot) forbids submitting. */
+  placeOrderDisabled: boolean;
   deliveryType: "STANDARD" | "SCHEDULED";
   onDeliveryTypeChange: (v: "STANDARD" | "SCHEDULED") => void;
   /** Date-only "YYYY-MM-DD" from DeliveryDatePicker, or "" for no selection. */
@@ -1072,6 +1140,13 @@ interface OrderReviewCardProps {
   onScheduledDeliveryAtChange: (v: string) => void;
   /** Region's Standard Delivery lead time, if configured. */
   standardDeliveryDays: number | null;
+  /** Resolved delivery config for the active area (undefined while loading). */
+  deliveryConfig: ResolvedDeliveryConfig | undefined;
+  codUnavailable: boolean;
+  belowMinOrder: boolean;
+  aboveMaxOrder: boolean;
+  minOrderAmount: number | null;
+  maxOrderAmount: number | null;
 }
 
 function OrderReviewCard({
@@ -1096,27 +1171,59 @@ function OrderReviewCard({
   onClear,
   onPlaceOrder,
   isPlacing,
+  placeOrderDisabled,
   deliveryType,
   onDeliveryTypeChange,
   scheduledDeliveryAt,
   onScheduledDeliveryAtChange,
   standardDeliveryDays,
+  deliveryConfig,
+  codUnavailable,
+  belowMinOrder,
+  aboveMaxOrder,
+  minOrderAmount,
+  maxOrderAmount,
 }: OrderReviewCardProps) {
   const { currency, locale } = useCurrency();
   const { t, locale: appLocale } = useT();
 
   // Mirrors order.service.js's estimatedDeliveryDays formula exactly (the LATER of the
-  // region's courier transit time and the slowest cart line's own prep/booking lead
-  // time) so this pre-purchase hint matches what the order will actually show after
-  // checkout. A client-side preview only — the backend remains authoritative.
+  // resolved ZONE-or-region courier transit time and the slowest cart line's own
+  // prep/booking lead time) so this pre-purchase hint matches what the order will
+  // actually snapshot. A client-side preview only — the backend remains authoritative.
   const maxCartItemLeadDays = Math.max(
     0,
     ...cartItems.map((i) => i.deliveryLeadDays ?? 0)
   );
-  const effectiveStandardDeliveryDays =
-    standardDeliveryDays != null || maxCartItemLeadDays > 0
-      ? Math.max(standardDeliveryDays ?? 0, maxCartItemLeadDays)
+  // Prefer the resolved lead (zone override → region) once the config loads; fall back to
+  // the region's standardDeliveryDays while it's still loading.
+  const resolvedStandardLead = deliveryConfig?.standardLeadDays ?? standardDeliveryDays;
+  const rawStandardDeliveryDays =
+    resolvedStandardLead != null || maxCartItemLeadDays > 0
+      ? Math.max(resolvedStandardLead ?? 0, maxCartItemLeadDays)
       : null;
+  // Mirror the backend snapshot: counting starts today when before the daily cutoff, else
+  // tomorrow (today's dispatch is missed); then roll the arrival forward past any
+  // non-delivery weekday / blackout date so it lands on a day this area actually delivers
+  // (e.g. a 5-day lead whose 5th day is off shows as 6). Uses the region-tz "today"/clock.
+  const effectiveStandardDeliveryDays = (() => {
+    if (rawStandardDeliveryDays == null) return null;
+    if (!deliveryConfig?.todayKey) return rawStandardDeliveryDays;
+    const cutoffMin = parseHHmm(deliveryConfig.sameDayCutoff);
+    const pastCutoff =
+      cutoffMin != null && nowMinutesInTz(deliveryConfig.timezone) >= cutoffMin;
+    const baseKey = pastCutoff
+      ? addDaysToKey(deliveryConfig.todayKey, 1)
+      : deliveryConfig.todayKey;
+    const arrival = nextDeliverableKey(
+      addDaysToKey(baseKey, rawStandardDeliveryDays),
+      deliveryConfig.deliveryDays ?? [],
+      new Set(deliveryConfig.blackoutDates ?? [])
+    );
+    return arrival
+      ? daysBetweenKeys(deliveryConfig.todayKey, arrival)
+      : rawStandardDeliveryDays;
+  })();
 
   // Earliest a scheduled delivery can be booked. Standard delivery already covers the
   // whole lead window, so scheduling only makes sense for dates strictly AFTER it: the
@@ -1143,13 +1250,35 @@ function OrderReviewCard({
     [minScheduledLeadDays]
   );
 
-  // If the cart changes so the current pick is now earlier than the minimum (e.g. a
-  // longer-lead item was added), clear it so the customer must re-select a valid day.
+  // Delivery-config-driven picker constraints (all empty/fallback while loading).
+  const allowedWeekdays = deliveryConfig?.deliveryDays ?? [];
+  const blackoutKeys = deliveryConfig?.blackoutDates ?? [];
+  // Floor for the scheduled-date picker = the LATER of the server-resolved earliest day
+  // (same-day/cutoff/blackout aware, but cart-blind) and the locally computed
+  // minScheduledKey (which folds in THIS cart's prep lead). Taking the max ensures the
+  // picker never offers a day the backend would reject for prep reasons — YYYY-MM-DD keys
+  // compare correctly as strings.
+  const serverEarliest = deliveryConfig?.earliestDeliveryKey;
+  const effectiveMinKey =
+    serverEarliest && serverEarliest > minScheduledKey ? serverEarliest : minScheduledKey;
+
+  // If the cart or resolved config shifts so the current pick is now earlier than the
+  // minimum (e.g. a longer-lead item was added, or a later earliestDeliveryKey resolved),
+  // clear it so the customer must re-select a valid day.
   useEffect(() => {
-    if (scheduledDeliveryAt && scheduledDeliveryAt < minScheduledKey) {
+    if (scheduledDeliveryAt && scheduledDeliveryAt < effectiveMinKey) {
       onScheduledDeliveryAtChange("");
     }
-  }, [scheduledDeliveryAt, minScheduledKey, onScheduledDeliveryAtChange]);
+  }, [scheduledDeliveryAt, effectiveMinKey, onScheduledDeliveryAtChange]);
+
+  // Free-delivery nudge: how much more (net) unlocks free delivery, when a threshold
+  // is set and not yet met.
+  const freeDeliveryRemaining =
+    deliveryConfig?.freeDeliveryThreshold != null &&
+    !deliveryConfig.freeDeliveryApplied &&
+    subtotal < deliveryConfig.freeDeliveryThreshold
+      ? deliveryConfig.freeDeliveryThreshold - subtotal
+      : null;
 
   return (
     <aside className="flex flex-col gap-4">
@@ -1251,6 +1380,13 @@ function OrderReviewCard({
               )}
             </span>
           </div>
+          {freeDeliveryRemaining != null ? (
+            <p className="text-xs text-bloom-700">
+              {t("checkout.freeDeliveryHint", {
+                amount: formatCurrency(freeDeliveryRemaining, currency, locale),
+              })}
+            </p>
+          ) : null}
           <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">
             <span>{t("common.total")}</span>
             <span><CurrencyAmount amount={total} currency={currency} locale={locale} /></span>
@@ -1359,9 +1495,11 @@ function OrderReviewCard({
                 <div className="mt-3" onClick={(e) => e.stopPropagation()}>
                   <DeliveryDatePicker
                     aria-label={t("checkout.scheduledDelivery")}
-                    minKey={minScheduledKey}
+                    minKey={effectiveMinKey}
                     maxKey={maxScheduledKey}
                     todayKey={todayScheduledKey}
+                    allowedWeekdays={allowedWeekdays}
+                    blackoutKeys={blackoutKeys}
                     value={scheduledDeliveryAt}
                     onChange={onScheduledDeliveryAtChange}
                   />
@@ -1376,19 +1514,30 @@ function OrderReviewCard({
 
         <Divider />
 
-        <div className="flex items-start gap-3 rounded-2xl border border-ink-900 bg-cream-50 p-4">
-          <input
-            type="radio"
-            name="payment"
-            defaultChecked
-            className="mt-1 h-4 w-4 accent-ink-900"
-            readOnly
-          />
-          <div>
-            <p className="font-medium text-ink-900">{t("checkout.cod")}</p>
-            <p className="text-sm text-ink-500">{t("checkout.codAvailability")}</p>
+        {/* COD is the only method. When the resolved area doesn't offer it, the option
+            is replaced by a clear error and submission is blocked (see place-order). */}
+        {codUnavailable ? (
+          <div
+            role="alert"
+            className="rounded-2xl border border-(--color-danger) bg-bloom-50 p-4 text-sm text-bloom-700"
+          >
+            {t("checkout.codUnavailable")}
           </div>
-        </div>
+        ) : (
+          <div className="flex items-start gap-3 rounded-2xl border border-ink-900 bg-cream-50 p-4">
+            <input
+              type="radio"
+              name="payment"
+              defaultChecked
+              className="mt-1 h-4 w-4 accent-ink-900"
+              readOnly
+            />
+            <div>
+              <p className="font-medium text-ink-900">{t("checkout.cod")}</p>
+              <p className="text-sm text-ink-500">{t("checkout.codAvailability")}</p>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-1 text-sm text-ink-600">
           <p className="inline-flex items-center gap-2">
@@ -1399,7 +1548,35 @@ function OrderReviewCard({
             <TruckIcon size={16} className="text-bloom-700" />
             {shipping === 0 ? t("cart.freeDelivery") : t("checkout.deliveryNote")}
           </p>
+          {deliveryConfig?.sameDayEnabled && deliveryConfig.sameDayCutoff ? (
+            <p className="inline-flex items-center gap-2">
+              <TruckIcon size={16} className="text-bloom-700" />
+              {t("checkout.sameDayLine", { cutoff: deliveryConfig.sameDayCutoff })}
+            </p>
+          ) : null}
         </div>
+
+        {/* Min/max order gates — mirrored from the resolved config; backend re-checks. */}
+        {belowMinOrder && minOrderAmount != null ? (
+          <div
+            role="alert"
+            className="rounded-lg border border-bloom-200 bg-bloom-50 px-3 py-2 text-sm text-bloom-700"
+          >
+            {t("checkout.minOrderError", {
+              amount: formatCurrency(minOrderAmount, currency, locale),
+            })}
+          </div>
+        ) : null}
+        {aboveMaxOrder && maxOrderAmount != null ? (
+          <div
+            role="alert"
+            className="rounded-lg border border-bloom-200 bg-bloom-50 px-3 py-2 text-sm text-bloom-700"
+          >
+            {t("checkout.maxOrderError", {
+              amount: formatCurrency(maxOrderAmount, currency, locale),
+            })}
+          </div>
+        ) : null}
 
         <Button
           type="button"
@@ -1407,6 +1584,7 @@ function OrderReviewCard({
           fullWidth
           onClick={onPlaceOrder}
           isLoading={isPlacing}
+          disabled={placeOrderDisabled}
         >
           {t("checkout.placeOrder")} ·{" "}
           <CurrencyAmount amount={total} currency={currency} locale={locale} />

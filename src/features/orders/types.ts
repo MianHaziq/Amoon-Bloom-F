@@ -137,6 +137,9 @@ export interface ApiOrder {
   /** Snapshot of the region's standard delivery days at checkout time. Only set when
    * deliveryType is STANDARD; null for legacy orders or when the region had no ETA configured. */
   estimatedDeliveryDays?: number | null;
+  /** Concrete resolved STANDARD arrival date ("YYYY-MM-DD", region tz) — display directly,
+   * no timezone drift. Null for SCHEDULED / legacy orders. */
+  estimatedDeliveryDate?: string | null;
   /** Pre-VAT, pre-discount line sum. Null for legacy orders placed before VAT. */
   subtotalAmount?: number | null;
   /** Total VAT — included in totalAmount for exclusive VAT, extracted (informational) for inclusive VAT. 0 when no VAT applied. */

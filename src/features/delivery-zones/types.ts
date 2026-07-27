@@ -11,6 +11,24 @@ export interface ApiDeliveryZone {
   name_ar: string | null;
   isActive: boolean;
   sortOrder: number;
+  // Per-zone overrides — null / [] = inherit the parent region's value.
+  /** Flat shipping fee for this zone (Prisma Decimal string). Null = inherit region. */
+  shippingFlatRate: string | null;
+  /** Free-delivery threshold for this zone (Decimal string). Null = inherit region. */
+  freeDeliveryThreshold: string | null;
+  /** Same-day offered? Null = inherit region. */
+  sameDayEnabled: boolean | null;
+  /** Same-day cutoff "HH:mm". Null = inherit region. */
+  sameDayCutoff: string | null;
+  /** Standard courier lead days for this zone. Null = inherit region.standardDeliveryDays. */
+  standardLeadDays: number | null;
+  /** Allowed delivery weekdays (0=Sun..6=Sat). [] = inherit region. */
+  deliveryDays: number[];
+  /** COD offered? Null = inherit region. */
+  codEnabled: boolean | null;
+  /** Min/max net order value to deliver here (Decimal string). Null = no bound. */
+  minOrderAmount: string | null;
+  maxOrderAmount: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,6 +39,15 @@ export interface ApiDeliveryZoneCreateInput {
   name_ar?: string | null;
   isActive?: boolean;
   sortOrder?: number;
+  shippingFlatRate?: number | null;
+  freeDeliveryThreshold?: number | null;
+  sameDayEnabled?: boolean | null;
+  sameDayCutoff?: string | null;
+  standardLeadDays?: number | null;
+  deliveryDays?: number[];
+  codEnabled?: boolean | null;
+  minOrderAmount?: number | null;
+  maxOrderAmount?: number | null;
 }
 
 export type ApiDeliveryZoneUpdateInput = Partial<ApiDeliveryZoneCreateInput>;

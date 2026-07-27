@@ -28,3 +28,19 @@ export function writeRegionCookie(code: string): void {
     code
   )}; path=/; max-age=31536000; samesite=lax`;
 }
+
+/**
+ * The selected delivery zone/city, mirrored into a cookie so SSR can resolve a
+ * zone-accurate delivery-days estimate on the product page (the server maps this
+ * name → the zone id within the current region, then sends it as `?zoneId=`). Stores
+ * the zone NAME (which is what the client has in `location.city`); the server does the
+ * name→id lookup against the region's zones. Empty name clears the cookie.
+ */
+export const ZONE_COOKIE = "zone";
+
+export function writeZoneCookie(name: string): void {
+  if (typeof document === "undefined") return;
+  document.cookie = name
+    ? `${ZONE_COOKIE}=${encodeURIComponent(name)}; path=/; max-age=31536000; samesite=lax`
+    : `${ZONE_COOKIE}=; path=/; max-age=0; samesite=lax`;
+}

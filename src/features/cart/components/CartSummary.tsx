@@ -11,7 +11,9 @@ import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 import { regionsApi } from "@/features/regions/api/regions.api";
+import { deliveryConfigApi } from "@/features/delivery-config/api/delivery-config.api";
 import { queryKeys } from "@/services/queryKeys";
+import { formatCutoffTime } from "@/lib/format";
 import { OrderDeliveryNote, maxCartLeadDays } from "./OrderDeliveryNote";
 import { usePublicVat } from "@/features/vat/hooks/usePublicVat";
 import { vatHint } from "@/features/vat/vatDisplay";
@@ -44,10 +46,26 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
   });
   const regionCode = countryCode;
   const currentRegion = regionsQuery.data?.find((r) => r.code === regionCode);
+
+  // Region-level resolved delivery config (no zone yet — the zone is picked at checkout).
+  // Drives the delivery fee (with free-delivery threshold), the same-day cutoff line, and
+  // whether the COD line is shown — all from real admin config, not hardcoded copy.
+  const deliveryConfigQuery = useQuery({
+    queryKey: queryKeys.deliveryConfig.resolve(regionCode, undefined, subtotal),
+    queryFn: () => deliveryConfigApi.get({ region: regionCode, subtotal }),
+    enabled: Boolean(regionCode),
+    staleTime: 60_000,
+  });
+  const deliveryConfig = deliveryConfigQuery.data;
+
+  // Prefer the resolved effective fee (folds in the free-delivery threshold) once loaded;
+  // fall back to the region flat rate while it loads so the line is never blank.
   const shipping =
-    currentRegion?.shippingFlatRate != null
-      ? Number(currentRegion.shippingFlatRate)
-      : 0;
+    deliveryConfig != null
+      ? deliveryConfig.effectiveFee
+      : currentRegion?.shippingFlatRate != null
+        ? Number(currentRegion.shippingFlatRate)
+        : 0;
   const total = subtotal + shipping;
 
   // VAT is only resolved for real at checkout, but the region's public config is
@@ -130,14 +148,23 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
       )}
 
       <ul className="flex flex-col gap-2 pt-1 text-xs text-ink-500">
-        <li className="inline-flex items-center gap-2">
-          <TruckIcon size={14} className="text-bloom-600" />
-          {t("cart.cutoff", { city: regionCopy.city })}
-        </li>
-        <li className="inline-flex items-center gap-2">
-          <ShieldIcon size={14} className="text-bloom-600" />
-          {t("cart.secureCod", { city: regionCopy.city })}
-        </li>
+        {/* Same-day line only when the region offers it, showing its real cutoff. */}
+        {deliveryConfig?.sameDayEnabled && deliveryConfig.sameDayCutoff ? (
+          <li className="inline-flex items-center gap-2">
+            <TruckIcon size={14} className="text-bloom-600" />
+            {t("cart.cutoff", {
+              city: regionCopy.city,
+              cutoff: formatCutoffTime(deliveryConfig.sameDayCutoff, locale),
+            })}
+          </li>
+        ) : null}
+        {/* COD line only when COD is available for the region. */}
+        {deliveryConfig?.codEnabled !== false ? (
+          <li className="inline-flex items-center gap-2">
+            <ShieldIcon size={14} className="text-bloom-600" />
+            {t("cart.secureCod", { city: regionCopy.city })}
+          </li>
+        ) : null}
       </ul>
     </aside>
   );
