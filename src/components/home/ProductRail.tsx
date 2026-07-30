@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
@@ -47,14 +47,14 @@ export function ProductRail({
           title={t(locale, titleKey)}
           description={t(locale, descKey)}
           action={
-            <Link href={viewAllHref ?? ROUTES.shop} className="contents">
+            <LocalizedLink href={viewAllHref ?? ROUTES.shop} className="contents">
               <Button
                 variant="ghost"
                 trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
               >
                 {t(locale, "home.viewAll")}
               </Button>
-            </Link>
+            </LocalizedLink>
           }
         />
       </Reveal>

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/useToast";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { ApiError } from "@/services/http";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import { useT } from "@/i18n/useT";
 
 export function RegisterForm() {
@@ -18,6 +19,7 @@ export function RegisterForm() {
   const { t } = useT();
   const toast = useToast();
   const router = useRouter();
+  const localize = useLocalizedHref();
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -47,7 +49,7 @@ export function RegisterForm() {
           ? t("auth.signedInAs", { name: session.user.firstName })
           : undefined,
       });
-      router.replace(ROUTES.home);
+      router.replace(localize(ROUTES.home));
     } catch (err) {
       const message =
         err instanceof ApiError

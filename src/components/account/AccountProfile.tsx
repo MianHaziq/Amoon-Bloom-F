@@ -15,6 +15,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useRouter } from "next/navigation";
 import { storage } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import { useT } from "@/i18n/useT";
 import { useMemo } from "react";
 
@@ -34,6 +35,7 @@ export function AccountProfile() {
   const user = useAppSelector((s) => s.auth.user);
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const localize = useLocalizedHref();
   const toast = useToast();
   const { t } = useT();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -149,7 +151,7 @@ export function AccountProfile() {
       toast.success({ title: t("account.accountDeleted") });
       storage.remove(STORAGE_KEYS.authToken);
       dispatch(logout());
-      router.replace("/");
+      router.replace(localize("/"));
     },
     onError: (err) => toast.fromError(t("account.accountDeleteError"), err),
   });

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Section, Button } from "@/components/ui";
 import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
@@ -31,7 +31,7 @@ export async function BrandStory() {
           <p className="mt-5 text-base leading-relaxed text-ink-600 md:text-lg">
             {t(locale, "home.storyBody", { country: regionCopy.country })}
           </p>
-          <Link href={ROUTES.shop} className="mt-8 inline-flex">
+          <LocalizedLink href={ROUTES.shop} className="mt-8 inline-flex">
             <Button
               variant="primary"
               size="lg"
@@ -39,7 +39,7 @@ export async function BrandStory() {
             >
               {t(locale, "home.storyCta")}
             </Button>
-          </Link>
+          </LocalizedLink>
         </div>
       </Reveal>
     </Section>

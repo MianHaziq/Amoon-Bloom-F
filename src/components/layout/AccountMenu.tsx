@@ -22,6 +22,7 @@ import {
 import { ROUTES } from "@/constants/routes";
 import { useAppSelector } from "@/store";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import { useT } from "@/i18n/useT";
 import { cn } from "@/lib/cn";
 
@@ -34,6 +35,7 @@ import { cn } from "@/lib/cn";
  */
 export function AccountMenu({ className }: { className?: string }) {
   const router = useRouter();
+  const localize = useLocalizedHref();
   const { signOut } = useAuth();
   const { t } = useT();
   const user = useAppSelector((s) => s.auth.user);
@@ -50,7 +52,7 @@ export function AccountMenu({ className }: { className?: string }) {
 
   const handleLogout = () => {
     signOut();
-    router.push(ROUTES.home);
+    router.push(localize(ROUTES.home));
   };
 
   return (
@@ -76,20 +78,20 @@ export function AccountMenu({ className }: { className?: string }) {
                 screen size, so admins never lose their way back in. */}
             {isStaff ? (
               <>
-                <MenuItem href={ROUTES.admin} icon={<ShieldIcon size={18} />}>
+                <MenuItem href={localize(ROUTES.admin)} icon={<ShieldIcon size={18} />}>
                   {t("nav.adminPanel")}
                 </MenuItem>
                 <MenuSeparator />
               </>
             ) : null}
-            <MenuItem href={ROUTES.account} icon={<UserIcon size={18} />}>
+            <MenuItem href={localize(ROUTES.account)} icon={<UserIcon size={18} />}>
               {t("nav.myAccount")}
             </MenuItem>
-            <MenuItem href={ROUTES.orders} icon={<PackageIcon size={18} />}>
+            <MenuItem href={localize(ROUTES.orders)} icon={<PackageIcon size={18} />}>
               {t("nav.myOrders")}
             </MenuItem>
             <MenuItem
-              href={ROUTES.wishlist}
+              href={localize(ROUTES.wishlist)}
               icon={<HeartIcon size={18} />}
               trailing={
                 wishlistCount > 0 ? (
@@ -102,7 +104,7 @@ export function AccountMenu({ className }: { className?: string }) {
               {t("nav.wishlist")}
             </MenuItem>
             <MenuItem
-              href={ROUTES.cart}
+              href={localize(ROUTES.cart)}
               icon={<BagIcon size={18} />}
               trailing={
                 itemCount > 0 ? (
@@ -130,10 +132,10 @@ export function AccountMenu({ className }: { className?: string }) {
               subtitle={t("nav.memberBody")}
             />
             <MenuSeparator />
-            <MenuItem href={ROUTES.login} icon={<LoginIcon size={18} />}>
+            <MenuItem href={localize(ROUTES.login)} icon={<LoginIcon size={18} />}>
               {t("nav.login")}
             </MenuItem>
-            <MenuItem href={ROUTES.register} icon={<UserPlusIcon size={18} />}>
+            <MenuItem href={localize(ROUTES.register)} icon={<UserPlusIcon size={18} />}>
               {t("auth.createAccount")}
             </MenuItem>
           </>

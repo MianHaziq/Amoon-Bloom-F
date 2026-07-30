@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { m } from "motion/react";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Divider, CurrencyAmount } from "@/components/ui";
@@ -135,7 +135,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
       ) : null}
 
       {variant === "page" && (
-        <Link href={ROUTES.checkout} className="contents">
+        <LocalizedLink href={ROUTES.checkout} className="contents">
           <Button
             fullWidth
             size="xl"
@@ -144,7 +144,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
           >
             {t("cart.checkout")}
           </Button>
-        </Link>
+        </LocalizedLink>
       )}
 
       <ul className="flex flex-col gap-2 pt-1 text-xs text-ink-500">

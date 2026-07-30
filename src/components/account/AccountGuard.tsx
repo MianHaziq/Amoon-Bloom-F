@@ -7,6 +7,7 @@ import { storage } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { Spinner } from "@/components/ui/Loader";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 
 /**
  * Client-side guard for `/account/*` routes. Waits for the storefront's
@@ -16,6 +17,7 @@ import { useIsHydrated } from "@/hooks/useIsHydrated";
 export function AccountGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const localize = useLocalizedHref();
   const user = useAppSelector((s) => s.auth.user);
   const hydrated = useIsHydrated();
 
@@ -24,10 +26,12 @@ export function AccountGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     if (!token) {
+      // pathname is already region/locale-prefixed, so login returns the
+      // visitor to the same prefixed account page after signing in.
       const next = encodeURIComponent(pathname || "/account");
-      router.replace(`/login?next=${next}`);
+      router.replace(localize(`/login?next=${next}`));
     }
-  }, [hydrated, token, pathname, router]);
+  }, [hydrated, token, pathname, router, localize]);
 
   if (!hydrated || !token || (token && !user)) {
     return (

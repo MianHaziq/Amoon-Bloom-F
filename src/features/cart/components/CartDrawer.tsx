@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { m, AnimatePresence } from "motion/react";
 import { Button, Drawer, Divider, CurrencyAmount } from "@/components/ui";
 import { ArrowRight, BagIcon } from "@/components/icons";
@@ -86,7 +86,7 @@ export function CartDrawer() {
               </p>
             ) : null}
             <div className="mt-4 flex flex-col gap-2">
-              <Link
+              <LocalizedLink
                 href={ROUTES.checkout}
                 onClick={close}
                 className="contents"
@@ -98,12 +98,12 @@ export function CartDrawer() {
                 >
                   {t("checkout.title")}
                 </Button>
-              </Link>
-              <Link href={ROUTES.cart} onClick={close} className="contents">
+              </LocalizedLink>
+              <LocalizedLink href={ROUTES.cart} onClick={close} className="contents">
                 <Button fullWidth size="lg" variant="outline">
                   {t("common.viewFullCart")}
                 </Button>
-              </Link>
+              </LocalizedLink>
             </div>
           </footer>
         </div>
@@ -126,11 +126,11 @@ function EmptyCart({ onContinue }: { onContinue: () => void }) {
         </p>
       </div>
       <Divider />
-      <Link href={ROUTES.shop} onClick={onContinue} className="contents">
+      <LocalizedLink href={ROUTES.shop} onClick={onContinue} className="contents">
         <Button size="lg" trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}>
           {t("common.browseBoutique")}
         </Button>
-      </Link>
+      </LocalizedLink>
     </div>
   );
 }

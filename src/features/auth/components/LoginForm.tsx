@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/useToast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { ApiError } from "@/services/http";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import { useT } from "@/i18n/useT";
 
 export function LoginForm() {
@@ -19,6 +20,7 @@ export function LoginForm() {
   const { t } = useT();
   const toast = useToast();
   const router = useRouter();
+  const localize = useLocalizedHref();
   const search = useSearchParams();
   const next = search.get("next");
   const [submitting, setSubmitting] = useState(false);
@@ -42,15 +44,17 @@ export function LoginForm() {
       const role = session.user?.role;
       const isStaff = role === "ADMIN" || role === "MANAGER";
 
-      // Resolve destination. An explicit `?next=` wins, except when a
-      // customer somehow lands on a /admin next URL — they'd just get
-      // bounced back here, so we drop it. Staff with no `next` go to /admin.
+      // Resolve destination. An explicit `?next=` wins (it's already
+      // region/locale-prefixed by the proxy/guard), except when a customer
+      // somehow lands on a /admin next URL — they'd just get bounced back
+      // here, so we drop it. Staff with no `next` go to the unprefixed /admin;
+      // customers go to their region/locale home.
       let destination: string;
       if (next && next.startsWith("/")) {
         const nextIsAdmin = next.startsWith("/admin");
-        destination = nextIsAdmin && !isStaff ? ROUTES.home : next;
+        destination = nextIsAdmin && !isStaff ? localize(ROUTES.home) : next;
       } else {
-        destination = isStaff ? "/admin" : ROUTES.home;
+        destination = isStaff ? "/admin" : localize(ROUTES.home);
       }
 
       toast.success({
@@ -120,12 +124,12 @@ export function LoginForm() {
           />
           {t("auth.rememberMe")}
         </label>
-        <Link
+        <LocalizedLink
           href="/forgot-password"
           className="font-medium text-bloom-700 hover:underline"
         >
           {t("auth.forgotPassword")}
-        </Link>
+        </LocalizedLink>
       </div>
       <Button
         type="submit"

@@ -49,6 +49,10 @@ export interface ApiRegion {
   /** ISO 3166-1 alpha-2 code (e.g. "AE") — renders this region's flag in the
    * storefront's country/region pickers. Null shows a neutral placeholder. */
   iso2: string | null;
+  /** Lowercase URL segment for this region's permanent public routes
+   * (e.g. "ae" -> /ae/en/…). Web-only — NOT used for API scoping (clients still
+   * send `code` via X-Region). Null = region has no dedicated public route. */
+  urlSlug: string | null;
   /** Per-region contact/legal info shown across the storefront (footer, support
    * section, WhatsApp button, contact page, legal pages, checkout receipt, order
    * emails). Same fallback convention as legalEntity: null falls back to the
@@ -111,6 +115,7 @@ export interface ApiRegionCreateInput {
   codEnabled?: boolean;
   blackoutDates?: ApiBlackoutDate[];
   iso2?: string | null;
+  urlSlug?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
   whatsappNumber?: string | null;

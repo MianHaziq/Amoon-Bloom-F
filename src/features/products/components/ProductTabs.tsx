@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/cn";
 import { CloseIcon } from "@/components/icons";
@@ -413,9 +413,9 @@ function ReviewForm({
     return (
       <div className="rounded-2xl border border-ink-100 bg-cream-50 px-5 py-4 text-sm text-ink-700">
         {t("product.reviewSignInPrompt")}{" "}
-        <Link href={ROUTES.login} className="font-semibold text-bloom-700 hover:underline">
+        <LocalizedLink href={ROUTES.login} className="font-semibold text-bloom-700 hover:underline">
           {t("common.signIn")}
-        </Link>
+        </LocalizedLink>
       </div>
     );
   }

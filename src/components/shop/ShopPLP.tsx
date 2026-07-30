@@ -31,6 +31,7 @@ import { FilterIcon, CloseIcon, ChevronDown, CheckIcon, ArrowRight } from "@/com
 import { baseTransition } from "@/lib/motion";
 import { cn } from "@/lib/cn";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import type { ProductFilter } from "@/features/products/types";
 import type { ApiProduct } from "@/features/products/api-types";
 import type { PaginatedResponse, ResponseMeta } from "@/types/api";
@@ -149,6 +150,7 @@ export function ShopPLP({
   const { t, tc, locale: uiLocale } = useT();
   const { currency, locale } = useCurrency();
   const router = useRouter();
+  const localize = useLocalizedHref();
 
   // The data SOURCE is the (locked-or-selected) category, or the search query.
   // Category & search are resolved SERVER-SIDE + paginated here — so browsing a
@@ -261,7 +263,7 @@ export function ShopPLP({
 
   const clearAll = () => {
     setFilter({ sort: "featured", category: lockedCategorySlug });
-    router.push(lockedCategorySlug ? window.location.pathname : "/shop");
+    router.push(lockedCategorySlug ? window.location.pathname : localize("/shop"));
   };
 
   const setFilterSafe = (next: ProductFilter) =>

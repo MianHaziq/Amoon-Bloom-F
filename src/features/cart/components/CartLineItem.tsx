@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { m } from "motion/react";
 import { IconButton, CurrencyAmount } from "@/components/ui";
 import { TrashIcon } from "@/components/icons";
@@ -43,7 +43,7 @@ export function CartLineItem({
           "rounded-2xl border border-ink-100 bg-white p-4"
       )}
     >
-      <Link
+      <LocalizedLink
         href={ROUTES.product(item.slug)}
         onClick={onNavigate}
         className={cn(
@@ -60,17 +60,17 @@ export function CartLineItem({
             className="object-cover"
           />
         )}
-      </Link>
+      </LocalizedLink>
 
       <div className="flex flex-1 flex-col">
         <div className="flex items-start justify-between gap-3">
-          <Link
+          <LocalizedLink
             href={ROUTES.product(item.slug)}
             onClick={onNavigate}
             className="min-w-0 font-display text-base font-medium leading-tight text-ink-900 hover:text-bloom-700"
           >
             {item.title}
-          </Link>
+          </LocalizedLink>
           <m.p
             key={item.unitPrice * item.quantity}
             initial={{ opacity: 0, y: -4 }}

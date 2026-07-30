@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Container, Badge, Button } from "@/components/ui";
 import { ArrowRight } from "@/components/icons";
 import { getServerRegion } from "@/services/serverRegion";
@@ -37,12 +37,12 @@ export async function Editorial() {
             across {regionCopy.country}.
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
-            <Link href="/about" className="contents">
+            <LocalizedLink href="/about" className="contents">
               <Button size="lg" trailingIcon={<ArrowRight size={16} />}>
                 Our story
               </Button>
-            </Link>
-            <Link href="/branches" className="contents">
+            </LocalizedLink>
+            <LocalizedLink href="/branches" className="contents">
               <Button
                 size="lg"
                 variant="outline"
@@ -50,7 +50,7 @@ export async function Editorial() {
               >
                 Visit a branch
               </Button>
-            </Link>
+            </LocalizedLink>
           </div>
         </div>
       </Container>

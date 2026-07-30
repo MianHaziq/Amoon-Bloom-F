@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Section, SectionHeader, DirScroll } from "@/components/ui";
 import { occasions, type Occasion } from "@/features/occasions/data/occasions.mock";
 import { cn } from "@/lib/cn";
@@ -23,7 +23,7 @@ export function OccasionRail() {
         <ul className="flex gap-5 lg:grid lg:grid-cols-7 lg:gap-4">
           {occasions.map((occasion) => (
             <li key={occasion.id} className="shrink-0">
-              <Link
+              <LocalizedLink
                 href={`/shop?occasion=${occasion.slug}`}
                 className="group flex w-32 flex-col items-center gap-3 lg:w-auto"
               >
@@ -49,7 +49,7 @@ export function OccasionRail() {
                     {occasion.tagline}
                   </p>
                 </div>
-              </Link>
+              </LocalizedLink>
             </li>
           ))}
         </ul>

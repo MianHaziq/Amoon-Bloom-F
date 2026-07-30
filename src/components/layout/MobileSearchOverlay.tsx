@@ -9,6 +9,7 @@ import { EASE_OUT } from "@/lib/motion";
 import { ROUTES } from "@/constants/routes";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { useProductQuickSearch } from "@/features/products/hooks/useProductQuickSearch";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import { useT } from "@/i18n/useT";
 import { SearchResults } from "./SearchResults";
 
@@ -27,6 +28,7 @@ interface MobileSearchOverlayProps {
 export function MobileSearchOverlay({ open, onClose }: MobileSearchOverlayProps) {
   const mounted = useIsHydrated();
   const router = useRouter();
+  const localize = useLocalizedHref();
   const { t } = useT();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -63,7 +65,7 @@ export function MobileSearchOverlay({ open, onClose }: MobileSearchOverlayProps)
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = query.trim();
-    router.push(q ? `${ROUTES.shop}?q=${encodeURIComponent(q)}` : ROUTES.shop);
+    router.push(localize(q ? `${ROUTES.shop}?q=${encodeURIComponent(q)}` : ROUTES.shop));
     handleClose();
   };
 

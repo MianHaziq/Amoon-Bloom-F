@@ -1,13 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useState } from "react";
 import { ChevronDown, ArrowRight } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/cn";
 import { useCategories } from "@/features/categories/hooks/useCategories";
+import { useUnprefixedPathname } from "@/features/location/useLocalizedHref";
 import { useT } from "@/i18n/useT";
 import type { CategoryGroup } from "@/features/categories/types";
 
@@ -19,7 +19,7 @@ export function MegaMenu({ className }: MegaMenuProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const { groups } = useCategories();
   const { t } = useT();
-  const pathname = usePathname();
+  const pathname = useUnprefixedPathname();
   const isHomeActive = pathname === ROUTES.home;
 
   return (
@@ -27,7 +27,7 @@ export function MegaMenu({ className }: MegaMenuProps) {
       className={cn("relative flex items-center gap-1", className)}
       onMouseLeave={() => setActiveId(null)}
     >
-      <Link
+      <LocalizedLink
         href={ROUTES.home}
         onMouseEnter={() => setActiveId(null)}
         className={cn(
@@ -36,16 +36,16 @@ export function MegaMenu({ className }: MegaMenuProps) {
         )}
       >
         <AnimatedLabel active={isHomeActive}>{t("common.home")}</AnimatedLabel>
-      </Link>
+      </LocalizedLink>
       {/* Standalone Shop link — goes straight to the full catalogue, separate
           from the categories dropdown beside it. */}
-      <Link
+      <LocalizedLink
         href={ROUTES.shop}
         onMouseEnter={() => setActiveId(null)}
         className="group rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-bloom-600"
       >
         <AnimatedLabel>{t("common.shop")}</AnimatedLabel>
-      </Link>
+      </LocalizedLink>
       {groups.map((group) => (
         <MegaMenuTrigger
           key={group.id}
@@ -54,18 +54,18 @@ export function MegaMenu({ className }: MegaMenuProps) {
           onActivate={() => setActiveId(group.id)}
         />
       ))}
-      <Link
+      <LocalizedLink
         href="/about"
         className="group rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-bloom-600"
       >
         <AnimatedLabel>{t("nav.ourStory")}</AnimatedLabel>
-      </Link>
-      <Link
+      </LocalizedLink>
+      <LocalizedLink
         href="/contact"
         className="group rounded-full px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-bloom-600"
       >
         <AnimatedLabel>{t("nav.contact")}</AnimatedLabel>
-      </Link>
+      </LocalizedLink>
     </nav>
   );
 }
@@ -154,7 +154,7 @@ function MegaMenuPanel({ group }: { group: CategoryGroup }) {
               ? cat.image.url
               : null;
             return (
-              <Link
+              <LocalizedLink
                 key={cat.id}
                 href={ROUTES.category(cat.slug)}
                 className="group flex items-center gap-3 rounded-2xl p-2.5 transition-colors hover:bg-cream-50"
@@ -188,18 +188,18 @@ function MegaMenuPanel({ group }: { group: CategoryGroup }) {
                   size={15}
                   className="shrink-0 text-ink-300 transition-all ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 group-hover:text-bloom-600 rtl:-scale-x-100"
                 />
-              </Link>
+              </LocalizedLink>
             );
           })}
         </div>
 
-        <Link
+        <LocalizedLink
           href={ROUTES.shop}
           className="mt-2 flex items-center justify-between rounded-2xl bg-cream-50 px-4 py-3 text-sm font-medium text-ink-900 transition-colors hover:bg-cream-100"
         >
           {t("nav.shopEverything")}
           <ArrowRight size={16} className="text-bloom-600 rtl:-scale-x-100" />
-        </Link>
+        </LocalizedLink>
       </div>
     </div>
   );

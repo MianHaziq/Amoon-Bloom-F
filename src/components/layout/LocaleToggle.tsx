@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setLocale, type Locale } from "@/store/slices/ui.slice";
 import { readLocaleCookie, writeLocaleCookie } from "@/i18n";
+import { withLocale } from "@/features/location/routing";
 import { useT } from "@/i18n/useT";
 import {
   Menu,
@@ -30,6 +31,7 @@ export function LocaleToggle({
 }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const pathname = usePathname();
   const locale = useAppSelector((s) => s.ui.locale);
   const { t } = useT();
 
@@ -37,7 +39,9 @@ export function LocaleToggle({
     if (next === locale) return;
     dispatch(setLocale(next));
     writeLocaleCookie(next);
-    router.refresh();
+    // Navigate to the same page under the new locale segment (the URL is the
+    // source of truth) so the SSR content re-renders in the chosen language.
+    router.push(withLocale(pathname ?? "/", next));
   };
 
   useEffect(() => {

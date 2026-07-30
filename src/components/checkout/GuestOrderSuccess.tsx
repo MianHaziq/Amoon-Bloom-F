@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Container, Button } from "@/components/ui";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { CheckIcon, ArrowRight, SparkleIcon } from "@/components/icons";
@@ -80,7 +80,7 @@ export function GuestOrderSuccess() {
           <p className="mt-5 text-xs text-ink-500">{t("order.guestLinkHint")}</p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link href={ROUTES.register} className="contents">
+            <LocalizedLink href={ROUTES.register} className="contents">
               <Button
                 size="lg"
                 fullWidth
@@ -89,21 +89,21 @@ export function GuestOrderSuccess() {
               >
                 {t("order.createAccountCta")}
               </Button>
-            </Link>
-            <Link href={ROUTES.login} className="contents">
+            </LocalizedLink>
+            <LocalizedLink href={ROUTES.login} className="contents">
               <Button size="lg" variant="outline" fullWidth className="sm:w-auto">
                 {t("order.loginCta")}
               </Button>
-            </Link>
+            </LocalizedLink>
           </div>
         </div>
 
         <div className="no-print mt-6 flex justify-center">
-          <Link href={ROUTES.shop} className="contents">
+          <LocalizedLink href={ROUTES.shop} className="contents">
             <Button size="lg" variant="ghost">
               {t("common.continueShopping")}
             </Button>
-          </Link>
+          </LocalizedLink>
         </div>
       </Container>
     </ReceiptStage>

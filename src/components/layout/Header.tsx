@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Container, IconButton } from "@/components/ui";
@@ -124,14 +124,14 @@ export function Header() {
         <div className="lg:hidden">
           {/* Row 1: Logo + delivery location */}
           <Container className="flex h-14 items-center justify-between">
-            <Link
+            <LocalizedLink
               href={ROUTES.home}
               className="flex shrink-0 items-center"
               aria-label={`${siteConfig.name} — home`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo.svg" alt={siteConfig.name} className="h-7 w-auto" />
-            </Link>
+            </LocalizedLink>
 
             <button
               type="button"
@@ -201,25 +201,25 @@ export function Header() {
 
         {/* ── Desktop header (lg+): single row ── */}
         <Container className="hidden h-20 items-center gap-4 lg:flex">
-          <Link
+          <LocalizedLink
             href={ROUTES.home}
             className="flex shrink-0 items-center"
             aria-label={`${siteConfig.name} — home`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.svg" alt={siteConfig.name} className="h-9 w-auto" />
-          </Link>
+          </LocalizedLink>
 
           <HeaderSearch />
 
           {isStaff ? (
             <nav className="flex items-center">
-              <Link
+              <LocalizedLink
                 href={ROUTES.admin}
                 className="inline-flex h-8 items-center rounded-full bg-ink-900 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-ink-800"
               >
                 {t("nav.adminPanel")}
-              </Link>
+              </LocalizedLink>
             </nav>
           ) : null}
 
@@ -227,7 +227,7 @@ export function Header() {
             <DeliverToPill />
             <LocaleToggle className="me-1" />
             <NotificationBell />
-            <Link
+            <LocalizedLink
               href={ROUTES.wishlist}
               aria-label={wishlistLabel}
               className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-all duration-200 hover:bg-ink-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-500 focus-visible:ring-offset-2 focus-visible:ring-offset-cream-50"
@@ -238,7 +238,7 @@ export function Header() {
                   {wishlistCount}
                 </span>
               ) : null}
-            </Link>
+            </LocalizedLink>
             <button
               type="button"
               onClick={() => dispatch(toggleCartDrawer(true))}

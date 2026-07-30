@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Container, Button } from "@/components/ui";
@@ -50,12 +50,12 @@ export function OrderReceipt({ orderId }: { orderId?: string }) {
           <>
             <ReceiptCard order={query.data} />
             <ReceiptActions order={query.data}>
-              <Link href={ROUTES.shop} className="contents">
+              <LocalizedLink href={ROUTES.shop} className="contents">
                 <Button size="lg" variant="outline" fullWidth className="sm:w-auto">
                   {t("common.continueShopping")}
                 </Button>
-              </Link>
-              <Link href={`/account/orders/${query.data.id}`} className="contents">
+              </LocalizedLink>
+              <LocalizedLink href={`/account/orders/${query.data.id}`} className="contents">
                 <Button
                   size="lg"
                   variant="subtle"
@@ -65,7 +65,7 @@ export function OrderReceipt({ orderId }: { orderId?: string }) {
                 >
                   {t("order.trackOrder")}
                 </Button>
-              </Link>
+              </LocalizedLink>
             </ReceiptActions>
           </>
         )}
@@ -97,13 +97,13 @@ function FallbackCard({
         )}
         <p className="max-w-sm text-sm text-ink-500">{t("order.thankYouBody")}</p>
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
-          <Link href={ROUTES.shop} className="contents">
+          <LocalizedLink href={ROUTES.shop} className="contents">
             <Button size="lg" variant="outline" fullWidth className="sm:w-auto">
               {t("common.continueShopping")}
             </Button>
-          </Link>
+          </LocalizedLink>
           {orderId && (
-            <Link href={`/account/orders/${orderId}`} className="contents">
+            <LocalizedLink href={`/account/orders/${orderId}`} className="contents">
               <Button
                 size="lg"
                 fullWidth
@@ -112,7 +112,7 @@ function FallbackCard({
               >
                 {t("order.trackOrder")}
               </Button>
-            </Link>
+            </LocalizedLink>
           )}
         </div>
       </div>

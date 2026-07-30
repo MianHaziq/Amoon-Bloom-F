@@ -1,9 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
+import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/store";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import {
+  useLocalizedHref,
+  useUnprefixedPathname,
+} from "@/features/location/useLocalizedHref";
 import { Container } from "@/components/ui";
 import {
   BellIcon,
@@ -44,15 +48,16 @@ export function AccountLayout({
   title?: string;
   description?: string;
 }) {
-  const pathname = usePathname();
+  const pathname = useUnprefixedPathname();
   const router = useRouter();
+  const localize = useLocalizedHref();
   const { signOut } = useAuth();
   const user = useAppSelector((s) => s.auth.user);
   const { t } = useT();
 
   const handleLogout = () => {
     signOut();
-    router.replace("/");
+    router.replace(localize("/"));
   };
 
   return (
@@ -78,7 +83,7 @@ export function AccountLayout({
               ? pathname === item.href
               : pathname?.startsWith(item.href);
             return (
-              <Link
+              <LocalizedLink
                 key={item.href}
                 href={item.href}
                 className={cn(
@@ -90,7 +95,7 @@ export function AccountLayout({
               >
                 <Icon size={16} />
                 {t(item.labelKey)}
-              </Link>
+              </LocalizedLink>
             );
           })}
           <button

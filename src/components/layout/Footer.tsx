@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import {
   InstagramIcon,
   FacebookIcon,
@@ -33,9 +33,9 @@ function FooterLink({ href, label }: { href: string; label: string }) {
     );
   }
   return (
-    <Link href={href} className={className}>
+    <LocalizedLink href={href} className={className}>
       {label}
-    </Link>
+    </LocalizedLink>
   );
 }
 
@@ -144,10 +144,10 @@ export async function Footer() {
     <footer className="bg-[#170b10] text-cream-100">
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
         <div className="max-w-lg">
-          <Link href={ROUTES.home} className="inline-flex items-center">
+          <LocalizedLink href={ROUTES.home} className="inline-flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.svg" alt={siteConfig.name} className="h-10 w-auto sm:h-12" />
-          </Link>
+          </LocalizedLink>
           <p className="mt-5 text-sm leading-relaxed text-cream-100/70">
             {t("footer.brandDesc", { country: regionCountryName ?? "" })}
           </p>

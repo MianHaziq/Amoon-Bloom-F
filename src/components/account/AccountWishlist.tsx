@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Button, CurrencyAmount } from "@/components/ui";
 import { TrashIcon, BagIcon, HeartIcon } from "@/components/icons";
 import { useAppDispatch, useAppSelector } from "@/store";
@@ -32,9 +32,9 @@ export function AccountWishlist() {
             {t("wishlist.emptyBody")}
           </p>
         </div>
-        <Link href={ROUTES.shop} className="contents">
+        <LocalizedLink href={ROUTES.shop} className="contents">
           <Button>{t("common.browseBoutique")}</Button>
-        </Link>
+        </LocalizedLink>
       </div>
     );
   }
@@ -46,7 +46,7 @@ export function AccountWishlist() {
           key={item.productId}
           className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5"
         >
-          <Link
+          <LocalizedLink
             href={ROUTES.product(item.slug)}
             className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl bg-blush-50"
           >
@@ -59,16 +59,16 @@ export function AccountWishlist() {
                 className="object-cover"
               />
             ) : null}
-          </Link>
+          </LocalizedLink>
 
           <div className="flex flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="min-w-0">
-              <Link
+              <LocalizedLink
                 href={ROUTES.product(item.slug)}
                 className="font-display text-lg text-ink-900 transition-colors hover:text-bloom-700"
               >
                 {item.title}
-              </Link>
+              </LocalizedLink>
               <p className="mt-0.5 text-sm font-medium text-ink-700">
                 <CurrencyAmount amount={item.unitPrice} currency={currency} locale={locale} />
               </p>

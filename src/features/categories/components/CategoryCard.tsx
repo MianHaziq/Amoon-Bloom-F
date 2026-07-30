@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { cn } from "@/lib/cn";
 import { ROUTES } from "@/constants/routes";
 import type { Category } from "../types";
@@ -33,7 +33,7 @@ export function CategoryCard({
   const src = realImage ?? fallbackImage ?? null;
 
   return (
-    <Link
+    <LocalizedLink
       href={ROUTES.category(category.slug)}
       className={cn(
         "group flex flex-col overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-(--shadow-soft) transition-all duration-300 hover:-translate-y-1 hover:shadow-(--shadow-lift)",
@@ -63,6 +63,6 @@ export function CategoryCard({
           {category.title}
         </h3>
       </div>
-    </Link>
+    </LocalizedLink>
   );
 }

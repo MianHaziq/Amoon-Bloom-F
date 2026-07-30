@@ -454,6 +454,10 @@ export function RegionForm({
         .string()
         .refine((v) => v === "" || /^[A-Za-z]{2}$/.test(v), t("admin.regionForm.iso2Invalid"))
         .optional(),
+      urlSlug: z
+        .string()
+        .refine((v) => v === "" || /^[a-z0-9-]+$/.test(v), t("admin.regionForm.urlSlugInvalid"))
+        .optional(),
       contactEmail: z
         .string()
         .refine((v) => v === "" || z.string().email().safeParse(v).success, t("admin.regionForm.contactEmailInvalid"))
@@ -538,6 +542,7 @@ export function RegionForm({
       codEnabled: true,
       blackoutDates: [],
       iso2: "",
+      urlSlug: "",
       contactEmail: "",
       contactPhone: "",
       whatsappNumber: "",
@@ -623,6 +628,9 @@ export function RegionForm({
     setValue("name", c.nameEn, { shouldDirty: true, shouldValidate: true });
     setValue("name_ar", c.nameAr, { shouldDirty: true });
     setValue("iso2", c.iso2.toUpperCase(), { shouldDirty: true, shouldValidate: true });
+    // Default the public-route slug to the lowercased ISO code (e.g. "ae"),
+    // still fully editable afterwards — same convenience as the other fields.
+    setValue("urlSlug", c.iso2.toLowerCase(), { shouldDirty: true, shouldValidate: true });
     if (c.currency) {
       setValue("currency", c.currency, { shouldDirty: true, shouldValidate: true });
     }
@@ -658,6 +666,7 @@ export function RegionForm({
         label_ar: b.label_ar ?? "",
       })),
       iso2: initial.iso2 ?? "",
+      urlSlug: initial.urlSlug ?? "",
       contactEmail: initial.contactEmail ?? "",
       contactPhone: initial.contactPhone ?? "",
       whatsappNumber: initial.whatsappNumber ?? "",
@@ -711,6 +720,7 @@ export function RegionForm({
           label_ar: b.label_ar?.trim() || null,
         })),
       iso2: v.iso2?.trim() ? v.iso2.trim().toUpperCase() : null,
+      urlSlug: v.urlSlug?.trim() ? v.urlSlug.trim().toLowerCase() : null,
       contactEmail: v.contactEmail?.trim() || null,
       contactPhone: v.contactPhone?.trim() || null,
       whatsappNumber: v.whatsappNumber?.trim() || null,
@@ -820,6 +830,13 @@ export function RegionForm({
                 className="mb-2.5 h-10 w-10"
               />
             </div>
+            <Input
+              label={t("admin.regionForm.urlSlugLabel")}
+              placeholder="ae"
+              hint={t("admin.regionForm.urlSlugHint")}
+              error={errors.urlSlug?.message}
+              {...register("urlSlug")}
+            />
           </div>
         </section>
 

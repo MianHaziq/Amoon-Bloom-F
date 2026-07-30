@@ -17,6 +17,7 @@
 
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
+import { ApiError } from "@/services/http";
 import { productsApi } from "@/features/products/api/products.api";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { sectionsApi } from "@/features/sections/api/sections.api";
@@ -42,7 +43,19 @@ const _categories = unstable_cache(
 export const getCachedCategories = cache((region?: string) => _categories(region));
 
 const _categoryById = unstable_cache(
-  (region: string | undefined, id: string) => categoriesApi.getById(id, region),
+  async (region: string | undefined, id: string) => {
+    try {
+      return await categoriesApi.getById(id, region);
+    } catch (e) {
+      // A genuine 404 (category doesn't exist / not in this region) is a
+      // cacheable "not found" → return null so the page renders a real 404
+      // instead of the error boundary. `instanceof ApiError` is reliable HERE
+      // (inside the cached fn); it does NOT survive being re-thrown across the
+      // unstable_cache boundary, which is why detection must happen here.
+      if (e instanceof ApiError && e.status === 404) return null;
+      throw e;
+    }
+  },
   ["catalog:category-by-id"],
   { revalidate: CATALOG_TTL, tags: ["categories"] }
 );
@@ -75,8 +88,16 @@ export const getCachedProductsByCategory = cache(
 );
 
 const _productById = unstable_cache(
-  (region: string | undefined, id: string, zoneKey: string) =>
-    productsApi.getById(id, region, zoneKey === "none" ? undefined : zoneKey),
+  async (region: string | undefined, id: string, zoneKey: string) => {
+    try {
+      return await productsApi.getById(id, region, zoneKey === "none" ? undefined : zoneKey);
+    } catch (e) {
+      // See _categoryById: 404 → null so the page can 404 cleanly (instanceof
+      // ApiError only works inside the cached fn, not across the cache boundary).
+      if (e instanceof ApiError && e.status === 404) return null;
+      throw e;
+    }
+  },
   ["catalog:product-by-id"],
   { revalidate: PRODUCTS_TTL, tags: ["products"] }
 );
@@ -146,3 +167,20 @@ const _deliveryConfig = unstable_cache(
   { revalidate: CATALOG_TTL, tags: ["regions", "delivery-zones"] }
 );
 export const getCachedDeliveryConfig = cache((regionCode?: string) => _deliveryConfig(r(regionCode)));
+
+// Zone-aware variant: resolves same-day/cutoff/fee etc. for a region + specific zone
+// (zone overrides win over region). `zoneId` is part of the cache key so per-zone
+// config doesn't bleed across zones ("none" sentinel keeps the key stable when no zone
+// is selected, matching getCachedProductById). Used by the product page's same-day note.
+const _deliveryConfigForZone = unstable_cache(
+  (regionCode: string, zoneKey: string) =>
+    deliveryConfigApi.get({
+      region: regionCode === "default" ? undefined : regionCode,
+      zoneId: zoneKey === "none" ? undefined : zoneKey,
+    }),
+  ["catalog:delivery-config-zone"],
+  { revalidate: CATALOG_TTL, tags: ["regions", "delivery-zones"] }
+);
+export const getCachedDeliveryConfigForZone = cache(
+  (regionCode?: string, zoneId?: string) => _deliveryConfigForZone(r(regionCode), zoneId || "none")
+);

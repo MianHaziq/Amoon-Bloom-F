@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
@@ -37,14 +37,14 @@ export async function FeaturedProducts() {
           title={t(locale, "home.featuredTitle")}
           description={t(locale, "home.featuredDesc")}
           action={
-            <Link href={ROUTES.shop} className="contents">
+            <LocalizedLink href={ROUTES.shop} className="contents">
               <Button
                 variant="ghost"
                 trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
               >
                 {t(locale, "home.viewEdit")}
               </Button>
-            </Link>
+            </LocalizedLink>
           }
         />
       </Reveal>

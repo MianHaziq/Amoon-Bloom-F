@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useQuery } from "@tanstack/react-query";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { queryKeys } from "@/services/queryKeys";
@@ -41,9 +41,9 @@ export function AccountOrderDetail({ id }: { id: string }) {
     return (
       <div className="rounded-xl border border-bloom-200 bg-bloom-50 p-6 text-bloom-700">
         {t("account.orderLoadError")}{" "}
-        <Link href="/account/orders" className="underline">
+        <LocalizedLink href="/account/orders" className="underline">
           {t("account.backToOrders")}
-        </Link>
+        </LocalizedLink>
       </div>
     );
   }
@@ -57,13 +57,13 @@ export function AccountOrderDetail({ id }: { id: string }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Link
+        <LocalizedLink
           href="/account/orders"
           className="inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-900"
         >
           <ChevronRight size={14} className="rotate-180 rtl:-scale-x-100" />
           {t("account.allOrders")}
-        </Link>
+        </LocalizedLink>
       </div>
 
       <header className="flex flex-wrap items-end justify-between gap-3">

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Drawer } from "@/components/ui";
@@ -15,6 +15,7 @@ import { writeLocaleCookie } from "@/i18n";
 import { GlobeIcon } from "@/components/icons";
 import { DeliverToPill } from "@/features/location/components/DeliverToPill";
 import { useRouter } from "next/navigation";
+import { parsePrefix, withLocale } from "@/features/location/routing";
 import { cn } from "@/lib/cn";
 
 const LOCALES: { value: Locale; nativeLabel: string; label: string }[] = [
@@ -27,6 +28,7 @@ export function MobileNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useT();
+  const restPath = parsePrefix(pathname ?? "")?.rest ?? pathname ?? "/";
   const open = useAppSelector((s) => s.ui.isMobileNavOpen);
   const locale = useAppSelector((s) => s.ui.locale);
   const user = useAppSelector((s) => s.auth.user);
@@ -39,7 +41,9 @@ export function MobileNav() {
     writeLocaleCookie(next);
     document.documentElement.lang = next;
     document.documentElement.dir = next === "ar" ? "rtl" : "ltr";
-    router.refresh();
+    // Navigate to the same page under the new locale segment so the URL (the
+    // source of truth) and the SSR content follow the language switch.
+    router.push(withLocale(pathname ?? "/", next));
   };
 
   // Close drawer on navigation
@@ -63,7 +67,7 @@ export function MobileNav() {
       <div className="flex flex-col gap-6 px-6 py-4">
         {/* Standalone Shop link — direct to the full catalogue, above the
             category breakdown. */}
-        <Link
+        <LocalizedLink
           onClick={close}
           href={ROUTES.shop}
           className="flex items-center justify-between rounded-2xl bg-ink-900 px-4 py-3 text-white transition-colors hover:bg-ink-800"
@@ -72,7 +76,7 @@ export function MobileNav() {
             {t("common.shop")}
           </span>
           <ChevronRight size={18} className="text-white/70 rtl:-scale-x-100" />
-        </Link>
+        </LocalizedLink>
 
         {categoryGroups.map((group) => (
           <section key={group.id}>
@@ -82,14 +86,14 @@ export function MobileNav() {
             <ul className="mt-3 flex flex-col gap-1">
               {group.categories.map((cat) => (
                 <li key={cat.id}>
-                  <Link
+                  <LocalizedLink
                     onClick={close}
                     href={ROUTES.category(cat.slug)}
                     className="flex items-center justify-between rounded-xl px-3 py-2.5 text-base text-ink-900 hover:bg-cream-50"
                   >
                     <span className="font-display text-lg">{cat.title}</span>
                     <ChevronRight size={16} className="text-ink-400 rtl:-scale-x-100" />
-                  </Link>
+                  </LocalizedLink>
                 </li>
               ))}
             </ul>
@@ -98,13 +102,13 @@ export function MobileNav() {
 
         <div className="mt-2 flex flex-col gap-1 border-t border-ink-100 pt-4">
           {isStaff ? (
-            <Link
+            <LocalizedLink
               onClick={close}
               href={ROUTES.admin}
               className="rounded-xl bg-ink-900 px-3 py-2.5 text-sm font-semibold text-white hover:bg-ink-800"
             >
               {t("nav.adminPanel")}
-            </Link>
+            </LocalizedLink>
           ) : null}
           {[
             { href: ROUTES.home, label: t("common.home") },
@@ -112,19 +116,19 @@ export function MobileNav() {
             { href: "/about", label: t("nav.ourStory") },
             { href: "/contact", label: t("nav.contact") },
           ].map((link) => (
-            <Link
+            <LocalizedLink
               key={link.href}
               onClick={close}
               href={link.href}
               className={cn(
                 "rounded-xl px-3 py-2.5 text-sm font-medium",
-                pathname === link.href
+                restPath === link.href
                   ? "bg-bloom-50 text-bloom-700"
                   : "text-ink-700 hover:bg-cream-50"
               )}
             >
               {link.label}
-            </Link>
+            </LocalizedLink>
           ))}
         </div>
 
@@ -171,20 +175,20 @@ export function MobileNav() {
             {t("nav.memberBody")}
           </p>
           <div className="mt-1 flex gap-2">
-            <Link
+            <LocalizedLink
               onClick={close}
               href={ROUTES.login}
               className="flex-1 rounded-full bg-ink-900 px-4 py-2.5 text-center text-sm font-medium text-white"
             >
               {t("common.signIn")}
-            </Link>
-            <Link
+            </LocalizedLink>
+            <LocalizedLink
               onClick={close}
               href={ROUTES.register}
               className="flex-1 rounded-full border border-ink-200 px-4 py-2.5 text-center text-sm font-medium text-ink-900"
             >
               {t("nav.join")}
-            </Link>
+            </LocalizedLink>
           </div>
         </div>
       </div>

@@ -32,31 +32,22 @@ export function LocationPersistence() {
     if (hydrated.current) return;
     hydrated.current = true;
     const stored = storage.get<Partial<LocationState>>(STORAGE_KEYS.location);
+    // The `/:region/:locale` URL is now the source of truth for the REGION
+    // (`country`): it's seeded into Redux server-side (StoreProvider, from the
+    // URL slug) and kept in sync on navigation by RegionLocaleSync. So
+    // localStorage restores ONLY the delivery city/zone and the "has chosen"
+    // flag here — never the country — otherwise a shared link to another region
+    // (or an hreflang alternate) would get silently overridden by a past choice.
     if (stored && stored.hasChosen) {
-      // The server already rendered using the `region` cookie (see
-      // StoreProvider's `initialCountry`). localStorage is the user's
-      // explicit past choice and should still win if it disagrees — but the
-      // cookie can go stale independently of localStorage (cleared via
-      // browser privacy settings, a different profile, etc.), and patching
-      // ONLY Redux in that case leaves server-rendered markup (catalog,
-      // footer, currency) stuck on the old region while client-rendered text
-      // jumps to the new one — a jarring half-corrected flash. If they
-      // disagree, refresh Server Components too so the whole page lands on
-      // one consistent region instead of a split state.
-      const priorCountry = store.getState().location.country;
-      dispatch(setLocationFromStorage(stored));
-      writeRegionCookie(store.getState().location.country);
-      writeZoneCookie(store.getState().location.city);
-      if (stored.country && stored.country !== priorCountry) {
-        router.refresh();
-      }
-      return;
+      dispatch(
+        setLocationFromStorage({ city: stored.city, hasChosen: stored.hasChosen })
+      );
     }
-    // Mirror the (possibly default) region into the cookie so SSR catalog
-    // fetches and the axios X-Region interceptor agree on the same region.
+    // Mirror the URL-seeded region + restored zone into the cookies so SSR
+    // catalog fetches and the axios X-Region interceptor agree on the same region.
     writeRegionCookie(store.getState().location.country);
     writeZoneCookie(store.getState().location.city);
-  }, [dispatch, store, router]);
+  }, [dispatch, store]);
 
   // When a user logs in (or the page loads with an active session), seed the
   // location from their saved profile if they haven't explicitly chosen one yet.
@@ -81,6 +72,12 @@ export function LocationPersistence() {
         // profile value could predate a region being renamed/removed.
         const region = regions.find((r) => r.code === rawCountry);
         if (!region) return;
+
+        // Region is URL-driven now, so only adopt the profile's saved delivery
+        // city when it belongs to the region the visitor is currently viewing —
+        // we never switch their region out from under the URL they're on.
+        const currentCountry = store.getState().location.country;
+        if (region.code !== currentCountry) return;
 
         const zones = await deliveryZonesApi.list(region.code).catch(() => []);
         const city = zones.some((z) => z.name === rawCity) ? rawCity : zones[0]?.name ?? "";

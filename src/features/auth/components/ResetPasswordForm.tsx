@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import { Button, Input } from "@/components/ui";
 import { ArrowRight, CheckCircleIcon } from "@/components/icons";
 import { authApi } from "../api/auth.api";
 import { ApiError } from "@/services/http";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import { useT } from "@/i18n/useT";
 import { useMemo } from "react";
 
@@ -18,6 +19,7 @@ type Values = { newPassword: string; confirm: string };
 export function ResetPasswordForm() {
   const { t } = useT();
   const router = useRouter();
+  const localize = useLocalizedHref();
   const search = useSearchParams();
   const token = search.get("token") ?? "";
   const [submitting, setSubmitting] = useState(false);
@@ -55,7 +57,7 @@ export function ResetPasswordForm() {
     try {
       await authApi.resetPassword(token, newPassword);
       setDone(true);
-      setTimeout(() => router.replace("/login"), 1500);
+      setTimeout(() => router.replace(localize("/login")), 1500);
     } catch (err) {
       setFormError(
         err instanceof ApiError ? err.message : t("auth.resetError")
@@ -114,9 +116,9 @@ export function ResetPasswordForm() {
         {t("auth.resetPassword")}
       </Button>
       <p className="text-center text-sm text-ink-500">
-        <Link href="/login" className="font-medium text-bloom-700 hover:underline">
+        <LocalizedLink href="/login" className="font-medium text-bloom-700 hover:underline">
           {t("auth.backToSignIn")}
-        </Link>
+        </LocalizedLink>
       </p>
     </form>
   );

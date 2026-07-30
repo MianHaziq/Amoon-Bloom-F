@@ -11,6 +11,7 @@ import { queryKeys } from "@/services/queryKeys";
 import { notificationsApi } from "@/features/notifications/api/notifications.api";
 import type { ApiNotification } from "@/features/notifications/types";
 import { relativeTime } from "@/features/notifications/utils";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import { useT } from "@/i18n/useT";
 
 const PAGE_SIZE = 20;
@@ -24,6 +25,7 @@ const PAGE_SIZE = 20;
 export function AccountNotifications() {
   const { t, locale } = useT();
   const router = useRouter();
+  const localize = useLocalizedHref();
   const qc = useQueryClient();
 
   const query = useInfiniteQuery({
@@ -50,7 +52,7 @@ export function AccountNotifications() {
       (typeof n.data?.deeplink === "string" && n.data.deeplink) ||
       (typeof n.data?.link === "string" && n.data.link) ||
       null;
-    if (link && link.startsWith("/")) router.push(link);
+    if (link && link.startsWith("/")) router.push(localize(link));
   };
 
   const items = useMemo(

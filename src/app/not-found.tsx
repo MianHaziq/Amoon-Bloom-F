@@ -4,9 +4,19 @@ import { ArrowRight } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 import { getServerLocale } from "@/i18n/server";
 import { t } from "@/i18n";
+import {
+  buildPrefix,
+  withPrefix,
+  DEFAULT_REGION_SLUG,
+} from "@/features/location/routing";
 
 export default async function NotFound() {
   const locale = await getServerLocale();
+  // This boundary also renders for an INVALID region slug (the storefront layout
+  // 404s on one), so links point at the DEFAULT region — never the bad slug.
+  const prefix = buildPrefix(DEFAULT_REGION_SLUG, locale);
+  const home = withPrefix(prefix, ROUTES.home);
+  const shop = withPrefix(prefix, ROUTES.shop);
   return (
     <Container className="flex min-h-[60vh] flex-col items-center justify-center py-24 text-center">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-bloom-700">
@@ -19,12 +29,12 @@ export default async function NotFound() {
         {t(locale, "notFound.body")}
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Link href={ROUTES.home} className="contents">
+        <Link href={home} className="contents">
           <Button size="lg" trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}>
             {t(locale, "notFound.backHome")}
           </Button>
         </Link>
-        <Link href={ROUTES.shop} className="contents">
+        <Link href={shop} className="contents">
           <Button size="lg" variant="outline">
             {t(locale, "common.browseBoutique")}
           </Button>

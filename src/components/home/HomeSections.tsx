@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
@@ -82,7 +82,7 @@ export async function HomeSections() {
               <SectionHeader
                 title={localized(section.title, section.title_ar, locale)}
                 action={
-                  <Link href={viewAllHref(section.id)} className="contents">
+                  <LocalizedLink href={viewAllHref(section.id)} className="contents">
                     <Button
                       variant="ghost"
                       trailingIcon={
@@ -91,7 +91,7 @@ export async function HomeSections() {
                     >
                       {t(locale, "home.viewAll")}
                     </Button>
-                  </Link>
+                  </LocalizedLink>
                 }
               />
             </Reveal>

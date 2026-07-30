@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, m } from "motion/react";
 import { Modal, Button, Skeleton } from "@/components/ui";
@@ -14,6 +14,7 @@ import { regionsApi } from "@/features/regions/api/regions.api";
 import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { queryKeys } from "@/services/queryKeys";
 import { profileApi } from "@/features/auth/api/profile.api";
+import { withRegionSlug, regionSlug } from "@/features/location/routing";
 import { useT } from "@/i18n/useT";
 import { RegionFlag } from "./RegionFlag";
 
@@ -103,6 +104,7 @@ function OptionRow({
 export function LocationSheet({ open, onClose }: LocationSheetProps) {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const { t } = useT();
   const current = useAppSelector((s) => s.location);
@@ -163,11 +165,14 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
     }
     onClose();
     if (countryChanged) {
-      // Region (and therefore catalog visibility + currency) changed — refresh
-      // server-rendered data (home, shop, PDP) and drop client-side caches
-      // (cart, product lists, promo codes) so they refetch with the new
-      // X-Region header instead of showing the previous region's content.
-      router.refresh();
+      // Region (and therefore catalog visibility + currency) changed — navigate
+      // to the SAME page under the new region slug so the URL (source of truth)
+      // and the server-rendered data (home, shop, PDP) follow the switch, and
+      // drop client-side caches (cart, product lists, promo codes) so they
+      // refetch with the new X-Region header instead of the previous region's.
+      const region = (regionsQuery.data ?? []).find((r) => r.code === finalCountry);
+      const slug = region ? regionSlug(region) : finalCountry.toLowerCase();
+      router.push(withRegionSlug(pathname ?? "/", slug));
       queryClient.invalidateQueries();
     }
   };

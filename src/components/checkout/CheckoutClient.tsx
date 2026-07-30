@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,6 +46,7 @@ import { DeliveryDatePicker } from "./DeliveryDatePicker";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { stripKnownCallingCode } from "@/features/regions/countries";
 import { ROUTES } from "@/constants/routes";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { storage } from "@/lib/storage";
 import { cn } from "@/lib/cn";
@@ -57,8 +58,6 @@ import {
   addDaysToKey,
   daysBetweenKeys,
   nextDeliverableKey,
-  parseHHmm,
-  nowMinutesInTz,
 } from "@/lib/deliveryDate";
 import { useAppSelector } from "@/store";
 import { useT } from "@/i18n/useT";
@@ -173,6 +172,7 @@ type NewAddressValues = z.infer<ReturnType<typeof makeNewAddressSchema>>;
 
 export function CheckoutClient() {
   const router = useRouter();
+  const localize = useLocalizedHref();
   const toast = useToast();
   const queryClient = useQueryClient();
   const cart = useCart();
@@ -546,7 +546,7 @@ export function CheckoutClient() {
         } catch {
           /* sessionStorage unavailable — the success page falls back gracefully */
         }
-        router.push(`${ROUTES.orderSuccess}?guest=1`);
+        router.push(localize(`${ROUTES.orderSuccess}?guest=1`));
         return;
       }
 
@@ -554,7 +554,7 @@ export function CheckoutClient() {
       // the order we just received instead of refetching (or showing nothing).
       queryClient.setQueryData(queryKeys.orders.detail(order.id), order);
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
-      router.push(`${ROUTES.orderSuccess}?id=${order.id}`);
+      router.push(localize(`${ROUTES.orderSuccess}?id=${order.id}`));
     },
     onError: (err) => {
       const message =
@@ -594,12 +594,12 @@ export function CheckoutClient() {
         <p className="mt-2 text-ink-500">
           {t("checkout.emptyBody")}
         </p>
-        <Link
+        <LocalizedLink
           href={ROUTES.shop}
           className="mt-6 inline-flex h-12 items-center rounded-full bg-bloom-600 px-6 text-base font-medium text-white shadow-(--shadow-bloom) hover:bg-bloom-700"
         >
           {t("common.browseBoutique")}
-        </Link>
+        </LocalizedLink>
       </Container>
     );
   }
@@ -612,9 +612,9 @@ export function CheckoutClient() {
             className="flex items-center gap-1 text-xs text-ink-500"
             aria-label={t("a11y.breadcrumb")}
           >
-            <Link href={ROUTES.cart} className="hover:text-ink-900">
+            <LocalizedLink href={ROUTES.cart} className="hover:text-ink-900">
               {t("nav.cart")}
-            </Link>
+            </LocalizedLink>
             <ChevronRight size={12} className="rtl:-scale-x-100" />
             <span className="text-ink-900">{t("checkout.title")}</span>
           </nav>
@@ -978,12 +978,12 @@ function BillingShippingCard({
       {!isAuthed ? (
         <p className="text-sm text-ink-500">
           {t("checkout.haveAccount")}{" "}
-          <Link
+          <LocalizedLink
             href={`${ROUTES.login}?next=${encodeURIComponent(ROUTES.checkout)}`}
             className="font-medium text-bloom-700 underline underline-offset-2 hover:text-bloom-800"
           >
             {t("checkout.signInToCheckout")}
-          </Link>
+          </LocalizedLink>
         </p>
       ) : null}
 
@@ -1202,21 +1202,18 @@ function OrderReviewCard({
     resolvedStandardLead != null || maxCartItemLeadDays > 0
       ? Math.max(resolvedStandardLead ?? 0, maxCartItemLeadDays)
       : null;
-  // Mirror the backend snapshot: counting starts today when before the daily cutoff, else
-  // tomorrow (today's dispatch is missed); then roll the arrival forward past any
-  // non-delivery weekday / blackout date so it lands on a day this area actually delivers
-  // (e.g. a 5-day lead whose 5th day is off shows as 6). Uses the region-tz "today"/clock.
+  // Mirror the backend snapshot: count the standard lead from TODAY, then roll the arrival
+  // forward past any non-delivery weekday / blackout date so it lands on a day this area
+  // actually delivers (e.g. a 5-day lead whose 5th day is off shows as 6). Uses the
+  // region-tz "today". The same-day cutoff is DELIBERATELY not applied — it governs only
+  // same-day eligibility, so pushing the standard lead to "tomorrow" past the cutoff would
+  // make the checkout ETA read one day longer than the configured lead and disagree with
+  // the product page (see order.service.js's matching note).
   const effectiveStandardDeliveryDays = (() => {
     if (rawStandardDeliveryDays == null) return null;
     if (!deliveryConfig?.todayKey) return rawStandardDeliveryDays;
-    const cutoffMin = parseHHmm(deliveryConfig.sameDayCutoff);
-    const pastCutoff =
-      cutoffMin != null && nowMinutesInTz(deliveryConfig.timezone) >= cutoffMin;
-    const baseKey = pastCutoff
-      ? addDaysToKey(deliveryConfig.todayKey, 1)
-      : deliveryConfig.todayKey;
     const arrival = nextDeliverableKey(
-      addDaysToKey(baseKey, rawStandardDeliveryDays),
+      addDaysToKey(deliveryConfig.todayKey, rawStandardDeliveryDays),
       deliveryConfig.deliveryDays ?? [],
       new Set(deliveryConfig.blackoutDates ?? [])
     );
@@ -1226,11 +1223,11 @@ function OrderReviewCard({
   })();
 
   // Earliest a scheduled delivery can be booked. Standard delivery already covers the
-  // whole lead window, so scheduling only makes sense for dates strictly AFTER it: the
-  // floor is effective-lead-days + 1. A 1-day product hides tomorrow (earliest = day 2);
-  // a 2-day product hides through day 2 (earliest = day 3). Unknown lead falls back to
-  // tomorrow (day 1). Clamped to the max window so an unusually long lead time can never
-  // invert the calendar (min > max) — always between 1 and SCHEDULED_MAX_WINDOW_DAYS.
+  // whole lead window (arrival = today+lead), so scheduling only makes sense for dates
+  // strictly AFTER it: the floor is effective-lead-days + 1. A 1-day lead (arrives tomorrow)
+  // hides tomorrow (earliest = day 2); a 2-day lead hides through day 2 (earliest = day 3).
+  // Unknown lead falls back to tomorrow (day 1). Clamped to the max window so an unusually
+  // long lead time can never invert the calendar (min > max).
   const minScheduledLeadDays = Math.min(
     (effectiveStandardDeliveryDays ?? 0) + 1,
     SCHEDULED_MAX_WINDOW_DAYS

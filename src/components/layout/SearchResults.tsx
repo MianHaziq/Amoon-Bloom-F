@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Spinner } from "@/components/ui";
 import { CurrencyAmount } from "@/components/ui/CurrencyAmount";
 import { ArrowRight, SearchIcon } from "@/components/icons";
@@ -80,7 +80,7 @@ export function SearchResults({
       <ul className="flex flex-col">
         {products.map((p) => (
           <li key={p.id}>
-            <Link
+            <LocalizedLink
               href={ROUTES.product(p.slug)}
               onClick={onNavigate}
               className={`flex items-center rounded-xl ${rowPad} transition-colors hover:bg-cream-100`}
@@ -114,19 +114,19 @@ export function SearchResults({
                   className="mt-0.5 block text-sm font-semibold text-bloom-700"
                 />
               </span>
-            </Link>
+            </LocalizedLink>
           </li>
         ))}
       </ul>
 
-      <Link
+      <LocalizedLink
         href={`${ROUTES.shop}?q=${encodeURIComponent(term)}`}
         onClick={onNavigate}
         className="flex items-center justify-center gap-2 border-t border-ink-100 px-4 py-3 text-sm font-semibold text-ink-900 transition-colors hover:text-bloom-700"
       >
         {t("nav.searchViewAll", { total })}
         <ArrowRight size={15} className="rtl:-scale-x-100" />
-      </Link>
+      </LocalizedLink>
     </div>
   );
 }

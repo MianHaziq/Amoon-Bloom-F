@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { ROUTES } from "@/constants/routes";
@@ -189,19 +189,19 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
             {t("hero.subtitle")}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3 sm:mt-7">
-            <Link
+            <LocalizedLink
               href={ROUTES.shop}
               className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-ink-900 shadow-(--shadow-lift) transition-transform hover:-translate-y-0.5 hover:bg-cream-50 sm:h-12 sm:px-6"
             >
               {t("hero.ctaPrimary")}
               <ArrowRight size={16} className="rtl:-scale-x-100" />
-            </Link>
-            <Link
+            </LocalizedLink>
+            <LocalizedLink
               href={ROUTES.shop}
               className="inline-flex h-11 items-center rounded-full border border-white/40 px-5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10 sm:h-12 sm:px-6"
             >
               {t("hero.ctaSecondary")}
-            </Link>
+            </LocalizedLink>
           </div>
         </div>
 
@@ -245,13 +245,13 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
     {/* Mobile shop button — sits at the bottom-left of the carousel, half
         inside the image and half below it. Must live outside the overflow-hidden
         <section> so it isn't clipped at the rounded edge. */}
-    <Link
+    <LocalizedLink
       href={ROUTES.shop}
       className="absolute bottom-0 inset-s-5 z-20 translate-y-1/2 inline-flex items-center gap-2.5 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-bloom-700 shadow-xl ring-4 ring-cream-50 transition-colors hover:bg-cream-50 active:scale-95 sm:hidden"
     >
       {t("hero.ctaPrimary")}
       <ArrowRight size={14} className="rtl:-scale-x-100" />
-    </Link>
+    </LocalizedLink>
     </div>
   );
 }

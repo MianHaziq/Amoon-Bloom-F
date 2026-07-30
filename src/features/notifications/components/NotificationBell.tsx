@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BellIcon } from "@/components/icons";
@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/Loader";
 import { cn } from "@/lib/cn";
 import { queryKeys } from "@/services/queryKeys";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import { useT } from "@/i18n/useT";
 import { ROUTES } from "@/constants/routes";
 import { notificationsApi } from "../api/notifications.api";
@@ -25,6 +26,7 @@ export function NotificationBell({ className }: { className?: string }) {
   const { isAuthenticated } = useAuth();
   const { t, locale } = useT();
   const router = useRouter();
+  const localize = useLocalizedHref();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -79,7 +81,7 @@ export function NotificationBell({ className }: { className?: string }) {
       (typeof n.data?.link === "string" && n.data.link) ||
       null;
     setOpen(false);
-    if (link && link.startsWith("/")) router.push(link);
+    if (link && link.startsWith("/")) router.push(localize(link));
   };
 
   return (
@@ -171,13 +173,13 @@ export function NotificationBell({ className }: { className?: string }) {
             )}
           </div>
 
-          <Link
+          <LocalizedLink
             href={ROUTES.notifications}
             onClick={() => setOpen(false)}
             className="block border-t border-ink-100 px-4 py-3 text-center text-sm font-medium text-bloom-700 transition-colors hover:bg-bloom-50"
           >
             {t("notifications.viewAll")}
-          </Link>
+          </LocalizedLink>
         </div>
       ) : null}
     </div>

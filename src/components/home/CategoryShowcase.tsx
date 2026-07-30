@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
@@ -58,14 +58,14 @@ export async function CategoryShowcase() {
             title={t(locale, "home.categoriesTitle")}
             description={t(locale, "home.categoriesDesc", { city: regionCopy.city })}
             action={
-              <Link href={ROUTES.shop} className="contents">
+              <LocalizedLink href={ROUTES.shop} className="contents">
                 <Button
                   variant="ghost"
                   trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
                 >
                   {t(locale, "home.browseAll")}
                 </Button>
-              </Link>
+              </LocalizedLink>
             }
           />
         </Reveal>
@@ -83,14 +83,14 @@ export async function CategoryShowcase() {
       </StaggerGroup>
       {/* Mobile: simple browse button below the grid */}
       <div className="mt-6 flex justify-center md:hidden">
-        <Link href={ROUTES.shop} className="contents">
+        <LocalizedLink href={ROUTES.shop} className="contents">
           <Button
             variant="ghost"
             trailingIcon={<ArrowRight size={16} className="rtl:-scale-x-100" />}
           >
             {t(locale, "home.browseAll")}
           </Button>
-        </Link>
+        </LocalizedLink>
       </div>
     </Section>
   );

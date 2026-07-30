@@ -7,6 +7,7 @@ import { SearchIcon } from "@/components/icons";
 import { EASE_OUT } from "@/lib/motion";
 import { ROUTES } from "@/constants/routes";
 import { useProductQuickSearch } from "@/features/products/hooks/useProductQuickSearch";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 import { useT } from "@/i18n/useT";
 import { SearchResults } from "./SearchResults";
 
@@ -17,6 +18,7 @@ import { SearchResults } from "./SearchResults";
  */
 export function HeaderSearch() {
   const router = useRouter();
+  const localize = useLocalizedHref();
   const { t } = useT();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -37,7 +39,7 @@ export function HeaderSearch() {
 
   const goToResults = () => {
     const q = query.trim();
-    router.push(q ? `${ROUTES.shop}?q=${encodeURIComponent(q)}` : ROUTES.shop);
+    router.push(localize(q ? `${ROUTES.shop}?q=${encodeURIComponent(q)}` : ROUTES.shop));
     setOpen(false);
   };
 

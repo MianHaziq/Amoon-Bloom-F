@@ -11,6 +11,7 @@ import { env } from "@/config/env";
 import { useToast } from "@/hooks/useToast";
 import { ApiError } from "@/services/http";
 import { ROUTES } from "@/constants/routes";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
 
 const GIS_SCRIPT = "https://accounts.google.com/gsi/client";
 const APPLE_SCRIPT =
@@ -111,6 +112,7 @@ export function useOAuthSignIn() {
   const dispatch = useAppDispatch();
   const toast = useToast();
   const router = useRouter();
+  const localize = useLocalizedHref();
   const search = useSearchParams();
   const [pending, setPending] = useState<null | "google" | "apple">(null);
 
@@ -118,13 +120,14 @@ export function useOAuthSignIn() {
   const resolveDestination = useCallback(
     (role: string | undefined) => {
       const isStaff = role === "ADMIN" || role === "MANAGER";
+      // `next` is already region/locale-prefixed by the proxy/guard.
       if (next && next.startsWith("/")) {
         const nextIsAdmin = next.startsWith("/admin");
-        return nextIsAdmin && !isStaff ? ROUTES.home : next;
+        return nextIsAdmin && !isStaff ? localize(ROUTES.home) : next;
       }
-      return isStaff ? "/admin" : ROUTES.home;
+      return isStaff ? "/admin" : localize(ROUTES.home);
     },
-    [next]
+    [next, localize]
   );
 
   const handleSession = useCallback(

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ordersApi } from "@/features/orders/api/orders.api";
@@ -56,12 +56,12 @@ export function AccountOrders() {
         <p className="mt-2 text-sm text-ink-500">
           {t("account.ordersEmptyBody")}
         </p>
-        <Link
+        <LocalizedLink
           href="/shop"
           className="mt-4 inline-flex h-10 items-center rounded-full bg-bloom-600 px-5 text-sm font-medium text-white shadow-(--shadow-bloom) hover:bg-bloom-700"
         >
           {t("account.startShopping")}
-        </Link>
+        </LocalizedLink>
       </div>
     );
   }
@@ -76,7 +76,7 @@ export function AccountOrders() {
             ? order.items.reduce((s, i) => s + (i?.quantity ?? 0), 0)
             : 0;
         return (
-          <Link
+          <LocalizedLink
             key={order.id}
             href={`/account/orders/${order.id}`}
             className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 transition-colors hover:border-ink-200 sm:gap-5 sm:p-5"
@@ -99,7 +99,7 @@ export function AccountOrders() {
               </p>
             </div>
             <ChevronRight size={16} className="shrink-0 text-ink-400 rtl:-scale-x-100" />
-          </Link>
+          </LocalizedLink>
         );
       })}
 

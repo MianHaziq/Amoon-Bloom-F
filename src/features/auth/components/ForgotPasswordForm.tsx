@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -60,12 +60,12 @@ export function ForgotPasswordForm() {
         <p className="text-sm text-ink-500">
           {t("auth.checkEmailBody")}
         </p>
-        <Link
+        <LocalizedLink
           href="/login"
           className="mt-2 text-sm font-medium text-bloom-700 hover:underline"
         >
           {t("auth.backToSignIn")}
-        </Link>
+        </LocalizedLink>
       </div>
     );
   }
@@ -99,9 +99,9 @@ export function ForgotPasswordForm() {
       </Button>
       <p className="text-center text-sm text-ink-500">
         {t("auth.rememberedIt")}{" "}
-        <Link href="/login" className="font-medium text-bloom-700 hover:underline">
+        <LocalizedLink href="/login" className="font-medium text-bloom-700 hover:underline">
           {t("auth.signIn")}
-        </Link>
+        </LocalizedLink>
       </p>
     </form>
   );

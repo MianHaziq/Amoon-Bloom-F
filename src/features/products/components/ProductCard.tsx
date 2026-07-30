@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { useState } from "react";
 import { Badge, CurrencyAmount } from "@/components/ui";
 import { BagIcon, StarIcon } from "@/components/icons";
@@ -88,7 +88,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
         className
       )}
     >
-      <Link
+      <LocalizedLink
         href={ROUTES.product(product.slug)}
         className="relative block overflow-hidden rounded-2xl bg-blush-50 transition-transform duration-300 ease-out-soft will-change-transform group-hover:-translate-y-1"
         aria-label={product.title}
@@ -157,7 +157,7 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
             {product.inStock ? t("common.quickAdd") : t("common.soldOut")}
           </button>
         </div>
-      </Link>
+      </LocalizedLink>
 
       <div className="flex flex-col gap-1">
         {/* Category eyebrow — basic product detail only (matches the client's
@@ -167,12 +167,12 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
             {product.category}
           </p>
         )}
-        <Link
+        <LocalizedLink
           href={ROUTES.product(product.slug)}
           className="line-clamp-1 text-sm font-medium leading-snug tracking-tight text-ink-900 transition-colors hover:text-bloom-700 sm:text-base"
         >
           {product.title}
-        </Link>
+        </LocalizedLink>
         <div className="mt-1 flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
             <CurrencyAmount
