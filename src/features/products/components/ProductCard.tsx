@@ -212,6 +212,11 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
                 )}
               </>
             )}
+            {vatHintValue?.kind === "exclusive" ? (
+              <span className="text-xs font-medium text-bloom-700">
+                {t("product.vatExclusiveNote")}
+              </span>
+            ) : null}
           </div>
 
           {colors.length > 0 ? (
@@ -266,11 +271,6 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
             </span>
           ) : null}
         </div>
-        {vatHintValue?.kind === "exclusive" ? (
-          <p className="text-xs font-medium text-ink-500">
-            {t("product.vatExclusiveNote")}
-          </p>
-        ) : null}
       </div>
     </article>
   );
