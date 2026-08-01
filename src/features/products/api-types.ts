@@ -25,6 +25,34 @@ export interface ApiProductOptionGroup {
   optionColors?: string[];
   /** Optional per-value image SETS (array-of-arrays), aligned with `options`. */
   optionImageSets?: string[][];
+  /** True when this group's values map 1:1 to `ApiProduct.variants` (e.g. "Size") —
+   *  picking a value changes price/photos/contents, not just the photo. At most one
+   *  group per product is true. */
+  isVariantAxis?: boolean;
+}
+
+/** One priced/photographed size (or other single-axis variant) of a product — e.g. the
+ *  Small/Medium/Large Graduation Giveaway Box. `optionValue` matches a value in the
+ *  product's `isVariantAxis` option group. Stock stays product-level (`ApiProduct.quantity`),
+ *  not per-variant. */
+export interface ApiProductVariant {
+  id: string;
+  optionValue: string;
+  optionValue_ar: string | null;
+  price: number;
+  discountedPrice: number | null;
+  images: string[];
+  contents: string | null;
+  contents_ar: string | null;
+  isDefault: boolean;
+  sortOrder: number;
+}
+
+/** "From X to Y" price span across a product's variants (each variant's own discounted
+ *  price when it's lower). Null when the product has no variants. */
+export interface ApiProductPriceRange {
+  min: number;
+  max: number;
 }
 
 export interface ApiProductCategoryRef {
@@ -51,14 +79,20 @@ export interface ApiProductRegionPrice {
   discountedPrice: number | null;
   /** Per-region "ships within N days" override for this product (null = none). */
   deliveryLeadDays?: number | null;
+  /** Per-region cash-arrangement fee schedule override — both-or-neither (see
+   *  utils/cashArrangementMath.js on the backend for the full precedence chain). */
+  cashArrangementFeeStepAmount?: number | null;
+  cashArrangementFeeMarginPercent?: number | null;
 }
 
-/** Per-zone "ships within N days" override for this product. One entry per delivery
- *  zone that has an override; deliveryLeadDays null = no override for that zone
- *  (falls back to the region/product/category/default chain). */
+/** Per-zone "ships within N days" + cash-arrangement fee overrides for this product. One
+ *  entry per delivery zone that has ANY override; a null field means no override for that
+ *  specific field (falls back to the region/product/category/default chain). */
 export interface ApiProductZoneLead {
   zoneId: string;
   deliveryLeadDays: number | null;
+  cashArrangementFeeStepAmount?: number | null;
+  cashArrangementFeeMarginPercent?: number | null;
 }
 
 export interface ApiProduct {
@@ -84,6 +118,10 @@ export interface ApiProduct {
   /** Overrides Category.deliveryLeadDays / Settings.defaultDeliveryLeadDays for this
    *  product specifically. Null = no override (falls through the resolution chain). */
   deliveryLeadDays?: number | null;
+  /** Default cash-arrangement fee schedule for this product (both-or-neither). Overridden
+   *  per-region/per-zone by the corresponding entries in regionPrices/zoneLeadDays. */
+  cashArrangementFeeStepAmount?: number | null;
+  cashArrangementFeeMarginPercent?: number | null;
   /** Fully-resolved "ships within N day(s)" lead time (product -> category -> global
    *  default) — always a number, never null. Present on every public product read. */
   resolvedDeliveryLeadDays?: number;
@@ -98,6 +136,11 @@ export interface ApiProduct {
   images: string[];
   descriptions: ApiProductDescriptionBlock[];
   productOptions: ApiProductOptionGroup[];
+  /** Small/Medium/Large-style variants, each with its own price/photos/contents. Empty
+   *  for every product that doesn't use this (the vast majority). */
+  variants: ApiProductVariant[];
+  /** "From X to Y" span across variants. Null when the product has no variants. */
+  priceRange: ApiProductPriceRange | null;
   /** Aggregated from the Review table — null/0 until the product has any reviews. */
   avgRating?: number | null;
   reviewCount?: number;
@@ -123,6 +166,19 @@ export interface ApiProductOptionInput {
   optionColors?: string[];
   /** Optional per-value image SETS (array-of-arrays), aligned with `options`. */
   optionImageSets?: string[][];
+  /** Marks this group as the one whose values drive `variants` (e.g. "Size"). */
+  isVariantAxis?: boolean;
+}
+
+export interface ApiProductVariantInput {
+  optionValue?: string | null;
+  optionValue_ar?: string | null;
+  price: number;
+  discountedPrice?: number | null;
+  images?: string[];
+  contents?: string | null;
+  contents_ar?: string | null;
+  isDefault?: boolean;
 }
 
 export interface ApiProductCreateInput {
@@ -144,10 +200,15 @@ export interface ApiProductCreateInput {
   customNamePrice?: number | null;
   quantity?: number;
   deliveryLeadDays?: number | null;
+  cashArrangementFeeStepAmount?: number | null;
+  cashArrangementFeeMarginPercent?: number | null;
   categoryId?: string | null;
   descriptions?: ApiProductDescriptionInput[];
   images?: string[];
   productOptions?: ApiProductOptionInput[];
+  /** Optional Small/Medium/Large-style variants — full replace on update when sent.
+   *  Empty/omitted = a plain product (unchanged behavior). */
+  variants?: ApiProductVariantInput[];
   /** Publish state. Defaults to PUBLISHED from the admin form. */
   status?: "DRAFT" | "PUBLISHED";
   /** Regions this product should be visible in. Defaults to the default region (UAE) if omitted. */

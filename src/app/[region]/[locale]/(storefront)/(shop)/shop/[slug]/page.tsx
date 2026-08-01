@@ -154,7 +154,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </StaggerItem>
 
             <StaggerItem>
-              <AddToCartPanel product={product} sameDayCutoff={sameDayCutoff} />
+              {/* Per-unit "add cash arrangement" lives inside AddToCartPanel (above the
+                  add-to-cart button), captured per unit like the gift-card option. */}
+              <AddToCartPanel
+                product={product}
+                sameDayCutoff={sameDayCutoff}
+                regionCode={region ?? ""}
+              />
             </StaggerItem>
           </StaggerGroup>
         </div>

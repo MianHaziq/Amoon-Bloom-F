@@ -12,7 +12,9 @@ import { addToCart } from "@/features/cart/cart.thunks";
 import { toggleCartDrawer } from "@/store/slices/ui.slice";
 import { WishlistToggle } from "@/features/wishlist/components/WishlistToggle";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
-import { useShowVatInclusive } from "@/features/vat/hooks/useShowVatInclusive";
+import { usePublicVat } from "@/features/vat/hooks/usePublicVat";
+import { vatHint } from "@/features/vat/vatDisplay";
+import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { useT } from "@/i18n/useT";
 import type { MessageKey } from "@/i18n";
 import { isColorGroupTitle, productColorSwatches } from "../facets";
@@ -45,7 +47,12 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
     product.compareAtPrice.amount > product.price.amount;
   const colors = productColorSwatches(product);
   const colorGroup = product.options?.find((g) => isColorGroupTitle(g.title));
-  const showVatInclusive = useShowVatInclusive();
+  // Grid cards are the one pre-checkout surface that previews an exclusive
+  // "+ X% VAT" addition (matches the checkout total). Nothing is shown for
+  // inclusive regions here — that label only appears on the PDP now.
+  const vat = usePublicVat();
+  const hydrated = useIsHydrated();
+  const vatHintValue = hydrated ? vatHint(vat) : null;
 
   // Colour-variant image swap: hovering a dot previews its image, clicking pins
   // it — all in-place, no navigation. Falls back to the default primary image.
@@ -175,19 +182,35 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
         </LocalizedLink>
         <div className="mt-1 flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
-            <CurrencyAmount
-              amount={product.price.amount}
-              currency={currency}
-              locale={locale}
-              className="text-base font-semibold text-bloom-700"
-            />
-            {hasDiscount && product.compareAtPrice && (
-              <CurrencyAmount
-                amount={product.compareAtPrice.amount}
-                currency={currency}
-                locale={locale}
-                className="text-xs text-ink-400 line-through"
-              />
+            {product.priceRange ? (
+              <>
+                <span className="text-xs font-medium text-ink-500">
+                  {t("product.fromPriceLabel")}
+                </span>
+                <CurrencyAmount
+                  amount={product.priceRange.min}
+                  currency={currency}
+                  locale={locale}
+                  className="text-base font-semibold text-bloom-700"
+                />
+              </>
+            ) : (
+              <>
+                <CurrencyAmount
+                  amount={product.price.amount}
+                  currency={currency}
+                  locale={locale}
+                  className="text-base font-semibold text-bloom-700"
+                />
+                {hasDiscount && product.compareAtPrice && (
+                  <CurrencyAmount
+                    amount={product.compareAtPrice.amount}
+                    currency={currency}
+                    locale={locale}
+                    className="text-xs text-ink-400 line-through"
+                  />
+                )}
+              </>
             )}
           </div>
 
@@ -243,11 +266,11 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
             </span>
           ) : null}
         </div>
-        {showVatInclusive && (
-          <p className="text-xs font-medium text-bloom-600">
-            {t("product.vatInclusive")}
+        {vatHintValue?.kind === "exclusive" ? (
+          <p className="text-xs font-medium text-ink-500">
+            {t("product.vatExclusiveNote")}
           </p>
-        )}
+        ) : null}
       </div>
     </article>
   );

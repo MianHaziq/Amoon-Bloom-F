@@ -8,6 +8,7 @@ import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { useT } from "@/i18n/useT";
 import { cn } from "@/lib/cn";
 import type { Product } from "../types";
+import { usePdpImage } from "./PdpImageContext";
 
 interface ProductPriceProps {
   product: Product;
@@ -20,18 +21,32 @@ interface ProductPriceProps {
  * location slice so prices flip when the user switches country (mobile spec
  * §3.3). The product's stored `price.currency` is ignored — the storefront
  * always renders in the destination's currency.
+ *
+ * Only ever rendered on the PDP (inside PdpImageProvider), so it also reads the
+ * currently selected variant (e.g. size) and shows THAT variant's price/discount
+ * instead of the product's own once one is active — matching what AddToCartPanel
+ * is about to charge.
  */
 export function ProductPrice({ product, size = "lg", className }: ProductPriceProps) {
   const { currency, locale } = useCurrency();
   const { t } = useT();
-  const hasDiscount =
-    product.compareAtPrice &&
-    product.compareAtPrice.amount > product.price.amount;
+  const { activeVariant } = usePdpImage();
+  const amount = activeVariant
+    ? activeVariant.discountedPrice != null && activeVariant.discountedPrice < activeVariant.price
+      ? activeVariant.discountedPrice
+      : activeVariant.price
+    : product.price.amount;
+  const compareAtAmount = activeVariant
+    ? activeVariant.discountedPrice != null && activeVariant.discountedPrice < activeVariant.price
+      ? activeVariant.price
+      : null
+    : (product.compareAtPrice?.amount ?? null);
+  const hasDiscount = compareAtAmount != null && compareAtAmount > amount;
 
   // Same public VAT config the checkout preview reads (§ CheckoutClient.tsx).
-  // Inclusive regions announce "VAT Inclusive" (no amount); exclusive regions
-  // (whole-catalogue scope) announce "+ X% VAT" so the addition is visible
-  // before checkout.
+  // Inclusive regions announce "VAT Inclusive" (no amount). Exclusive regions
+  // say nothing here — the "+ X% VAT" preview only appears on the shop grid
+  // and the real amount on checkout; showing it again on the PDP was noise.
   //
   // The config is client-fetched (react-query), so it's absent during SSR but may
   // be present (cached) on the first client render — rendering it immediately
@@ -44,7 +59,7 @@ export function ProductPrice({ product, size = "lg", className }: ProductPricePr
   return (
     <div className={cn("flex items-baseline gap-3", className)}>
       <CurrencyAmount
-        amount={product.price.amount}
+        amount={amount}
         currency={currency}
         locale={locale}
         className={cn(
@@ -52,9 +67,9 @@ export function ProductPrice({ product, size = "lg", className }: ProductPricePr
           size === "lg" ? "text-3xl" : "text-xl"
         )}
       />
-      {hasDiscount && product.compareAtPrice ? (
+      {hasDiscount && compareAtAmount != null ? (
         <CurrencyAmount
-          amount={product.compareAtPrice.amount}
+          amount={compareAtAmount}
           currency={currency}
           locale={locale}
           className={cn(
@@ -66,10 +81,6 @@ export function ProductPrice({ product, size = "lg", className }: ProductPricePr
       {hint?.kind === "inclusive" ? (
         <span className="text-sm font-medium text-bloom-600">
           {t("product.vatInclusive")}
-        </span>
-      ) : hint?.kind === "exclusive" ? (
-        <span className="text-sm font-medium text-ink-500">
-          {t("product.vatExclusiveNote", { rate: hint.rate })}
         </span>
       ) : null}
     </div>

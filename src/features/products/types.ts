@@ -17,6 +17,30 @@ export interface ProductOptionGroup {
   optionColors?: string[];
   /** Optional per-value image SETS (array-of-arrays), aligned with `options`. */
   optionImageSets?: string[][];
+  /** True when this group's values map 1:1 to `Product.variants` (e.g. "Size") —
+   *  picking a value changes price/photos/contents, not just the photo. */
+  isVariantAxis?: boolean;
+}
+
+/** One priced/photographed size (or other single-axis variant) of a product — e.g. the
+ *  Small/Medium/Large Graduation Giveaway Box. `optionValue`/`optionValue_ar` match a
+ *  value in the product's `isVariantAxis` option group. */
+export interface ProductVariant {
+  id: string;
+  optionValue: string;
+  optionValue_ar?: string;
+  price: number;
+  discountedPrice: number | null;
+  images: string[];
+  /** Already localized to the active locale by the adapter. */
+  contents?: string;
+  isDefault: boolean;
+}
+
+/** "From X to Y" price span across a product's variants. */
+export interface ProductPriceRange {
+  min: number;
+  max: number;
 }
 
 export interface ProductDescriptionBlock {
@@ -43,6 +67,11 @@ export interface Product {
   rating?: number;
   reviewCount?: number;
   options?: ProductOptionGroup[];
+  /** Small/Medium/Large-style variants, each with its own price/photos/contents.
+   *  Absent/empty for the vast majority of products. */
+  variants?: ProductVariant[];
+  /** "From X to Y" span across variants — present only when `variants` is non-empty. */
+  priceRange?: ProductPriceRange;
   tags?: string[];
   /** Free gift-card message add-on, offered per product (most products have it). */
   giftCardEnabled?: boolean;

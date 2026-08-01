@@ -6,11 +6,12 @@
  * `reviewCount` ARE backend-aggregated (from the Review table).
  */
 
-import type { Product, ProductDescriptionBlock, ProductOptionGroup } from "./types";
+import type { Product, ProductDescriptionBlock, ProductOptionGroup, ProductVariant } from "./types";
 import type {
   ApiProduct,
   ApiProductDescriptionBlock,
   ApiProductOptionGroup,
+  ApiProductVariant,
 } from "./api-types";
 import { localized } from "@/i18n";
 import type { Locale } from "@/store/slices/ui.slice";
@@ -45,6 +46,18 @@ const adaptOption = (
   optionColors: o.optionColors ?? [],
   // Per-value image sets align by the same canonical index.
   optionImageSets: o.optionImageSets ?? [],
+  isVariantAxis: o.isVariantAxis ?? false,
+});
+
+const adaptVariant = (v: ApiProductVariant, locale: Locale): ProductVariant => ({
+  id: v.id,
+  optionValue: v.optionValue,
+  optionValue_ar: v.optionValue_ar ?? undefined,
+  price: v.price,
+  discountedPrice: v.discountedPrice,
+  images: v.images ?? [],
+  contents: localized(v.contents ?? "", v.contents_ar, locale) || undefined,
+  isDefault: v.isDefault,
 });
 
 export interface ToUiProductOptions {
@@ -105,6 +118,8 @@ export function toUiProduct(api: ApiProduct, opts: ToUiProductOptions = {}): Pro
     categorySlug,
     inStock: api.quantity > 0,
     options: api.productOptions?.map((o) => adaptOption(o, locale)),
+    variants: api.variants?.length ? api.variants.map((v) => adaptVariant(v, locale)) : undefined,
+    priceRange: api.priceRange ?? undefined,
     giftCardEnabled: api.giftCardEnabled ?? false,
     giftCardExtraPrice: api.giftCardExtraPrice ?? undefined,
     customNameEnabled: api.customNameEnabled ?? false,

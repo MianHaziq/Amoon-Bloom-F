@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Product } from "../types";
+import type { Product, ProductVariant } from "../types";
 
 /** Result of an add-to-cart attempt driven from the shared PDP selection. */
 export interface PdpAddResult {
@@ -40,6 +40,11 @@ interface PdpImageCtx {
   gallery: GalleryPhoto[];
   /** The option group driving the gallery (has photos), or null if the product has none. */
   visualOptionId: string | null;
+  /** The variant (e.g. size) matching the current selection of the product's
+   *  `isVariantAxis` option group — its price/photos/contents should override the
+   *  product's own. Null when the product has no variants, or (transiently) no
+   *  value is selected for that group yet. */
+  activeVariant: ProductVariant | null;
   /** AddToCartPanel registers its add-to-cart handler here so the mobile sticky
    *  bar (rendered elsewhere in the tree) can trigger the SAME add with the live
    *  colour / name / gift-card / quantity selection. Pass null on unmount. */
@@ -84,8 +89,31 @@ export function PdpImageProvider({
     [product.options]
   );
 
+  // The (at most one) option group whose values are priced Product.variants
+  // (e.g. "Size") — often the SAME group as visualOption (a size also carries its
+  // own photos), but tracked separately since a variant's price/contents matter
+  // even when it carries no photo of its own.
+  const variantOption = useMemo(
+    () => (product.options ?? []).find((o) => o.isVariantAxis) ?? null,
+    [product.options]
+  );
+
   const [selected, setSelected] = useState<Record<string, string>>(() =>
-    Object.fromEntries((product.options ?? []).map((o) => [o.id, o.options[0] ?? ""]))
+    Object.fromEntries(
+      (product.options ?? []).map((o) => {
+        // The variant axis opens on its DEFAULT variant (not just the first value),
+        // matching what the product's own price/photo already show before any
+        // selection — so the first paint never disagrees with what's picked.
+        if (o.isVariantAxis && product.variants?.length) {
+          const def = product.variants.find((v) => v.isDefault);
+          const val = def
+            ? o.options.find((val) => val === def.optionValue || val === def.optionValue_ar)
+            : undefined;
+          return [o.id, val ?? o.options[0] ?? ""];
+        }
+        return [o.id, o.options[0] ?? ""];
+      })
+    )
   );
   // Explicit thumbnail click — shows that exact photo even when its variant has
   // several. Cleared on a fresh option-picker selection so the new variant's own
@@ -140,6 +168,14 @@ export function PdpImageProvider({
     gallery[0]?.url ??
     null;
 
+  const activeVariant = useMemo<ProductVariant | null>(() => {
+    if (!variantOption || !product.variants?.length) return null;
+    const val = selected[variantOption.id];
+    return (
+      product.variants.find((v) => v.optionValue === val || v.optionValue_ar === val) ?? null
+    );
+  }, [variantOption, selected, product.variants]);
+
   // Bridge so the sticky bar can reuse the panel's exact add-to-cart logic
   // (which owns qty / gift-card / custom-name state) instead of duplicating it.
   const addHandlerRef = useRef<(() => Promise<PdpAddResult>) | null>(null);
@@ -173,11 +209,12 @@ export function PdpImageProvider({
       setActiveUrl,
       gallery,
       visualOptionId: visualOption?.id ?? null,
+      activeVariant,
       registerAddHandler,
       requestAdd,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selected, activeUrl, gallery, visualOption, registerAddHandler, requestAdd]
+    [selected, activeUrl, gallery, visualOption, activeVariant, registerAddHandler, requestAdd]
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
