@@ -765,7 +765,6 @@ export function CheckoutClient() {
             vatAmount={vatAmount}
             vatRatePercent={vatConfig?.ratePercent ?? null}
             vatInclusive={Boolean(vatConfig?.inclusive)}
-            vatAdds={vatAdds}
             vatUncertain={vatUncertain}
             couponOpen={couponOpen}
             onToggleCoupon={() => setCouponOpen((v) => !v)}
@@ -1228,7 +1227,6 @@ interface OrderReviewCardProps {
   vatAmount: number;
   vatRatePercent: number | null;
   vatInclusive: boolean;
-  vatAdds: boolean;
   vatUncertain: boolean;
   couponOpen: boolean;
   onToggleCoupon: () => void;
@@ -1271,7 +1269,6 @@ function OrderReviewCard({
   vatAmount,
   vatRatePercent,
   vatInclusive,
-  vatAdds,
   vatUncertain,
   couponOpen,
   onToggleCoupon,
@@ -1489,7 +1486,6 @@ function OrderReviewCard({
                   only the label is shown, no figure. */}
               {!vatInclusive ? (
                 <span>
-                  {vatAdds ? "+ " : ""}
                   <CurrencyAmount amount={vatAmount} currency={currency} locale={locale} />
                 </span>
               ) : null}
