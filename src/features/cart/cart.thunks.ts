@@ -6,6 +6,7 @@ import {
   clearCart,
   setItems,
   type CartItem,
+  type CartLineCashArrangement,
 } from "@/store/slices/cart.slice";
 import { pushToast } from "@/store/slices/ui.slice";
 import { ApiError } from "@/services/http";
@@ -71,6 +72,8 @@ export interface CartExtras {
   customName?: string | null;
   /** Gift-card personalized message. Reuses the cart's existing message field. */
   message?: string | null;
+  /** Per-unit cash arrangement for this line (null = none). Part of line identity. */
+  cashArrangement?: CartLineCashArrangement | null;
   /** Photo of the chosen variant, for the optimistic/guest local cart line. The
    *  server derives its own on reconcile, so this isn't sent to the API. */
   variantImage?: string | null;
@@ -93,6 +96,7 @@ export const addToCart =
         giftCardSelected: extras?.giftCardSelected,
         customName: extras?.customName,
         message: extras?.message,
+        cashArrangement: extras?.cashArrangement,
       })
     );
     if (!isAuthed(getState)) return { ok: true };
@@ -104,6 +108,7 @@ export const addToCart =
         giftCardSelected: extras?.giftCardSelected,
         customName: extras?.customName,
         message: extras?.message,
+        cashArrangement: extras?.cashArrangement,
       });
       dispatch(setItems(apiCartToCartItems(server)));
       return { ok: true };
@@ -192,6 +197,7 @@ export const hydrateServerCart = (): AppThunk<Promise<void>> => async (dispatch,
           giftCardSelected: it.giftCardSelected,
           customName: it.customName,
           message: it.message,
+          cashArrangement: it.cashArrangement,
         });
         const [first, ...rest] = guest;
         await cartApi.add(mergePayload(first));

@@ -30,6 +30,13 @@ export function apiCartToCartItems(cart: ApiCart): CartItem[] {
       variantKey: it.variantKey ?? "",
       giftCardSelected: it.giftCardSelected ?? false,
       customName: it.customName ?? null,
+      cashArrangement: it.cashArrangement
+        ? {
+            cashAmount: it.cashArrangement.cashAmount,
+            denomination: it.cashArrangement.denomination ?? null,
+            note: it.cashArrangement.note ?? "",
+          }
+        : null,
       deliveryLeadDays: it.product.resolvedDeliveryLeadDays ?? undefined,
     };
   });

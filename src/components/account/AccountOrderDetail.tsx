@@ -141,6 +141,16 @@ export function AccountOrderDetail({ id }: { id: string }) {
                     giftCardSelected={item.giftCardSelected}
                     customName={item.customName}
                     message={item.perProductMessage}
+                    cashArrangement={
+                      item.cashArrangementAmount
+                        ? {
+                            cashAmount: item.cashArrangementAmount,
+                            denomination: item.cashArrangementDenomination,
+                          }
+                        : null
+                    }
+                    currency={currency}
+                    locale={curLocale}
                     className="mt-2"
                   />
                 </div>

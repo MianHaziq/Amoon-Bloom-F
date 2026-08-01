@@ -24,8 +24,9 @@ export function CartPersistence() {
   useEffect(() => {
     if (hydrated.current) return;
     hydrated.current = true;
-    // Only guests hydrate from localStorage; for signed-in users CartSync loads
-    // the authoritative server cart instead (and merges any guest leftovers).
+    // Only guests hydrate ITEMS from localStorage; for signed-in users CartSync loads
+    // the authoritative server cart instead (and merges any guest leftovers). Per-line cash
+    // arrangement rides on each CartItem, so it persists with the items automatically.
     if (store.getState().auth.status === "authenticated") return;
     const stored = storage.get<CartItem[]>(STORAGE_KEYS.cart);
     // If redux already has items (set during this session before mount)
@@ -39,10 +40,11 @@ export function CartPersistence() {
     let lastSerialised: string | null = null;
     const unsubscribe = store.subscribe(() => {
       if (!hydrated.current) return;
+      const state = store.getState();
       // While authenticated the server cart is the source of truth — don't
-      // shadow-write a guest copy to localStorage (CartSync cleared it on login).
-      if (store.getState().auth.status === "authenticated") return;
-      const items = store.getState().cart.items;
+      // shadow-write a guest copy of ITEMS to localStorage (CartSync cleared it on login).
+      if (state.auth.status === "authenticated") return;
+      const items = state.cart.items;
       const next = JSON.stringify(items);
       if (next === lastSerialised) return;
       lastSerialised = next;

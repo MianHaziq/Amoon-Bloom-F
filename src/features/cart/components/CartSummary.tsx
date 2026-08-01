@@ -68,12 +68,13 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
         : 0;
   const total = subtotal + shipping;
 
-  // VAT is only resolved for real at checkout, but the region's public config is
-  // enough to tell the shopper up front whether prices are VAT-inclusive or a
-  // "+ X% VAT" will be added. Shown on the cart page only (the checkout page has
-  // its own live VAT line, so we don't duplicate it there).
+  // VAT is only resolved for real at checkout. The cart page previews the plain
+  // "VAT Inclusive" label when prices already include it, but never the exclusive
+  // "+ VAT" addition — that preview is reserved for the shop grid, with the real
+  // amount shown on checkout, so we don't show a second note here.
   const vatConfig = usePublicVat();
   const hint = variant === "page" ? vatHint(vatConfig) : null;
+  const showVatInclusiveHint = hint?.kind === "inclusive";
 
   return (
     <aside
@@ -126,11 +127,9 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
         </m.span>
       </div>
 
-      {hint ? (
+      {showVatInclusiveHint ? (
         <p className="-mt-2 text-xs text-ink-500">
-          {hint.kind === "inclusive"
-            ? t("product.vatInclusive")
-            : t("product.vatExclusiveNote", { rate: hint.rate })}
+          {t("product.vatInclusive")}
         </p>
       ) : null}
 

@@ -1,5 +1,6 @@
 import { useT } from "@/i18n/useT";
-import { ChatIcon, SparkleIcon, PencilIcon } from "@/components/icons";
+import { ChatIcon, SparkleIcon, PencilIcon, CashIcon } from "@/components/icons";
+import { CurrencyAmount } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
 /**
@@ -14,17 +15,26 @@ export function OrderItemExtras({
   giftCardSelected,
   customName,
   message,
+  cashArrangement,
+  currency,
+  locale,
   className,
 }: {
   giftCardSelected?: boolean;
   customName?: string | null;
   message?: string | null;
+  /** Per-unit cash arrangement for this line — shown as a pill (needs currency + locale). */
+  cashArrangement?: { cashAmount: number; denomination?: number | null } | null;
+  currency?: string;
+  locale?: string;
   className?: string;
 }) {
   const { t } = useT();
   const name = customName?.trim();
   const note = message?.trim();
-  const hasPill = giftCardSelected || Boolean(name);
+  const cashAmount = cashArrangement?.cashAmount;
+  const hasCash = Boolean(cashAmount && cashAmount > 0 && currency && locale);
+  const hasPill = giftCardSelected || Boolean(name) || hasCash;
   if (!hasPill && !note) return null;
 
   return (
@@ -35,6 +45,13 @@ export function OrderItemExtras({
             <span className="inline-flex items-center gap-1.5 rounded-full bg-bloom-50 px-2.5 py-1 text-[11px] font-semibold text-bloom-700 ring-1 ring-inset ring-bloom-100">
               <SparkleIcon size={12} />
               {t("admin.orderDetailPage.giftCardLabel")}
+            </span>
+          ) : null}
+          {hasCash ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
+              <CashIcon size={12} />
+              {t("admin.orderDetailPage.cashLabel")}:{" "}
+              <CurrencyAmount amount={cashAmount!} currency={currency!} locale={locale!} />
             </span>
           ) : null}
           {name ? (

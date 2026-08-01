@@ -16,6 +16,8 @@ import { useT } from "@/i18n/useT";
 import type {
   ApiCategory,
   ApiCategoryCreateInput,
+  ApiCategoryRegionLead,
+  ApiCategoryZoneLead,
 } from "@/features/categories/api-types";
 
 interface CategoryFormProps {
@@ -42,8 +44,15 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
           .min(0, t("admin.categoryForm.deliveryLeadDaysInvalid"))
           .max(30, t("admin.categoryForm.deliveryLeadDaysInvalid"))
           .nullable(),
+        // Default cash-arrangement fee schedule for this category (both-or-neither;
+        // enforced server-side — see utils/cashArrangementMath.js).
+        cashArrangementFeeStepAmount: z.number().positive().nullable(),
+        cashArrangementFeeMarginPercent: z.number().nonnegative().nullable(),
         regionIds: z.array(z.string()),
         // Per-region lead-time overrides, keyed by regionId (null = no override).
+        // Per-region/zone records are keyed by id; an untouched override comes through as
+        // `undefined`, so the value schema must be `.nullish()` (null OR undefined = no
+        // override), not just `.nullable()` — else every unset region/zone fails validation.
         regionLeadDays: z.record(
           z.string(),
           z
@@ -51,8 +60,13 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
             .int(t("admin.categoryForm.deliveryLeadDaysInvalid"))
             .min(0, t("admin.categoryForm.deliveryLeadDaysInvalid"))
             .max(30, t("admin.categoryForm.deliveryLeadDaysInvalid"))
-            .nullable()
+            .nullish()
         ),
+        // Per-region cash-arrangement fee schedule overrides — sibling records (not
+        // merged into regionLeadDays' bare-number shape); merged back into one
+        // combined array at submit time.
+        regionCashArrangementFeeStepAmount: z.record(z.string(), z.number().positive().nullish()),
+        regionCashArrangementFeeMarginPercent: z.record(z.string(), z.number().nonnegative().nullish()),
         // Per-zone lead-time overrides, keyed by zoneId (null/blank = no override).
         zoneLeadDays: z.record(
           z.string(),
@@ -61,8 +75,10 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
             .int(t("admin.categoryForm.deliveryLeadDaysInvalid"))
             .min(0, t("admin.categoryForm.deliveryLeadDaysInvalid"))
             .max(30, t("admin.categoryForm.deliveryLeadDaysInvalid"))
-            .nullable()
+            .nullish()
         ),
+        zoneCashArrangementFeeStepAmount: z.record(z.string(), z.number().positive().nullish()),
+        zoneCashArrangementFeeMarginPercent: z.record(z.string(), z.number().nonnegative().nullish()),
       }),
     [t]
   );
@@ -86,9 +102,15 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       image: null,
       status: "PUBLISHED",
       deliveryLeadDays: null,
+      cashArrangementFeeStepAmount: null,
+      cashArrangementFeeMarginPercent: null,
       regionIds: [],
       regionLeadDays: {},
+      regionCashArrangementFeeStepAmount: {},
+      regionCashArrangementFeeMarginPercent: {},
       zoneLeadDays: {},
+      zoneCashArrangementFeeStepAmount: {},
+      zoneCashArrangementFeeMarginPercent: {},
     },
   });
 
@@ -127,12 +149,26 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       image: initial.image,
       status: initial.status ?? "PUBLISHED",
       deliveryLeadDays: initial.deliveryLeadDays ?? null,
+      cashArrangementFeeStepAmount: initial.cashArrangementFeeStepAmount ?? null,
+      cashArrangementFeeMarginPercent: initial.cashArrangementFeeMarginPercent ?? null,
       regionIds: initial.regionIds ?? [],
       regionLeadDays: Object.fromEntries(
         (initial.regionLeadDays ?? []).map((rl) => [rl.regionId, rl.deliveryLeadDays])
       ),
+      regionCashArrangementFeeStepAmount: Object.fromEntries(
+        (initial.regionLeadDays ?? []).map((rl) => [rl.regionId, rl.cashArrangementFeeStepAmount ?? null])
+      ),
+      regionCashArrangementFeeMarginPercent: Object.fromEntries(
+        (initial.regionLeadDays ?? []).map((rl) => [rl.regionId, rl.cashArrangementFeeMarginPercent ?? null])
+      ),
       zoneLeadDays: Object.fromEntries(
         (initial.zoneLeadDays ?? []).map((zl) => [zl.zoneId, zl.deliveryLeadDays ?? null])
+      ),
+      zoneCashArrangementFeeStepAmount: Object.fromEntries(
+        (initial.zoneLeadDays ?? []).map((zl) => [zl.zoneId, zl.cashArrangementFeeStepAmount ?? null])
+      ),
+      zoneCashArrangementFeeMarginPercent: Object.fromEntries(
+        (initial.zoneLeadDays ?? []).map((zl) => [zl.zoneId, zl.cashArrangementFeeMarginPercent ?? null])
       ),
     });
   }, [initial, reset]);
@@ -146,19 +182,60 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       image: values.image,
       status: values.status,
       deliveryLeadDays: values.deliveryLeadDays,
+      cashArrangementFeeStepAmount: values.cashArrangementFeeStepAmount,
+      cashArrangementFeeMarginPercent: values.cashArrangementFeeMarginPercent,
       regionIds: values.regionIds,
       // Send every per-region lead the form holds; the backend only applies the
       // ones for regions the category is actually in (targetRegionIds). We do NOT
       // filter here by values.regionIds — an id-format mismatch would silently
       // drop the override and the backend would keep the stale value.
-      regionLeadDays: Object.entries(values.regionLeadDays ?? {}).map(
-        ([regionId, days]) => ({ regionId, deliveryLeadDays: days ?? null })
-      ),
-      // Per-zone overrides — drop blank/null entries (server treats a missing zone
-      // as "no override"). Full replace on the backend.
-      zoneLeadDays: Object.entries(values.zoneLeadDays ?? {})
-        .filter(([, days]) => days != null)
-        .map(([zoneId, days]) => ({ zoneId, deliveryLeadDays: Number(days) })),
+      //
+      // Lead days and the cash-arrangement fee schedule are edited as separate
+      // form-state records (see regionCashArrangementFee*/zoneCashArrangementFee*
+      // above) but submitted as ONE combined array per region/zone — matches the
+      // backend's CategoryRegion/CategoryZone row, which carries all fields together.
+      regionLeadDays: (() => {
+        const regionIds = new Set([
+          ...Object.keys(values.regionLeadDays ?? {}),
+          ...Object.keys(values.regionCashArrangementFeeStepAmount ?? {}),
+          ...Object.keys(values.regionCashArrangementFeeMarginPercent ?? {}),
+        ]);
+        const rows: ApiCategoryRegionLead[] = [];
+        for (const regionId of regionIds) {
+          rows.push({
+            regionId,
+            deliveryLeadDays: values.regionLeadDays?.[regionId] ?? null,
+            cashArrangementFeeStepAmount: values.regionCashArrangementFeeStepAmount?.[regionId] ?? null,
+            cashArrangementFeeMarginPercent: values.regionCashArrangementFeeMarginPercent?.[regionId] ?? null,
+          });
+        }
+        return rows;
+      })(),
+      // Per-zone overrides — drop a zone entirely only when it has NONE of the three
+      // overrides set (server treats a missing zone as "no override at all").
+      zoneLeadDays: (() => {
+        const zoneIds = new Set([
+          ...Object.keys(values.zoneLeadDays ?? {}),
+          ...Object.keys(values.zoneCashArrangementFeeStepAmount ?? {}),
+          ...Object.keys(values.zoneCashArrangementFeeMarginPercent ?? {}),
+        ]);
+        const rows: ApiCategoryZoneLead[] = [];
+        for (const zoneId of zoneIds) {
+          const deliveryLeadDays = values.zoneLeadDays?.[zoneId] ?? null;
+          const cashArrangementFeeStepAmount = values.zoneCashArrangementFeeStepAmount?.[zoneId] ?? null;
+          const cashArrangementFeeMarginPercent = values.zoneCashArrangementFeeMarginPercent?.[zoneId] ?? null;
+          if (deliveryLeadDays == null && cashArrangementFeeStepAmount == null && cashArrangementFeeMarginPercent == null) {
+            continue;
+          }
+          rows.push({
+            zoneId,
+            deliveryLeadDays: deliveryLeadDays == null ? null : Number(deliveryLeadDays),
+            cashArrangementFeeStepAmount,
+            cashArrangementFeeMarginPercent,
+          });
+        }
+        return rows;
+      })(),
     });
   });
 
@@ -241,6 +318,37 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
         </section>
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+          <h3 className="mb-1 font-display text-lg text-ink-900">
+            {t("admin.categoryForm.cashArrangementFeeHeading")}
+          </h3>
+          <p className="mb-3 text-xs text-ink-500">
+            {t("admin.categoryForm.cashArrangementFeeHint")}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              label={t("admin.categoryForm.cashArrangementFeeStepAmountLabel")}
+              type="number"
+              min={0}
+              step={0.01}
+              error={errors.cashArrangementFeeStepAmount?.message}
+              {...register("cashArrangementFeeStepAmount", {
+                setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+              })}
+            />
+            <Input
+              label={t("admin.categoryForm.cashArrangementFeeMarginPercentLabel")}
+              type="number"
+              min={0}
+              step={0.01}
+              error={errors.cashArrangementFeeMarginPercent?.message}
+              {...register("cashArrangementFeeMarginPercent", {
+                setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+              })}
+            />
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
           <h3 className="mb-4 font-display text-lg text-ink-900">Regions</h3>
           <Controller
             control={control}
@@ -285,6 +393,46 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
                         />
                       )}
                     />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Controller
+                        control={control}
+                        name={`regionCashArrangementFeeStepAmount.${region.id}`}
+                        render={({ field }) => (
+                          <Input
+                            label={t("admin.categoryForm.regionCashArrangementFeeStepAmountLabel", {
+                              region: region.name,
+                            })}
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            placeholder="—"
+                            value={field.value ?? ""}
+                            onChange={(e) =>
+                              field.onChange(e.target.value === "" ? null : Number(e.target.value))
+                            }
+                          />
+                        )}
+                      />
+                      <Controller
+                        control={control}
+                        name={`regionCashArrangementFeeMarginPercent.${region.id}`}
+                        render={({ field }) => (
+                          <Input
+                            label={t("admin.categoryForm.regionCashArrangementFeeMarginPercentLabel", {
+                              region: region.name,
+                            })}
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            placeholder="—"
+                            value={field.value ?? ""}
+                            onChange={(e) =>
+                              field.onChange(e.target.value === "" ? null : Number(e.target.value))
+                            }
+                          />
+                        )}
+                      />
+                    </div>
                     {/* Per-zone overrides, nested under the region so the hierarchy
                         reads region → its zones. */}
                     <div className="border-s-2 border-ink-100 ps-3">
@@ -298,27 +446,72 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
                       ) : (
                         <div className="flex flex-col gap-2">
                           {regionZones.map((zone) => (
-                            <Controller
-                              key={zone.id}
-                              control={control}
-                              name={`zoneLeadDays.${zone.id}`}
-                              render={({ field }) => (
-                                <Input
-                                  label={zone.name}
-                                  type="number"
-                                  min={0}
-                                  max={30}
-                                  step={1}
-                                  placeholder="—"
-                                  value={field.value ?? ""}
-                                  onChange={(e) =>
-                                    field.onChange(
-                                      e.target.value === "" ? null : Number(e.target.value)
-                                    )
-                                  }
+                            <div key={zone.id} className="flex flex-col gap-1.5">
+                              <Controller
+                                control={control}
+                                name={`zoneLeadDays.${zone.id}`}
+                                render={({ field }) => (
+                                  <Input
+                                    label={zone.name}
+                                    type="number"
+                                    min={0}
+                                    max={30}
+                                    step={1}
+                                    placeholder="—"
+                                    value={field.value ?? ""}
+                                    onChange={(e) =>
+                                      field.onChange(
+                                        e.target.value === "" ? null : Number(e.target.value)
+                                      )
+                                    }
+                                  />
+                                )}
+                              />
+                              <div className="grid grid-cols-2 gap-2">
+                                <Controller
+                                  control={control}
+                                  name={`zoneCashArrangementFeeStepAmount.${zone.id}`}
+                                  render={({ field }) => (
+                                    <Input
+                                      label={t("admin.categoryForm.zoneCashArrangementFeeStepAmountLabel", {
+                                        zone: zone.name,
+                                      })}
+                                      type="number"
+                                      min={0}
+                                      step={0.01}
+                                      placeholder="—"
+                                      value={field.value ?? ""}
+                                      onChange={(e) =>
+                                        field.onChange(
+                                          e.target.value === "" ? null : Number(e.target.value)
+                                        )
+                                      }
+                                    />
+                                  )}
                                 />
-                              )}
-                            />
+                                <Controller
+                                  control={control}
+                                  name={`zoneCashArrangementFeeMarginPercent.${zone.id}`}
+                                  render={({ field }) => (
+                                    <Input
+                                      label={t("admin.categoryForm.zoneCashArrangementFeeMarginPercentLabel", {
+                                        zone: zone.name,
+                                      })}
+                                      type="number"
+                                      min={0}
+                                      step={0.01}
+                                      placeholder="—"
+                                      value={field.value ?? ""}
+                                      onChange={(e) =>
+                                        field.onChange(
+                                          e.target.value === "" ? null : Number(e.target.value)
+                                        )
+                                      }
+                                    />
+                                  )}
+                                />
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}

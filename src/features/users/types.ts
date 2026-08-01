@@ -26,6 +26,7 @@ export type ManagerPermission =
   | "REVIEWS"
   | "DELIVERY_ZONES"
   | "VAT"
+  | "CASH_ARRANGEMENT"
   | "NOTIFICATIONS"
   | "USERS"
   | "MANAGERS";

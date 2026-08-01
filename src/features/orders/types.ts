@@ -91,6 +91,13 @@ export interface ApiOrderItem {
   /** Gift-card/custom-name add-ons chosen at add-to-cart time, snapshotted at order time. */
   giftCardSelected?: boolean;
   customName?: string | null;
+  /** Per-line cash arrangement snapshot (PER UNIT — line total is each × quantity). */
+  cashArrangementRequested?: boolean;
+  cashArrangementAmount?: number | null;
+  cashArrangementDenomination?: number | null;
+  cashArrangementNote?: string | null;
+  cashArrangementFeeAmount?: number | null;
+  cashArrangementFeeVatAmount?: number | null;
   /** This line's VAT rate/amount, snapshotted at order time. 0 when the line wasn't taxable. */
   vatRatePercent?: number;
   vatAmount?: number;
@@ -150,6 +157,18 @@ export interface ApiOrder {
   vatRatePercent?: number | null;
   /** True when the VAT was already included in the catalogue price (nothing added at checkout). */
   vatInclusive?: boolean;
+  /** Whether the customer requested a cash arrangement on this order. */
+  cashArrangementRequested?: boolean;
+  /** Raw cash amount requested (never taxed) — null when not requested. */
+  cashArrangementAmount?: number | null;
+  /** Customer's preferred banknote denomination — informational only, never affects price. */
+  cashArrangementDenomination?: number | null;
+  /** Free-text note specific to the cash-arrangement request (separate from orderMessage). */
+  cashArrangementNote?: string | null;
+  /** Pre-VAT service fee charged for arranging the cash. Already folded into totalAmount. */
+  cashArrangementFeeAmount?: number | null;
+  /** VAT on cashArrangementFeeAmount ONLY (never on cashArrangementAmount) — already folded into taxAmount. */
+  cashArrangementFeeVatAmount?: number | null;
   appliedPromoCode: string | null;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
@@ -193,6 +212,12 @@ export interface ApiOrderListRow {
   vatAmount?: number;
   vatRatePercent?: number | null;
   vatInclusive?: boolean;
+  cashArrangementRequested?: boolean;
+  cashArrangementAmount?: number | null;
+  cashArrangementDenomination?: number | null;
+  cashArrangementNote?: string | null;
+  cashArrangementFeeAmount?: number | null;
+  cashArrangementFeeVatAmount?: number | null;
   /** Currency the order was totaled in (e.g. "AED", "SAR"). Defaults to AED for legacy orders. */
   currency?: string;
   /** STANDARD (default) or SCHEDULED. Undefined/absent on legacy orders — treat as STANDARD. */
@@ -227,6 +252,16 @@ export interface ApiOrderStatusLite {
   updatedAt: string;
 }
 
+/** Optional PER-UNIT "Add cash arrangement" request on a cart/order line. Absent or
+ *  `cashAmount` <= 0 means no cash for that line. */
+export interface ApiCashArrangementRequestInput {
+  cashAmount: number;
+  /** Must be one of the region's configured denomination presets — no custom option. */
+  denomination?: number;
+  /** Free-text note specific to this cash request, capped at 500 chars server-side. */
+  note?: string;
+}
+
 export interface ApiCheckoutInput {
   addressId?: string;
   shippingAddress?: OrderShippingAddressInput;
@@ -236,6 +271,7 @@ export interface ApiCheckoutInput {
   deliveryType?: DeliveryType;
   /** Required (and validated as 1-60 days out) when deliveryType is SCHEDULED. ISO datetime. */
   scheduledDeliveryAt?: string;
+  // Cash arrangement is per-line and lives on the server CART for signed-in users — not sent here.
 }
 
 export interface ApiGuestCheckoutItem {
@@ -245,6 +281,8 @@ export interface ApiGuestCheckoutItem {
   selectedOptions?: Record<string, string> | null;
   giftCardSelected?: boolean;
   customName?: string | null;
+  /** Per-unit cash arrangement for this item. */
+  cashArrangement?: ApiCashArrangementRequestInput;
 }
 
 /** Body for `POST /orders/guest-checkout` (unauthenticated). */
@@ -259,6 +297,7 @@ export interface ApiGuestCheckoutInput {
   deliveryType?: DeliveryType;
   /** Required (and validated as 1-60 days out) when deliveryType is SCHEDULED. ISO datetime. */
   scheduledDeliveryAt?: string;
+  // Cash arrangement is per-item — see ApiGuestCheckoutItem.cashArrangement.
 }
 
 export interface ApiOrderHistoryParams {

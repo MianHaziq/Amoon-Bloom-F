@@ -37,6 +37,12 @@ import { addressesApi } from "@/features/addresses/api/addresses.api";
 import { ordersApi } from "@/features/orders/api/orders.api";
 import { promoCodesApi } from "@/features/promo-codes/api/promo-codes.api";
 import { vatApi } from "@/features/vat/api/vat.api";
+import { cashArrangementApi } from "@/features/cash-arrangement/api/cash-arrangement.api";
+import { computeCashArrangementFee } from "@/features/cash-arrangement/cashArrangementFee";
+import {
+  CashArrangementSummary,
+  type CashArrangementSummaryProps,
+} from "./CashArrangementSummary";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { deliveryConfigApi } from "@/features/delivery-config/api/delivery-config.api";
@@ -209,6 +215,9 @@ export function CheckoutClient() {
   // flag the empty-cart guard below flashes for a frame while the transition
   // finishes.
   const [orderPlaced, setOrderPlaced] = useState(false);
+  // "Add cash arrangement" is now chosen PER ITEM on the product page and rides on each cart
+  // line; checkout only READS it (read-only summary) and submits it (guests inline; signed-in
+  // users' cash is already on the server cart).
   const [deliveryType, setDeliveryType] = useState<"STANDARD" | "SCHEDULED">("STANDARD");
   // Date-only "YYYY-MM-DD" from DeliveryDatePicker (or "" for no selection) — the
   // business only ever needs a day, not a time-of-day; converted to a UTC ISO
@@ -420,7 +429,85 @@ export function CheckoutClient() {
       : 0;
   const vatAdds = vatActive && vatKnownScope && !vatConfig!.inclusive && vatAmount > 0;
   const vatUncertain = vatActive && !vatKnownScope;
-  const total = taxableNet + (vatAdds ? vatAmount : 0) + shipping;
+
+  // "Add cash arrangement" — resolve eligibility + fee schedule for the current cart/zone,
+  // same tier as deliveryConfigQuery/vatQuery above. POST because cartLines is an array
+  // body (mirrors POST /promo-codes/validate), but this is a plain useQuery (idempotent,
+  // cart/zone-derived read), not a useMutation — unlike promo's explicit "Apply" click,
+  // this is automatically derived from cart state, so it should refetch whenever that
+  // cart/zone/region key changes, exactly like deliveryConfigQuery does.
+  const cartProductIds = useMemo(
+    () => Array.from(new Set(cart.items.map((i) => i.productId))).sort(),
+    [cart.items]
+  );
+  const cashArrangementQuery = useQuery({
+    queryKey: queryKeys.cashArrangement.resolve(regionCode, activeZoneId, cartProductIds),
+    queryFn: () =>
+      cashArrangementApi.resolve({
+        zoneId: activeZoneId,
+        cartLines: cartProductIds.map((productId) => ({ productId })),
+      }),
+    enabled: Boolean(regionCode) && cartProductIds.length > 0,
+  });
+  const cashArrangementConfig = cashArrangementQuery.data;
+
+  // Cash arrangement is PER LINE (chosen on the product page, riding on each cart line).
+  // Resolve gives each product's own fee schedule (`lines`); price every cart line that
+  // carries cash. VAT on the fee uses the SAME vatConfig/vatKnownScope gate as the rest of
+  // the order. Whether the fee's VAT is ADDED (exclusive) vs already-inside (inclusive) is
+  // order-level, so compute it once.
+  const cashScheduleByProduct = new Map(
+    (cashArrangementConfig?.lines ?? []).map((l) => [l.productId, l])
+  );
+  const cashFeeVatAdds = Boolean(vatActive && vatKnownScope && !vatConfig?.inclusive);
+  const cashLines = cart.items
+    .filter((it) => it.cashArrangement && it.cashArrangement.cashAmount > 0)
+    .map((it) => {
+      const cash = it.cashArrangement!;
+      const sched = cashScheduleByProduct.get(it.productId);
+      const eligible = Boolean(
+        sched && sched.eligible && sched.feeStepAmount != null && sched.feeMarginPercent != null
+      );
+      const feePerUnit = eligible
+        ? computeCashArrangementFee(cash.cashAmount, {
+            feeStepAmount: sched!.feeStepAmount!,
+            feeMarginPercent: sched!.feeMarginPercent!,
+          })
+        : 0;
+      const feeVatPerUnit =
+        vatActive && vatKnownScope && feePerUnit > 0
+          ? vatConfig!.inclusive
+            ? round2(feePerUnit - feePerUnit / (1 + vatConfig!.ratePercent / 100))
+            : round2(feePerUnit * (vatConfig!.ratePercent / 100))
+          : 0;
+      return {
+        key: `${it.productId}::${it.variantKey}`,
+        title: it.title,
+        quantity: it.quantity,
+        cashAmount: cash.cashAmount,
+        denomination: cash.denomination,
+        note: cash.note,
+        eligible,
+        feePerUnit,
+        feeVatPerUnit,
+      };
+    });
+  const hasCashLines = cashLines.length > 0;
+  // Order-level roll-ups for the total (per-unit × qty across eligible cash lines).
+  const cashRawTotal = round2(
+    cashLines.reduce((s, l) => s + (l.eligible ? l.cashAmount * l.quantity : 0), 0)
+  );
+  const cashFeeTotal = round2(cashLines.reduce((s, l) => s + l.feePerUnit * l.quantity, 0));
+  const cashFeeVatTotal = round2(cashLines.reduce((s, l) => s + l.feeVatPerUnit * l.quantity, 0));
+
+  const total =
+    taxableNet +
+    (vatAdds ? vatAmount : 0) +
+    shipping +
+    cashFeeTotal +
+    (cashFeeVatAdds ? cashFeeVatTotal : 0) +
+    // Raw cash amount is added to the total but NEVER passed through VAT.
+    cashRawTotal;
 
   const syncCart = async () => {
     if (cart.items.length === 0) throw new Error(t("checkout.cartEmptyError"));
@@ -437,6 +524,13 @@ export function CheckoutClient() {
           selectedOptions: item.selectedOptions ?? undefined,
           giftCardSelected: item.giftCardSelected,
           customName: item.customName ?? undefined,
+          cashArrangement: item.cashArrangement
+            ? {
+                cashAmount: item.cashArrangement.cashAmount,
+                denomination: item.cashArrangement.denomination ?? undefined,
+                note: item.cashArrangement.note || undefined,
+              }
+            : undefined,
         })
       )
     );
@@ -499,8 +593,11 @@ export function CheckoutClient() {
           }
         : undefined;
 
+      // Cash arrangement is PER LINE now — it rides on each cart line (chosen on the product
+      // page). The backend re-resolves eligibility + fee authoritatively at order time, so no
+      // pre-submit re-check is needed here.
       if (!isAuthed) {
-        // Guest: no server cart — send the local cart items inline. COD only.
+        // Guest: no server cart — send the local cart items inline (each with its own cash). COD only.
         if (cart.items.length === 0) throw new Error(t("checkout.cartEmptyError"));
         return ordersApi.guestCheckout({
           items: cart.items.map((i) => ({
@@ -510,6 +607,13 @@ export function CheckoutClient() {
             selectedOptions: i.selectedOptions ?? undefined,
             giftCardSelected: i.giftCardSelected,
             customName: i.customName ?? undefined,
+            cashArrangement: i.cashArrangement
+              ? {
+                  cashAmount: i.cashArrangement.cashAmount,
+                  denomination: i.cashArrangement.denomination ?? undefined,
+                  note: i.cashArrangement.note || undefined,
+                }
+              : undefined,
           })),
           // Guests always fill the inline form, so shippingAddress is defined.
           shippingAddress: shippingAddress!,
@@ -521,7 +625,8 @@ export function CheckoutClient() {
         });
       }
 
-      // Authenticated: mirror the local cart to the server cart, then check out.
+      // Authenticated: mirror the local cart (incl. each line's cash) to the server cart, then
+      // check out — the order reads the per-line cash from the server cart.
       await syncCart();
       return ordersApi.checkout({
         addressId: resolvedAddressId,
@@ -691,6 +796,11 @@ export function CheckoutClient() {
             aboveMaxOrder={aboveMaxOrder}
             minOrderAmount={minOrderAmount}
             maxOrderAmount={maxOrderAmount}
+            cashArrangement={
+              hasCashLines
+                ? { lines: cashLines, feeVatAdds: cashFeeVatAdds }
+                : null
+            }
           />
         </div>
       </Section>
@@ -1147,6 +1257,9 @@ interface OrderReviewCardProps {
   aboveMaxOrder: boolean;
   minOrderAmount: number | null;
   maxOrderAmount: number | null;
+  /** Read-only summary of the cash arrangement chosen on the product page. Null when none is
+   *  active for this cart/region — nothing renders. Editing happens on the product page. */
+  cashArrangement: Omit<CashArrangementSummaryProps, "currency" | "locale"> | null;
 }
 
 function OrderReviewCard({
@@ -1183,6 +1296,7 @@ function OrderReviewCard({
   aboveMaxOrder,
   minOrderAmount,
   maxOrderAmount,
+  cashArrangement,
 }: OrderReviewCardProps) {
   const { currency, locale } = useCurrency();
   const { t, locale: appLocale } = useT();
@@ -1320,6 +1434,11 @@ function OrderReviewCard({
                       )}
                     </div>
                   )}
+                  {item.message && (
+                    <p className="mt-1 line-clamp-2 wrap-break-word text-xs italic text-ink-500">
+                      &ldquo;{item.message}&rdquo;
+                    </p>
+                  )}
                 </div>
                 <p className="shrink-0 font-medium tabular-nums">
                   <CurrencyAmount
@@ -1332,6 +1451,15 @@ function OrderReviewCard({
             </li>
           ))}
         </ul>
+
+        {/* Compact per-line cash arrangement — shown here in "Your order" (its amounts are
+            already folded into the total below). */}
+        {cashArrangement ? (
+          <>
+            <Divider />
+            <CashArrangementSummary {...cashArrangement} currency={currency} locale={locale} />
+          </>
+        ) : null}
 
         <Divider />
 
@@ -1353,7 +1481,7 @@ function OrderReviewCard({
               <span>
                 {vatInclusive
                   ? t("order.vatIncludedLabel", { rate: vatRatePercent })
-                  : t("order.vatLabel", { rate: vatRatePercent })}
+                  : t("checkout.vatLabel")}
               </span>
               {/* Inclusive VAT is already baked into the item prices above — showing
                   its extracted amount here (a different number than the same rate

@@ -29,6 +29,14 @@ export interface ApiDeliveryZone {
   /** Min/max net order value to deliver here (Decimal string). Null = no bound. */
   minOrderAmount: string | null;
   maxOrderAmount: string | null;
+  /** Cash-arrangement quick-pick amounts for this zone. [] = inherit the region's CashArrangementConfig list. */
+  cashArrangementQuickPickAmounts: number[];
+  /** Cash-arrangement banknote denominations for this zone. [] = inherit the region's CashArrangementConfig list. */
+  cashArrangementDenominations: number[];
+  /** Zone-wide FLAT cash-arrangement fee (Decimal string; both-or-neither). Null = inherit
+   *  the region's flat fee. Beats the region flat fee, below all product/category overrides. */
+  cashArrangementFeeStepAmount: string | null;
+  cashArrangementFeeMarginPercent: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,6 +56,11 @@ export interface ApiDeliveryZoneCreateInput {
   codEnabled?: boolean | null;
   minOrderAmount?: number | null;
   maxOrderAmount?: number | null;
+  cashArrangementQuickPickAmounts?: number[];
+  cashArrangementDenominations?: number[];
+  /** Zone-wide flat fee (both-or-neither). Send both null to clear (inherit region flat). */
+  cashArrangementFeeStepAmount?: number | null;
+  cashArrangementFeeMarginPercent?: number | null;
 }
 
 export type ApiDeliveryZoneUpdateInput = Partial<ApiDeliveryZoneCreateInput>;

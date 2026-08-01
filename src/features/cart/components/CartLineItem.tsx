@@ -8,6 +8,7 @@ import { TrashIcon } from "@/components/icons";
 import { listItem, microTransition } from "@/lib/motion";
 import { QuantitySelector } from "@/features/products/components/QuantitySelector";
 import { SelectedOptions } from "@/features/products/components/SelectedOptions";
+import { OrderItemExtras } from "@/features/orders/components/OrderItemExtras";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useAppDispatch } from "@/store";
@@ -90,20 +91,15 @@ export function CartLineItem({
           {t("cart.each")}
         </p>
         <SelectedOptions options={item.selectedOptions} className="mt-1.5" />
-        {(item.giftCardSelected || item.customName) && (
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {item.giftCardSelected && (
-              <span className="inline-flex items-center rounded-full bg-ink-900 px-2 py-0.5 text-[11px] font-medium text-white">
-                {t("product.giftCardBadge")}
-              </span>
-            )}
-            {item.customName && (
-              <span className="inline-flex items-center rounded-full bg-ink-900 px-2 py-0.5 text-[11px] font-medium text-white">
-                {item.customName}
-              </span>
-            )}
-          </div>
-        )}
+        <OrderItemExtras
+          giftCardSelected={item.giftCardSelected}
+          customName={item.customName}
+          message={item.message}
+          cashArrangement={item.cashArrangement}
+          currency={currency}
+          locale={locale}
+          className="mt-2"
+        />
         <div className="mt-auto flex items-center justify-between pt-3">
           <QuantitySelector
             size="sm"

@@ -1,6 +1,15 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { Product } from "@/features/products/types";
-import { lineVariantKey } from "@/features/cart/variantKey";
+import { lineVariantKey, type LineCashArrangement } from "@/features/cart/variantKey";
+
+/** Per-UNIT "add cash arrangement" for a cart line. The fee is NOT stored here — it's
+ *  resolved authoritatively at checkout/order time from the cart+region+zone. Two units of
+ *  the same product with different cash configs are separate lines (folded into variantKey). */
+export interface CartLineCashArrangement {
+  cashAmount: number;
+  denomination: number | null;
+  note: string;
+}
 
 export interface CartItem {
   productId: string;
@@ -20,6 +29,8 @@ export interface CartItem {
   /** Gift-card/custom-name add-on selections. `unitPrice` already includes their cost. */
   giftCardSelected?: boolean;
   customName?: string | null;
+  /** Per-unit cash arrangement for this line (null = none). Part of line identity. */
+  cashArrangement?: CartLineCashArrangement | null;
   /** Snapshot of the product's resolved "ships within N day(s)" lead time at add-to-cart
    *  time, for display only (cart drawer/page, checkout review). */
   deliveryLeadDays?: number;
@@ -37,6 +48,22 @@ function optionExtraCharge(
   if (giftCardSelected && product.giftCardEnabled) extra += product.giftCardExtraPrice ?? 0;
   if (customName && product.customNameEnabled) extra += product.customNamePrice ?? 0;
   return extra;
+}
+
+/** Normalize a per-unit cash arrangement for storage/identity (positive amount, int
+ *  denomination, trimmed note). Returns null when there's no positive amount. */
+function normalizeLineCash(
+  cash?: CartLineCashArrangement | LineCashArrangement | null
+): CartLineCashArrangement | null {
+  if (!cash || !(Number(cash.cashAmount) > 0)) return null;
+  return {
+    cashAmount: Math.round(Number(cash.cashAmount) * 100) / 100,
+    denomination:
+      cash.denomination != null && Number(cash.denomination) > 0
+        ? Math.trunc(Number(cash.denomination))
+        : null,
+    note: (cash.note ?? "").trim(),
+  };
 }
 
 export interface CartState {
@@ -61,16 +88,24 @@ const cartSlice = createSlice({
         giftCardSelected?: boolean;
         customName?: string | null;
         message?: string | null;
+        cashArrangement?: CartLineCashArrangement | null;
       }>
     ) {
       const { product, quantity = 1, selectedOptions, variantImage, giftCardSelected, customName, message } = action.payload;
       const resolvedImage = variantImage ?? product.images[0]?.url;
-      // Line identity = variant (colour/size) + personalized custom name. Merge
-      // only into a line with the SAME variant AND SAME name; a different variant
-      // OR a different name becomes its own line (Amazon/Shopify-style). This is
-      // what lets a customer buy the same product with 4 different gift names as
-      // 4 lines instead of the last name overwriting the rest.
-      const variantKey = lineVariantKey(selectedOptions, customName, giftCardSelected);
+      const cashArrangement = normalizeLineCash(action.payload.cashArrangement);
+      // Line identity = variant (colour/size) + personalized custom name + gift-card message
+      // + per-unit cash arrangement. Merge only into a line with the SAME config; any
+      // difference becomes its own line (Amazon/Shopify-style), so a customer can buy the same
+      // product with 3 different cash amounts as 3 lines. Gift-card message is folded only for
+      // gift-card products (mirrors the backend gate).
+      const variantKey = lineVariantKey(
+        selectedOptions,
+        customName,
+        giftCardSelected,
+        product.giftCardEnabled ? message : null,
+        cashArrangement
+      );
       const existing = state.items.find(
         (i) => i.productId === product.id && i.variantKey === variantKey
       );
@@ -80,6 +115,7 @@ const cartSlice = createSlice({
         if (giftCardSelected !== undefined) existing.giftCardSelected = giftCardSelected;
         if (customName !== undefined) existing.customName = customName;
         if (message !== undefined) existing.message = message;
+        existing.cashArrangement = cashArrangement;
         existing.deliveryLeadDays = product.deliveryLeadDays;
         existing.unitPrice =
           product.price.amount + optionExtraCharge(product, existing.giftCardSelected, existing.customName);
@@ -98,6 +134,7 @@ const cartSlice = createSlice({
         giftCardSelected: giftCardSelected ?? false,
         customName: customName ?? null,
         message: message ?? null,
+        cashArrangement,
         deliveryLeadDays: product.deliveryLeadDays,
       });
     },

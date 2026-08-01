@@ -21,6 +21,10 @@ export interface ApiCategory {
   /** Overrides Settings.defaultDeliveryLeadDays for every product in this category
    *  that doesn't set its own Product.deliveryLeadDays. Null = no override. */
   deliveryLeadDays?: number | null;
+  /** Default cash-arrangement fee schedule for every product in this category that
+   *  doesn't set its own (both-or-neither). Overridden per-region/per-zone below. */
+  cashArrangementFeeStepAmount?: number | null;
+  cashArrangementFeeMarginPercent?: number | null;
   /** Per-region overrides of the category lead time (staff reads). One entry per
    *  region the category is in; deliveryLeadDays null = no override for that region. */
   regionLeadDays?: ApiCategoryRegionLead[];
@@ -34,11 +38,16 @@ export interface ApiCategory {
 export interface ApiCategoryRegionLead {
   regionId: string;
   deliveryLeadDays: number | null;
+  /** Per-region cash-arrangement fee schedule override — both-or-neither. */
+  cashArrangementFeeStepAmount?: number | null;
+  cashArrangementFeeMarginPercent?: number | null;
 }
 
 export interface ApiCategoryZoneLead {
   zoneId: string;
   deliveryLeadDays: number | null;
+  cashArrangementFeeStepAmount?: number | null;
+  cashArrangementFeeMarginPercent?: number | null;
 }
 
 export interface ApiCategoryDetail extends ApiCategory {
@@ -55,6 +64,8 @@ export interface ApiCategoryCreateInput {
   /** Regions this category should be visible in. Defaults to the default region (UAE) if omitted. */
   regionIds?: string[];
   deliveryLeadDays?: number | null;
+  cashArrangementFeeStepAmount?: number | null;
+  cashArrangementFeeMarginPercent?: number | null;
   /** Per-region lead-time overrides: [{ regionId, deliveryLeadDays }]. */
   regionLeadDays?: ApiCategoryRegionLead[];
   /** Per-zone lead-time overrides: [{ zoneId, deliveryLeadDays }]. Full replace on update;

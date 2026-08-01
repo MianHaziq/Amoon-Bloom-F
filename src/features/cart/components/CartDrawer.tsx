@@ -29,7 +29,10 @@ export function CartDrawer() {
   );
   const orderLeadDays = maxCartLeadDays(items);
   const { currency, locale } = useCurrency();
-  const hint = vatHint(usePublicVat());
+  // Only the plain "VAT Inclusive" label previews here — the exclusive
+  // "+ VAT" addition is reserved for the shop grid and the real amount
+  // on checkout, not repeated in the drawer.
+  const showVatInclusiveHint = vatHint(usePublicVat())?.kind === "inclusive";
 
   return (
     <Drawer
@@ -78,11 +81,9 @@ export function CartDrawer() {
             <p className="mt-1 text-xs text-ink-500">
               {t("cart.deliveryNote")}
             </p>
-            {hint ? (
+            {showVatInclusiveHint ? (
               <p className="mt-1 text-xs text-ink-500">
-                {hint.kind === "inclusive"
-                  ? t("product.vatInclusive")
-                  : t("product.vatExclusiveNote", { rate: hint.rate })}
+                {t("product.vatInclusive")}
               </p>
             ) : null}
             <div className="mt-4 flex flex-col gap-2">

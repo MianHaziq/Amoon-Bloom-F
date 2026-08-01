@@ -150,6 +150,21 @@ export const queryKeys = {
     public: () => [...queryKeys.vat.all, "public"] as const,
   },
 
+  cashArrangement: {
+    all: ["cash-arrangement"] as const,
+    list: () => [...queryKeys.cashArrangement.all, "list"] as const,
+    detail: (regionId: string) => [...queryKeys.cashArrangement.all, "detail", regionId] as const,
+    public: () => [...queryKeys.cashArrangement.all, "public"] as const,
+    resolve: (regionCode?: string, zoneId?: string, productIds?: string[]) =>
+      [
+        ...queryKeys.cashArrangement.all,
+        "resolve",
+        regionCode ?? "default",
+        zoneId ?? "none",
+        productIds ?? [],
+      ] as const,
+  },
+
   jobs: {
     all: ["jobs"] as const,
   },

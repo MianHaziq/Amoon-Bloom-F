@@ -444,6 +444,16 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
                     giftCardSelected={item.giftCardSelected}
                     customName={item.customName}
                     message={item.perProductMessage}
+                    cashArrangement={
+                      item.cashArrangementAmount
+                        ? {
+                            cashAmount: item.cashArrangementAmount,
+                            denomination: item.cashArrangementDenomination,
+                          }
+                        : null
+                    }
+                    currency={currency}
+                    locale={locale}
                     className="mt-1.5"
                   />
                   {/* Mobile-only per-unit breakdown (columns are hidden on mobile) */}
@@ -500,6 +510,22 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
             label={t("common.delivery")}
             value={shipping > 0 ? price(shipping) : t("common.free")}
           />
+          {/* Cash arrangement (roll-up of every line's cash + service fee) — added to the
+              total but never VAT'd on the raw cash; the fee's VAT is inside the VAT row above. */}
+          {order.cashArrangementRequested && Number(order.cashArrangementAmount) > 0 ? (
+            <>
+              <TotalRow
+                label={t("checkout.cashAmountLineLabel")}
+                value={price(Number(order.cashArrangementAmount))}
+              />
+              {Number(order.cashArrangementFeeAmount) > 0 ? (
+                <TotalRow
+                  label={t("checkout.cashArrangementFeeLabel")}
+                  value={price(Number(order.cashArrangementFeeAmount))}
+                />
+              ) : null}
+            </>
+          ) : null}
           <div className="mt-2 flex items-baseline justify-between border-t-2 border-ink-900/85 pt-3">
             <span className="font-display text-lg text-ink-900">{t("common.total")}</span>
             <span className="font-display text-2xl font-medium tabular-nums text-ink-900">

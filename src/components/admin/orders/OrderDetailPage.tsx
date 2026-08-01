@@ -116,6 +116,16 @@ export function OrderDetailPage({ id }: { id: string }) {
                         giftCardSelected={item.giftCardSelected}
                         customName={item.customName}
                         message={item.perProductMessage}
+                        cashArrangement={
+                          item.cashArrangementAmount
+                            ? {
+                                cashAmount: item.cashArrangementAmount,
+                                denomination: item.cashArrangementDenomination,
+                              }
+                            : null
+                        }
+                        currency={order.currency ?? "AED"}
+                        locale={locale}
                         className="mt-2"
                       />
                       {item.resolvedLeadDays != null && (
@@ -168,6 +178,20 @@ export function OrderDetailPage({ id }: { id: string }) {
                     {order.vatInclusive ? null : <>+ {formatCurrency(vatAmount)}</>}
                   </dd>
                 </div>
+              ) : null}
+              {order.cashArrangementRequested && Number(order.cashArrangementAmount) > 0 ? (
+                <>
+                  <div className="flex justify-between text-ink-500">
+                    <dt>{t("checkout.cashAmountLineLabel")}</dt>
+                    <dd>{formatCurrency(Number(order.cashArrangementAmount))}</dd>
+                  </div>
+                  {Number(order.cashArrangementFeeAmount) > 0 ? (
+                    <div className="flex justify-between text-ink-500">
+                      <dt>{t("checkout.cashArrangementFeeLabel")}</dt>
+                      <dd>{formatCurrency(Number(order.cashArrangementFeeAmount))}</dd>
+                    </div>
+                  ) : null}
+                </>
               ) : null}
               <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">
                 <dt>{t("common.total")}</dt>

@@ -6,6 +6,13 @@
 
 import type { ApiProduct } from "@/features/products/api-types";
 
+/** Per-unit cash arrangement on a cart line (server + add-input shape). */
+export interface ApiCartLineCashArrangement {
+  cashAmount: number;
+  denomination?: number | null;
+  note?: string | null;
+}
+
 export interface ApiCartItem {
   id: string;
   productId: string;
@@ -21,6 +28,8 @@ export interface ApiCartItem {
   selectedImage?: string | null;
   giftCardSelected?: boolean;
   customName?: string | null;
+  /** Per-unit cash arrangement for this line (null = none). */
+  cashArrangement?: ApiCartLineCashArrangement | null;
   lineTotal: number;
 }
 
@@ -38,6 +47,7 @@ export interface ApiCartAddInput {
   selectedOptions?: Record<string, string> | null;
   giftCardSelected?: boolean;
   customName?: string | null;
+  cashArrangement?: ApiCartLineCashArrangement | null;
 }
 
 export interface ApiCartQuantityInput {
