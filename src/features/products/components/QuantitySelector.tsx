@@ -25,15 +25,20 @@ export function QuantitySelector({
   const dec = () => onChange(Math.max(min, value - 1));
   const inc = () => onChange(Math.min(max, value + 1));
 
-  const sizeClasses =
-    size === "sm"
-      ? "h-9 w-9 text-sm"
-      : "h-11 w-11 text-base";
+  // A clean rounded box (not a stretched pill); md matches the xl button's height so it can
+  // sit inline with Add to cart, sm is the compact cart-drawer stepper.
+  const boxH = size === "sm" ? "h-9" : "h-14";
+  const btnW = size === "sm" ? "w-9" : "w-12";
+  const numW = size === "sm" ? "min-w-7 text-sm" : "min-w-10 text-base";
+  const iconSize = size === "sm" ? 14 : 16;
+  const btn =
+    "inline-flex items-center justify-center text-ink-600 transition-colors duration-150 hover:bg-cream-50 hover:text-bloom-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40";
 
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-full border border-ink-200 bg-white",
+        "inline-flex items-stretch overflow-hidden rounded-2xl border border-ink-200 bg-white",
+        boxH,
         className
       )}
       role="group"
@@ -44,20 +49,11 @@ export function QuantitySelector({
         onClick={dec}
         disabled={value <= min}
         aria-label={t("product.decreaseQty")}
-        className={cn(
-          "inline-flex items-center justify-center rounded-s-full text-ink-700 transition-[color,transform] duration-150 hover:text-bloom-700 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40",
-          sizeClasses
-        )}
+        className={cn(btn, btnW, "border-e border-ink-100")}
       >
-        <MinusIcon size={14} />
+        <MinusIcon size={iconSize} />
       </button>
-      <span
-        className={cn(
-          "min-w-10 text-center font-medium tabular-nums text-ink-900",
-          size === "sm" && "min-w-8 text-sm"
-        )}
-        aria-live="polite"
-      >
+      <span className={cn("flex items-center justify-center text-center font-semibold tabular-nums text-ink-900", numW)} aria-live="polite">
         {value}
       </span>
       <button
@@ -65,12 +61,9 @@ export function QuantitySelector({
         onClick={inc}
         disabled={value >= max}
         aria-label={t("product.increaseQty")}
-        className={cn(
-          "inline-flex items-center justify-center rounded-e-full text-ink-700 transition-[color,transform] duration-150 hover:text-bloom-700 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40",
-          sizeClasses
-        )}
+        className={cn(btn, btnW, "border-s border-ink-100")}
       >
-        <PlusIcon size={14} />
+        <PlusIcon size={iconSize} />
       </button>
     </div>
   );

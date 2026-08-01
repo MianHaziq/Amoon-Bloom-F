@@ -394,6 +394,14 @@ export const PercentIcon = ({ size, ...rest }: IconProps) => (
   </svg>
 );
 
+export const CashIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <rect x="2" y="6" width="20" height="12" rx="2" />
+    <circle cx="12" cy="12" r="3" />
+    <path d="M6 9h.01M18 15h.01" />
+  </svg>
+);
+
 export const PencilIcon = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <path d="M12 20h9" />

@@ -54,20 +54,10 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
 
   const handleAdd = async () => {
     if (!product.inStock) return;
-    // Run the main panel's add with the current colour/name/gift-card/qty. It
-    // opens the cart drawer and raises its own stock error toast on success/fail.
-    const res = await requestAdd();
-    // Only case the bar can't complete: a required custom name was toggled on but
-    // left empty. Send the shopper to the panel's name field to fill it in.
-    if (res.needsName) {
-      document
-        .getElementById("add-to-cart-panel")
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      // Focus after the smooth scroll so the keyboard opens on the right field.
-      window.setTimeout(() => {
-        document.getElementById("custom-name-input")?.focus();
-      }, 450);
-    }
+    // Run the main panel's exact add with the current colour/name/gift-card/qty. It
+    // opens any needed personalization modal (gift card / custom name / cash), opens
+    // the cart drawer, and raises its own stock error toast on success/fail.
+    await requestAdd();
   };
 
   // Follows the selected variant photo (falls back to the product's primary image).
