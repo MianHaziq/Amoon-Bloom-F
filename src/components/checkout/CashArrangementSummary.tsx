@@ -29,7 +29,7 @@ export interface CashArrangementSummaryProps {
   locale: string;
 }
 
-export function CashArrangementSummary({ lines, feeVatAdds, currency, locale }: CashArrangementSummaryProps) {
+export function CashArrangementSummary({ lines, currency, locale }: CashArrangementSummaryProps) {
   const { t } = useT();
   if (lines.length === 0) return null;
 
@@ -50,17 +50,11 @@ export function CashArrangementSummary({ lines, feeVatAdds, currency, locale }: 
             <span>{t("checkout.cashAmountLineLabel")}</span>
             <CurrencyAmount amount={l.cashAmount} currency={currency} locale={locale} />
           </div>
+          {/* The fee's VAT is folded into the single "VAT" total line below (not shown
+              per-line here). */}
           <div className="flex justify-between text-ink-500">
             <span>{t("checkout.cashArrangementFeeLabel")}</span>
-            <span className="inline-flex items-baseline gap-1">
-              <CurrencyAmount amount={l.feePerUnit} currency={currency} locale={locale} />
-              {feeVatAdds && l.feeVatPerUnit > 0 ? (
-                <span className="text-[10px] text-ink-400">
-                  +<CurrencyAmount amount={l.feeVatPerUnit} currency={currency} locale={locale} />{" "}
-                  {t("checkout.vatLabel")}
-                </span>
-              ) : null}
-            </span>
+            <CurrencyAmount amount={l.feePerUnit} currency={currency} locale={locale} />
           </div>
         </div>
       ))}

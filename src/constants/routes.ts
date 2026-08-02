@@ -1,7 +1,7 @@
 export const ROUTES = {
   home: "/",
   shop: "/shop",
-  category: (slug: string) => `/shop/category/${slug}`,
+  category: (slug: string) => `/shop?category=${slug}`,
   product: (slug: string) => `/shop/${slug}`,
   cart: "/cart",
   checkout: "/checkout",

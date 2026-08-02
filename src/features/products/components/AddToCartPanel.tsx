@@ -61,18 +61,30 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
   const [justAdded, setJustAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Gift card add-on: complimentary, opted into with an inline Yes/No. Saying "Yes"
-  // opens a modal that collects ONE card message per unit (see GiftCardModal), so a
-  // shopper buying several can send several separate cards.
+  // Gift card add-on: complimentary, opted into with an inline Yes/No. The toggle
+  // only RECORDS the choice — the modal that collects ONE card message per unit
+  // (see GiftCardModal) opens later, when "Add to cart" is clicked (see
+  // startAddFlow), so it always reflects whatever quantity the shopper has settled
+  // on by then rather than whatever it was the moment they said "Yes".
   const [giftCard, setGiftCard] = useState(false);
   const [giftCards, setGiftCards] = useState<GiftCardEntry[]>([]);
   const [giftModalOpen, setGiftModalOpen] = useState(false);
-  // Custom name add-on: paid, opted into with an inline Yes/No. Saying "Yes" opens a
-  // modal that collects ONE name per unit (see CustomNameModal), so a shopper buying
-  // several can print a different name on each (or leave some without a name).
+  // Custom name add-on: paid, opted into with an inline Yes/No — same deferred-to-
+  // add-click pattern as the gift card above.
   const [customNameSelected, setCustomNameSelected] = useState(false);
   const [customNames, setCustomNames] = useState<CustomNameEntry[]>([]);
   const [customNameModalOpen, setCustomNameModalOpen] = useState(false);
+  // Which step of the "Add to cart" confirmation chain is currently open (if any).
+  // Drives onGiftSave/onCustomNameSave: only advance the chain (or actually add to
+  // cart) when a modal's Save/Cancel fires AS PART OF that chain — a Save/Cancel
+  // from the standalone "Edit" button (addStep === "idle") just records the entries.
+  const [addStep, setAddStep] = useState<"idle" | "gift" | "customName">("idle");
+  // Resolves the in-flight startAddFlow() promise once the chain finishes (added,
+  // or the shopper cancelled a step) — lets the mobile sticky bar's requestAdd()
+  // await the SAME multi-step confirmation instead of racing ahead of it.
+  const pendingAddResolveRef = useRef<
+    ((result: PdpAddResult | PromiseLike<PdpAddResult>) => void) | null
+  >(null);
 
   // Cash arrangement add-on: opted into with an inline Yes/No that opens a modal collecting
   // ONE cash arrangement per unit (see CashArrangementModal), so a shopper buying several can
@@ -117,49 +129,76 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
   };
   const includedCashCount = cashEntries.filter((e) => e.included && Number(e.cashAmount) > 0).length;
 
+  // Settles the in-flight startAddFlow() promise (if any) — called whenever the
+  // chain finishes, whether by actually adding to cart or by a cancel abort.
+  const settleAddFlow = (result: PdpAddResult | Promise<PdpAddResult>) => {
+    const resolve = pendingAddResolveRef.current;
+    pendingAddResolveRef.current = null;
+    resolve?.(result);
+  };
+
   // --- Gift card toggle + modal wiring -------------------------------------
+  // The toggle only records the choice now — see startAddFlow for when the modal
+  // actually opens. The "Yes"/"No" still flips instantly so the UI responds.
   const onGiftToggle = (v: boolean) => {
-    if (v) {
-      setGiftCard(true);
-      setGiftModalOpen(true); // "on click Yes, show the modal"
-    } else {
-      setGiftCard(false);
-      setGiftCards([]);
-    }
+    setGiftCard(v);
+    if (!v) setGiftCards([]);
   };
   const onGiftCancel = () => {
     setGiftModalOpen(false);
     // Cancelling before any card was saved leaves the toggle at "No".
     if (giftCards.length === 0) setGiftCard(false);
+    // A cancel mid-"Add to cart" aborts the whole add — nothing gets added with
+    // half-confirmed personalization. The shopper can just click Add again.
+    if (addStep === "gift") {
+      setAddStep("idle");
+      settleAddFlow({ ok: false });
+    }
   };
   const onGiftSave = (entries: GiftCardEntry[]) => {
     setGiftModalOpen(false);
     const anyIncluded = entries.some((e) => e.included);
+    const nextGiftCards = anyIncluded ? entries : [];
     setGiftCard(anyIncluded);
-    setGiftCards(anyIncluded ? entries : []);
+    setGiftCards(nextGiftCards);
+
+    if (addStep !== "gift") return; // opened via the standalone "Edit" button — just save
+    if (customNameSelected) {
+      setAddStep("customName");
+      setCustomNameModalOpen(true);
+    } else {
+      setAddStep("idle");
+      settleAddFlow(handleAdd({ giftCards: nextGiftCards }));
+    }
   };
   const includedCardCount = giftCards.filter((e) => e.included).length;
 
   // --- Custom name toggle + modal wiring (mirrors the gift card) ------------
   const onCustomNameToggle = (v: boolean) => {
-    if (v) {
-      setCustomNameSelected(true);
-      setCustomNameModalOpen(true); // "on click Yes, show the modal"
-    } else {
-      setCustomNameSelected(false);
-      setCustomNames([]);
-    }
+    setCustomNameSelected(v);
+    if (!v) setCustomNames([]);
   };
   const onCustomNameCancel = () => {
     setCustomNameModalOpen(false);
     // Cancelling before any name was saved leaves the toggle at "No".
     if (customNames.length === 0) setCustomNameSelected(false);
+    if (addStep === "customName") {
+      setAddStep("idle");
+      settleAddFlow({ ok: false });
+    }
   };
   const onCustomNameSave = (entries: CustomNameEntry[]) => {
     setCustomNameModalOpen(false);
     const anyIncluded = entries.some((e) => e.included && e.name.trim());
+    const nextCustomNames = anyIncluded ? entries : [];
     setCustomNameSelected(anyIncluded);
-    setCustomNames(anyIncluded ? entries : []);
+    setCustomNames(nextCustomNames);
+
+    if (addStep !== "customName") return; // opened via the standalone "Edit" button
+    setAddStep("idle");
+    // Custom name is always the LAST step of the chain (gift card, if any, ran
+    // first and its entries already committed a render ago) — perform the add.
+    settleAddFlow(handleAdd({ customNames: nextCustomNames }));
   };
   const includedNameCount = customNames.filter((e) => e.included && e.name.trim()).length;
 
@@ -201,17 +240,27 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
     addedTimer.current = setTimeout(() => setJustAdded(false), 1600);
   };
 
-  const handleAdd = async (): Promise<PdpAddResult> => {
+  // `overrides` carries a step's just-saved entries when handleAdd is invoked in
+  // the SAME event-handler tick as setGiftCards/setCustomNames (that state hasn't
+  // rendered yet, so reading it from the closure would see the stale array) — see
+  // onGiftSave/onCustomNameSave. Any step that already committed in an EARLIER
+  // tick (there's a full render between chain steps) is safely read from state.
+  const handleAdd = async (overrides?: {
+    giftCards?: GiftCardEntry[];
+    customNames?: CustomNameEntry[];
+  }): Promise<PdpAddResult> => {
     if (!product.inStock) return { ok: false };
     const { selectedByTitle, variantImage } = buildSelection();
+    const effectiveGiftCards = overrides?.giftCards ?? giftCards;
+    const effectiveCustomNames = overrides?.customNames ?? customNames;
 
     // One config per unit: each unit's own gift card (message, or none), its own custom
     // name (or none), and its own cash arrangement (amount/denom/note, or none). A unit
     // past the saved entries (qty raised afterwards) gets a sensible default.
     const units: UnitConfig[] = Array.from({ length: qty }, (_, i) => {
-      const entry = giftCard ? giftCards[i] ?? { included: true, message: "" } : undefined;
+      const entry = giftCard ? effectiveGiftCards[i] ?? { included: true, message: "" } : undefined;
       const hasCard = !!entry?.included;
-      const nameEntry = customNameSelected ? customNames[i] : undefined;
+      const nameEntry = customNameSelected ? effectiveCustomNames[i] : undefined;
       const unitName = nameEntry?.included && nameEntry.name.trim() ? nameEntry.name.trim() : null;
       const cEntry = cashEnabled && cashEligible ? cashEntries[i] : undefined;
       const cashAmt = cEntry && cEntry.included ? Number(cEntry.cashAmount) : 0;
@@ -258,12 +307,35 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
     return { ok: true };
   };
 
+  // Entry point for the "Add to cart" button (and the mobile sticky bar, via
+  // requestAdd). If either add-on is turned on, walks the shopper through its
+  // modal FIRST — Gift card, then Custom name — so what they confirm always
+  // matches the quantity on screen right now, then performs the actual add. Only
+  // resolves once the whole chain settles (added, or aborted by a cancel).
+  const startAddFlow = (): Promise<PdpAddResult> => {
+    if (!product.inStock) return Promise.resolve({ ok: false });
+    return new Promise<PdpAddResult>((resolve) => {
+      pendingAddResolveRef.current = resolve;
+      if (giftCard) {
+        setAddStep("gift");
+        setGiftModalOpen(true);
+      } else if (customNameSelected) {
+        setAddStep("customName");
+        setCustomNameModalOpen(true);
+      } else {
+        pendingAddResolveRef.current = null;
+        resolve(handleAdd());
+      }
+    });
+  };
+
   // Expose this panel's add handler to the shared PDP context via a stable wrapper
-  // that always calls the latest `handleAdd` (which closes over the current
-  // qty/colour/name/gift-card state). Lets the mobile sticky bar run the same add.
-  const latestAdd = useRef(handleAdd);
+  // that always calls the latest `startAddFlow` (which closes over the current
+  // qty/colour/name/gift-card state). Lets the mobile sticky bar run the same
+  // add-to-cart confirmation chain.
+  const latestAdd = useRef(startAddFlow);
   useEffect(() => {
-    latestAdd.current = handleAdd;
+    latestAdd.current = startAddFlow;
   });
   useEffect(() => {
     const stable = () => latestAdd.current();
@@ -399,7 +471,7 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
           <Button
             fullWidth
             size="xl"
-            onClick={handleAdd}
+            onClick={startAddFlow}
             disabled={!product.inStock}
             leadingIcon={
               product.inStock && justAdded ? (

@@ -217,28 +217,33 @@ export function CashArrangementModal({
           })}
         </div>
 
-        {multi && (
-          <button
-            type="button"
-            onClick={applyToAll}
-            className={cn(
-              "self-start text-xs font-medium text-bloom-700 transition-colors hover:text-bloom-800 hover:underline",
-              !entries[0]?.included && "pointer-events-none opacity-40"
-            )}
-          >
-            {t("product.cashApplyAll")}
-          </button>
-        )}
-
         {/* Pinned footer — sticks to the bottom of the (scrolling) Modal body. The negative
-            margins pull it flush to the Modal body's px-6/py-5 padding so it spans full width. */}
-        <div className="sticky bottom-0 z-10 -mx-6 -mb-5 flex items-center justify-end gap-3 border-t border-ink-100 bg-white/95 px-6 py-4 backdrop-blur-sm">
-          <Button variant="ghost" size="md" onClick={onCancel}>
-            {t("common.cancel")}
-          </Button>
-          <Button size="md" onClick={() => onSave(entries)}>
-            {t("common.save")}
-          </Button>
+            margins pull it flush to the Modal body's px-6/py-5 padding so it spans full width.
+            "Use this cash for all items" lives IN this bar (not as a floating line above it) —
+            with 2+ items the body overflows and this footer stays pinned over whatever's last
+            in the scrollable content, so anything placed just above it here would be
+            permanently hidden underneath it rather than merely scrolled past. */}
+        <div className="sticky bottom-0 z-10 -mx-6 -mb-5 flex items-center gap-3 border-t border-ink-100 bg-white/95 px-6 py-4 backdrop-blur-sm">
+          {multi && (
+            <button
+              type="button"
+              onClick={applyToAll}
+              className={cn(
+                "text-xs font-medium text-bloom-700 transition-colors hover:text-bloom-800 hover:underline",
+                !entries[0]?.included && "pointer-events-none opacity-40"
+              )}
+            >
+              {t("product.cashApplyAll")}
+            </button>
+          )}
+          <div className="ml-auto flex items-center gap-3">
+            <Button variant="ghost" size="md" onClick={onCancel}>
+              {t("common.cancel")}
+            </Button>
+            <Button size="md" onClick={() => onSave(entries)}>
+              {t("common.save")}
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>

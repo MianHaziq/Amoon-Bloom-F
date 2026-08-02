@@ -1299,6 +1299,13 @@ function OrderReviewCard({
   const { currency, locale } = useCurrency();
   const { t, locale: appLocale } = useT();
 
+  // ONE combined VAT figure = product VAT + cash-arrangement fee VAT (both at the same rate),
+  // shown on a single "VAT" line — the fee's VAT is not split out next to the fee.
+  const cashFeeVatTotal = cashArrangement
+    ? cashArrangement.lines.reduce((s, l) => s + l.feeVatPerUnit * l.quantity, 0)
+    : 0;
+  const combinedVatAmount = Math.round((vatAmount + cashFeeVatTotal) * 100) / 100;
+
   // Mirrors order.service.js's estimatedDeliveryDays formula exactly (the LATER of the
   // resolved ZONE-or-region courier transit time and the slowest cart line's own
   // prep/booking lead time) so this pre-purchase hint matches what the order will
@@ -1474,7 +1481,7 @@ function OrderReviewCard({
               </span>
             </div>
           ) : null}
-          {vatRatePercent != null && vatAmount > 0 ? (
+          {vatRatePercent != null && combinedVatAmount > 0 ? (
             <div className="flex justify-between text-ink-500">
               <span>
                 {vatInclusive
@@ -1484,10 +1491,11 @@ function OrderReviewCard({
               {/* Inclusive VAT is already baked into the item prices above — showing
                   its extracted amount here (a different number than the same rate
                   would add on an exclusive order) reads as a calculation error, so
-                  only the label is shown, no figure. */}
+                  only the label is shown, no figure. For exclusive VAT, this is the
+                  SINGLE combined figure (product VAT + cash-arrangement fee VAT). */}
               {!vatInclusive ? (
                 <span>
-                  <CurrencyAmount amount={vatAmount} currency={currency} locale={locale} />
+                  <CurrencyAmount amount={combinedVatAmount} currency={currency} locale={locale} />
                 </span>
               ) : null}
             </div>
