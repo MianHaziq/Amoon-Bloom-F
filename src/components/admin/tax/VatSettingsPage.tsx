@@ -13,6 +13,7 @@ import { vatApi } from "@/features/vat/api/vat.api";
 import { categoriesApi } from "@/features/categories/api/categories.api";
 import { productsApi } from "@/features/products/api/products.api";
 import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
 import { cn } from "@/lib/cn";
@@ -132,6 +133,10 @@ export function VatSettingsPage() {
         (prev ?? []).map((c) => (c.regionId === updated.regionId ? updated : c))
       );
       toast.success({ title: t("admin.vatPage.saved") });
+      // The Terms & Conditions page's inclusive/exclusive VAT sentence reads this
+      // via an SSR cache (see catalogCache.getCachedVatPublic) — bust it now so the
+      // change is live immediately instead of after the cache TTL.
+      revalidateCatalog(["vat"]);
     },
     onError: (err) => toast.fromError(t("admin.vatPage.saveError"), err),
   });

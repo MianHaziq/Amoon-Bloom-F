@@ -162,6 +162,50 @@ const cartSlice = createSlice({
       const item = state.items.find(matches);
       if (item) item.quantity = quantity;
     },
+    /**
+     * Re-partitions ONE existing line into one-or-more lines by distinct cash-arrangement
+     * config — used when a shopper raises the quantity of a cash-carrying line (cart
+     * drawer/page) and re-configuring per unit makes some units diverge from the line's
+     * original shared config. Mirrors addItem's own per-config merge/split logic: a group
+     * whose recomputed variantKey collides with an already-existing line merges into it
+     * (quantity added), otherwise a new line is pushed with the base line's other fields
+     * (variant/gift-card/custom-name/price/image) untouched.
+     */
+    splitCashLine(
+      state,
+      action: PayloadAction<{
+        productId: string;
+        variantKey: string;
+        groups: { cashArrangement: CartLineCashArrangement | null; quantity: number }[];
+      }>
+    ) {
+      const { productId, variantKey, groups } = action.payload;
+      const idx = state.items.findIndex(
+        (i) => i.productId === productId && i.variantKey === variantKey
+      );
+      if (idx === -1) return;
+      const base = state.items[idx];
+      state.items.splice(idx, 1);
+      for (const g of groups) {
+        if (g.quantity <= 0) continue;
+        const cash = normalizeLineCash(g.cashArrangement);
+        const newKey = lineVariantKey(
+          base.selectedOptions,
+          base.customName,
+          base.giftCardSelected,
+          base.giftCardSelected ? base.message ?? null : null,
+          cash
+        );
+        const existingIdx = state.items.findIndex(
+          (i) => i.productId === productId && i.variantKey === newKey
+        );
+        if (existingIdx !== -1) {
+          state.items[existingIdx].quantity += g.quantity;
+          continue;
+        }
+        state.items.push({ ...base, variantKey: newKey, cashArrangement: cash, quantity: g.quantity });
+      }
+    },
     removeItem(state, action: PayloadAction<{ productId: string; variantKey?: string }>) {
       const { productId, variantKey } = action.payload;
       state.items = state.items.filter(
@@ -179,7 +223,7 @@ const cartSlice = createSlice({
   },
 });
 
-export const { addItem, updateQuantity, removeItem, clearCart, setItems } =
+export const { addItem, updateQuantity, splitCashLine, removeItem, clearCart, setItems } =
   cartSlice.actions;
 
 export default cartSlice.reducer;

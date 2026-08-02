@@ -2,6 +2,7 @@ import type { AppThunk } from "@/store";
 import {
   addItem,
   updateQuantity,
+  splitCashLine,
   removeItem,
   clearCart,
   setItems,
@@ -129,6 +130,102 @@ export const setCartQuantity =
           ? await cartApi.removeItem(productId, variantKey)
           : await cartApi.setQuantity({ productId, quantity, variantKey });
       dispatch(setItems(apiCartToCartItems(server)));
+      return { ok: true };
+    } catch (err) {
+      return handleServerError(dispatch, err);
+    }
+  };
+
+/** Structurally matches CashArrangementModal's CashUnitEntry — kept independent here
+ *  rather than importing that (product-feature UI component) type into this
+ *  cart-domain file. */
+export interface CashEntryLike {
+  included: boolean;
+  cashAmount: string;
+  denomination: number | null;
+  note: string;
+}
+
+function cashArrangementEquals(
+  a: CartLineCashArrangement | null,
+  b: CartLineCashArrangement | null
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.cashAmount === b.cashAmount && a.denomination === b.denomination && a.note === b.note;
+}
+
+/**
+ * Applies a freshly re-collected set of per-unit cash-arrangement entries back onto
+ * an existing line — used when the shopper raises a cash-carrying line's quantity in
+ * the cart drawer/page and re-opens CashArrangementModal to configure the new unit(s).
+ *
+ * If every unit still shares the SAME config the line already had, this is just a
+ * quantity bump (setCartQuantity). If units now diverge (a different amount, or none
+ * for the new unit(s)), the line is split: removed, then one line per distinct group is
+ * (re-)added — the cart-drawer equivalent of the product page's multi-unit "Add to
+ * cart" grouping (see AddToCartPanel.handleAdd).
+ */
+export const applyCashArrangementEntries =
+  (
+    productId: string,
+    variantKey: string,
+    entries: CashEntryLike[]
+  ): AppThunk<Promise<CartMutationResult>> =>
+  async (dispatch, getState) => {
+    const original = getState().cart.items.find(
+      (i) => i.productId === productId && i.variantKey === variantKey
+    );
+    if (!original) return { ok: true };
+
+    const groups = new Map<
+      string,
+      { cashArrangement: CartLineCashArrangement | null; quantity: number }
+    >();
+    for (const e of entries) {
+      const amt = e.included ? Number(e.cashAmount) : 0;
+      const cash: CartLineCashArrangement | null =
+        amt > 0
+          ? { cashAmount: Math.round(amt * 100) / 100, denomination: e.denomination ?? null, note: (e.note ?? "").trim() }
+          : null;
+      const key = cash ? JSON.stringify([cash.cashAmount, cash.denomination, cash.note]) : "none";
+      const g = groups.get(key);
+      if (g) g.quantity += 1;
+      else groups.set(key, { cashArrangement: cash, quantity: 1 });
+    }
+    const groupList = Array.from(groups.values());
+
+    // Fast path — every unit ended up with the line's ORIGINAL shared config: no
+    // divergence, so this is just a quantity change.
+    if (
+      groupList.length === 1 &&
+      cashArrangementEquals(groupList[0].cashArrangement, original.cashArrangement ?? null)
+    ) {
+      return dispatch(setCartQuantity(productId, groupList[0].quantity, variantKey));
+    }
+
+    dispatch(splitCashLine({ productId, variantKey, groups: groupList }));
+    if (!isAuthed(getState)) return { ok: true };
+    try {
+      // No server endpoint edits a line's cash config in place — remove the old line,
+      // then re-add each resulting group (server-side variantKey grouping handles
+      // merges/creates the same way PDP's sequential per-group add() does).
+      await cartApi.removeItem(productId, variantKey);
+      let server: Awaited<ReturnType<typeof cartApi.add>> | null = null;
+      for (const g of groupList) {
+        if (g.quantity <= 0) continue;
+        server = await cartApi.add({
+          productId,
+          quantity: g.quantity,
+          selectedOptions: original.selectedOptions,
+          giftCardSelected: original.giftCardSelected,
+          customName: original.customName,
+          message: original.message,
+          cashArrangement: g.cashArrangement,
+        });
+      }
+      if (server) dispatch(setItems(apiCartToCartItems(server)));
+      else await reconcile(dispatch);
       return { ok: true };
     } catch (err) {
       return handleServerError(dispatch, err);

@@ -12,7 +12,9 @@ import { DataTable, type Column } from "@/components/admin/DataTable";
 import { RegionBadges } from "@/components/admin/RegionBadges";
 import { Pagination } from "@/components/admin/Pagination";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
+import { Select } from "@/components/admin/Select";
+import { PencilIcon, PlusIcon, SearchIcon, TrashIcon } from "@/components/icons";
+import { useDebounce } from "@/hooks/useDebounce";
 import { formatCurrency } from "@/lib/format";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
@@ -21,26 +23,47 @@ import type { ApiProduct } from "@/features/products/api-types";
 import type { PaginatedResponse } from "@/types";
 
 const PAGE_SIZE = 20;
+// Sentinel for the category filter's "All categories" option — kept out of the
+// query params entirely rather than sent as an empty categoryId.
+const ALL_CATEGORIES = "all";
 
 export function ProductsAdminPage() {
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
   const [pendingDelete, setPendingDelete] = useState<ApiProduct | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
   const { t } = useT();
 
-  const productsQuery = useQuery({
-    queryKey: queryKeys.products.list({ page, limit: PAGE_SIZE }),
-    queryFn: () => productsApi.list({ page, limit: PAGE_SIZE }),
-  });
-
-  // Categories — used to render the column. We'd rather show a name than an id.
+  // Categories — used to render the column and populate the filter dropdown.
   const categoriesQuery = useQuery({
     queryKey: queryKeys.categories.list(),
     queryFn: () => categoriesApi.list(),
   });
   const categoryById = (id: string | null) =>
     categoriesQuery.data?.find((c) => c.id === id)?.title ?? "—";
+
+  const isFiltered = Boolean(debouncedSearch) || categoryFilter !== ALL_CATEGORIES;
+  const params = {
+    page,
+    limit: PAGE_SIZE,
+    ...(categoryFilter !== ALL_CATEGORIES ? { categoryId: categoryFilter } : {}),
+  };
+
+  // A search term routes to the dedicated (pg_trgm-indexed) search endpoint — matches
+  // title/subtitle/description (EN + AR) and category name. No term just lists the
+  // catalogue in its normal admin display order, optionally narrowed by category.
+  const productsQuery = useQuery({
+    queryKey: debouncedSearch
+      ? queryKeys.products.search(debouncedSearch, params)
+      : queryKeys.products.list(params),
+    queryFn: () =>
+      debouncedSearch
+        ? productsApi.search(debouncedSearch, params)
+        : productsApi.list(params),
+  });
 
   const reorderMutation = useMutation({
     mutationFn: (items: { id: string; sortOrder: number }[]) =>
@@ -57,7 +80,7 @@ export function ProductsAdminPage() {
   });
 
   const handleReorder = (rows: ApiProduct[]) => {
-    const key = queryKeys.products.list({ page, limit: PAGE_SIZE });
+    const key = queryKeys.products.list(params);
     const prev = queryClient.getQueryData<PaginatedResponse<ApiProduct>>(key);
     if (prev) queryClient.setQueryData(key, { ...prev, data: rows });
     const base = (page - 1) * PAGE_SIZE;
@@ -201,9 +224,47 @@ export function ProductsAdminPage() {
         isLoading={productsQuery.isPending}
         isError={productsQuery.isError}
         error={productsQuery.error}
-        emptyTitle={t("admin.productsPage.emptyTitle")}
-        emptyDescription={t("admin.productsPage.emptyDescription")}
-        sortable
+        emptyTitle={
+          isFiltered ? t("admin.productsPage.noMatchesTitle") : t("admin.productsPage.emptyTitle")
+        }
+        emptyDescription={
+          isFiltered
+            ? t("admin.productsPage.noMatchesDescription")
+            : t("admin.productsPage.emptyDescription")
+        }
+        toolbar={
+          <div className="flex w-full flex-wrap items-center gap-2">
+            <div className="flex flex-1 items-center gap-2 rounded-lg border border-ink-200 bg-white px-3 py-1.5 sm:max-w-sm">
+              <SearchIcon size={16} className="text-ink-400" />
+              <input
+                placeholder={t("admin.productsPage.searchPlaceholder")}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="flex-1 bg-transparent text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
+              />
+            </div>
+            <Select
+              value={categoryFilter}
+              onChange={(v) => {
+                setCategoryFilter(v);
+                setPage(1);
+              }}
+              aria-label={t("admin.productsPage.categoryFilterLabel")}
+              options={[
+                { value: ALL_CATEGORIES, label: t("admin.productsPage.allCategories") },
+                ...(categoriesQuery.data?.map((c) => ({ value: c.id, label: c.title })) ?? []),
+              ]}
+            />
+          </div>
+        }
+        // Drag-to-reorder writes an absolute catalogue sortOrder derived from each row's
+        // on-screen position — only meaningful against the full, unfiltered list. With a
+        // search term or category filter active, on-screen position no longer matches the
+        // row's true position in the catalogue, so reordering here would scramble it.
+        sortable={!isFiltered}
         onReorder={handleReorder}
         footer={
           <Pagination

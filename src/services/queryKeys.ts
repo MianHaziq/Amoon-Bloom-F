@@ -23,7 +23,8 @@ export const queryKeys = {
     byCategory: (categoryId: string, params?: unknown) =>
       [...queryKeys.products.all, "category", categoryId, params ?? null] as const,
     detail: (id: string) => [...queryKeys.products.all, "detail", id] as const,
-    search: (q: string) => [...queryKeys.products.all, "search", q] as const,
+    search: (q: string, params?: unknown) =>
+      [...queryKeys.products.all, "search", q, params ?? null] as const,
   },
 
   categories: {

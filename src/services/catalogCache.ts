@@ -25,6 +25,7 @@ import { bannersApi } from "@/features/banners/api/banners.api";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { deliveryConfigApi } from "@/features/delivery-config/api/delivery-config.api";
+import { vatApi } from "@/features/vat/api/vat.api";
 
 // Reference/catalog data changes rarely (admin edits) → cache longer.
 const CATALOG_TTL = 300; // 5 min: categories, sections, banners
@@ -184,3 +185,16 @@ const _deliveryConfigForZone = unstable_cache(
 export const getCachedDeliveryConfigForZone = cache(
   (regionCode?: string, zoneId?: string) => _deliveryConfigForZone(r(regionCode), zoneId || "none")
 );
+
+// --- VAT --------------------------------------------------------------------
+// The Terms & Conditions page's only SSR read of VatConfig, so its "inclusive of
+// VAT" / "exclusive of VAT" sentence tracks the region's real, admin-set config
+// instead of hardcoding one or the other. Everywhere else (PDP, cart, checkout)
+// reads the same data client-side via usePublicVat() (React Query) instead.
+
+const _vatPublic = unstable_cache(
+  (regionCode: string) => vatApi.getPublic(regionCode === "default" ? undefined : regionCode),
+  ["catalog:vat-public"],
+  { revalidate: CATALOG_TTL, tags: ["vat"] }
+);
+export const getCachedVatPublic = cache((regionCode?: string) => _vatPublic(r(regionCode)));

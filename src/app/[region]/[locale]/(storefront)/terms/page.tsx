@@ -5,13 +5,20 @@ import {
 } from "@/components/legal/LegalPageLayout";
 import { getServerLocale } from "@/i18n/server";
 import { getServerRegion } from "@/services/serverRegion";
+import { getCachedVatPublic } from "@/services/catalogCache";
 import { localized } from "@/i18n";
 import { regionContactFromRegionCode, type RegionContact } from "@/features/location/regionContact";
+import type { ApiPublicVatConfig } from "@/features/vat/types";
+import { termsVatClause } from "@/features/vat/vatLegalClause";
 import type { Locale } from "@/store/slices/ui.slice";
 
 export const metadata = { title: "Terms & Conditions" };
 
-const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => {
+const getSections = (
+  locale: Locale,
+  contact: RegionContact,
+  vat: ApiPublicVatConfig | null
+): LegalSection[] => {
   const P = (en: string, ar: string): LegalBlock => ({
     type: "p",
     text: localized(en, ar, locale),
@@ -68,10 +75,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
             "Product images are for illustrative purposes. Minor variations in colour, wrapping, or arrangement may occur due to the handcrafted and perishable nature of our products.",
             "صور المنتجات لأغراض توضيحية فقط، وقد تحدث اختلافات طفيفة في اللون أو التغليف أو التنسيق نظرا للطبيعة اليدوية والقابلة للتلف لمنتجاتنا.",
           ],
-          [
-            `Prices are displayed in ${contact.currencyDisplayName} and are inclusive of VAT where applicable, in accordance with ${contact.vatLawName}.`,
-            `تعرض الأسعار ب${contact.currencyDisplayName} وتشمل ضريبة القيمة المضافة حيثما ينطبق ذلك، بموجب ${contact.vatLawName}.`,
-          ],
+          termsVatClause(vat, contact.currencyDisplayName, contact.vatLawName),
           [
             "We reserve the right to modify prices at any time without prior notice, except for confirmed orders.",
             "نحتفظ بحق تعديل الأسعار في أي وقت دون إشعار مسبق، باستثناء الطلبات المؤكدة.",
@@ -201,7 +205,10 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
 
 export default async function TermsPage() {
   const [locale, region] = await Promise.all([getServerLocale(), getServerRegion()]);
-  const contact = await regionContactFromRegionCode(region, locale);
+  const [contact, vat] = await Promise.all([
+    regionContactFromRegionCode(region, locale),
+    getCachedVatPublic(region).catch(() => null),
+  ]);
   return (
     <LegalPageLayout
       eyebrow={localized("Policies", "السياسات", locale)}
@@ -214,7 +221,7 @@ export default async function TermsPage() {
       badge={localized("Terms & Conditions", "الشروط والأحكام", locale)}
       updatedLabel={localized("Last Updated", "آخر تحديث", locale)}
       updatedValue={localized("June 2026", "يونيو 2026", locale)}
-      sections={getSections(locale, contact)}
+      sections={getSections(locale, contact, vat)}
     />
   );
 }

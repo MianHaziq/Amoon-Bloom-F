@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { m, AnimatePresence } from "motion/react";
-import { Button } from "@/components/ui";
+import { Button, CurrencyAmount } from "@/components/ui";
 import { BagIcon, HeartIcon, CheckIcon, SparkleIcon, PencilIcon } from "@/components/icons";
 import { microTransition } from "@/lib/motion";
 import { QuantitySelector } from "./QuantitySelector";
@@ -18,6 +18,7 @@ import { useCart } from "@/features/cart/hooks/useCart";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { formatCurrency } from "@/lib/format";
 import { cashArrangementApi } from "@/features/cash-arrangement/api/cash-arrangement.api";
+import { computeCashArrangementFee } from "@/features/cash-arrangement/cashArrangementFee";
 import { queryKeys } from "@/services/queryKeys";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { pushToast, toggleCartDrawer } from "@/store/slices/ui.slice";
@@ -26,6 +27,7 @@ import type { CartLineCashArrangement } from "@/store/slices/cart.slice";
 import { cn } from "@/lib/cn";
 import { useT } from "@/i18n/useT";
 import type { Product } from "../types";
+import { resolveActivePhotoGroup } from "../variantResolution";
 
 interface AddToCartPanelProps {
   product: Product;
@@ -53,13 +55,27 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
   // colour here and clicking its photo in the gallery are the same action.
   // `registerAddHandler` lets the mobile sticky bar trigger this panel's exact
   // add-to-cart with the live colour/name/gift-card/qty (it lives elsewhere in the tree).
-  const { selected, selectOption, registerAddHandler, activeVariant } = usePdpImage();
+  const {
+    selected,
+    selectOption,
+    registerAddHandler,
+    activeVariant,
+    activeVariantColor,
+    selectVariantColor,
+  } = usePdpImage();
   const wishlisted = useAppSelector((s) =>
     s.wishlist.items.some((i) => i.productId === product.id)
   );
   const [qty, setQty] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Same variant-aware price ProductPrice/StickyAddToCart show above the fold — must match
+  // what's actually about to be charged for the cash-arrangement price preview below.
+  const unitPrice = activeVariant
+    ? activeVariant.discountedPrice != null && activeVariant.discountedPrice < activeVariant.price
+      ? activeVariant.discountedPrice
+      : activeVariant.price
+    : product.price.amount;
 
   // Gift card add-on: complimentary, opted into with an inline Yes/No. The toggle
   // only RECORDS the choice — the modal that collects ONE card message per unit
@@ -75,10 +91,11 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
   const [customNames, setCustomNames] = useState<CustomNameEntry[]>([]);
   const [customNameModalOpen, setCustomNameModalOpen] = useState(false);
   // Which step of the "Add to cart" confirmation chain is currently open (if any).
-  // Drives onGiftSave/onCustomNameSave: only advance the chain (or actually add to
-  // cart) when a modal's Save/Cancel fires AS PART OF that chain — a Save/Cancel
-  // from the standalone "Edit" button (addStep === "idle") just records the entries.
-  const [addStep, setAddStep] = useState<"idle" | "gift" | "customName">("idle");
+  // Drives onGiftSave/onCustomNameSave/onCashSave: only advance the chain (or
+  // actually add to cart) when a modal's Save/Cancel fires AS PART OF that chain —
+  // a Save/Cancel from the standalone "Edit" button (addStep === "idle") just
+  // records the entries.
+  const [addStep, setAddStep] = useState<"idle" | "gift" | "customName" | "cash">("idle");
   // Resolves the in-flight startAddFlow() promise once the chain finishes (added,
   // or the shopper cancelled a step) — lets the mobile sticky bar's requestAdd()
   // await the SAME multi-step confirmation instead of racing ahead of it.
@@ -120,14 +137,53 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
   const onCashCancel = () => {
     setCashModalOpen(false);
     if (cashEntries.length === 0) setCashEnabled(false);
+    // A cancel mid-"Add to cart" aborts the whole add — mirrors onGiftCancel/onCustomNameCancel.
+    if (addStep === "cash") {
+      setAddStep("idle");
+      settleAddFlow({ ok: false });
+    }
   };
   const onCashSave = (entries: CashUnitEntry[]) => {
     setCashModalOpen(false);
     const anyIncluded = entries.some((e) => e.included && Number(e.cashAmount) > 0);
+    const nextCashEntries = anyIncluded ? entries : [];
     setCashEnabled(anyIncluded);
-    setCashEntries(anyIncluded ? entries : []);
+    setCashEntries(nextCashEntries);
+
+    if (addStep !== "cash") return; // opened via the standalone "Edit" button — just save
+    setAddStep("idle");
+    // Cash arrangement is always the LAST step of the chain (gift card / custom name,
+    // if any, already ran and committed a render ago) — perform the add.
+    settleAddFlow(handleAdd({ cashEntries: nextCashEntries }));
   };
   const includedCashCount = cashEntries.filter((e) => e.included && Number(e.cashAmount) > 0).length;
+  // Both feed the price-preview section below so the fee is visible on the product page
+  // itself, not only once the shopper reaches checkout (client feedback: surfacing it for
+  // the first time at checkout reads as a surprise fee).
+  const totalCashAmount = cashEntries.reduce((sum, e) => {
+    const amt = Number(e.cashAmount);
+    return e.included && amt > 0 ? sum + amt : sum;
+  }, 0);
+  const totalCashFee =
+    cashConfig?.feeStepAmount == null || cashConfig?.feeMarginPercent == null
+      ? 0
+      : cashEntries.reduce((sum, e) => {
+          const amt = Number(e.cashAmount);
+          if (!e.included || !(amt > 0)) return sum;
+          return (
+            sum +
+            computeCashArrangementFee(amt, {
+              feeStepAmount: cashConfig.feeStepAmount!,
+              feeMarginPercent: cashConfig.feeMarginPercent!,
+            })
+          );
+        }, 0);
+  // Only reopen the cash modal on "Add to cart" when there's actually something unresolved —
+  // i.e. qty was raised past the last saved entries, so the new unit(s) have no decision yet.
+  // A saved entries array always has exactly as many slots as the qty it was saved at (see
+  // CashArrangementModal's seed()), so `< qty` alone means new, undecided units exist; qty
+  // being lowered afterwards needs no reopen since every remaining unit was already decided.
+  const cashNeedsConfirmation = cashEnabled && cashEligible && qty > cashEntries.length;
 
   // Settles the in-flight startAddFlow() promise (if any) — called whenever the
   // chain finishes, whether by actually adding to cart or by a cancel abort.
@@ -166,6 +222,9 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
     if (customNameSelected) {
       setAddStep("customName");
       setCustomNameModalOpen(true);
+    } else if (cashNeedsConfirmation) {
+      setAddStep("cash");
+      setCashModalOpen(true);
     } else {
       setAddStep("idle");
       settleAddFlow(handleAdd({ giftCards: nextGiftCards }));
@@ -195,10 +254,15 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
     setCustomNames(nextCustomNames);
 
     if (addStep !== "customName") return; // opened via the standalone "Edit" button
-    setAddStep("idle");
-    // Custom name is always the LAST step of the chain (gift card, if any, ran
-    // first and its entries already committed a render ago) — perform the add.
-    settleAddFlow(handleAdd({ customNames: nextCustomNames }));
+    if (cashNeedsConfirmation) {
+      setAddStep("cash");
+      setCashModalOpen(true);
+    } else {
+      setAddStep("idle");
+      // Gift card, if any, ran first and its entries already committed a render
+      // ago — perform the add.
+      settleAddFlow(handleAdd({ customNames: nextCustomNames }));
+    }
   };
   const includedNameCount = customNames.filter((e) => e.included && e.name.trim()).length;
 
@@ -212,21 +276,20 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
       },
       {}
     );
-    const variantImage = (() => {
-      const group = product.options?.find(
-        (o) =>
-          o.optionImages?.some((u) => u?.trim()) ||
-          o.optionImageSets?.some((set) => set.some((u) => u?.trim()))
-      );
-      if (!group) return undefined;
-      const idx = group.options.indexOf(selected[group.id] ?? "");
-      if (idx < 0) return undefined;
-      const set = (group.optionImageSets?.[idx] ?? [])
-        .map((u) => u?.trim())
-        .filter(Boolean) as string[];
-      const single = group.optionImages?.[idx]?.trim();
-      return (set.length ? set[0] : single) || undefined;
-    })();
+    // The active variant's own colour (e.g. Large's Pink/Blue/Red) isn't a real
+    // ProductOption group, so it's captured under its own synthetic key instead of
+    // the loop above.
+    if (activeVariantColor) {
+      selectedByTitle[t("product.colorOptionLabel")] = activeVariantColor.label;
+    }
+    // Same priority/fallback rule as the main gallery (PdpImageContext): when the
+    // active variant has its own colours, ITS choice wins (falling back to the
+    // variant's own photo only if that specific colour has none); otherwise defer
+    // entirely to the generic multi-group system — shared via variantResolution.ts
+    // so the cart-line thumbnail can never disagree with what the PDP just showed.
+    const variantImage = activeVariant?.colors?.length
+      ? activeVariantColor?.images[0] ?? activeVariant.images[0]
+      : resolveActivePhotoGroup(product.options, selected)?.images[0];
     return {
       selectedByTitle: Object.keys(selectedByTitle).length > 0 ? selectedByTitle : null,
       variantImage,
@@ -248,21 +311,25 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
   const handleAdd = async (overrides?: {
     giftCards?: GiftCardEntry[];
     customNames?: CustomNameEntry[];
+    cashEntries?: CashUnitEntry[];
   }): Promise<PdpAddResult> => {
     if (!product.inStock) return { ok: false };
     const { selectedByTitle, variantImage } = buildSelection();
     const effectiveGiftCards = overrides?.giftCards ?? giftCards;
     const effectiveCustomNames = overrides?.customNames ?? customNames;
+    const effectiveCashEntries = overrides?.cashEntries ?? cashEntries;
 
     // One config per unit: each unit's own gift card (message, or none), its own custom
     // name (or none), and its own cash arrangement (amount/denom/note, or none). A unit
-    // past the saved entries (qty raised afterwards) gets a sensible default.
+    // past the saved entries (qty raised afterwards) gets a sensible default — though in
+    // practice startAddFlow always re-opens the cash modal first when cashEnabled, so
+    // effectiveCashEntries is already re-seeded to `qty` length by the time this runs.
     const units: UnitConfig[] = Array.from({ length: qty }, (_, i) => {
       const entry = giftCard ? effectiveGiftCards[i] ?? { included: true, message: "" } : undefined;
       const hasCard = !!entry?.included;
       const nameEntry = customNameSelected ? effectiveCustomNames[i] : undefined;
       const unitName = nameEntry?.included && nameEntry.name.trim() ? nameEntry.name.trim() : null;
-      const cEntry = cashEnabled && cashEligible ? cashEntries[i] : undefined;
+      const cEntry = cashEnabled && cashEligible ? effectiveCashEntries[i] : undefined;
       const cashAmt = cEntry && cEntry.included ? Number(cEntry.cashAmount) : 0;
       const cashArrangement: CartLineCashArrangement | null =
         cashAmt > 0
@@ -308,10 +375,17 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
   };
 
   // Entry point for the "Add to cart" button (and the mobile sticky bar, via
-  // requestAdd). If either add-on is turned on, walks the shopper through its
-  // modal FIRST — Gift card, then Custom name — so what they confirm always
-  // matches the quantity on screen right now, then performs the actual add. Only
-  // resolves once the whole chain settles (added, or aborted by a cancel).
+  // requestAdd). If any add-on is turned on, walks the shopper through its modal
+  // FIRST — Gift card, then Custom name, then Cash arrangement — so what they
+  // confirm always matches the quantity on screen right now (this is what fixes
+  // "raise qty to 2 after configuring cash for 1 and the 2nd unit silently gets
+  // no cash arrangement" — cashNeedsConfirmation re-opens the modal, pre-seeded
+  // for the current qty, whenever it was raised past the last saved entries).
+  // Gift card / custom name have no such qty-aware skip since re-seeding them per
+  // unit is comparatively cheap and their modals are quick — cash is the one add-on
+  // heavy enough (fee calc, denominations) that reopening it for no reason, on
+  // every single add-to-cart click, would be an annoyance. Only resolves once the
+  // whole chain settles (added, or aborted by a cancel).
   const startAddFlow = (): Promise<PdpAddResult> => {
     if (!product.inStock) return Promise.resolve({ ok: false });
     return new Promise<PdpAddResult>((resolve) => {
@@ -322,6 +396,9 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
       } else if (customNameSelected) {
         setAddStep("customName");
         setCustomNameModalOpen(true);
+      } else if (cashNeedsConfirmation) {
+        setAddStep("cash");
+        setCashModalOpen(true);
       } else {
         pendingAddResolveRef.current = null;
         resolve(handleAdd());
@@ -362,6 +439,22 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
             />
           ))}
         </div>
+      )}
+
+      {/* The active variant's OWN colours (e.g. Large's Pink/Blue/Red) — entirely
+          independent from any other size's list, so this re-renders from scratch
+          whenever Size changes. Not a real ProductOption group, so it's rendered
+          separately from the loop above. */}
+      {activeVariant?.colors && activeVariant.colors.length > 0 && (
+        <OptionPicker
+          title={t("product.colorOptionLabel")}
+          options={activeVariant.colors.map((c) => c.label)}
+          value={activeVariantColor?.label ?? null}
+          onChange={(label) => {
+            const match = activeVariant.colors!.find((c) => c.label === label);
+            if (match) selectVariantColor(match.id);
+          }}
+        />
       )}
 
       {activeVariant?.contents ? (
@@ -454,12 +547,41 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
                   ? t("product.cashSummaryOne")
                   : t("product.cashSummaryMany", { count: includedCashCount })}
               </span>
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-bloom-700">
+              <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-bloom-700">
                 <PencilIcon size={12} />
                 {t("product.giftCardEdit")}
               </span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* Full price preview once cash is added — client feedback: the fee must be visible
+          here on the PDP, not first revealed at checkout. Mirrors CashArrangementSection's
+          checkout breakdown (product price / cash amount / fee / subtotal before VAT), just
+          summed across the whole quantity instead of one unit. */}
+      {cashEnabled && includedCashCount > 0 && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-ink-100 bg-white p-4 text-sm">
+          <div className="flex justify-between text-ink-600">
+            <span>{t("checkout.productPriceLabel")}</span>
+            <CurrencyAmount amount={unitPrice * qty} currency={currency} locale={locale} />
+          </div>
+          <div className="flex justify-between text-ink-600">
+            <span>{t("checkout.cashAmountLineLabel")}</span>
+            <CurrencyAmount amount={totalCashAmount} currency={currency} locale={locale} />
+          </div>
+          <div className="flex justify-between text-ink-600">
+            <span>{t("checkout.cashArrangementFeeLabel")}</span>
+            <CurrencyAmount amount={totalCashFee} currency={currency} locale={locale} />
+          </div>
+          <div className="flex justify-between border-t border-ink-100 pt-2 font-semibold text-ink-900">
+            <span>{t("checkout.cashSubtotalBeforeVatLabel")}</span>
+            <CurrencyAmount
+              amount={unitPrice * qty + totalCashAmount + totalCashFee}
+              currency={currency}
+              locale={locale}
+            />
+          </div>
         </div>
       )}
 

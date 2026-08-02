@@ -22,6 +22,17 @@ export interface ProductOptionGroup {
   isVariantAxis?: boolean;
 }
 
+/** One colour choice available for ONE specific variant (e.g. "Pink" for the Large
+ *  size) — entirely independent from any other size's colour list. Never affects
+ *  price; picking one only swaps the displayed photo(s). */
+export interface ProductVariantColor {
+  id: string;
+  /** Already localized to the active locale by the adapter. */
+  label: string;
+  images: string[];
+  isDefault: boolean;
+}
+
 /** One priced/photographed size (or other single-axis variant) of a product — e.g. the
  *  Small/Medium/Large Graduation Giveaway Box. `optionValue`/`optionValue_ar` match a
  *  value in the product's `isVariantAxis` option group. */
@@ -38,6 +49,9 @@ export interface ProductVariant {
   /** This variant's own description blocks — empty/absent means it has no override
    *  and shares the product's top-level `descriptions` instead. */
   descriptions?: ProductDescriptionBlock[];
+  /** This variant's own colour choices (e.g. Large's Pink/Blue/Red). Empty/absent =
+   *  this size offers no colour picker at all — the vast majority of variants. */
+  colors?: ProductVariantColor[];
 }
 
 /** "From X to Y" price span across a product's variants. */

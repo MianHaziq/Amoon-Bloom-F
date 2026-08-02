@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
 import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { m } from "motion/react";
 import { IconButton, CurrencyAmount } from "@/components/ui";
@@ -9,11 +11,15 @@ import { listItem, microTransition } from "@/lib/motion";
 import { QuantitySelector } from "@/features/products/components/QuantitySelector";
 import { SelectedOptions } from "@/features/products/components/SelectedOptions";
 import { OrderItemExtras } from "@/features/orders/components/OrderItemExtras";
+import { CashArrangementModal, type CashUnitEntry } from "@/features/products/components/CashArrangementModal";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { useAppDispatch } from "@/store";
-import { removeFromCart, setCartQuantity } from "@/features/cart/cart.thunks";
+import { removeFromCart, setCartQuantity, applyCashArrangementEntries } from "@/features/cart/cart.thunks";
 import { type CartItem } from "@/store/slices/cart.slice";
+import { cashArrangementApi } from "@/features/cash-arrangement/api/cash-arrangement.api";
+import { computeCashArrangementFee } from "@/features/cash-arrangement/cashArrangementFee";
+import { queryKeys } from "@/services/queryKeys";
 import { cn } from "@/lib/cn";
 import { useT } from "@/i18n/useT";
 
@@ -29,8 +35,51 @@ export function CartLineItem({
   onNavigate,
 }: CartLineItemProps) {
   const dispatch = useAppDispatch();
-  const { currency, locale } = useCurrency();
+  const { currency, locale, countryCode: regionCode } = useCurrency();
   const { t } = useT();
+
+  // Raising quantity on a line that already has a cash arrangement needs the shopper
+  // to say whether the new unit(s) get one too (and if so, what amount) — reopen the
+  // same per-unit modal the product page uses, rather than silently scaling the
+  // existing amount/fee to units nobody confirmed it for. Only fetched for lines that
+  // actually carry a cash arrangement (usually cache-warm already from the PDP visit).
+  const hasCash = Boolean(item.cashArrangement);
+  const [cashModalOpen, setCashModalOpen] = useState(false);
+  const [pendingQty, setPendingQty] = useState<number | null>(null);
+  const cashQuery = useQuery({
+    queryKey: queryKeys.cashArrangement.resolve(regionCode, undefined, [item.productId]),
+    queryFn: () => cashArrangementApi.resolve({ cartLines: [{ productId: item.productId }] }),
+    enabled: hasCash && Boolean(regionCode),
+  });
+  const cashConfig = cashQuery.data;
+  // Surfaced in the cart line (via OrderItemExtras) so the fee is visible here too, not
+  // only at checkout — the resolve config is already fetched above for the quantity-raise
+  // flow, so this just reuses it (no extra request).
+  const cashFeeAmount =
+    item.cashArrangement && cashConfig?.feeStepAmount != null && cashConfig?.feeMarginPercent != null
+      ? computeCashArrangementFee(item.cashArrangement.cashAmount, {
+          feeStepAmount: cashConfig.feeStepAmount,
+          feeMarginPercent: cashConfig.feeMarginPercent,
+        })
+      : null;
+
+  const handleQuantityChange = (q: number) => {
+    if (item.cashArrangement && q > item.quantity && cashConfig) {
+      setPendingQty(q);
+      setCashModalOpen(true);
+      return;
+    }
+    dispatch(setCartQuantity(item.productId, q, item.variantKey));
+  };
+
+  const cashInitialEntries: CashUnitEntry[] = item.cashArrangement
+    ? Array.from({ length: item.quantity }, () => ({
+        included: true,
+        cashAmount: String(item.cashArrangement!.cashAmount),
+        denomination: item.cashArrangement!.denomination,
+        note: item.cashArrangement!.note,
+      }))
+    : [];
 
   return (
     <m.article
@@ -95,7 +144,9 @@ export function CartLineItem({
           giftCardSelected={item.giftCardSelected}
           customName={item.customName}
           message={item.message}
-          cashArrangement={item.cashArrangement}
+          cashArrangement={
+            item.cashArrangement ? { ...item.cashArrangement, feeAmount: cashFeeAmount } : null
+          }
           currency={currency}
           locale={locale}
           className="mt-2"
@@ -104,9 +155,7 @@ export function CartLineItem({
           <QuantitySelector
             size="sm"
             value={item.quantity}
-            onChange={(q) =>
-              dispatch(setCartQuantity(item.productId, q, item.variantKey))
-            }
+            onChange={handleQuantityChange}
           />
           <IconButton
             label={t("common.remove")}
@@ -119,6 +168,26 @@ export function CartLineItem({
           </IconButton>
         </div>
       </div>
+
+      {hasCash && cashConfig && (
+        <CashArrangementModal
+          open={cashModalOpen}
+          quantity={pendingQty ?? item.quantity}
+          config={cashConfig}
+          initial={cashInitialEntries}
+          currency={currency}
+          locale={locale}
+          onCancel={() => {
+            setCashModalOpen(false);
+            setPendingQty(null);
+          }}
+          onSave={(entries) => {
+            setCashModalOpen(false);
+            setPendingQty(null);
+            dispatch(applyCashArrangementEntries(item.productId, item.variantKey, entries));
+          }}
+        />
+      )}
     </m.article>
   );
 }

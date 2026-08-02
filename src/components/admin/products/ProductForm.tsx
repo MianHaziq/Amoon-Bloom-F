@@ -38,6 +38,7 @@ import type {
   ApiProduct,
   ApiProductCreateInput,
   ApiProductDescriptionInput,
+  ApiProductVariantColorInput,
   ApiProductVariantInput,
   ApiProductZoneLead,
 } from "@/features/products/api-types";
@@ -65,6 +66,26 @@ function cleanDescriptionBlocks(
     .filter((d) => d.description !== "");
 }
 
+interface VariantColorFormValue {
+  label?: string | null;
+  label_ar?: string | null;
+  images?: string[];
+}
+
+/** Trim a form-state colour list (for ONE size) into API input shape, dropping
+ *  entries with no label — mirrors cleanDescriptionBlocks. */
+function cleanVariantColors(
+  colors: VariantColorFormValue[] | undefined
+): ApiProductVariantColorInput[] {
+  return (colors ?? [])
+    .map((c) => ({
+      label: c.label?.trim() || null,
+      label_ar: c.label_ar?.trim() || null,
+      images: (c.images ?? []).filter((u) => u && u.trim()),
+    }))
+    .filter((c) => c.label !== null || c.label_ar !== null);
+}
+
 function useProductFormSchema() {
   const { t } = useT();
   return useMemo(() => {
@@ -90,6 +111,15 @@ function useProductFormSchema() {
         },
         { path: ["description"], message: t("admin.productForm.descriptionRequired") }
       );
+
+    // One colour choice within ONE size's own list (e.g. Large's "Pink") — an
+    // empty/unlabeled entry is simply dropped at submit time, same convention as
+    // descriptionSchema above.
+    const colorEntrySchema = z.object({
+      label: z.string().optional().nullable(),
+      label_ar: z.string().optional().nullable(),
+      images: z.array(z.string()).optional(),
+    });
 
     const optionSchema = z.object({
       title: z.string().min(1, t("admin.productForm.optionTitleRequired")),
@@ -119,6 +149,10 @@ function useProductFormSchema() {
       // card) — an empty array means this size has no override and shares the
       // product's shared blocks instead.
       variantDescriptions: z.array(z.array(descriptionSchema)).optional(),
+      // Optional per-value COLOUR choices, aligned with `options` — e.g. Large gets
+      // its own Pink/Blue/Red while Medium only gets Blue/Black. Entirely independent
+      // per size (unlike variantDescriptions, there's no "shared" fallback to inherit).
+      variantColors: z.array(z.array(colorEntrySchema)).optional(),
     });
 
     return z.object({
@@ -404,6 +438,13 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               description_ar: d.description_ar ?? "",
             }))
           ),
+          variantColors: matchedVariants.map((v) =>
+            (v?.colors ?? []).map((c) => ({
+              label: c.label ?? "",
+              label_ar: c.label_ar ?? "",
+              images: c.images ?? [],
+            }))
+          ),
         };
       }),
     });
@@ -466,6 +507,9 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               // Empty = this size has no override and shares the product's shared
               // `descriptions` blocks instead.
               descriptions: cleanDescriptionBlocks(o.variantDescriptions?.[i]),
+              // Entirely independent per size — e.g. Large's own Pink/Blue/Red,
+              // Medium's own Blue/Black. Empty = this size has no colour picker.
+              colors: cleanVariantColors(o.variantColors?.[i]),
             });
           }
         });
@@ -846,6 +890,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           <Card
             title={t("admin.productForm.zoneLeadDaysHeading")}
             description={t("admin.productForm.zoneLeadDaysHint")}
+            collapsible
           >
             <div className="flex flex-col gap-4">
               {selectedRegions.map((region) => {
@@ -1081,6 +1126,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                     variantContents_ar: [""],
                     variantDefaultIndex: null,
                     variantDescriptions: [[]],
+                    variantColors: [[]],
                   });
                 }}
                 className="inline-flex items-center gap-1 text-sm font-medium text-ink-600 hover:text-ink-900"
@@ -1290,21 +1336,47 @@ interface CardProps {
   description?: string;
   action?: React.ReactNode;
   children: React.ReactNode;
+  /** When set, the header becomes a toggle that shows/hides the body — starts
+   *  closed unless defaultOpen is true. Omit for a normal always-open card. */
+  collapsible?: boolean;
+  defaultOpen?: boolean;
 }
 
-function Card({ title, description, action, children }: CardProps) {
+function Card({ title, description, action, children, collapsible, defaultOpen }: CardProps) {
+  const [open, setOpen] = useState(defaultOpen ?? false);
+  const showBody = !collapsible || open;
   return (
     <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-      <header className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-display text-lg text-ink-900">{title}</h3>
-          {description ? (
-            <p className="text-xs text-ink-500">{description}</p>
-          ) : null}
-        </div>
+      <header className={cn("flex items-start justify-between gap-3", showBody && "mb-4")}>
+        {collapsible ? (
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            className="flex flex-1 items-start justify-between gap-3 text-left"
+          >
+            <div>
+              <h3 className="font-display text-lg text-ink-900">{title}</h3>
+              {description ? (
+                <p className="text-xs text-ink-500">{description}</p>
+              ) : null}
+            </div>
+            <ChevronDown
+              size={16}
+              className={cn("mt-1 shrink-0 text-ink-500 transition-transform", open && "rotate-180")}
+            />
+          </button>
+        ) : (
+          <div>
+            <h3 className="font-display text-lg text-ink-900">{title}</h3>
+            {description ? (
+              <p className="text-xs text-ink-500">{description}</p>
+            ) : null}
+          </div>
+        )}
         {action}
       </header>
-      {children}
+      {showBody ? children : null}
     </section>
   );
 }
@@ -1489,6 +1561,32 @@ function OptionValueRows({
     control,
     name: `productOptions.${index}.variantDescriptions`,
   }) ?? []) as DescriptionBlockFormValue[][];
+  const variantColors = (useWatch({
+    control,
+    name: `productOptions.${index}.variantColors`,
+  }) ?? []) as VariantColorFormValue[][];
+  // Which value row's colour-photo picker is open, keyed "valueIndex:colorIndex" —
+  // independent from the value row's own `pickerOpen` above since a colour's photos
+  // are nested one level deeper.
+  const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (colorPickerOpen === null) return;
+    // Listens on "click" (not "mousedown"): closing on mousedown collapses this
+    // picker's photo grid mid-click — if the shopper's next click targets an
+    // element that SHIFTS UP as a result (e.g. another size row's own "Add
+    // colour" button, once this picker's height disappears), the browser's
+    // mouseup/click phase can land on the wrong spot after that reflow. Closing
+    // on the full "click" event instead lets the whole click sequence complete
+    // against the ORIGINAL layout first.
+    const onDown = (e: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setColorPickerOpen(null);
+      }
+    };
+    document.addEventListener("click", onDown);
+    return () => document.removeEventListener("click", onDown);
+  }, [colorPickerOpen]);
 
   const count = options.length;
 
@@ -1623,6 +1721,48 @@ function OptionValueRows({
       padDescs()[i].map((b, j) => (j === blockIndex ? { ...b, [field]: value } : b))
     );
   };
+  // variantColors follows the exact same standalone-field pattern as
+  // variantDescriptions above (nested one level deeper than the other per-value
+  // fields) — see that block's comment for why it isn't threaded through commit().
+  const padColors = () => {
+    const c = variantColors.map((x) => (Array.isArray(x) ? x : []));
+    while (c.length < count) c.push([]);
+    return c;
+  };
+  const setVariantColors = (i: number, colors: VariantColorFormValue[]) => {
+    const next = padColors();
+    next[i] = colors;
+    setValue(`productOptions.${index}.variantColors`, next, { shouldDirty: true });
+  };
+  const addColorEntry = (i: number) => {
+    setVariantColors(i, [...padColors()[i], { label: "", label_ar: "", images: [] }]);
+  };
+  const removeColorEntry = (i: number, colorIndex: number) => {
+    setVariantColors(i, padColors()[i].filter((_, j) => j !== colorIndex));
+    setColorPickerOpen(null);
+  };
+  const setColorField = (
+    i: number,
+    colorIndex: number,
+    field: "label" | "label_ar",
+    value: string
+  ) => {
+    setVariantColors(
+      i,
+      padColors()[i].map((c, j) => (j === colorIndex ? { ...c, [field]: value } : c))
+    );
+  };
+  const toggleColorImage = (i: number, colorIndex: number, url: string) => {
+    const colors = padColors();
+    const current = colors[i][colorIndex]?.images ?? [];
+    const nextImages = current.includes(url)
+      ? current.filter((u) => u !== url)
+      : [...current, url];
+    setVariantColors(
+      i,
+      colors[i].map((c, j) => (j === colorIndex ? { ...c, images: nextImages } : c))
+    );
+  };
   const addRow = () => {
     const s = padded();
     commit(
@@ -1636,6 +1776,7 @@ function OptionValueRows({
       [...s.contentsAr, ""]
     );
     setValue(`productOptions.${index}.variantDescriptions`, [...padDescs(), []], { shouldDirty: true });
+    setValue(`productOptions.${index}.variantColors`, [...padColors(), []], { shouldDirty: true });
   };
   const removeRow = (i: number) => {
     const s = padded();
@@ -1654,7 +1795,13 @@ function OptionValueRows({
       padDescs().filter((_, j) => j !== i),
       { shouldDirty: true }
     );
+    setValue(
+      `productOptions.${index}.variantColors`,
+      padColors().filter((_, j) => j !== i),
+      { shouldDirty: true }
+    );
     setPickerOpen(null);
+    setColorPickerOpen(null);
     // Keep the default pointer valid — clear it if it pointed at the removed row,
     // shift it left if it pointed past it.
     if (variantDefaultIndex != null) {
@@ -1923,8 +2070,8 @@ function OptionValueRows({
                               setVariantBlockField(i, blockIndex, "description", e.target.value)
                             }
                             placeholder={t("admin.productForm.bodyEn")}
-                            rows={2}
-                            className="mt-2 w-full rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-xs focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                            rows={5}
+                            className="mt-2 min-h-28 w-full resize-y rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm leading-relaxed focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
                           />
                           <textarea
                             value={block.description_ar ?? ""}
@@ -1933,8 +2080,8 @@ function OptionValueRows({
                             }
                             dir="rtl"
                             placeholder={t("admin.productForm.bodyAr")}
-                            rows={2}
-                            className="mt-2 w-full rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-xs focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                            rows={5}
+                            className="mt-2 min-h-28 w-full resize-y rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm leading-relaxed focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
                           />
                         </div>
                       ))}
@@ -1945,6 +2092,134 @@ function OptionValueRows({
                       >
                         <PlusIcon size={12} /> {t("admin.productForm.addBlock")}
                       </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-2 border-t border-ink-100 pt-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-ink-600">
+                      {t("admin.productForm.variantColorsLabel")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => addColorEntry(i)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-bloom-700 hover:text-bloom-800"
+                    >
+                      <PlusIcon size={12} /> {t("admin.productForm.addColour")}
+                    </button>
+                  </div>
+
+                  {(variantColors[i]?.length ?? 0) === 0 ? (
+                    <p className="mt-1 text-[11px] text-ink-400">
+                      {t("admin.productForm.variantColorsEmptyHint")}
+                    </p>
+                  ) : (
+                    <div className="mt-2 flex flex-col gap-2">
+                      {(variantColors[i] ?? []).map((color, colorIndex) => {
+                        const colorKey = `${i}:${colorIndex}`;
+                        const colorImages = color.images ?? [];
+                        return (
+                          <div
+                            key={colorIndex}
+                            ref={colorPickerOpen === colorKey ? colorPickerRef : undefined}
+                            className="rounded-lg border border-ink-100 bg-cream-50 p-3"
+                          >
+                            <div className="mb-2 flex items-center justify-between">
+                              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">
+                                {t("admin.productForm.colourLabel", { n: colorIndex + 1 })}
+                              </p>
+                              <button
+                                type="button"
+                                aria-label={t("admin.productForm.removeColourAria")}
+                                onClick={() => removeColorEntry(i, colorIndex)}
+                                className="rounded-md p-1 text-bloom-700 hover:bg-bloom-50"
+                              >
+                                <TrashIcon size={12} />
+                              </button>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                              <input
+                                value={color.label ?? ""}
+                                onChange={(e) => setColorField(i, colorIndex, "label", e.target.value)}
+                                placeholder={t("admin.productForm.colourNamePlaceholderEn")}
+                                className="h-8 rounded-lg border border-ink-200 bg-white px-2.5 text-xs focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                              />
+                              <input
+                                value={color.label_ar ?? ""}
+                                onChange={(e) => setColorField(i, colorIndex, "label_ar", e.target.value)}
+                                dir="rtl"
+                                placeholder={t("admin.productForm.colourNamePlaceholderAr")}
+                                className="h-8 rounded-lg border border-ink-200 bg-white px-2.5 text-xs focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setColorPickerOpen(colorPickerOpen === colorKey ? null : colorKey)
+                                }
+                                disabled={images.length === 0}
+                                className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-2 text-xs text-ink-700 hover:border-ink-400 disabled:opacity-50"
+                                aria-expanded={colorPickerOpen === colorKey}
+                              >
+                                {colorImages[0] ? (
+                                  <>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={colorImages[0]}
+                                      alt=""
+                                      className="h-5 w-5 rounded object-cover"
+                                    />
+                                    <span className="hidden sm:inline">
+                                      {colorImages.length > 1
+                                        ? t("admin.productForm.photosCountLabel", { count: colorImages.length })
+                                        : t("admin.productForm.photoLabel")}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span>
+                                    {images.length === 0
+                                      ? t("admin.productForm.noImagesLabel")
+                                      : t("admin.productForm.addPhotosLabel")}
+                                  </span>
+                                )}
+                                <ChevronDown size={12} />
+                              </button>
+                            </div>
+
+                            {colorPickerOpen === colorKey && images.length > 0 ? (
+                              <div className="mt-2 border-t border-ink-100 pt-2">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {images.map((url) => {
+                                    const active = colorImages.includes(url);
+                                    return (
+                                      <button
+                                        key={url}
+                                        type="button"
+                                        aria-pressed={active}
+                                        aria-label={
+                                          active
+                                            ? t("admin.productForm.removePhotoAria")
+                                            : t("admin.productForm.addPhotoAria")
+                                        }
+                                        onClick={() => toggleColorImage(i, colorIndex, url)}
+                                        className={cn(
+                                          "relative h-10 w-10 overflow-hidden rounded-md ring-offset-1",
+                                          active
+                                            ? "ring-2 ring-bloom-500"
+                                            : "ring-1 ring-ink-200 hover:ring-ink-400"
+                                        )}
+                                      >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={url} alt="" className="h-full w-full object-cover" />
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

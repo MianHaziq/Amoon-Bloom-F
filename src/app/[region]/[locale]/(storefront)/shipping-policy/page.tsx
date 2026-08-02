@@ -5,13 +5,20 @@ import {
 } from "@/components/legal/LegalPageLayout";
 import { getServerLocale } from "@/i18n/server";
 import { getServerRegion } from "@/services/serverRegion";
+import { getCachedVatPublic } from "@/services/catalogCache";
 import { localized } from "@/i18n";
 import { regionContactFromRegionCode, type RegionContact } from "@/features/location/regionContact";
+import type { ApiPublicVatConfig } from "@/features/vat/types";
+import { shippingVatClause } from "@/features/vat/vatLegalClause";
 import type { Locale } from "@/store/slices/ui.slice";
 
 export const metadata = { title: "Shipping Policy" };
 
-const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => {
+const getSections = (
+  locale: Locale,
+  contact: RegionContact,
+  vat: ApiPublicVatConfig | null
+): LegalSection[] => {
   const P = (en: string, ar: string): LegalBlock => ({
     type: "p",
     text: localized(en, ar, locale),
@@ -103,7 +110,11 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       ],
     },
     {
-      title: localized("4. Delivery Process", "4. إجراءات التسليم", locale),
+      title: localized("4. Product Prices & VAT", "4. أسعار المنتجات وضريبة القيمة المضافة", locale),
+      blocks: [P(...shippingVatClause(vat, contact.currencyDisplayName, contact.vatLawName))],
+    },
+    {
+      title: localized("5. Delivery Process", "5. إجراءات التسليم", locale),
       blocks: [
         L([
           [
@@ -126,7 +137,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       ],
     },
     {
-      title: localized("5. Perishable Items", "5. المنتجات القابلة للتلف", locale),
+      title: localized("6. Perishable Items", "6. المنتجات القابلة للتلف", locale),
       blocks: [
         P(
           "Floral arrangements and perishable gift items require timely receipt upon delivery. We are not responsible for deterioration of perishable products due to:",
@@ -149,7 +160,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       ],
     },
     {
-      title: localized("6. Order Tracking", "6. تتبع الطلب", locale),
+      title: localized("7. Order Tracking", "7. تتبع الطلب", locale),
       blocks: [
         P(
           `You can track your order status by contacting our customer care team via WhatsApp at ${contact.whatsappNumber}.`,
@@ -158,7 +169,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       ],
     },
     {
-      title: localized("7. Delivery Restrictions", "7. قيود التوصيل", locale),
+      title: localized("8. Delivery Restrictions", "8. قيود التوصيل", locale),
       blocks: [
         L([
           [
@@ -174,8 +185,8 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
     },
     {
       title: localized(
-        "8. Failed or Delayed Deliveries",
-        "8. حالات التسليم الفاشلة أو المتأخرة",
+        "9. Failed or Delayed Deliveries",
+        "9. حالات التسليم الفاشلة أو المتأخرة",
         locale
       ),
       blocks: [
@@ -186,7 +197,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       ],
     },
     {
-      title: localized("9. Force Majeure", "9. القوة القاهرة", locale),
+      title: localized("10. Force Majeure", "10. القوة القاهرة", locale),
       blocks: [
         P(
           "We shall not be liable for delivery delays or failures caused by circumstances beyond our reasonable control, including but not limited to extreme weather, road closures, public emergencies, or government restrictions.",
@@ -195,7 +206,7 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
       ],
     },
     {
-      title: localized("10. Contact Us", "10. تواصل معنا", locale),
+      title: localized("11. Contact Us", "11. تواصل معنا", locale),
       blocks: [
         P(
           "For delivery enquiries or special delivery requests:",
@@ -213,7 +224,10 @@ const getSections = (locale: Locale, contact: RegionContact): LegalSection[] => 
 
 export default async function ShippingPolicyPage() {
   const [locale, region] = await Promise.all([getServerLocale(), getServerRegion()]);
-  const contact = await regionContactFromRegionCode(region, locale);
+  const [contact, vat] = await Promise.all([
+    regionContactFromRegionCode(region, locale),
+    getCachedVatPublic(region).catch(() => null),
+  ]);
   return (
     <LegalPageLayout
       eyebrow={localized("Policies", "السياسات", locale)}
@@ -226,7 +240,7 @@ export default async function ShippingPolicyPage() {
       badge={localized("Shipping Policy", "سياسة الشحن", locale)}
       updatedLabel={localized("Last Updated", "آخر تحديث", locale)}
       updatedValue={localized("June 2026", "يونيو 2026", locale)}
-      sections={getSections(locale, contact)}
+      sections={getSections(locale, contact, vat)}
     />
   );
 }

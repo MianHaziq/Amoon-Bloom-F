@@ -8,11 +8,15 @@ import type {
 
 export const vatApi = {
   /**
-   * Public VAT config for the CURRENT region — resolved server-side from the
-   * `X-Region` header the http client already attaches to every request.
+   * Public VAT config for a region. Client calls omit `region` and rely on the
+   * `X-Region` header the http client already attaches to every request; Server
+   * Component callers (no header interceptor) pass the region code explicitly,
+   * same convention as `productsApi.list({ region })`.
    */
-  async getPublic(): Promise<ApiPublicVatConfig> {
-    const { data } = await http.get<ApiResponse<ApiPublicVatConfig>>("/vat/public");
+  async getPublic(region?: string): Promise<ApiPublicVatConfig> {
+    const { data } = await http.get<ApiResponse<ApiPublicVatConfig>>("/vat/public", {
+      params: region ? { region } : undefined,
+    });
     return data.data;
   },
 

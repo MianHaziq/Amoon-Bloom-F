@@ -23,8 +23,16 @@ export function OrderItemExtras({
   giftCardSelected?: boolean;
   customName?: string | null;
   message?: string | null;
-  /** Per-unit cash arrangement for this line — shown as a pill (needs currency + locale). */
-  cashArrangement?: { cashAmount: number; denomination?: number | null } | null;
+  /** Per-unit cash arrangement for this line. `feeAmount` is only passed where the fee has
+   *  already been resolved (currently just the cart) — when present, a full breakdown box
+   *  (amount + banknote + fee) renders instead of the compact "Cash: X" pill used everywhere
+   *  else (admin/account order lists, checkout receipt), so the fee is visible before
+   *  checkout rather than being a surprise there. */
+  cashArrangement?: {
+    cashAmount: number;
+    denomination?: number | null;
+    feeAmount?: number | null;
+  } | null;
   currency?: string;
   locale?: string;
   className?: string;
@@ -34,8 +42,9 @@ export function OrderItemExtras({
   const note = message?.trim();
   const cashAmount = cashArrangement?.cashAmount;
   const hasCash = Boolean(cashAmount && cashAmount > 0 && currency && locale);
-  const hasPill = giftCardSelected || Boolean(name) || hasCash;
-  if (!hasPill && !note) return null;
+  const hasCashFee = hasCash && Boolean(cashArrangement?.feeAmount && cashArrangement.feeAmount > 0);
+  const hasPill = giftCardSelected || Boolean(name) || (hasCash && !hasCashFee);
+  if (!hasPill && !hasCashFee && !note) return null;
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -47,7 +56,7 @@ export function OrderItemExtras({
               {t("admin.orderDetailPage.giftCardLabel")}
             </span>
           ) : null}
-          {hasCash ? (
+          {hasCash && !hasCashFee ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
               <CashIcon size={12} />
               {t("admin.orderDetailPage.cashLabel")}:{" "}
@@ -63,6 +72,32 @@ export function OrderItemExtras({
               <span className="truncate font-semibold text-ink-800">{name}</span>
             </span>
           ) : null}
+        </div>
+      ) : null}
+
+      {hasCashFee ? (
+        <div className="flex flex-col gap-1 rounded-xl border border-emerald-100 bg-emerald-50/40 px-3 py-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+            {t("product.cashDetailsLabel")}
+          </p>
+          <div className="flex justify-between text-xs text-ink-600">
+            <span>{t("checkout.cashAmountLineLabel")}</span>
+            <CurrencyAmount amount={cashAmount!} currency={currency!} locale={locale!} />
+          </div>
+          {cashArrangement?.denomination ? (
+            <div className="flex justify-between text-xs text-ink-600">
+              <span>{t("checkout.cashDenominationLabel")}</span>
+              <CurrencyAmount
+                amount={cashArrangement.denomination}
+                currency={currency!}
+                locale={locale!}
+              />
+            </div>
+          ) : null}
+          <div className="flex justify-between text-xs font-medium text-ink-700">
+            <span>{t("checkout.cashArrangementFeeLabel")}</span>
+            <CurrencyAmount amount={cashArrangement!.feeAmount!} currency={currency!} locale={locale!} />
+          </div>
         </div>
       ) : null}
 

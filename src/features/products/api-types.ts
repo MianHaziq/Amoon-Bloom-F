@@ -31,6 +31,17 @@ export interface ApiProductOptionGroup {
   isVariantAxis?: boolean;
 }
 
+/** One colour choice available for ONE specific variant (e.g. "Pink" for the Large
+ *  size) — entirely independent from any other size's colour list. Never affects
+ *  price; picking one only swaps the displayed photo(s). */
+export interface ApiProductVariantColor {
+  id: string;
+  label: string;
+  label_ar: string | null;
+  images: string[];
+  isDefault: boolean;
+}
+
 /** One priced/photographed size (or other single-axis variant) of a product — e.g. the
  *  Small/Medium/Large Graduation Giveaway Box. `optionValue` matches a value in the
  *  product's `isVariantAxis` option group. Stock stays product-level (`ApiProduct.quantity`),
@@ -49,6 +60,9 @@ export interface ApiProductVariant {
   /** This variant's own description blocks (same shape as `ApiProduct.descriptions`).
    *  Empty = this size has no override and shares the product's shared blocks instead. */
   descriptions: ApiProductDescriptionBlock[];
+  /** This variant's own colour choices (e.g. Large's Pink/Blue/Red). Empty = this
+   *  size offers no colour picker at all — the vast majority of variants. */
+  colors: ApiProductVariantColor[];
 }
 
 /** "From X to Y" price span across a product's variants (each variant's own discounted
@@ -173,6 +187,13 @@ export interface ApiProductOptionInput {
   isVariantAxis?: boolean;
 }
 
+export interface ApiProductVariantColorInput {
+  label?: string | null;
+  label_ar?: string | null;
+  images?: string[];
+  isDefault?: boolean;
+}
+
 export interface ApiProductVariantInput {
   optionValue?: string | null;
   optionValue_ar?: string | null;
@@ -185,6 +206,9 @@ export interface ApiProductVariantInput {
   /** Optional description-block override for this size. Omit/empty = shares the
    *  product's shared `descriptions` instead. */
   descriptions?: ApiProductDescriptionInput[];
+  /** Optional colour choices for this size only (e.g. Large's own Pink/Blue/Red) —
+   *  independent from any other size's list. Omit/empty = no colour picker for this size. */
+  colors?: ApiProductVariantColorInput[];
 }
 
 export interface ApiProductCreateInput {
@@ -232,4 +256,6 @@ export interface ApiProductListParams {
    * interceptor instead. Also doubles as the staff region filter.
    */
   region?: string;
+  /** Narrow to one category — supported by `list()` and `search()`. */
+  categoryId?: string;
 }

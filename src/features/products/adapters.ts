@@ -6,12 +6,19 @@
  * `reviewCount` ARE backend-aggregated (from the Review table).
  */
 
-import type { Product, ProductDescriptionBlock, ProductOptionGroup, ProductVariant } from "./types";
+import type {
+  Product,
+  ProductDescriptionBlock,
+  ProductOptionGroup,
+  ProductVariant,
+  ProductVariantColor,
+} from "./types";
 import type {
   ApiProduct,
   ApiProductDescriptionBlock,
   ApiProductOptionGroup,
   ApiProductVariant,
+  ApiProductVariantColor,
 } from "./api-types";
 import { localized } from "@/i18n";
 import type { Locale } from "@/store/slices/ui.slice";
@@ -49,6 +56,16 @@ const adaptOption = (
   isVariantAxis: o.isVariantAxis ?? false,
 });
 
+const adaptVariantColor = (
+  c: ApiProductVariantColor,
+  locale: Locale
+): ProductVariantColor => ({
+  id: c.id,
+  label: localized(c.label, c.label_ar, locale),
+  images: c.images ?? [],
+  isDefault: c.isDefault,
+});
+
 const adaptVariant = (v: ApiProductVariant, locale: Locale): ProductVariant => ({
   id: v.id,
   optionValue: v.optionValue,
@@ -59,6 +76,7 @@ const adaptVariant = (v: ApiProductVariant, locale: Locale): ProductVariant => (
   contents: localized(v.contents ?? "", v.contents_ar, locale) || undefined,
   isDefault: v.isDefault,
   descriptions: v.descriptions?.map((d) => adaptDescription(d, locale)),
+  colors: v.colors?.map((c) => adaptVariantColor(c, locale)),
 });
 
 export interface ToUiProductOptions {

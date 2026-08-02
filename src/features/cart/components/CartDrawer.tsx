@@ -9,6 +9,7 @@ import { cartLineKey } from "@/features/cart/variantKey";
 import { OrderDeliveryNote, maxCartLeadDays } from "./OrderDeliveryNote";
 import { usePublicVat } from "@/features/vat/hooks/usePublicVat";
 import { vatHint } from "@/features/vat/vatDisplay";
+import { useCartCashTotals } from "@/features/cash-arrangement/hooks/useCartCashTotals";
 import { microTransition } from "@/lib/motion";
 import { ROUTES } from "@/constants/routes";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
@@ -23,10 +24,15 @@ export function CartDrawer() {
   const items = useAppSelector((s) => s.cart.items);
   const close = () => dispatch(toggleCartDrawer(false));
   const itemCount = items.reduce((s, i) => s + i.quantity, 0);
-  const subtotal = items.reduce(
+  const productSubtotal = items.reduce(
     (s, i) => s + i.unitPrice * i.quantity,
     0
   );
+  // The drawer's "Subtotal" is the only figure shown before Checkout, so it must
+  // include each line's cash arrangement (raw amount + service fee) too — not just
+  // product prices — or it understates what the shopper is actually about to pay.
+  const { cashRawTotal, cashFeeTotal } = useCartCashTotals(items);
+  const subtotal = productSubtotal + cashRawTotal + cashFeeTotal;
   const orderLeadDays = maxCartLeadDays(items);
   const { currency, locale } = useCurrency();
   // Only the plain "VAT Inclusive" label previews here — the exclusive
@@ -78,9 +84,6 @@ export function CartDrawer() {
                 <CurrencyAmount amount={subtotal} currency={currency} locale={locale} />
               </m.span>
             </div>
-            <p className="mt-1 text-xs text-ink-500">
-              {t("cart.deliveryNote")}
-            </p>
             {showVatInclusiveHint ? (
               <p className="mt-1 text-xs text-ink-500">
                 {t("product.vatInclusive")}

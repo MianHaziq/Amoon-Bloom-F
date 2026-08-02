@@ -17,6 +17,7 @@ import { formatCutoffTime } from "@/lib/format";
 import { OrderDeliveryNote, maxCartLeadDays } from "./OrderDeliveryNote";
 import { usePublicVat } from "@/features/vat/hooks/usePublicVat";
 import { vatHint } from "@/features/vat/vatDisplay";
+import { useCartCashTotals } from "@/features/cash-arrangement/hooks/useCartCashTotals";
 import { useT } from "@/i18n/useT";
 
 interface CartSummaryProps {
@@ -32,6 +33,11 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
     (sum, i) => sum + i.unitPrice * i.quantity,
     0
   );
+  // Each line's own "Cash amount"/"Arrangement service fee" breakdown is already
+  // shown on the line itself (OrderItemExtras) — this is just the running roll-up
+  // so Total isn't missing real money the shopper is about to pay.
+  const { cashRawTotal, cashFeeTotal } = useCartCashTotals(items);
+  const cashTotal = cashRawTotal + cashFeeTotal;
   const orderLeadDays = maxCartLeadDays(items);
 
   // Flat shipping fee for the current region — same query key as
@@ -66,7 +72,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
       : currentRegion?.shippingFlatRate != null
         ? Number(currentRegion.shippingFlatRate)
         : 0;
-  const total = subtotal + shipping;
+  const total = subtotal + shipping + cashTotal;
 
   // VAT is only resolved for real at checkout. The cart page previews the plain
   // "VAT Inclusive" label when prices already include it, but never the exclusive
@@ -98,6 +104,14 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
             <CurrencyAmount amount={subtotal} currency={currency} locale={locale} />
           </m.dd>
         </div>
+        {cashTotal > 0 && (
+          <div className="flex justify-between">
+            <dt className="text-ink-600">{t("product.cashDetailsLabel")}</dt>
+            <dd className="font-medium tabular-nums text-ink-900">
+              <CurrencyAmount amount={cashTotal} currency={currency} locale={locale} />
+            </dd>
+          </div>
+        )}
         <div className="flex justify-between">
           <dt className="text-ink-600">{t("common.delivery")}</dt>
           <dd className="font-medium tabular-nums text-ink-900">

@@ -1,17 +1,26 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Input } from "@/components/ui";
+import { Select } from "@/components/admin/Select";
 import { ChevronDown, PlusIcon, TrashIcon } from "@/components/icons";
 import { RegionFlag } from "@/features/location/components/RegionFlag";
 import { CountryPicker } from "./CountryPicker";
 import { useT } from "@/i18n/useT";
 import { cn } from "@/lib/cn";
+import { vatApi } from "@/features/vat/api/vat.api";
+import { termsVatClause, shippingVatClause } from "@/features/vat/vatLegalClause";
+import { queryKeys } from "@/services/queryKeys";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
+import { useToast } from "@/hooks/useToast";
 import type { ApiRegion, ApiRegionCreateInput } from "@/features/regions/types";
 import type { CountryOption } from "@/features/regions/countries";
+import type { ApiPublicVatConfig, ApiVatConfig } from "@/features/vat/types";
 
 interface RegionFormProps {
   initial?: ApiRegion;
@@ -159,6 +168,24 @@ const LEGAL_FIELD_META: Record<LegalFieldName, LegalFieldMeta> = {
 const LEGAL_ENTITY_EXAMPLE_TERMS = ["Amoon Bloom Trading LLC", "أمون بلوم للتجارة ذ.م.م"];
 
 /**
+ * Assumed VAT treatment for the "how it reads" preview when there's no real
+ * VatConfig to read yet — create mode (the region doesn't exist, so it can't
+ * have one), or the live config still loading/erroring in edit mode. Exclusive
+ * is the standard: every real region is set up VAT-exclusive, and a brand-new
+ * region is created VAT-exclusive by convention too, so the preview should
+ * show that full clause by default rather than a bare "no VAT mentioned"
+ * placeholder that reads as broken. An EXISTING, already-configured region
+ * (even one deliberately VAT-disabled, like Morocco) always uses its own real
+ * config once loaded — this default only fills the gap before real data exists.
+ */
+const DEFAULT_PREVIEW_VAT: ApiPublicVatConfig = {
+  enabled: true,
+  ratePercent: 5,
+  inclusive: false,
+  appliesTo: "ALL_PRODUCTS",
+};
+
+/**
  * Renders a storefront-preview sentence with the region-specific citation
  * value(s) highlighted in brand pink, so the admin can see at a glance exactly
  * which words in the clause are the thing their field replaces. `terms` are the
@@ -225,16 +252,27 @@ interface LegalExampleBlock {
   exampleAr: string;
   /** A second clause on the SAME page that reuses this exact value. */
   alsoUsedIn?: string;
+  /** When set, `example`/`exampleAr` above are only a pre-load fallback — the
+   *  real "how it reads on the storefront" preview is instead computed live
+   *  from this region's actual VatConfig plus the currently-typed
+   *  currencyDisplayName/vatLawName, via the SAME `termsVatClause`/
+   *  `shippingVatClause` functions the storefront pages call. This is the one
+   *  clause whose wording genuinely forks (inclusive vs exclusive vs no-VAT)
+   *  based on a setting from a different admin page (Tax (VAT)) — a static
+   *  example would silently go stale the moment that setting changes. */
+  dynamicExample?: "terms" | "shipping";
 }
 interface LegalReferenceBlock {
   kind: "reference";
-  fieldName: LegalFieldName;
+  fieldNames: LegalFieldName[];
   clauseTitle: string;
   clauseTitleAr: string;
   example: string;
   exampleAr: string;
   /** Key into LEGAL_PAGE_GROUPS holding the real, editable input. */
   referencesGroupKey: string;
+  /** See LegalExampleBlock.dynamicExample. */
+  dynamicExample?: "terms" | "shipping";
 }
 interface LegalFooterBlock {
   kind: "footer";
@@ -272,10 +310,13 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
         fieldNames: ["currencyDisplayName", "vatLawName"],
         clauseTitle: "3. Products & Availability",
         clauseTitleAr: "3. المنتجات والتوفر",
+        // Fallback only, shown before this region's VatConfig has loaded — the
+        // real preview is computed live (see dynamicExample below).
         example:
-          "Prices are displayed in UAE Dirhams (AED) and are inclusive of VAT where applicable, in accordance with UAE Federal Decree-Law on Value Added Tax.",
+          "Prices are displayed in UAE Dirhams (AED) and are exclusive of VAT where applicable. Applicable VAT is added at checkout in accordance with UAE Federal Decree-Law on Value Added Tax.",
         exampleAr:
-          "تعرض الأسعار بالدرهم الإماراتي وتشمل ضريبة القيمة المضافة حيثما ينطبق ذلك، بموجب المرسوم بقانون اتحادي بشأن ضريبة القيمة المضافة.",
+          "تعرض الأسعار بالدرهم الإماراتي ولا تشمل ضريبة القيمة المضافة حيثما ينطبق ذلك. تضاف ضريبة القيمة المضافة المستحقة عند إتمام الطلب بموجب المرسوم بقانون اتحادي بشأن ضريبة القيمة المضافة.",
+        dynamicExample: "terms",
       },
       {
         kind: "field",
@@ -341,9 +382,23 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
     blocks: [
       {
         kind: "reference",
-        fieldName: "consumerProtectionLawName",
-        clauseTitle: "8. Failed or Delayed Deliveries",
-        clauseTitleAr: "8. حالات التسليم الفاشلة أو المتأخرة",
+        fieldNames: ["currencyDisplayName", "vatLawName"],
+        clauseTitle: "4. Product Prices & VAT",
+        clauseTitleAr: "4. أسعار المنتجات وضريبة القيمة المضافة",
+        // Fallback only, shown before this region's VatConfig has loaded — the
+        // real preview is computed live (see dynamicExample below).
+        example:
+          "All product prices displayed on our website are listed in UAE Dirhams (AED) and are exclusive of VAT where applicable. Applicable VAT is calculated and added at checkout before you complete your order, in accordance with UAE Federal Decree-Law on Value Added Tax. Your order total at checkout will show the product subtotal, delivery charges, and VAT separately where applicable.",
+        exampleAr:
+          "تعرض جميع أسعار المنتجات على موقعنا بالدرهم الإماراتي ولا تشمل ضريبة القيمة المضافة حيثما ينطبق ذلك. يتم احتساب ضريبة القيمة المضافة المستحقة وإضافتها عند إتمام الطلب قبل إكمال طلبك، بموجب المرسوم بقانون اتحادي بشأن ضريبة القيمة المضافة. سيوضح إجمالي طلبك عند إتمام الشراء إجمالي المنتجات ورسوم التوصيل وضريبة القيمة المضافة بشكل منفصل حيثما ينطبق ذلك.",
+        referencesGroupKey: "terms",
+        dynamicExample: "shipping",
+      },
+      {
+        kind: "reference",
+        fieldNames: ["consumerProtectionLawName"],
+        clauseTitle: "9. Failed or Delayed Deliveries",
+        clauseTitleAr: "9. حالات التسليم الفاشلة أو المتأخرة",
         example:
           "In the event of a delivery failure caused by us (not attributable to customer error or force majeure), we will re-deliver at no additional charge or issue a full refund at the customer's election, in accordance with UAE Federal Law No. 15 of 2020 on Consumer Protection.",
         exampleAr:
@@ -359,7 +414,7 @@ const LEGAL_PAGE_GROUPS: LegalPageGroup[] = [
     blocks: [
       {
         kind: "reference",
-        fieldName: "consumerProtectionLawName",
+        fieldNames: ["consumerProtectionLawName"],
         clauseTitle: "7. General Limitation",
         clauseTitleAr: "7. تحديد عام للمسؤولية",
         example:
@@ -407,6 +462,60 @@ export function RegionForm({
   // create vs. edit from whether `initial` is present, and every caller
   // already relies on that.
   const isCreate = !initial;
+
+  // Feeds the "3. Products & Availability" / "4. Product Prices & VAT" preview
+  // blocks below — reuses the SAME list query as the Tax (VAT) admin page so
+  // the two share one cache entry. Disabled in create mode: a region that
+  // doesn't exist yet has no VatConfig row to read (see vatApi.list()'s
+  // "disabled default" doc comment for why every EXISTING region always has
+  // an entry, never a 404).
+  const vatConfigsQuery = useQuery({
+    queryKey: queryKeys.vat.list(),
+    queryFn: () => vatApi.list(),
+    enabled: !isCreate,
+  });
+  // `!isCreate` is checked FIRST and short-circuits before touching
+  // `vatConfigsQuery` at all — `enabled: false` above only skips the fetch, it
+  // doesn't stop `useQuery` from surfacing another component's already-cached
+  // data for the same key (e.g. a prior visit to Tax (VAT), which shares this
+  // exact query key) as `isSuccess: true`. Gating on `isCreate` directly, not
+  // `vatConfigsQuery.isSuccess`, keeps create mode's default deterministic
+  // regardless of what's sitting in the cache.
+  // `realVatConfig` is null unless this region's actual config is loaded (edit
+  // mode only) — used to decide whether the inclusive/exclusive control below
+  // is actionable yet. `regionVatConfig` (fed to the clause builders) is never
+  // null: it falls back to the exclusive default when there's nothing real yet.
+  const realVatConfig: ApiVatConfig | null =
+    !isCreate && vatConfigsQuery.isSuccess
+      ? vatConfigsQuery.data?.find((c) => c.regionId === initial.id) ?? null
+      : null;
+  const regionVatConfig: ApiPublicVatConfig = realVatConfig ?? DEFAULT_PREVIEW_VAT;
+  // The clause only ever mentions VAT (inclusive OR exclusive) once VAT is
+  // actually enabled with a real rate for this region — matches vatClauseKind's
+  // own gate. Below that threshold, toggling inclusive/exclusive has no visible
+  // effect on the storefront text, so the control stays hidden rather than
+  // silently doing nothing when clicked.
+  const vatTreatmentIsEditable = Boolean(realVatConfig?.enabled && realVatConfig.ratePercent > 0);
+
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const vatInclusiveMutation = useMutation({
+    mutationFn: (inclusive: boolean) => {
+      if (!initial) throw new Error("Region must be saved before its VAT treatment can be set");
+      return vatApi.update(initial.id, { inclusive });
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData<ApiVatConfig[]>(queryKeys.vat.list(), (prev) =>
+        (prev ?? []).map((c) => (c.regionId === updated.regionId ? updated : c))
+      );
+      toast.success({ title: t("admin.regionForm.vatTreatmentSaved") });
+      // Same cache tag VatSettingsPage busts on save — the Terms & Conditions /
+      // Shipping Policy pages read this via an SSR cache (getCachedVatPublic),
+      // so the wording updates immediately instead of after the cache TTL.
+      revalidateCatalog(["vat"]);
+    },
+    onError: (err) => toast.fromError(t("admin.regionForm.vatTreatmentSaveError"), err),
+  });
 
   const { createSchema, editSchema } = useMemo(() => {
     const base = z.object({
@@ -1068,7 +1177,32 @@ export function RegionForm({
                   {open ? (
                     <div className="flex flex-col gap-4 p-4">
                       {group.blocks.map((block, i) => {
-                        const example = locale === "ar" ? block.exampleAr : block.example;
+                        let example = locale === "ar" ? block.exampleAr : block.example;
+                        // The VAT clause forks by this region's real VatConfig (a setting
+                        // from a different admin page), so its preview can't be a static
+                        // example — compute it live via the same functions the storefront
+                        // pages call, using the currently-typed currency/law values (falling
+                        // back to the field placeholders when blank) so the highlighted
+                        // terms below always match exactly what's shown. `regionVatConfig`
+                        // is never null — it's this region's real config once loaded, or the
+                        // exclusive default (DEFAULT_PREVIEW_VAT) before that/in create mode.
+                        let dynamicTerms: string[] = [];
+                        if (block.kind !== "footer" && block.dynamicExample) {
+                          const currencyValue =
+                            (locale === "ar" ? allValues.currencyDisplayName_ar : allValues.currencyDisplayName)?.trim() ||
+                            (locale === "ar"
+                              ? LEGAL_FIELD_META.currencyDisplayName.arPlaceholder
+                              : LEGAL_FIELD_META.currencyDisplayName.placeholder);
+                          const vatLawValue =
+                            (locale === "ar" ? allValues.vatLawName_ar : allValues.vatLawName)?.trim() ||
+                            (locale === "ar"
+                              ? LEGAL_FIELD_META.vatLawName.arPlaceholder
+                              : LEGAL_FIELD_META.vatLawName.placeholder);
+                          dynamicTerms = [currencyValue, vatLawValue];
+                          const buildClause = block.dynamicExample === "terms" ? termsVatClause : shippingVatClause;
+                          const [dynEn, dynAr] = buildClause(regionVatConfig, currencyValue, vatLawValue);
+                          example = locale === "ar" ? dynAr : dynEn;
+                        }
                         if (block.kind === "footer") {
                           // The footer's only region-specific word is the country,
                           // which the storefront fills from this region's Name field.
@@ -1096,8 +1230,11 @@ export function RegionForm({
                             (g) => g.key === block.referencesGroupKey
                           );
                           const clauseTitle = locale === "ar" ? block.clauseTitleAr : block.clauseTitle;
-                          const refMeta = LEGAL_FIELD_META[block.fieldName];
-                          const refTerm = locale === "ar" ? refMeta.arPlaceholder : refMeta.placeholder;
+                          const refTerms = block.dynamicExample
+                            ? dynamicTerms
+                            : block.fieldNames.map((fn) =>
+                                locale === "ar" ? LEGAL_FIELD_META[fn].arPlaceholder : LEGAL_FIELD_META[fn].placeholder
+                              );
                           return (
                             <div
                               key={i}
@@ -1110,7 +1247,7 @@ export function RegionForm({
                                 {t("admin.regionForm.legalExampleLabel")}
                               </p>
                               <p className="mt-1 text-sm italic text-ink-600">
-                                &ldquo;{highlightExample(example, [refTerm, ...LEGAL_ENTITY_EXAMPLE_TERMS])}&rdquo;
+                                &ldquo;{highlightExample(example, [...refTerms, ...LEGAL_ENTITY_EXAMPLE_TERMS])}&rdquo;
                               </p>
                               <p className="mt-2 text-xs text-bloom-700">
                                 {sourceGroup
@@ -1125,11 +1262,13 @@ export function RegionForm({
                           );
                         }
                         const clauseTitle = locale === "ar" ? block.clauseTitleAr : block.clauseTitle;
-                        const fieldTerms = block.fieldNames.map((fn) =>
-                          locale === "ar"
-                            ? LEGAL_FIELD_META[fn].arPlaceholder
-                            : LEGAL_FIELD_META[fn].placeholder
-                        );
+                        const fieldTerms = block.dynamicExample
+                          ? dynamicTerms
+                          : block.fieldNames.map((fn) =>
+                              locale === "ar"
+                                ? LEGAL_FIELD_META[fn].arPlaceholder
+                                : LEGAL_FIELD_META[fn].placeholder
+                            );
                         return (
                           <div key={i} className="rounded-xl border border-ink-100 bg-white p-4">
                             <p className="text-xs font-semibold uppercase tracking-wide text-bloom-700">
@@ -1145,6 +1284,43 @@ export function RegionForm({
                               <p className="mt-1.5 text-[11px] text-ink-400">
                                 {t("admin.regionForm.legalAlsoUsedIn", { clause: block.alsoUsedIn })}
                               </p>
+                            ) : null}
+                            {block.dynamicExample === "terms" ? (
+                              <div className="mt-3 rounded-lg border border-ink-100 bg-cream-50/60 p-3">
+                                {isCreate ? (
+                                  <p className="text-xs text-ink-500">
+                                    {t("admin.regionForm.vatTreatmentCreateHint")}
+                                  </p>
+                                ) : !vatTreatmentIsEditable ? (
+                                  <p className="text-xs text-ink-500">
+                                    {t("admin.regionForm.vatTreatmentDisabledHint")}{" "}
+                                    <Link
+                                      href="/admin/tax"
+                                      className="font-medium text-bloom-700 hover:underline"
+                                    >
+                                      {t("admin.regionForm.vatTreatmentGoToTax")}
+                                    </Link>
+                                  </p>
+                                ) : (
+                                  <>
+                                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-700">
+                                      {t("admin.regionForm.vatTreatmentLabel")}
+                                    </label>
+                                    <Select
+                                      value={regionVatConfig.inclusive ? "inclusive" : "exclusive"}
+                                      onChange={(v) => vatInclusiveMutation.mutate(v === "inclusive")}
+                                      aria-label={t("admin.regionForm.vatTreatmentLabel")}
+                                      options={[
+                                        { value: "exclusive", label: t("admin.regionForm.vatExclusive") },
+                                        { value: "inclusive", label: t("admin.regionForm.vatInclusive") },
+                                      ]}
+                                    />
+                                    <p className="mt-1.5 text-xs text-ink-500">
+                                      {t("admin.regionForm.vatTreatmentHint")}
+                                    </p>
+                                  </>
+                                )}
+                              </div>
                             ) : null}
                             <div className="mt-3 flex flex-col gap-4">
                               {block.fieldNames.map((fieldName) => {
