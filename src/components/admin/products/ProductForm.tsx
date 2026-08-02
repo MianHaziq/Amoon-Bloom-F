@@ -37,9 +37,33 @@ import { useToast } from "@/hooks/useToast";
 import type {
   ApiProduct,
   ApiProductCreateInput,
+  ApiProductDescriptionInput,
   ApiProductVariantInput,
   ApiProductZoneLead,
 } from "@/features/products/api-types";
+
+interface DescriptionBlockFormValue {
+  title?: string | null;
+  title_ar?: string | null;
+  description?: string | null;
+  description_ar?: string | null;
+}
+
+/** Trim a form-state description-block list into API input shape, dropping blocks
+ *  with no body — shared by the top-level `descriptions` card and each variant's own
+ *  override list, which have identical shapes and cleaning rules. */
+function cleanDescriptionBlocks(
+  blocks: DescriptionBlockFormValue[] | undefined
+): ApiProductDescriptionInput[] {
+  return (blocks ?? [])
+    .map((d) => ({
+      title: d.title?.trim() || null,
+      title_ar: d.title_ar?.trim() || null,
+      description: (d.description ?? "").trim(),
+      description_ar: d.description_ar?.trim() || null,
+    }))
+    .filter((d) => d.description !== "");
+}
 
 function useProductFormSchema() {
   const { t } = useT();
@@ -90,6 +114,11 @@ function useProductFormSchema() {
       // Which value index is the default (shown before the shopper picks one). null =
       // no explicit choice — the server defaults to the first value.
       variantDefaultIndex: z.number().nullable().optional(),
+      // Optional per-value description-block OVERRIDES, aligned with `options`. Each
+      // entry is that size's own block list (same shape as the top-level `descriptions`
+      // card) — an empty array means this size has no override and shares the
+      // product's shared blocks instead.
+      variantDescriptions: z.array(z.array(descriptionSchema)).optional(),
     });
 
     return z.object({
@@ -367,6 +396,14 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           variantContents: matchedVariants.map((v) => v?.contents ?? ""),
           variantContents_ar: matchedVariants.map((v) => v?.contents_ar ?? ""),
           variantDefaultIndex: defaultIdx >= 0 ? defaultIdx : null,
+          variantDescriptions: matchedVariants.map((v) =>
+            (v?.descriptions ?? []).map((d) => ({
+              title: d.title ?? "",
+              title_ar: d.title_ar ?? "",
+              description: d.description,
+              description_ar: d.description_ar ?? "",
+            }))
+          ),
         };
       }),
     });
@@ -388,15 +425,8 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
   const submit = handleSubmit(async (values) => {
     let payload: ApiProductCreateInput;
     try {
-    const cleanedDescriptions = values.descriptions
-      .map((d) => ({
-        title: d.title?.trim() || null,
-        title_ar: d.title_ar?.trim() || null,
-        description: (d.description ?? "").trim(),
-        description_ar: d.description_ar?.trim() || null,
-      }))
-      // Drop entirely-empty blocks (validation lets them through; they carry nothing).
-      .filter((d) => d.description !== "");
+    // Drop entirely-empty blocks (validation lets them through; they carry nothing).
+    const cleanedDescriptions = cleanDescriptionBlocks(values.descriptions);
     // Built alongside cleanedOptions below: the one group (if any) flagged
     // isVariantAxis contributes one ApiProductVariantInput per kept value.
     let cleanedVariants: ApiProductVariantInput[] = [];
@@ -433,6 +463,9 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               contents: o.variantContents?.[i]?.trim() || null,
               contents_ar: o.variantContents_ar?.[i]?.trim() || null,
               isDefault: options.length - 1 === o.variantDefaultIndex,
+              // Empty = this size has no override and shares the product's shared
+              // `descriptions` blocks instead.
+              descriptions: cleanDescriptionBlocks(o.variantDescriptions?.[i]),
             });
           }
         });
@@ -1047,6 +1080,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                     variantContents: [""],
                     variantContents_ar: [""],
                     variantDefaultIndex: null,
+                    variantDescriptions: [[]],
                   });
                 }}
                 className="inline-flex items-center gap-1 text-sm font-medium text-ink-600 hover:text-ink-900"
@@ -1451,6 +1485,10 @@ function OptionValueRows({
     control,
     name: `productOptions.${index}.variantDefaultIndex`,
   }) ?? null;
+  const variantDescriptions = (useWatch({
+    control,
+    name: `productOptions.${index}.variantDescriptions`,
+  }) ?? []) as DescriptionBlockFormValue[][];
 
   const count = options.length;
 
@@ -1541,6 +1579,50 @@ function OptionValueRows({
   const setDefault = (i: number) => {
     setValue(`productOptions.${index}.variantDefaultIndex`, i, { shouldDirty: true });
   };
+  // variantDescriptions is kept as its own field (not threaded through commit()/
+  // padded() above) since block-level edits are nested one level deeper than the
+  // other per-value fields — but addRow/removeRow still need to keep it padded/
+  // spliced in lockstep with every other parallel array.
+  const padDescs = () => {
+    const d = variantDescriptions.map((x) => (Array.isArray(x) ? x : []));
+    while (d.length < count) d.push([]);
+    return d;
+  };
+  const setVariantDescriptions = (i: number, blocks: DescriptionBlockFormValue[]) => {
+    const next = padDescs();
+    next[i] = blocks;
+    setValue(`productOptions.${index}.variantDescriptions`, next, { shouldDirty: true });
+  };
+  const toggleVariantCustomDescription = (i: number) => {
+    const current = padDescs()[i];
+    setVariantDescriptions(
+      i,
+      current.length > 0 ? [] : [{ title: "", title_ar: "", description: "", description_ar: "" }]
+    );
+  };
+  const addVariantBlock = (i: number) => {
+    setVariantDescriptions(i, [
+      ...padDescs()[i],
+      { title: "", title_ar: "", description: "", description_ar: "" },
+    ]);
+  };
+  const removeVariantBlock = (i: number, blockIndex: number) => {
+    setVariantDescriptions(
+      i,
+      padDescs()[i].filter((_, j) => j !== blockIndex)
+    );
+  };
+  const setVariantBlockField = (
+    i: number,
+    blockIndex: number,
+    field: "title" | "title_ar" | "description" | "description_ar",
+    value: string
+  ) => {
+    setVariantDescriptions(
+      i,
+      padDescs()[i].map((b, j) => (j === blockIndex ? { ...b, [field]: value } : b))
+    );
+  };
   const addRow = () => {
     const s = padded();
     commit(
@@ -1553,6 +1635,7 @@ function OptionValueRows({
       [...s.contents, ""],
       [...s.contentsAr, ""]
     );
+    setValue(`productOptions.${index}.variantDescriptions`, [...padDescs(), []], { shouldDirty: true });
   };
   const removeRow = (i: number) => {
     const s = padded();
@@ -1565,6 +1648,11 @@ function OptionValueRows({
       s.discounts.filter((_, j) => j !== i),
       s.contents.filter((_, j) => j !== i),
       s.contentsAr.filter((_, j) => j !== i)
+    );
+    setValue(
+      `productOptions.${index}.variantDescriptions`,
+      padDescs().filter((_, j) => j !== i),
+      { shouldDirty: true }
     );
     setPickerOpen(null);
     // Keep the default pointer valid — clear it if it pointed at the removed row,
@@ -1703,6 +1791,7 @@ function OptionValueRows({
               </div>
 
               {isVariantAxis ? (
+                <>
                 <div className="mt-2 grid gap-2 border-t border-ink-100 pt-2 sm:grid-cols-[1fr_1fr_auto]">
                   <input
                     type="number"
@@ -1763,6 +1852,103 @@ function OptionValueRows({
                     className="rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
                   />
                 </div>
+
+                <div className="mt-2 border-t border-ink-100 pt-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-ink-600">
+                      {t("admin.productForm.variantDescriptionLabel")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleVariantCustomDescription(i)}
+                      className={cn(
+                        "text-xs font-medium",
+                        (variantDescriptions[i]?.length ?? 0) > 0
+                          ? "text-bloom-700 hover:text-bloom-800"
+                          : "text-ink-500 hover:text-ink-800"
+                      )}
+                    >
+                      {(variantDescriptions[i]?.length ?? 0) > 0
+                        ? t("admin.productForm.variantDescriptionUseShared")
+                        : t("admin.productForm.variantDescriptionAddCustom")}
+                    </button>
+                  </div>
+
+                  {(variantDescriptions[i]?.length ?? 0) === 0 ? (
+                    <p className="mt-1 text-[11px] text-ink-400">
+                      {t("admin.productForm.variantDescriptionSharedHint")}
+                    </p>
+                  ) : (
+                    <div className="mt-2 flex flex-col gap-2">
+                      {(variantDescriptions[i] ?? []).map((block, blockIndex) => (
+                        <div
+                          key={blockIndex}
+                          className="rounded-lg border border-ink-100 bg-cream-50 p-3"
+                        >
+                          <div className="mb-2 flex items-center justify-between">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">
+                              {t("admin.productForm.blockLabel", { n: blockIndex + 1 })}
+                            </p>
+                            <button
+                              type="button"
+                              aria-label={t("admin.productForm.removeBlockAria")}
+                              onClick={() => removeVariantBlock(i, blockIndex)}
+                              className="rounded-md p-1 text-bloom-700 hover:bg-bloom-50"
+                            >
+                              <TrashIcon size={12} />
+                            </button>
+                          </div>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            <input
+                              value={block.title ?? ""}
+                              onChange={(e) =>
+                                setVariantBlockField(i, blockIndex, "title", e.target.value)
+                              }
+                              placeholder={t("admin.productForm.headingEn")}
+                              className="h-8 rounded-lg border border-ink-200 bg-white px-2.5 text-xs focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                            />
+                            <input
+                              value={block.title_ar ?? ""}
+                              onChange={(e) =>
+                                setVariantBlockField(i, blockIndex, "title_ar", e.target.value)
+                              }
+                              dir="rtl"
+                              placeholder={t("admin.productForm.headingAr")}
+                              className="h-8 rounded-lg border border-ink-200 bg-white px-2.5 text-xs focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                            />
+                          </div>
+                          <textarea
+                            value={block.description ?? ""}
+                            onChange={(e) =>
+                              setVariantBlockField(i, blockIndex, "description", e.target.value)
+                            }
+                            placeholder={t("admin.productForm.bodyEn")}
+                            rows={2}
+                            className="mt-2 w-full rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-xs focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                          />
+                          <textarea
+                            value={block.description_ar ?? ""}
+                            onChange={(e) =>
+                              setVariantBlockField(i, blockIndex, "description_ar", e.target.value)
+                            }
+                            dir="rtl"
+                            placeholder={t("admin.productForm.bodyAr")}
+                            rows={2}
+                            className="mt-2 w-full rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-xs focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                          />
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => addVariantBlock(i)}
+                        className="inline-flex items-center gap-1 self-start text-xs font-medium text-bloom-700 hover:text-bloom-800"
+                      >
+                        <PlusIcon size={12} /> {t("admin.productForm.addBlock")}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                </>
               ) : null}
 
               {pickerOpen === i && images.length > 0 ? (
