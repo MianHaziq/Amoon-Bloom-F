@@ -21,6 +21,7 @@ import { ROUTES } from "@/constants/routes";
 import type { PaginatedResponse } from "@/types";
 import type { ApiReview } from "@/features/reviews/types";
 import type { ProductDescriptionBlock, ProductOptionGroup } from "../types";
+import { usePdpImage } from "./PdpImageContext";
 
 interface ProductTabsProps {
   productId: string;
@@ -52,7 +53,15 @@ export function ProductTabs({
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
 
-  const blocks = (descriptions ?? []).filter((d) => d.description?.trim());
+  // The selected size/variant's own description blocks win over the product's shared
+  // ones when it has any — an admin can give one size (e.g. "Large") its own copy while
+  // every other size keeps sharing the common blocks passed in via `descriptions`.
+  const { activeVariant } = usePdpImage();
+  const effectiveDescriptions = activeVariant?.descriptions?.length
+    ? activeVariant.descriptions
+    : descriptions;
+
+  const blocks = (effectiveDescriptions ?? []).filter((d) => d.description?.trim());
   const hasDescription = Boolean(description?.trim()) || blocks.length > 0;
   const specs: { label: string; value: string }[] = [
     ...(category ? [{ label: t("shop.category"), value: category }] : []),
