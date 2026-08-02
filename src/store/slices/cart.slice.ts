@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { Product } from "@/features/products/types";
 import { lineVariantKey, type LineCashArrangement } from "@/features/cart/variantKey";
+import { resolveVariantForSelection, effectiveVariantPrice } from "@/features/products/variantResolution";
 
 /** Per-UNIT "add cash arrangement" for a cart line. The fee is NOT stored here — it's
  *  resolved authoritatively at checkout/order time from the cart+region+zone. Two units of
@@ -94,6 +95,13 @@ const cartSlice = createSlice({
       const { product, quantity = 1, selectedOptions, variantImage, giftCardSelected, customName, message } = action.payload;
       const resolvedImage = variantImage ?? product.images[0]?.url;
       const cashArrangement = normalizeLineCash(action.payload.cashArrangement);
+      // Priced variants (e.g. Size: Small/Medium/Large) each have their own price —
+      // resolve the one the shopper actually picked instead of the product's base
+      // price, which only mirrors the DEFAULT variant. This is the guest-cart path
+      // (no server round-trip), so it must resolve this itself; the signed-in path
+      // gets it authoritatively from the server's own cart response.
+      const variant = resolveVariantForSelection(product, selectedOptions);
+      const basePrice = variant ? effectiveVariantPrice(variant) : product.price.amount;
       // Line identity = variant (colour/size) + personalized custom name + gift-card message
       // + per-unit cash arrangement. Merge only into a line with the SAME config; any
       // difference becomes its own line (Amazon/Shopify-style), so a customer can buy the same
@@ -118,7 +126,7 @@ const cartSlice = createSlice({
         existing.cashArrangement = cashArrangement;
         existing.deliveryLeadDays = product.deliveryLeadDays;
         existing.unitPrice =
-          product.price.amount + optionExtraCharge(product, existing.giftCardSelected, existing.customName);
+          basePrice + optionExtraCharge(product, existing.giftCardSelected, existing.customName);
         return;
       }
       state.items.push({
@@ -126,7 +134,7 @@ const cartSlice = createSlice({
         slug: product.slug,
         title: product.title,
         imageUrl: resolvedImage,
-        unitPrice: product.price.amount + optionExtraCharge(product, giftCardSelected, customName),
+        unitPrice: basePrice + optionExtraCharge(product, giftCardSelected, customName),
         currency: product.price.currency,
         quantity,
         selectedOptions: selectedOptions ?? null,

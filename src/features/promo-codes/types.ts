@@ -77,7 +77,13 @@ export interface ApiPromoCodeListParams {
 
 export interface ApiPromoValidateInput {
   code: string;
-  items?: Array<{ productId: string; quantity: number }>;
+  items?: Array<{
+    productId: string;
+    quantity: number;
+    /** Chosen variant (e.g. {"Size":"Medium"}) so a priced-variant product
+     *  previews its discount against the variant's own price. */
+    selectedOptions?: Record<string, string> | null;
+  }>;
 }
 
 /**

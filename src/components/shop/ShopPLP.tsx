@@ -312,11 +312,16 @@ export function ShopPLP({
     if (filter.inStock) {
       list = list.filter((p) => p.inStock);
     }
+    // A priced-variant product (Small/Medium/Large-style) spans a price RANGE —
+    // filtering/sorting on its single `price` (which only mirrors the default
+    // variant) could wrongly hide/misorder it relative to a min/max the shopper
+    // set, when a DIFFERENT variant would actually qualify. Use the full range
+    // when present, falling back to the plain price for every other product.
     if (filter.minPrice != null) {
-      list = list.filter((p) => p.price.amount >= filter.minPrice!);
+      list = list.filter((p) => (p.priceRange?.max ?? p.price.amount) >= filter.minPrice!);
     }
     if (filter.maxPrice != null) {
-      list = list.filter((p) => p.price.amount <= filter.maxPrice!);
+      list = list.filter((p) => (p.priceRange?.min ?? p.price.amount) <= filter.maxPrice!);
     }
     const colors = filter.colors ?? [];
     if (colors.length > 0) {
@@ -324,10 +329,10 @@ export function ShopPLP({
     }
     switch (filter.sort) {
       case "price-asc":
-        list.sort((a, b) => a.price.amount - b.price.amount);
+        list.sort((a, b) => (a.priceRange?.min ?? a.price.amount) - (b.priceRange?.min ?? b.price.amount));
         break;
       case "price-desc":
-        list.sort((a, b) => b.price.amount - a.price.amount);
+        list.sort((a, b) => (b.priceRange?.max ?? b.price.amount) - (a.priceRange?.max ?? a.price.amount));
         break;
       case "newest":
         // "New arrivals" sort — newest-created first, applied on top of whatever

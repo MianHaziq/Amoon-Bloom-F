@@ -235,9 +235,12 @@ export function derivePriceBounds(products: Product[]): PriceBounds | null {
   let min = Infinity;
   let max = -Infinity;
   for (const p of products) {
-    const a = p.price.amount;
-    if (a < min) min = a;
-    if (a > max) max = a;
+    // A priced-variant product spans a range (e.g. Small=25..Large=40) — use the
+    // full span so the slider's bounds cover every size, not just the default.
+    const lo = p.priceRange?.min ?? p.price.amount;
+    const hi = p.priceRange?.max ?? p.price.amount;
+    if (lo < min) min = lo;
+    if (hi > max) max = hi;
   }
   min = Math.floor(min);
   max = Math.ceil(max);

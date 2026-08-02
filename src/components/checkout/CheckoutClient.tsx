@@ -333,6 +333,7 @@ export function CheckoutClient() {
         items: cart.items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
+          selectedOptions: i.selectedOptions ?? undefined,
         })),
       }),
     onSuccess: (result) => {

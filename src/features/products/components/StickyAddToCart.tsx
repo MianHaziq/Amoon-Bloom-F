@@ -24,9 +24,11 @@ interface StickyAddToCartProps {
 export function StickyAddToCart({ product }: StickyAddToCartProps) {
   const dispatch = useAppDispatch();
   // Shares the PDP's live selection: `activeUrl` is the currently-shown variant
-  // photo (so this bar's thumbnail follows the chosen colour), and `requestAdd`
-  // runs the main panel's exact add-to-cart with that same selection.
-  const { activeUrl, requestAdd } = usePdpImage();
+  // photo (so this bar's thumbnail follows the chosen colour), `activeVariant`
+  // is the matching priced variant (so this bar's price follows a chosen size
+  // instead of freezing on the product's default), and `requestAdd` runs the
+  // main panel's exact add-to-cart with that same selection.
+  const { activeUrl, activeVariant, requestAdd } = usePdpImage();
   const { currency, locale } = useCurrency();
   const { t } = useT();
   const [visible, setVisible] = useState(false);
@@ -62,6 +64,14 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
 
   // Follows the selected variant photo (falls back to the product's primary image).
   const imageUrl = activeUrl ?? product.images[0]?.url ?? null;
+  // Follows the selected variant's price (falls back to the product's own) — must
+  // match ProductPrice.tsx above the fold, or scrolling reveals two disagreeing
+  // prices for the same product on screen at once.
+  const priceAmount = activeVariant
+    ? activeVariant.discountedPrice != null && activeVariant.discountedPrice < activeVariant.price
+      ? activeVariant.discountedPrice
+      : activeVariant.price
+    : product.price.amount;
 
   return (
     <>
@@ -94,7 +104,7 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
             {product.title}
           </p>
           <CurrencyAmount
-            amount={product.price.amount}
+            amount={priceAmount}
             currency={currency}
             locale={locale}
             className="block text-sm font-semibold tabular-nums text-bloom-700"

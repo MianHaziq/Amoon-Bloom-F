@@ -107,12 +107,19 @@ export function SearchResults({
                 <span className="block truncate text-sm font-medium text-ink-900">
                   {p.title}
                 </span>
-                <CurrencyAmount
-                  amount={p.price.amount}
-                  currency={currency}
-                  locale={locale}
-                  className="mt-0.5 block text-sm font-semibold text-bloom-700"
-                />
+                <span className="mt-0.5 flex items-baseline gap-1">
+                  {p.priceRange ? (
+                    <span className="text-xs font-medium text-ink-500">
+                      {t("product.fromPriceLabel")}
+                    </span>
+                  ) : null}
+                  <CurrencyAmount
+                    amount={p.priceRange ? p.priceRange.min : p.price.amount}
+                    currency={currency}
+                    locale={locale}
+                    className="block text-sm font-semibold text-bloom-700"
+                  />
+                </span>
               </span>
             </LocalizedLink>
           </li>
