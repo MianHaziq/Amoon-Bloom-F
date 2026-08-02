@@ -58,6 +58,7 @@ const adaptVariant = (v: ApiProductVariant, locale: Locale): ProductVariant => (
   images: v.images ?? [],
   contents: localized(v.contents ?? "", v.contents_ar, locale) || undefined,
   isDefault: v.isDefault,
+  descriptions: v.descriptions?.map((d) => adaptDescription(d, locale)),
 });
 
 export interface ToUiProductOptions {

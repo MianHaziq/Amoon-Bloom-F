@@ -46,6 +46,9 @@ export interface ApiProductVariant {
   contents_ar: string | null;
   isDefault: boolean;
   sortOrder: number;
+  /** This variant's own description blocks (same shape as `ApiProduct.descriptions`).
+   *  Empty = this size has no override and shares the product's shared blocks instead. */
+  descriptions: ApiProductDescriptionBlock[];
 }
 
 /** "From X to Y" price span across a product's variants (each variant's own discounted
@@ -179,6 +182,9 @@ export interface ApiProductVariantInput {
   contents?: string | null;
   contents_ar?: string | null;
   isDefault?: boolean;
+  /** Optional description-block override for this size. Omit/empty = shares the
+   *  product's shared `descriptions` instead. */
+  descriptions?: ApiProductDescriptionInput[];
 }
 
 export interface ApiProductCreateInput {

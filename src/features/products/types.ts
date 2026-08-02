@@ -35,6 +35,9 @@ export interface ProductVariant {
   /** Already localized to the active locale by the adapter. */
   contents?: string;
   isDefault: boolean;
+  /** This variant's own description blocks — empty/absent means it has no override
+   *  and shares the product's top-level `descriptions` instead. */
+  descriptions?: ProductDescriptionBlock[];
 }
 
 /** "From X to Y" price span across a product's variants. */
