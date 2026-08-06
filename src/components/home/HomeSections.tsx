@@ -2,7 +2,8 @@ import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Section, SectionHeader, Button } from "@/components/ui";
 import { Reveal } from "@/components/motion/primitives";
 import { ArrowRight } from "@/components/icons";
-import { ProductCarousel } from "@/features/products/components/ProductCarousel";
+import { SectionProducts } from "@/features/products/components/SectionProducts";
+import { resolveSectionDisplay, sectionRenderCount } from "@/features/sections/display";
 import { ProductRail } from "./ProductRail";
 import { getCachedSections, getCachedProductList } from "@/services/catalogCache";
 import { toUiProducts } from "@/features/products/adapters";
@@ -67,9 +68,12 @@ export async function HomeSections() {
   return (
     <>
       {eligible.map((section, idx) => {
+        const display = resolveSectionDisplay(section);
+        // Render enough cards to satisfy the larger breakpoint limit; SectionProducts
+        // trims each breakpoint down to its own limit via CSS.
         const products = toUiProducts(section.products, { locale }).slice(
           0,
-          PRODUCTS_PER_SECTION
+          sectionRenderCount(display)
         );
         if (products.length === 0) return null;
         return (
@@ -96,7 +100,11 @@ export async function HomeSections() {
               />
             </Reveal>
             <div className="mt-8">
-              <ProductCarousel products={products} />
+              <SectionProducts
+                products={products}
+                display={display}
+                scopeId={section.id}
+              />
             </div>
           </Section>
         );

@@ -204,6 +204,102 @@ input:-webkit-autofill:focus {
 }
 
 /* =====================================================================
+   Adaptive home-section product layout
+   --------------------------------------------------------------------
+   One container that renders a home section's products as either a wrapped
+   GRID or a horizontal SCROLL rail, chosen INDEPENDENTLY for mobile (base)
+   and desktop (lg: ≥1024px) from `data-sp-m` / `data-sp-d`, with the column
+   count carried in the `--sp-m-cols` / `--sp-d-cols` custom properties set
+   inline by SectionProducts.tsx.
+
+   Driving columns through CSS vars (not Tailwind `grid-cols-N` classes) means
+   any column count works with no safelist, and all four mobile×desktop
+   combinations live in a SINGLE DOM tree — no double render, and correct on
+   the first server paint with zero JS (JS only adds the scroll dots).
+
+   `columns` means products-per-row in GRID mode and cards-visible-at-once in
+   SCROLL mode; SCROLL adds a `--sp-peek` sliver of the next card so it's
+   obvious the row scrolls. Written mobile-first: the @media block below wins
+   at ≥lg by source order (equal specificity).
+   ===================================================================== */
+.section-products {
+  --sp-gap-x: 0.75rem; /* column gap — matches gap-x-3 */
+  --sp-gap-y: 2rem; /* row gap (GRID rows only) — matches gap-y-8 */
+  --sp-peek: 0.16; /* fraction of the next card peeking in SCROLL mode */
+  display: grid;
+  gap: var(--sp-gap-y) var(--sp-gap-x);
+}
+
+/* ---- MOBILE (base, < lg) ---- */
+.section-products[data-sp-m="grid"] {
+  grid-template-columns: repeat(var(--sp-m-cols), minmax(0, 1fr));
+}
+.section-products[data-sp-m="scroll"] {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  /* Bleed to the screen edges so the peeking next card signals scrollability;
+     the padding keeps the leading/trailing card off the gutter, and
+     scroll-padding keeps snap from hiding the leading gutter on load. */
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  scroll-padding-inline: 1rem;
+}
+.section-products[data-sp-m="scroll"] > .section-products__item {
+  flex: 0 0
+    calc(
+      (100% - var(--sp-m-cols) * var(--sp-gap-x)) / (var(--sp-m-cols) + var(--sp-peek))
+    );
+  scroll-snap-align: start;
+}
+
+/* ---- DESKTOP (lg: ≥1024px) ---- */
+@media (min-width: 1024px) {
+  .section-products {
+    --sp-gap-x: 1.5rem; /* matches sm:gap-x-6 */
+    --sp-gap-y: 3rem; /* matches sm:gap-y-12 */
+  }
+  .section-products[data-sp-d="grid"] {
+    display: grid;
+    grid-template-columns: repeat(var(--sp-d-cols), minmax(0, 1fr));
+    overflow: visible;
+    /* Undo the mobile scroll bleed for a scroll-on-mobile / grid-on-desktop section. */
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+  .section-products[data-sp-d="grid"] > .section-products__item {
+    flex: initial; /* reset any mobile scroll flex-basis */
+  }
+  .section-products[data-sp-d="scroll"] {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    /* Desktop rail aligns to the container (no full-bleed). */
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
+  }
+  .section-products[data-sp-d="scroll"] > .section-products__item {
+    flex: 0 0
+      calc(
+        (100% - var(--sp-d-cols) * var(--sp-gap-x)) / (var(--sp-d-cols) + var(--sp-peek))
+      );
+    scroll-snap-align: start;
+  }
+}
+
+/* Respect reduced-motion: don't smooth-scroll for users who opt out. */
+@media (prefers-reduced-motion: reduce) {
+  .section-products {
+    scroll-behavior: auto;
+  }
+}
+
+/* =====================================================================
    Animations
    ===================================================================== */
 

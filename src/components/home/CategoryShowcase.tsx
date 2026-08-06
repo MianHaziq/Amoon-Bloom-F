@@ -77,6 +77,7 @@ export async function CategoryShowcase() {
               category={cat}
               fallbackImage={fallbackImage}
               priority={i === 0}
+              comingSoonLabel={t(locale, "common.comingSoon")}
             />
           </StaggerItem>
         ))}
