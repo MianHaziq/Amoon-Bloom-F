@@ -79,7 +79,9 @@ export function AccountWishlist() {
                 size="sm"
                 variant="outline"
                 leadingIcon={<BagIcon size={14} />}
+                disabled={item.comingSoon}
                 onClick={() => {
+                  if (item.comingSoon) return;
                   dispatch(
                     addItem({
                       product: {
@@ -109,7 +111,7 @@ export function AccountWishlist() {
                   );
                 }}
               >
-                {t("common.addToCart")}
+                {item.comingSoon ? t("common.comingSoon") : t("common.addToCart")}
               </Button>
               <Button
                 size="sm"

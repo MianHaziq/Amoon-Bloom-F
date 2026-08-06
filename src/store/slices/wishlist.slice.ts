@@ -8,6 +8,10 @@ export interface WishlistItem {
   imageUrl?: string;
   unitPrice: number;
   currency: string;
+  /** Snapshot of the product's coming-soon state so the wishlist can disable "Add to
+   *  cart" for it (older persisted items lack it → treated as orderable; checkout
+   *  still blocks). */
+  comingSoon?: boolean;
   addedAt: string;
 }
 
@@ -24,6 +28,7 @@ const toItem = (product: Product): WishlistItem => ({
   imageUrl: product.images[0]?.url,
   unitPrice: product.price.amount,
   currency: product.price.currency,
+  comingSoon: product.comingSoon,
   addedAt: new Date().toISOString(),
 });
 

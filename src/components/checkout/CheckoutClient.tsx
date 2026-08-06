@@ -430,6 +430,16 @@ export function CheckoutClient() {
       : 0;
   const vatAdds = vatActive && vatKnownScope && !vatConfig!.inclusive && vatAmount > 0;
   const vatUncertain = vatActive && !vatKnownScope;
+  // Shipping VAT (client requirement): the delivery fee is taxed at the VAT rate whenever VAT
+  // is enabled — regardless of the product VAT scope, since shipping isn't a product. Same
+  // inclusive/exclusive rule; backend re-computes this authoritatively at order time.
+  const shippingVatAmount =
+    vatActive && shipping > 0
+      ? vatConfig!.inclusive
+        ? round2(shipping - shipping / (1 + vatConfig!.ratePercent / 100))
+        : round2(shipping * (vatConfig!.ratePercent / 100))
+      : 0;
+  const shippingVatAdds = vatActive && !vatConfig!.inclusive && shippingVatAmount > 0;
 
   // "Add cash arrangement" — resolve eligibility + fee schedule for the current cart/zone,
   // same tier as deliveryConfigQuery/vatQuery above. POST because cartLines is an array
@@ -505,6 +515,7 @@ export function CheckoutClient() {
     taxableNet +
     (vatAdds ? vatAmount : 0) +
     shipping +
+    (shippingVatAdds ? shippingVatAmount : 0) +
     cashFeeTotal +
     (cashFeeVatAdds ? cashFeeVatTotal : 0) +
     // Raw cash amount is added to the total but NEVER passed through VAT.
@@ -764,6 +775,7 @@ export function CheckoutClient() {
             discount={discount}
             total={total}
             vatAmount={vatAmount}
+            shippingVatAmount={shippingVatAmount}
             vatRatePercent={vatConfig?.ratePercent ?? null}
             vatInclusive={Boolean(vatConfig?.inclusive)}
             vatUncertain={vatUncertain}
@@ -1226,6 +1238,8 @@ interface OrderReviewCardProps {
   discount: number;
   total: number;
   vatAmount: number;
+  /** VAT on the shipping fee (0 when free/disabled) — folded into the single VAT line. */
+  shippingVatAmount: number;
   vatRatePercent: number | null;
   vatInclusive: boolean;
   vatUncertain: boolean;
@@ -1268,6 +1282,7 @@ function OrderReviewCard({
   discount,
   total,
   vatAmount,
+  shippingVatAmount,
   vatRatePercent,
   vatInclusive,
   vatUncertain,
@@ -1304,7 +1319,8 @@ function OrderReviewCard({
   const cashFeeVatTotal = cashArrangement
     ? cashArrangement.lines.reduce((s, l) => s + l.feeVatPerUnit * l.quantity, 0)
     : 0;
-  const combinedVatAmount = Math.round((vatAmount + cashFeeVatTotal) * 100) / 100;
+  const combinedVatAmount =
+    Math.round((vatAmount + cashFeeVatTotal + shippingVatAmount) * 100) / 100;
 
   // Mirrors order.service.js's estimatedDeliveryDays formula exactly (the LATER of the
   // resolved ZONE-or-region courier transit time and the slowest cart line's own

@@ -85,6 +85,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <h1 className="mt-6 font-display text-3xl font-medium leading-tight text-ink-900 sm:text-4xl md:text-5xl lg:text-6xl">
             {category.title}
           </h1>
+          {category.comingSoon && (
+            <span className="mt-4 inline-flex items-center rounded-full bg-ink-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white">
+              {t(locale, "common.comingSoon")}
+            </span>
+          )}
           {category.description && (
             <p className="mt-3 max-w-2xl text-ink-500">{category.description}</p>
           )}
