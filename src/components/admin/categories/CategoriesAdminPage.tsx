@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { RegionBadges } from "@/components/admin/RegionBadges";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { Badge } from "@/components/ui";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
@@ -55,7 +56,10 @@ export function CategoriesAdminPage() {
       header: t("admin.categoriesPage.columnCategory"),
       cell: (c) => (
         <div>
-          <p className="font-medium text-ink-900">{c.title}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-ink-900">{c.title}</p>
+            {c.comingSoon ? <Badge tone="gold">{t("common.comingSoon")}</Badge> : null}
+          </div>
           {c.title_ar ? <p className="text-xs text-ink-500" dir="rtl">{c.title_ar}</p> : null}
         </div>
       ),

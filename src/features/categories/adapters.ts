@@ -29,6 +29,7 @@ export function toUiCategory(api: ApiCategory, locale: Locale = "en"): Category 
     description_ar: api.description_ar ?? undefined,
     image,
     productCount: api.totalProducts,
+    comingSoon: Boolean(api.comingSoon),
   };
 }
 

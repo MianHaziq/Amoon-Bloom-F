@@ -38,6 +38,8 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
         description_ar: z.string().optional().nullable(),
         image: z.string().url().nullable(),
         status: z.enum(["DRAFT", "PUBLISHED"]),
+        comingSoon: z.boolean(),
+        draftScope: z.enum(["HOME_ONLY", "ENTIRE_STORE"]),
         deliveryLeadDays: z
           .number()
           .int()
@@ -89,6 +91,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
     register,
     control,
     watch,
+    setValue,
     handleSubmit,
     reset,
     formState: { errors },
@@ -101,6 +104,8 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       description_ar: "",
       image: null,
       status: "PUBLISHED",
+      comingSoon: false,
+      draftScope: "HOME_ONLY",
       deliveryLeadDays: null,
       cashArrangementFeeStepAmount: null,
       cashArrangementFeeMarginPercent: null,
@@ -128,6 +133,8 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
   });
   const allZones = zonesQuery.data ?? [];
   const selectedRegionIds = watch("regionIds");
+  const watchedStatus = watch("status");
+  const watchedComingSoon = watch("comingSoon");
   const selectedRegions = (regionsQuery.data ?? []).filter((r) =>
     selectedRegionIds?.includes(r.id)
   );
@@ -148,6 +155,8 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       description_ar: initial.description_ar ?? "",
       image: initial.image,
       status: initial.status ?? "PUBLISHED",
+      comingSoon: initial.comingSoon ?? false,
+      draftScope: initial.draftScope ?? "HOME_ONLY",
       deliveryLeadDays: initial.deliveryLeadDays ?? null,
       cashArrangementFeeStepAmount: initial.cashArrangementFeeStepAmount ?? null,
       cashArrangementFeeMarginPercent: initial.cashArrangementFeeMarginPercent ?? null,
@@ -181,6 +190,8 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       description_ar: values.description_ar?.trim() || null,
       image: values.image,
       status: values.status,
+      comingSoon: values.comingSoon,
+      draftScope: values.draftScope,
       deliveryLeadDays: values.deliveryLeadDays,
       cashArrangementFeeStepAmount: values.cashArrangementFeeStepAmount,
       cashArrangementFeeMarginPercent: values.cashArrangementFeeMarginPercent,
@@ -275,26 +286,66 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
 
       <aside className="flex flex-col gap-6">
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
-          <h3 className="mb-1 font-display text-lg text-ink-900">Visibility</h3>
+          <h3 className="mb-1 font-display text-lg text-ink-900">
+            {t("admin.categoryForm.visibilityHeading")}
+          </h3>
           <p className="mb-3 text-xs text-ink-500">
-            Published categories appear on the shop. Draft keeps them hidden.
+            {t("admin.categoryForm.visibilityHint")}
           </p>
-          <Controller
-            control={control}
-            name="status"
-            render={({ field }) => (
-              <Select
-                value={field.value}
-                onChange={field.onChange}
-                triggerClassName="w-full rounded-lg py-2 justify-between"
-                aria-label="Visibility"
-                options={[
-                  { value: "PUBLISHED", label: "Published — visible on the shop" },
-                  { value: "DRAFT", label: "Draft — hidden from customers" },
-                ]}
-              />
-            )}
+          {/* Three-way status: a "Coming soon" category is PUBLISHED + comingSoon —
+              visible everywhere but neither it nor any of its products can be ordered.
+              Stored as two fields (status + comingSoon), shown as one choice. */}
+          <Select
+            value={watchedComingSoon ? "COMING_SOON" : watchedStatus}
+            onChange={(v) => {
+              if (v === "COMING_SOON") {
+                setValue("status", "PUBLISHED", { shouldDirty: true });
+                setValue("comingSoon", true, { shouldDirty: true });
+              } else {
+                setValue("status", v as "DRAFT" | "PUBLISHED", { shouldDirty: true });
+                setValue("comingSoon", false, { shouldDirty: true });
+              }
+            }}
+            triggerClassName="w-full rounded-lg py-2 justify-between"
+            aria-label={t("admin.categoryForm.visibilityHeading")}
+            options={[
+              { value: "PUBLISHED", label: t("admin.categoryForm.statusPublished") },
+              { value: "COMING_SOON", label: t("admin.categoryForm.statusComingSoon") },
+              { value: "DRAFT", label: t("admin.categoryForm.statusDraft") },
+            ]}
           />
+          {watchedStatus === "DRAFT" && (
+            <div className="mt-4">
+              <label className="mb-1 block text-sm font-medium text-ink-800">
+                Draft scope
+              </label>
+              <p className="mb-2 text-xs text-ink-500">
+                Where this draft category is hidden.
+              </p>
+              <Controller
+                control={control}
+                name="draftScope"
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onChange={field.onChange}
+                    triggerClassName="w-full rounded-lg py-2 justify-between"
+                    aria-label="Draft scope"
+                    options={[
+                      {
+                        value: "HOME_ONLY",
+                        label: "Home page only — products still show in Shop",
+                      },
+                      {
+                        value: "ENTIRE_STORE",
+                        label: "Entire store — also hide its products from Shop",
+                      },
+                    ]}
+                  />
+                )}
+              />
+            </div>
+          )}
         </section>
 
         <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">

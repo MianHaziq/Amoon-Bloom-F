@@ -15,6 +15,12 @@ export interface ApiCategory {
   totalProducts: number;
   /** Publish state. Storefront only ever sees PUBLISHED; staff reads include DRAFT. */
   status?: "DRAFT" | "PUBLISHED";
+  /** "Coming soon": category (and all its products) visible but not orderable. */
+  comingSoon?: boolean;
+  /** How far a DRAFT status reaches (ignored while PUBLISHED). HOME_ONLY hides the
+   *  category from the home page only (products still list in the Shop); ENTIRE_STORE
+   *  also removes its products from every storefront surface. */
+  draftScope?: "HOME_ONLY" | "ENTIRE_STORE";
   /** Regions this category is visible in. Present on staff reads only. */
   regions?: ApiProductRegionRef[];
   regionIds?: string[];
@@ -61,6 +67,10 @@ export interface ApiCategoryCreateInput {
   description_ar?: string | null;
   image?: string | null;
   status?: "DRAFT" | "PUBLISHED";
+  /** "Coming soon": visible but not orderable. Server forces it off unless PUBLISHED. */
+  comingSoon?: boolean;
+  /** How far a DRAFT status reaches: HOME_ONLY (default) or ENTIRE_STORE. */
+  draftScope?: "HOME_ONLY" | "ENTIRE_STORE";
   /** Regions this category should be visible in. Defaults to the default region (UAE) if omitted. */
   regionIds?: string[];
   deliveryLeadDays?: number | null;

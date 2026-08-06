@@ -12,6 +12,8 @@ export interface Category {
   image: Image;
   productCount?: number;
   featured?: boolean;
+  /** Category-level "coming soon": visible but its products can't be ordered. */
+  comingSoon?: boolean;
 }
 
 export interface CategoryGroup {

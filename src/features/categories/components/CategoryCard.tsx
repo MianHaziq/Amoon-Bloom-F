@@ -11,6 +11,9 @@ interface CategoryCardProps {
   priority?: boolean;
   /** Representative image used when the category has no image of its own. */
   fallbackImage?: string;
+  /** Localized "Coming soon" label — passed in because this is a server component
+   *  with no access to the i18n hook. When set + category.comingSoon, shows an overlay. */
+  comingSoonLabel?: string;
 }
 
 /**
@@ -24,6 +27,7 @@ export function CategoryCard({
   className,
   priority,
   fallbackImage,
+  comingSoonLabel,
 }: CategoryCardProps) {
   // Only real (remote) images render via next/image; the adapter's local
   // placeholder is treated as "no image" so we fall back gracefully.
@@ -54,6 +58,13 @@ export function CategoryCard({
           <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-bloom-400 to-bloom-700">
             <span className="select-none font-display text-6xl text-white/90">
               {category.title.charAt(0)}
+            </span>
+          </div>
+        )}
+        {category.comingSoon && comingSoonLabel && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-ink-900/30 backdrop-blur-[1px]">
+            <span className="rounded-full bg-white/95 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-ink-900 shadow-md">
+              {comingSoonLabel}
             </span>
           </div>
         )}
