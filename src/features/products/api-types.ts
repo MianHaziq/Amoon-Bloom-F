@@ -26,7 +26,7 @@ export interface ApiProductOptionGroup {
   /** Optional per-value image SETS (array-of-arrays), aligned with `options`. */
   optionImageSets?: string[][];
   /** True when this group's values map 1:1 to `ApiProduct.variants` (e.g. "Size") —
-   *  picking a value changes price/photos/contents, not just the photo. At most one
+   *  picking a value changes price/photos/subtitle, not just the photo. At most one
    *  group per product is true. */
   isVariantAxis?: boolean;
 }
@@ -53,8 +53,8 @@ export interface ApiProductVariant {
   price: number;
   discountedPrice: number | null;
   images: string[];
-  contents: string | null;
-  contents_ar: string | null;
+  subtitle: string | null;
+  subtitle_ar: string | null;
   isDefault: boolean;
   sortOrder: number;
   /** This variant's own description blocks (same shape as `ApiProduct.descriptions`).
@@ -79,6 +79,9 @@ export interface ApiProductCategoryRef {
   /** Overrides Settings.defaultDeliveryLeadDays for products in this category with no
    *  own Product.deliveryLeadDays. Null = no override. */
   deliveryLeadDays?: number | null;
+  /** Category-level "coming soon": cascades to every product in it (the product's
+   *  effective coming-soon = its own flag OR this). */
+  comingSoon?: boolean;
 }
 
 export interface ApiProductRegionRef {
@@ -146,6 +149,9 @@ export interface ApiProduct {
   category?: ApiProductCategoryRef | null;
   /** Publish state. Storefront only ever sees PUBLISHED; staff reads include DRAFT. */
   status?: "DRAFT" | "PUBLISHED";
+  /** "Coming soon": product stays visible but can't be ordered. Effective state also
+   *  inherits from its category (see ApiProductCategoryRef.comingSoon). */
+  comingSoon?: boolean;
   /** Regions this product is visible in. Present on staff reads only. */
   regions?: ApiProductRegionRef[];
   regionIds?: string[];
@@ -153,7 +159,7 @@ export interface ApiProduct {
   images: string[];
   descriptions: ApiProductDescriptionBlock[];
   productOptions: ApiProductOptionGroup[];
-  /** Small/Medium/Large-style variants, each with its own price/photos/contents. Empty
+  /** Small/Medium/Large-style variants, each with its own price/photos/subtitle. Empty
    *  for every product that doesn't use this (the vast majority). */
   variants: ApiProductVariant[];
   /** "From X to Y" span across variants. Null when the product has no variants. */
@@ -200,8 +206,8 @@ export interface ApiProductVariantInput {
   price: number;
   discountedPrice?: number | null;
   images?: string[];
-  contents?: string | null;
-  contents_ar?: string | null;
+  subtitle?: string | null;
+  subtitle_ar?: string | null;
   isDefault?: boolean;
   /** Optional description-block override for this size. Omit/empty = shares the
    *  product's shared `descriptions` instead. */
@@ -241,6 +247,8 @@ export interface ApiProductCreateInput {
   variants?: ApiProductVariantInput[];
   /** Publish state. Defaults to PUBLISHED from the admin form. */
   status?: "DRAFT" | "PUBLISHED";
+  /** "Coming soon": visible but not orderable. Server forces it off unless PUBLISHED. */
+  comingSoon?: boolean;
   /** Regions this product should be visible in. Defaults to the default region (UAE) if omitted. */
   regionIds?: string[];
 }

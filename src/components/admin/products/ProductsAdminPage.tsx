@@ -125,7 +125,10 @@ export function ProductsAdminPage() {
       header: t("admin.productsPage.columnProduct"),
       cell: (p) => (
         <div>
-          <p className="font-medium text-ink-900">{p.title}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-ink-900">{p.title}</p>
+            {p.comingSoon ? <Badge tone="gold">{t("common.comingSoon")}</Badge> : null}
+          </div>
           {p.subtitle ? (
             <p className="mt-0.5 line-clamp-1 text-xs text-ink-500">{p.subtitle}</p>
           ) : null}

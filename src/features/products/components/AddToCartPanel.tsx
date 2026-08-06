@@ -313,7 +313,7 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
     customNames?: CustomNameEntry[];
     cashEntries?: CashUnitEntry[];
   }): Promise<PdpAddResult> => {
-    if (!product.inStock) return { ok: false };
+    if (!product.inStock || product.comingSoon) return { ok: false };
     const { selectedByTitle, variantImage } = buildSelection();
     const effectiveGiftCards = overrides?.giftCards ?? giftCards;
     const effectiveCustomNames = overrides?.customNames ?? customNames;
@@ -387,7 +387,7 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
   // every single add-to-cart click, would be an annoyance. Only resolves once the
   // whole chain settles (added, or aborted by a cancel).
   const startAddFlow = (): Promise<PdpAddResult> => {
-    if (!product.inStock) return Promise.resolve({ ok: false });
+    if (!product.inStock || product.comingSoon) return Promise.resolve({ ok: false });
     return new Promise<PdpAddResult>((resolve) => {
       pendingAddResolveRef.current = resolve;
       if (giftCard) {
@@ -456,12 +456,6 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
           }}
         />
       )}
-
-      {activeVariant?.contents ? (
-        <p className="rounded-2xl border border-ink-100 bg-cream-50 px-4 py-3 text-sm text-ink-700">
-          {activeVariant.contents}
-        </p>
-      ) : null}
 
       {product.giftCardEnabled && (
         <div className="flex flex-col gap-2">
@@ -594,9 +588,9 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
             fullWidth
             size="xl"
             onClick={startAddFlow}
-            disabled={!product.inStock}
+            disabled={!product.inStock || product.comingSoon}
             leadingIcon={
-              product.inStock && justAdded ? (
+              product.inStock && !product.comingSoon && justAdded ? (
                 <m.span
                   key="check"
                   initial={{ scale: 0, rotate: -20 }}
@@ -619,7 +613,9 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
                 transition={microTransition}
                 className="inline-block"
               >
-                {!product.inStock
+                {product.comingSoon
+                  ? t("common.comingSoon")
+                  : !product.inStock
                   ? t("common.soldOut")
                   : justAdded
                   ? t("common.addedToCart")
@@ -629,6 +625,9 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
           </Button>
         </m.div>
       </div>
+      {product.comingSoon && (
+        <p className="mt-2 text-sm text-ink-500">{t("common.comingSoonNote")}</p>
+      )}
 
       <Button
         fullWidth

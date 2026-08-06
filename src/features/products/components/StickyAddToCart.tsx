@@ -55,7 +55,7 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
   }, []);
 
   const handleAdd = async () => {
-    if (!product.inStock) return;
+    if (!product.inStock || product.comingSoon) return;
     // Run the main panel's exact add with the current colour/name/gift-card/qty. It
     // opens any needed personalization modal (gift card / custom name / cash), opens
     // the cart drawer, and raises its own stock error toast on success/fail.
@@ -113,10 +113,14 @@ export function StickyAddToCart({ product }: StickyAddToCartProps) {
         <Button
           size="md"
           onClick={handleAdd}
-          disabled={!product.inStock}
+          disabled={!product.inStock || product.comingSoon}
           leadingIcon={<BagIcon size={16} />}
         >
-          {product.inStock ? t("common.add") : t("common.soldOut")}
+          {product.comingSoon
+            ? t("common.comingSoon")
+            : product.inStock
+            ? t("common.add")
+            : t("common.soldOut")}
         </Button>
       </div>
       </div>

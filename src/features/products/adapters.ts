@@ -73,7 +73,7 @@ const adaptVariant = (v: ApiProductVariant, locale: Locale): ProductVariant => (
   price: v.price,
   discountedPrice: v.discountedPrice,
   images: v.images ?? [],
-  contents: localized(v.contents ?? "", v.contents_ar, locale) || undefined,
+  subtitle: localized(v.subtitle ?? "", v.subtitle_ar, locale) || undefined,
   isDefault: v.isDefault,
   descriptions: v.descriptions?.map((d) => adaptDescription(d, locale)),
   colors: v.colors?.map((c) => adaptVariantColor(c, locale)),
@@ -136,6 +136,9 @@ export function toUiProduct(api: ApiProduct, opts: ToUiProductOptions = {}): Pro
     category: categoryTitle,
     categorySlug,
     inStock: api.quantity > 0,
+    // Effective coming-soon = the product's own flag OR its category's (cascade). Use
+    // `||` not `??`: comingSoon serializes as `false`, so `??` would never fall through.
+    comingSoon: Boolean(api.comingSoon || api.category?.comingSoon),
     options: api.productOptions?.map((o) => adaptOption(o, locale)),
     variants: api.variants?.length ? api.variants.map((v) => adaptVariant(v, locale)) : undefined,
     priceRange: api.priceRange ?? undefined,

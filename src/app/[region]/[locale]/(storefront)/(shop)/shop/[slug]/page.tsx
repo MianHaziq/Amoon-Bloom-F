@@ -8,6 +8,7 @@ import { AddToCartPanel } from "@/features/products/components/AddToCartPanel";
 import { StickyAddToCart } from "@/features/products/components/StickyAddToCart";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { ProductPrice } from "@/features/products/components/ProductPrice";
+import { ProductSubtitle } from "@/features/products/components/ProductSubtitle";
 import { ProductTabs } from "@/features/products/components/ProductTabs";
 import { PdpImageProvider } from "@/features/products/components/PdpImageContext";
 import {
@@ -140,9 +141,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <h1 className="mt-2 font-display text-3xl font-medium leading-tight text-ink-900 sm:text-4xl md:text-5xl">
                 {product.title}
               </h1>
-              {product.subtitle && (
-                <p className="mt-2 text-base text-ink-500">{product.subtitle}</p>
-              )}
+              <ProductSubtitle subtitle={product.subtitle} />
             </StaggerItem>
 
             <StaggerItem>

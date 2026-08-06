@@ -135,12 +135,12 @@ function useProductFormSchema() {
       // Marks this group as the one whose values become priced Product.variants
       // (e.g. "Size"). At most one group may be true — enforced by the UI.
       isVariantAxis: z.boolean().optional(),
-      // Per-value price/contents, aligned by index with `options` — only meaningful
+      // Per-value price/subtitle, aligned by index with `options` — only meaningful
       // (and only shown/edited) when isVariantAxis is true.
       variantPrices: z.array(z.number().nullable()).optional(),
       variantDiscountedPrices: z.array(z.number().nullable()).optional(),
-      variantContents: z.array(z.string()).optional(),
-      variantContents_ar: z.array(z.string()).optional(),
+      variantSubtitle: z.array(z.string()).optional(),
+      variantSubtitle_ar: z.array(z.string()).optional(),
       // Which value index is the default (shown before the shopper picks one). null =
       // no explicit choice — the server defaults to the first value.
       variantDefaultIndex: z.number().nullable().optional(),
@@ -228,6 +228,7 @@ function useProductFormSchema() {
       cashArrangementFeeMarginPercent: z.number().nonnegative().nullable(),
       categoryId: z.string().optional().nullable(),
       status: z.enum(["DRAFT", "PUBLISHED"]),
+      comingSoon: z.boolean(),
       regionIds: z.array(z.string()),
       images: z.array(z.string().url()).max(10, t("admin.productForm.imagesMax")),
       descriptions: z.array(descriptionSchema),
@@ -266,6 +267,7 @@ const emptyDefaults: ProductFormValues = {
   cashArrangementFeeMarginPercent: null,
   categoryId: null,
   status: "PUBLISHED",
+  comingSoon: false,
   regionIds: [],
   images: [],
   descriptions: [],
@@ -376,6 +378,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       cashArrangementFeeMarginPercent: initial.cashArrangementFeeMarginPercent ?? null,
       categoryId: initial.categoryId,
       status: initial.status ?? "PUBLISHED",
+      comingSoon: initial.comingSoon ?? false,
       regionIds: initial.regionIds ?? [],
       images: initial.images,
       descriptions: initial.descriptions.map((d) => ({
@@ -387,7 +390,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       productOptions: initial.productOptions.map((o) => {
         // When this is the priced-variant axis, line up each option value with its
         // ProductVariant row (matched by label, EN first then AR) so the price/
-        // contents inputs open pre-filled instead of blank.
+        // subtitle inputs open pre-filled instead of blank.
         const matchedVariants = o.isVariantAxis
           ? o.options.map((val, i) =>
               (initial.variants ?? []).find(
@@ -427,8 +430,8 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           isVariantAxis: o.isVariantAxis ?? false,
           variantPrices: matchedVariants.map((v) => v?.price ?? null),
           variantDiscountedPrices: matchedVariants.map((v) => v?.discountedPrice ?? null),
-          variantContents: matchedVariants.map((v) => v?.contents ?? ""),
-          variantContents_ar: matchedVariants.map((v) => v?.contents_ar ?? ""),
+          variantSubtitle: matchedVariants.map((v) => v?.subtitle ?? ""),
+          variantSubtitle_ar: matchedVariants.map((v) => v?.subtitle_ar ?? ""),
           variantDefaultIndex: defaultIdx >= 0 ? defaultIdx : null,
           variantDescriptions: matchedVariants.map((v) =>
             (v?.descriptions ?? []).map((d) => ({
@@ -456,6 +459,8 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
   const images = watch("images");
   const giftCardEnabled = watch("giftCardEnabled");
   const customNameEnabled = watch("customNameEnabled");
+  const status = watch("status");
+  const comingSoon = watch("comingSoon");
   // Regions the product is in (from the picker) decide which regions' zones get
   // per-zone delivery-time inputs — only zones of selected regions are shown.
   const selectedRegionIds = watch("regionIds");
@@ -501,8 +506,8 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               price: o.variantPrices?.[i] ?? 0,
               discountedPrice: o.variantDiscountedPrices?.[i] ?? null,
               images: set,
-              contents: o.variantContents?.[i]?.trim() || null,
-              contents_ar: o.variantContents_ar?.[i]?.trim() || null,
+              subtitle: o.variantSubtitle?.[i]?.trim() || null,
+              subtitle_ar: o.variantSubtitle_ar?.[i]?.trim() || null,
               isDefault: options.length - 1 === o.variantDefaultIndex,
               // Empty = this size has no override and shares the product's shared
               // `descriptions` blocks instead.
@@ -600,6 +605,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           : Number(values.cashArrangementFeeMarginPercent),
       categoryId: values.categoryId || null,
       status: values.status,
+      comingSoon: values.comingSoon,
       regionIds: values.regionIds,
       images: values.images,
       descriptions: cleanedDescriptions,
@@ -1122,8 +1128,8 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                     isVariantAxis: true,
                     variantPrices: [null],
                     variantDiscountedPrices: [null],
-                    variantContents: [""],
-                    variantContents_ar: [""],
+                    variantSubtitle: [""],
+                    variantSubtitle_ar: [""],
                     variantDefaultIndex: null,
                     variantDescriptions: [[]],
                     variantColors: [[]],
@@ -1180,21 +1186,29 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           title={t("admin.productForm.visibilityHeading")}
           description={t("admin.productForm.visibilityDescription")}
         >
-          <Controller
-            control={control}
-            name="status"
-            render={({ field }) => (
-              <Select
-                value={field.value}
-                onChange={field.onChange}
-                triggerClassName="w-full rounded-lg py-2 justify-between"
-                aria-label={t("admin.productForm.visibilityHeading")}
-                options={[
-                  { value: "PUBLISHED", label: t("admin.productForm.statusPublished") },
-                  { value: "DRAFT", label: t("admin.productForm.statusDraft") },
-                ]}
-              />
-            )}
+          {/* Three-way status: Published / Coming soon / Draft. "Coming soon" is stored
+              as a separate boolean (comingSoon) but presented as one status choice — a
+              coming-soon product is PUBLISHED + comingSoon so it stays visible but is
+              not orderable. The Select value is derived from both fields, and picking an
+              option writes both. */}
+          <Select
+            value={comingSoon ? "COMING_SOON" : status}
+            onChange={(v) => {
+              if (v === "COMING_SOON") {
+                setValue("status", "PUBLISHED", { shouldDirty: true });
+                setValue("comingSoon", true, { shouldDirty: true });
+              } else {
+                setValue("status", v as "DRAFT" | "PUBLISHED", { shouldDirty: true });
+                setValue("comingSoon", false, { shouldDirty: true });
+              }
+            }}
+            triggerClassName="w-full rounded-lg py-2 justify-between"
+            aria-label={t("admin.productForm.visibilityHeading")}
+            options={[
+              { value: "PUBLISHED", label: t("admin.productForm.statusPublished") },
+              { value: "COMING_SOON", label: t("admin.productForm.statusComingSoon") },
+              { value: "DRAFT", label: t("admin.productForm.statusDraft") },
+            ]}
           />
         </Card>
 
@@ -1547,11 +1561,11 @@ function OptionValueRows({
     control,
     name: `productOptions.${index}.variantDiscountedPrices`,
   }) ?? []) as (number | null)[];
-  const variantContents = (useWatch({ control, name: `productOptions.${index}.variantContents` }) ??
+  const variantSubtitle = (useWatch({ control, name: `productOptions.${index}.variantSubtitle` }) ??
     []) as string[];
-  const variantContentsAr = (useWatch({
+  const variantSubtitleAr = (useWatch({
     control,
-    name: `productOptions.${index}.variantContents_ar`,
+    name: `productOptions.${index}.variantSubtitle_ar`,
   }) ?? []) as string[];
   const variantDefaultIndex = useWatch({
     control,
@@ -1592,7 +1606,7 @@ function OptionValueRows({
 
   // Persist all parallel arrays together so a value's EN label, AR label, photo
   // set, swatch colour, and (when this group is the priced-variant axis) price/
-  // discount/contents always share the same index (the server reads them aligned).
+  // discount/subtitle always share the same index (the server reads them aligned).
   // `optionImages` is derived = first photo of each set, which the mobile app and
   // card/hover swap read.
   const commit = (
@@ -1602,8 +1616,8 @@ function OptionValueRows({
     sets: string[][],
     prices: (number | null)[],
     discounts: (number | null)[],
-    contents: string[],
-    contentsAr: string[]
+    subtitle: string[],
+    subtitleAr: string[]
   ) => {
     const imgs = sets.map((set) => set?.[0] ?? "");
     setValue(`productOptions.${index}.options`, opts, { shouldDirty: true });
@@ -1613,8 +1627,8 @@ function OptionValueRows({
     setValue(`productOptions.${index}.optionImages`, imgs, { shouldDirty: true });
     setValue(`productOptions.${index}.variantPrices`, prices, { shouldDirty: true });
     setValue(`productOptions.${index}.variantDiscountedPrices`, discounts, { shouldDirty: true });
-    setValue(`productOptions.${index}.variantContents`, contents, { shouldDirty: true });
-    setValue(`productOptions.${index}.variantContents_ar`, contentsAr, { shouldDirty: true });
+    setValue(`productOptions.${index}.variantSubtitle`, subtitle, { shouldDirty: true });
+    setValue(`productOptions.${index}.variantSubtitle_ar`, subtitleAr, { shouldDirty: true });
   };
   const padded = () => {
     const ars = [...optionsAr];
@@ -1622,57 +1636,57 @@ function OptionValueRows({
     const sets = optionImageSets.map((s) => (Array.isArray(s) ? [...s] : []));
     const prices = [...variantPrices];
     const discounts = [...variantDiscountedPrices];
-    const contents = [...variantContents];
-    const contentsAr = [...variantContentsAr];
+    const subtitle = [...variantSubtitle];
+    const subtitleAr = [...variantSubtitleAr];
     while (ars.length < count) ars.push("");
     while (cols.length < count) cols.push("");
     while (sets.length < count) sets.push([]);
     while (prices.length < count) prices.push(null);
     while (discounts.length < count) discounts.push(null);
-    while (contents.length < count) contents.push("");
-    while (contentsAr.length < count) contentsAr.push("");
-    return { opts: [...options], ars, cols, sets, prices, discounts, contents, contentsAr };
+    while (subtitle.length < count) subtitle.push("");
+    while (subtitleAr.length < count) subtitleAr.push("");
+    return { opts: [...options], ars, cols, sets, prices, discounts, subtitle, subtitleAr };
   };
   const setEn = (i: number, v: string) => {
     const s = padded();
     s.opts[i] = v;
-    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.contents, s.contentsAr);
+    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.subtitle, s.subtitleAr);
   };
   const setArVal = (i: number, v: string) => {
     const s = padded();
     s.ars[i] = v;
-    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.contents, s.contentsAr);
+    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.subtitle, s.subtitleAr);
   };
   const toggleImg = (i: number, url: string) => {
     const s = padded();
     const set = s.sets[i];
     s.sets[i] = set.includes(url) ? set.filter((u) => u !== url) : [...set, url];
-    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.contents, s.contentsAr);
+    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.subtitle, s.subtitleAr);
   };
   const setColor = (i: number, hex: string) => {
     const s = padded();
     s.cols[i] = hex;
-    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.contents, s.contentsAr);
+    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.subtitle, s.subtitleAr);
   };
   const setPrice = (i: number, v: number | null) => {
     const s = padded();
     s.prices[i] = v;
-    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.contents, s.contentsAr);
+    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.subtitle, s.subtitleAr);
   };
   const setDiscountedPrice = (i: number, v: number | null) => {
     const s = padded();
     s.discounts[i] = v;
-    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.contents, s.contentsAr);
+    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.subtitle, s.subtitleAr);
   };
-  const setContents = (i: number, v: string) => {
+  const setSubtitle = (i: number, v: string) => {
     const s = padded();
-    s.contents[i] = v;
-    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.contents, s.contentsAr);
+    s.subtitle[i] = v;
+    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.subtitle, s.subtitleAr);
   };
-  const setContentsAr = (i: number, v: string) => {
+  const setSubtitleAr = (i: number, v: string) => {
     const s = padded();
-    s.contentsAr[i] = v;
-    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.contents, s.contentsAr);
+    s.subtitleAr[i] = v;
+    commit(s.opts, s.ars, s.cols, s.sets, s.prices, s.discounts, s.subtitle, s.subtitleAr);
   };
   const setDefault = (i: number) => {
     setValue(`productOptions.${index}.variantDefaultIndex`, i, { shouldDirty: true });
@@ -1772,8 +1786,8 @@ function OptionValueRows({
       [...s.sets, []],
       [...s.prices, null],
       [...s.discounts, null],
-      [...s.contents, ""],
-      [...s.contentsAr, ""]
+      [...s.subtitle, ""],
+      [...s.subtitleAr, ""]
     );
     setValue(`productOptions.${index}.variantDescriptions`, [...padDescs(), []], { shouldDirty: true });
     setValue(`productOptions.${index}.variantColors`, [...padColors(), []], { shouldDirty: true });
@@ -1787,8 +1801,8 @@ function OptionValueRows({
       s.sets.filter((_, j) => j !== i),
       s.prices.filter((_, j) => j !== i),
       s.discounts.filter((_, j) => j !== i),
-      s.contents.filter((_, j) => j !== i),
-      s.contentsAr.filter((_, j) => j !== i)
+      s.subtitle.filter((_, j) => j !== i),
+      s.subtitleAr.filter((_, j) => j !== i)
     );
     setValue(
       `productOptions.${index}.variantDescriptions`,
@@ -1984,17 +1998,17 @@ function OptionValueRows({
                       : t("admin.productForm.variantSetDefaultLabel")}
                   </button>
                   <textarea
-                    value={variantContents[i] ?? ""}
-                    onChange={(e) => setContents(i, e.target.value)}
-                    placeholder={t("admin.productForm.variantContentsPlaceholderEn")}
+                    value={variantSubtitle[i] ?? ""}
+                    onChange={(e) => setSubtitle(i, e.target.value)}
+                    placeholder={t("admin.productForm.variantSubtitlePlaceholderEn")}
                     rows={2}
                     className="rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20 sm:col-span-2"
                   />
                   <textarea
-                    value={variantContentsAr[i] ?? ""}
-                    onChange={(e) => setContentsAr(i, e.target.value)}
+                    value={variantSubtitleAr[i] ?? ""}
+                    onChange={(e) => setSubtitleAr(i, e.target.value)}
                     dir="rtl"
-                    placeholder={t("admin.productForm.variantContentsPlaceholderAr")}
+                    placeholder={t("admin.productForm.variantSubtitlePlaceholderAr")}
                     rows={2}
                     className="rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
                   />

@@ -18,7 +18,7 @@ export interface ProductOptionGroup {
   /** Optional per-value image SETS (array-of-arrays), aligned with `options`. */
   optionImageSets?: string[][];
   /** True when this group's values map 1:1 to `Product.variants` (e.g. "Size") —
-   *  picking a value changes price/photos/contents, not just the photo. */
+   *  picking a value changes price/photos/subtitle, not just the photo. */
   isVariantAxis?: boolean;
 }
 
@@ -44,7 +44,7 @@ export interface ProductVariant {
   discountedPrice: number | null;
   images: string[];
   /** Already localized to the active locale by the adapter. */
-  contents?: string;
+  subtitle?: string;
   isDefault: boolean;
   /** This variant's own description blocks — empty/absent means it has no override
    *  and shares the product's top-level `descriptions` instead. */
@@ -80,11 +80,13 @@ export interface Product {
   categorySlug: string;
   collection?: string;
   inStock: boolean;
+  /** Effective coming-soon (own OR inherited from category): visible but not orderable. */
+  comingSoon?: boolean;
   badge?: "new" | "bestseller" | "limited" | "sale";
   rating?: number;
   reviewCount?: number;
   options?: ProductOptionGroup[];
-  /** Small/Medium/Large-style variants, each with its own price/photos/contents.
+  /** Small/Medium/Large-style variants, each with its own price/photos/subtitle.
    *  Absent/empty for the vast majority of products. */
   variants?: ProductVariant[];
   /** "From X to Y" span across variants — present only when `variants` is non-empty. */

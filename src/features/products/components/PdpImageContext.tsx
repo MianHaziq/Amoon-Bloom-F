@@ -45,7 +45,7 @@ interface PdpImageCtx {
    *  whichever one is winning for the current selection, see `resolveActivePhotoGroup`. */
   activePhotoGroupId: string | null;
   /** The variant (e.g. size) matching the current selection of the product's
-   *  `isVariantAxis` option group — its price/photos/contents should override the
+   *  `isVariantAxis` option group — its price/photos/subtitle should override the
    *  product's own. Null when the product has no variants, or (transiently) no
    *  value is selected for that group yet. */
   activeVariant: ProductVariant | null;
@@ -100,7 +100,7 @@ export function PdpImageProvider({
 
   // The (at most one) option group whose values are priced Product.variants
   // (e.g. "Size") — often ALSO one of photoGroups (a size also carries its own
-  // photos), but tracked separately since a variant's price/contents matter even
+  // photos), but tracked separately since a variant's price/subtitle matter even
   // when it carries no photo of its own.
   const variantOption = useMemo(
     () => (product.options ?? []).find((o) => o.isVariantAxis) ?? null,
