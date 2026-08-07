@@ -82,6 +82,8 @@ export interface ApiProductCategoryRef {
   /** Category-level "coming soon": cascades to every product in it (the product's
    *  effective coming-soon = its own flag OR this). */
   comingSoon?: boolean;
+  /** Category default gift-card mode; a product inherits this when its own is null. */
+  giftCardMode?: "MESSAGE" | "NAME" | null;
 }
 
 export interface ApiProductRegionRef {
@@ -134,6 +136,9 @@ export interface ApiProduct {
   /** Paid "add a custom name" add-on, offered only on select products (mugs/cups/boxes). */
   customNameEnabled?: boolean;
   customNamePrice?: number | null;
+  /** Gift-card input mode override for this product. Null = inherit the category's,
+   *  then the MESSAGE default. Resolve via product ?? category ?? MESSAGE. */
+  giftCardMode?: "MESSAGE" | "NAME" | null;
   quantity: number;
   /** Overrides Category.deliveryLeadDays / Settings.defaultDeliveryLeadDays for this
    *  product specifically. Null = no override (falls through the resolution chain). */
@@ -232,6 +237,8 @@ export interface ApiProductCreateInput {
   zoneLeadDays?: ApiProductZoneLead[];
   giftCardEnabled?: boolean;
   giftCardExtraPrice?: number | null;
+  /** Gift-card mode override. "MESSAGE" | "NAME", or null to inherit the category default. */
+  giftCardMode?: "MESSAGE" | "NAME" | null;
   customNameEnabled?: boolean;
   customNamePrice?: number | null;
   quantity?: number;

@@ -114,6 +114,7 @@ export function OrderDetailPage({ id }: { id: string }) {
                       <SelectedOptions options={item.selectedOptions} className="mt-1.5" />
                       <OrderItemExtras
                         giftCardSelected={item.giftCardSelected}
+                        giftCardMode={item.giftCardMode}
                         customName={item.customName}
                         message={item.perProductMessage}
                         cashArrangement={

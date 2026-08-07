@@ -29,6 +29,7 @@ export function apiCartToCartItems(cart: ApiCart): CartItem[] {
       selectedOptions: it.selectedOptions ?? null,
       variantKey: it.variantKey ?? "",
       giftCardSelected: it.giftCardSelected ?? false,
+      giftCardMode: it.giftCardMode ?? null,
       customName: it.customName ?? null,
       cashArrangement: it.cashArrangement
         ? {

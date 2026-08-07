@@ -17,6 +17,8 @@ export interface ApiCategory {
   status?: "DRAFT" | "PUBLISHED";
   /** "Coming soon": category (and all its products) visible but not orderable. */
   comingSoon?: boolean;
+  /** Default gift-card input mode for this category's products (null = no default). */
+  giftCardMode?: "MESSAGE" | "NAME" | null;
   /** How far a DRAFT status reaches (ignored while PUBLISHED). HOME_ONLY hides the
    *  category from the home page only (products still list in the Shop); ENTIRE_STORE
    *  also removes its products from every storefront surface. */
@@ -69,6 +71,8 @@ export interface ApiCategoryCreateInput {
   status?: "DRAFT" | "PUBLISHED";
   /** "Coming soon": visible but not orderable. Server forces it off unless PUBLISHED. */
   comingSoon?: boolean;
+  /** Default gift-card mode for the category's products. null/"MESSAGE"/"NAME". */
+  giftCardMode?: "MESSAGE" | "NAME" | null;
   /** How far a DRAFT status reaches: HOME_ONLY (default) or ENTIRE_STORE. */
   draftScope?: "HOME_ONLY" | "ENTIRE_STORE";
   /** Regions this category should be visible in. Defaults to the default region (UAE) if omitted. */

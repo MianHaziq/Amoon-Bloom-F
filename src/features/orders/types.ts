@@ -90,6 +90,8 @@ export interface ApiOrderItem {
   selectedImage?: string | null;
   /** Gift-card/custom-name add-ons chosen at add-to-cart time, snapshotted at order time. */
   giftCardSelected?: boolean;
+  /** Resolved gift-card input mode snapshot ("MESSAGE" | "NAME"), for labeling. */
+  giftCardMode?: "MESSAGE" | "NAME" | null;
   customName?: string | null;
   /** Per-line cash arrangement snapshot (PER UNIT — line total is each × quantity). */
   cashArrangementRequested?: boolean;

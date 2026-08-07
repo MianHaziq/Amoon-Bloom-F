@@ -144,6 +144,9 @@ export function toUiProduct(api: ApiProduct, opts: ToUiProductOptions = {}): Pro
     priceRange: api.priceRange ?? undefined,
     giftCardEnabled: api.giftCardEnabled ?? false,
     giftCardExtraPrice: api.giftCardExtraPrice ?? undefined,
+    // Effective mode: product override, else category default, else MESSAGE. `??` (not
+    // `||`) because null is the "inherit" sentinel — falls through to the category.
+    giftCardMode: api.giftCardMode ?? api.category?.giftCardMode ?? "MESSAGE",
     customNameEnabled: api.customNameEnabled ?? false,
     customNamePrice: api.customNamePrice ?? undefined,
     deliveryLeadDays: api.resolvedDeliveryLeadDays ?? undefined,

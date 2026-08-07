@@ -95,6 +95,9 @@ export interface Product {
   /** Free gift-card message add-on, offered per product (most products have it). */
   giftCardEnabled?: boolean;
   giftCardExtraPrice?: number;
+  /** Effective gift-card input mode (product ?? category ?? MESSAGE): whether the card
+   *  collects a personalized MESSAGE or a single "gift NAME". */
+  giftCardMode?: "MESSAGE" | "NAME";
   /** Paid "add a custom name" add-on, offered only on select products. */
   customNameEnabled?: boolean;
   customNamePrice?: number;

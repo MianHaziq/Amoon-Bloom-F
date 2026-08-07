@@ -27,6 +27,8 @@ export interface ApiCartItem {
   /** Photo of the chosen variant (backend-derived), or null to use the product's primary image. */
   selectedImage?: string | null;
   giftCardSelected?: boolean;
+  /** Resolved gift-card input mode for this line ("MESSAGE" | "NAME"), for labeling. */
+  giftCardMode?: "MESSAGE" | "NAME" | null;
   customName?: string | null;
   /** Per-unit cash arrangement for this line (null = none). */
   cashArrangement?: ApiCartLineCashArrangement | null;

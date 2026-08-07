@@ -39,6 +39,8 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
         image: z.string().url().nullable(),
         status: z.enum(["DRAFT", "PUBLISHED"]),
         comingSoon: z.boolean(),
+        // null = no category default (products fall through to the MESSAGE default).
+        giftCardMode: z.enum(["MESSAGE", "NAME"]).nullable(),
         draftScope: z.enum(["HOME_ONLY", "ENTIRE_STORE"]),
         deliveryLeadDays: z
           .number()
@@ -105,6 +107,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       image: null,
       status: "PUBLISHED",
       comingSoon: false,
+      giftCardMode: null,
       draftScope: "HOME_ONLY",
       deliveryLeadDays: null,
       cashArrangementFeeStepAmount: null,
@@ -135,6 +138,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
   const selectedRegionIds = watch("regionIds");
   const watchedStatus = watch("status");
   const watchedComingSoon = watch("comingSoon");
+  const watchedGiftCardMode = watch("giftCardMode");
   const selectedRegions = (regionsQuery.data ?? []).filter((r) =>
     selectedRegionIds?.includes(r.id)
   );
@@ -156,6 +160,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       image: initial.image,
       status: initial.status ?? "PUBLISHED",
       comingSoon: initial.comingSoon ?? false,
+      giftCardMode: initial.giftCardMode ?? null,
       draftScope: initial.draftScope ?? "HOME_ONLY",
       deliveryLeadDays: initial.deliveryLeadDays ?? null,
       cashArrangementFeeStepAmount: initial.cashArrangementFeeStepAmount ?? null,
@@ -191,6 +196,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       image: values.image,
       status: values.status,
       comingSoon: values.comingSoon,
+      giftCardMode: values.giftCardMode,
       draftScope: values.draftScope,
       deliveryLeadDays: values.deliveryLeadDays,
       cashArrangementFeeStepAmount: values.cashArrangementFeeStepAmount,
@@ -365,6 +371,30 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
             {...register("deliveryLeadDays", {
               setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
             })}
+          />
+        </section>
+
+        <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+          <h3 className="mb-1 font-display text-lg text-ink-900">
+            {t("admin.categoryForm.giftModeHeading")}
+          </h3>
+          <p className="mb-3 text-xs text-ink-500">
+            {t("admin.categoryForm.giftModeHint")}
+          </p>
+          <Select
+            value={watchedGiftCardMode ?? ""}
+            onChange={(v) =>
+              setValue("giftCardMode", v === "" ? null : (v as "MESSAGE" | "NAME"), {
+                shouldDirty: true,
+              })
+            }
+            triggerClassName="w-full rounded-lg py-2 justify-between"
+            aria-label={t("admin.categoryForm.giftModeHeading")}
+            options={[
+              { value: "", label: t("admin.categoryForm.giftModeNone") },
+              { value: "MESSAGE", label: t("admin.categoryForm.giftModeMessage") },
+              { value: "NAME", label: t("admin.categoryForm.giftModeName") },
+            ]}
           />
         </section>
 

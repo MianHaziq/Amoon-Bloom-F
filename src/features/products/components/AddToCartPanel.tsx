@@ -653,6 +653,7 @@ export function AddToCartPanel({ product, sameDayCutoff, regionCode }: AddToCart
         <GiftCardModal
           open={giftModalOpen}
           quantity={qty}
+          mode={product.giftCardMode}
           initial={giftCards}
           onCancel={onGiftCancel}
           onSave={onGiftSave}

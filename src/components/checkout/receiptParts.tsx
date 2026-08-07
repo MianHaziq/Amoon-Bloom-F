@@ -442,6 +442,7 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
                   <SelectedOptions options={item.selectedOptions} className="mt-1" />
                   <OrderItemExtras
                     giftCardSelected={item.giftCardSelected}
+                    giftCardMode={item.giftCardMode}
                     customName={item.customName}
                     message={item.perProductMessage}
                     cashArrangement={

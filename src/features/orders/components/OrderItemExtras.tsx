@@ -13,6 +13,7 @@ import { cn } from "@/lib/cn";
  */
 export function OrderItemExtras({
   giftCardSelected,
+  giftCardMode,
   customName,
   message,
   cashArrangement,
@@ -21,6 +22,9 @@ export function OrderItemExtras({
   className,
 }: {
   giftCardSelected?: boolean;
+  /** How to label/format the gift value: NAME renders a plain "Gift name", otherwise a
+   *  quoted italic "Gift message". Null/undefined ⇒ message (legacy lines). */
+  giftCardMode?: "MESSAGE" | "NAME" | null;
   customName?: string | null;
   message?: string | null;
   /** Per-unit cash arrangement for this line. `feeAmount` is only passed where the fee has
@@ -40,6 +44,7 @@ export function OrderItemExtras({
   const { t } = useT();
   const name = customName?.trim();
   const note = message?.trim();
+  const isGiftName = giftCardMode === "NAME";
   const cashAmount = cashArrangement?.cashAmount;
   const hasCash = Boolean(cashAmount && cashAmount > 0 && currency && locale);
   const hasCashFee = hasCash && Boolean(cashArrangement?.feeAmount && cashArrangement.feeAmount > 0);
@@ -108,10 +113,17 @@ export function OrderItemExtras({
           </span>
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-400">
-              {t("admin.orderDetailPage.giftMessageLabel")}
+              {isGiftName
+                ? t("admin.orderDetailPage.giftNameLabel")
+                : t("admin.orderDetailPage.giftMessageLabel")}
             </p>
-            <p className="wrap-break-word text-sm italic leading-snug text-ink-700">
-              &ldquo;{note}&rdquo;
+            <p
+              className={cn(
+                "wrap-break-word text-sm leading-snug text-ink-700",
+                !isGiftName && "italic"
+              )}
+            >
+              {isGiftName ? note : <>&ldquo;{note}&rdquo;</>}
             </p>
           </div>
         </div>

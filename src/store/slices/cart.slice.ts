@@ -29,6 +29,9 @@ export interface CartItem {
   variantKey: string;
   /** Gift-card/custom-name add-on selections. `unitPrice` already includes their cost. */
   giftCardSelected?: boolean;
+  /** Resolved gift-card input mode for this line (drives the "Gift name" vs "Gift
+   *  message" label). Set when the gift card is on; null otherwise. */
+  giftCardMode?: "MESSAGE" | "NAME" | null;
   customName?: string | null;
   /** Per-unit cash arrangement for this line (null = none). Part of line identity. */
   cashArrangement?: CartLineCashArrangement | null;
@@ -120,7 +123,10 @@ const cartSlice = createSlice({
       if (existing) {
         existing.quantity += quantity;
         if (variantImage !== undefined) existing.imageUrl = resolvedImage ?? existing.imageUrl;
-        if (giftCardSelected !== undefined) existing.giftCardSelected = giftCardSelected;
+        if (giftCardSelected !== undefined) {
+          existing.giftCardSelected = giftCardSelected;
+          existing.giftCardMode = giftCardSelected ? product.giftCardMode ?? "MESSAGE" : null;
+        }
         if (customName !== undefined) existing.customName = customName;
         if (message !== undefined) existing.message = message;
         existing.cashArrangement = cashArrangement;
@@ -140,6 +146,7 @@ const cartSlice = createSlice({
         selectedOptions: selectedOptions ?? null,
         variantKey,
         giftCardSelected: giftCardSelected ?? false,
+        giftCardMode: giftCardSelected ? product.giftCardMode ?? "MESSAGE" : null,
         customName: customName ?? null,
         message: message ?? null,
         cashArrangement,

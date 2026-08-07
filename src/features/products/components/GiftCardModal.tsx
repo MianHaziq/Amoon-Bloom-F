@@ -16,6 +16,10 @@ interface GiftCardModalProps {
   open: boolean;
   /** How many units are being added — one card per unit. */
   quantity: number;
+  /** What the card collects: a personalized MESSAGE (textarea, default) or a single
+   *  "gift NAME" (one-line input). Only changes the widget + wording; the value is
+   *  still carried in each entry's `message`. */
+  mode?: "MESSAGE" | "NAME";
   /** Existing entries to restore when re-opening to edit. */
   initial: GiftCardEntry[];
   /** Cancel — discard changes. The caller reverts the toggle to "No" when no card
@@ -35,12 +39,14 @@ interface GiftCardModalProps {
 export function GiftCardModal({
   open,
   quantity,
+  mode = "MESSAGE",
   initial,
   onCancel,
   onSave,
 }: GiftCardModalProps) {
   const { t } = useT();
   const total = Math.max(1, quantity);
+  const isName = mode === "NAME";
 
   const seed = (): GiftCardEntry[] =>
     Array.from({ length: total }, (_, i) => ({
@@ -73,9 +79,19 @@ export function GiftCardModal({
       open={open}
       onClose={onCancel}
       size="sm"
-      title={multi ? t("product.giftCardModalTitleMulti") : t("product.giftCardModalTitle")}
+      title={
+        isName
+          ? t("product.giftNameModalTitle")
+          : multi
+          ? t("product.giftCardModalTitleMulti")
+          : t("product.giftCardModalTitle")
+      }
       description={
-        multi ? t("product.giftCardModalSubtitleMulti") : t("product.giftCardModalSubtitle")
+        isName
+          ? t("product.giftNameModalSubtitle")
+          : multi
+          ? t("product.giftCardModalSubtitleMulti")
+          : t("product.giftCardModalSubtitle")
       }
     >
       <div className="flex flex-col gap-4">
@@ -104,14 +120,25 @@ export function GiftCardModal({
 
               {entry.included ? (
                 <div className="px-4 pb-4 pt-2">
-                  <textarea
-                    value={entry.message}
-                    onChange={(e) => patch(i, { message: e.target.value })}
-                    rows={2}
-                    maxLength={500}
-                    placeholder={t("product.giftCardMessagePlaceholder")}
-                    className="w-full resize-none rounded-xl border border-ink-200 bg-white/80 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-bloom-400 focus:outline-none focus:ring-4 focus:ring-bloom-100"
-                  />
+                  {isName ? (
+                    <input
+                      type="text"
+                      value={entry.message}
+                      onChange={(e) => patch(i, { message: e.target.value })}
+                      maxLength={120}
+                      placeholder={t("product.giftNamePlaceholder")}
+                      className="w-full rounded-xl border border-ink-200 bg-white/80 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-bloom-400 focus:outline-none focus:ring-4 focus:ring-bloom-100"
+                    />
+                  ) : (
+                    <textarea
+                      value={entry.message}
+                      onChange={(e) => patch(i, { message: e.target.value })}
+                      rows={2}
+                      maxLength={500}
+                      placeholder={t("product.giftCardMessagePlaceholder")}
+                      className="w-full resize-none rounded-xl border border-ink-200 bg-white/80 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:border-bloom-400 focus:outline-none focus:ring-4 focus:ring-bloom-100"
+                    />
+                  )}
                 </div>
               ) : (
                 <button

@@ -207,6 +207,8 @@ function useProductFormSchema() {
       zoneCashArrangementFeeMarginPercent: z.record(z.string(), z.number().nonnegative().nullish()),
       // Gift card add-on — free personalized message, toggled per product.
       giftCardEnabled: z.boolean(),
+      // null = inherit the category default (then the global MESSAGE default).
+      giftCardMode: z.enum(["MESSAGE", "NAME"]).nullable(),
       giftCardExtraPrice: z.number().nonnegative().nullable(),
       // Custom name add-on — customer types a name at add-to-cart time for this fee.
       customNameEnabled: z.boolean(),
@@ -258,6 +260,7 @@ const emptyDefaults: ProductFormValues = {
   zoneCashArrangementFeeStepAmount: {},
   zoneCashArrangementFeeMarginPercent: {},
   giftCardEnabled: false,
+  giftCardMode: null,
   giftCardExtraPrice: null,
   customNameEnabled: false,
   customNamePrice: null,
@@ -369,6 +372,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         (initial.zoneLeadDays ?? []).map((zl) => [zl.zoneId, zl.cashArrangementFeeMarginPercent ?? null])
       ),
       giftCardEnabled: initial.giftCardEnabled ?? false,
+      giftCardMode: initial.giftCardMode ?? null,
       giftCardExtraPrice: initial.giftCardExtraPrice ?? null,
       customNameEnabled: initial.customNameEnabled ?? false,
       customNamePrice: initial.customNamePrice ?? null,
@@ -458,6 +462,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
 
   const images = watch("images");
   const giftCardEnabled = watch("giftCardEnabled");
+  const giftCardMode = watch("giftCardMode");
   const customNameEnabled = watch("customNameEnabled");
   const status = watch("status");
   const comingSoon = watch("comingSoon");
@@ -581,6 +586,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
         return rows;
       })(),
       giftCardEnabled: values.giftCardEnabled,
+      giftCardMode: values.giftCardMode,
       giftCardExtraPrice:
         values.giftCardExtraPrice === null || values.giftCardExtraPrice === undefined
           ? null
@@ -864,6 +870,28 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                     setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
                   })}
                 />
+                {giftCardEnabled ? (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-medium text-ink-700">
+                      {t("admin.productForm.giftModeLabel")}
+                    </label>
+                    <Select
+                      value={giftCardMode ?? ""}
+                      onChange={(v) =>
+                        setValue("giftCardMode", v === "" ? null : (v as "MESSAGE" | "NAME"), {
+                          shouldDirty: true,
+                        })
+                      }
+                      triggerClassName="w-full rounded-lg py-2 justify-between"
+                      aria-label={t("admin.productForm.giftModeLabel")}
+                      options={[
+                        { value: "", label: t("admin.productForm.giftModeInherit") },
+                        { value: "MESSAGE", label: t("admin.productForm.giftModeMessage") },
+                        { value: "NAME", label: t("admin.productForm.giftModeName") },
+                      ]}
+                    />
+                  </div>
+                ) : null}
               </div>
               <div className="flex flex-col gap-2">
                 <label className="inline-flex cursor-pointer items-center gap-2">
