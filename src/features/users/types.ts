@@ -31,6 +31,14 @@ export type ManagerPermission =
   | "USERS"
   | "MANAGERS";
 
+/** Region a manager is scoped to (subset of the store's regions). */
+export interface ApiManagedRegion {
+  id: string;
+  code: string;
+  name: string;
+  name_ar: string | null;
+}
+
 export interface ApiAdminUser {
   id: string;
   name: string;
@@ -42,6 +50,9 @@ export interface ApiAdminUser {
   status: UserStatusDisplay;
   managerTitle: string | null;
   managerPermissions: ManagerPermission[];
+  /** Regions a MANAGER may access. Empty = all regions (super-manager). */
+  managedRegionIds: string[];
+  managedRegions: ApiManagedRegion[];
   isEmailVerified: boolean;
   joinedAt: string;
   createdAt: string;
@@ -81,6 +92,8 @@ export interface ApiUserCreateInput {
   role: Exclude<UserRoleEnum, "ADMIN">;
   managerTitle?: string;
   managerPermissions?: ManagerPermission[];
+  /** Regions this manager may access. Omit/empty = all regions (super-manager). */
+  managedRegionIds?: string[];
   avatar?: string;
 }
 
@@ -94,6 +107,7 @@ export interface ApiUserUpdateInput {
   role?: UserRoleEnum;
   managerTitle?: string;
   managerPermissions?: ManagerPermission[];
+  managedRegionIds?: string[];
   avatar?: string | null;
 }
 

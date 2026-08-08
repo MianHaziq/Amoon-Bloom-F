@@ -1485,40 +1485,21 @@ function OrderReviewCard({
         <Divider />
 
         <div className="flex flex-col gap-2 text-sm">
-          <div className="flex justify-between text-ink-500">
+          <div className="flex items-baseline justify-between gap-4 text-ink-500">
             <span>{t("common.subtotal")}</span>
-            <span><CurrencyAmount amount={subtotal} currency={currency} locale={locale} /></span>
+            <span className="tabular-nums text-right"><CurrencyAmount amount={subtotal} currency={currency} locale={locale} /></span>
           </div>
           {discount > 0 ? (
-            <div className="flex justify-between text-ink-500">
+            <div className="flex items-baseline justify-between gap-4 text-ink-500">
               <span>{t("common.discount")}</span>
-              <span>
+              <span className="tabular-nums text-right">
                 −<CurrencyAmount amount={discount} currency={currency} locale={locale} />
               </span>
             </div>
           ) : null}
-          {vatRatePercent != null && combinedVatAmount > 0 ? (
-            <div className="flex justify-between text-ink-500">
-              <span>
-                {vatInclusive
-                  ? t("order.vatIncludedLabel", { rate: vatRatePercent })
-                  : t("checkout.vatLabel")}
-              </span>
-              {/* Inclusive VAT is already baked into the item prices above — showing
-                  its extracted amount here (a different number than the same rate
-                  would add on an exclusive order) reads as a calculation error, so
-                  only the label is shown, no figure. For exclusive VAT, this is the
-                  SINGLE combined figure (product VAT + cash-arrangement fee VAT). */}
-              {!vatInclusive ? (
-                <span>
-                  <CurrencyAmount amount={combinedVatAmount} currency={currency} locale={locale} />
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-          <div className="flex justify-between text-ink-500">
+          <div className="flex items-baseline justify-between gap-4 text-ink-500">
             <span>{t("checkout.shipment")}</span>
-            <span>
+            <span className="tabular-nums text-right">
               {shipping === 0 ? (
                 t("common.free")
               ) : (
@@ -1533,9 +1514,29 @@ function OrderReviewCard({
               })}
             </p>
           ) : null}
-          <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">
+          {/* VAT sits directly under Shipment (delivery fee is taxed too), just above the Total. */}
+          {vatRatePercent != null && combinedVatAmount > 0 ? (
+            <div className="flex items-baseline justify-between gap-4 text-ink-500">
+              <span>
+                {vatInclusive
+                  ? t("order.vatIncludedLabel", { rate: vatRatePercent })
+                  : t("checkout.vatLabel")}
+              </span>
+              {/* Inclusive VAT is already baked into the item prices above — showing
+                  its extracted amount here (a different number than the same rate
+                  would add on an exclusive order) reads as a calculation error, so
+                  only the label is shown, no figure. For exclusive VAT, this is the
+                  SINGLE combined figure (product VAT + cash-arrangement fee VAT). */}
+              {!vatInclusive ? (
+                <span className="tabular-nums text-right">
+                  <CurrencyAmount amount={combinedVatAmount} currency={currency} locale={locale} />
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="flex items-baseline justify-between gap-4 border-t border-ink-100 pt-2 font-medium text-ink-900">
             <span>{t("common.total")}</span>
-            <span><CurrencyAmount amount={total} currency={currency} locale={locale} /></span>
+            <span className="tabular-nums text-right"><CurrencyAmount amount={total} currency={currency} locale={locale} /></span>
           </div>
           {vatUncertain ? (
             <p className="text-xs text-ink-400">{t("checkout.vatEstimateNote")}</p>

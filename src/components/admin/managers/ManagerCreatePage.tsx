@@ -60,6 +60,7 @@ export function ManagerCreatePage() {
             role: "MANAGER",
             managerTitle: v.managerTitle ?? undefined,
             managerPermissions: v.managerPermissions as ManagerPermission[],
+            managedRegionIds: v.managedRegionIds ?? [],
             avatar: v.avatar ?? undefined,
           };
           await mutation.mutateAsync(payload);

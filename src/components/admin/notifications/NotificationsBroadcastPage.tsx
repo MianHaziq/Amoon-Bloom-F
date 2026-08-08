@@ -14,12 +14,18 @@ import { notificationsApi } from "@/features/notifications/api/notifications.api
 import { queryKeys } from "@/services/queryKeys";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
+import { useAppSelector } from "@/store";
 import type { ApiBroadcastInput } from "@/features/notifications/types";
 
 export function NotificationsBroadcastPage() {
   const toast = useToast();
   const { t } = useT();
   const [pending, setPending] = useState<ApiBroadcastInput | null>(null);
+  // A region-scoped manager can only broadcast to their own region(s): the
+  // "All regions" option is removed and a region must be chosen. (The regions
+  // list itself is already scoped to their regions by the backend.)
+  const authUser = useAppSelector((s) => s.auth.user);
+  const isRegionScoped = (authUser?.managedRegionIds?.length ?? 0) > 0;
 
   const schema = useMemo(
     () =>
@@ -84,6 +90,11 @@ export function NotificationsBroadcastPage() {
   // Validate + assemble the payload, then open the confirm dialog. Sending
   // happens only after confirmation since a broadcast reaches many customers.
   const onValid = handleSubmit((v) => {
+    // A region-scoped manager must explicitly pick one of their regions.
+    if (isRegionScoped && !v.regionId) {
+      setError("regionId", { message: t("admin.notificationsPage.regionRequired") });
+      return;
+    }
     let data: Record<string, unknown> | undefined;
     const raw = v.dataJson?.trim();
     if (raw) {
@@ -175,7 +186,10 @@ export function NotificationsBroadcastPage() {
                     triggerClassName="w-full rounded-2xl py-3 justify-between"
                     aria-label={t("admin.notificationsPage.regionFieldLabel")}
                     options={[
-                      { value: "", label: t("admin.notificationsPage.allRegionsOption") },
+                      // Scoped managers must target one of their regions — no "All".
+                      ...(isRegionScoped
+                        ? []
+                        : [{ value: "", label: t("admin.notificationsPage.allRegionsOption") }]),
                       ...(regionsQuery.data ?? []).map((r) => ({
                         value: r.id,
                         label: `${r.name} (${r.code})`,

@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Input } from "@/components/ui";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { usersApi } from "@/features/users/api/users.api";
+import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
 import { useT } from "@/i18n/useT";
 import type {
@@ -26,6 +27,8 @@ function useUserFormSchemas() {
       role: z.enum(["CUSTOMER", "MANAGER"]),
       managerTitle: z.string().optional().nullable(),
       managerPermissions: z.array(z.string()),
+      // Regions a manager may access. Empty = all regions (super-manager).
+      managedRegionIds: z.array(z.string()),
       avatar: z.string().url().nullable(),
     });
 
@@ -107,6 +110,10 @@ export function UserForm({
     queryKey: queryKeys.users.permissionsCatalog(),
     queryFn: () => usersApi.permissionsCatalog(),
   });
+  const regionsQuery = useQuery({
+    queryKey: queryKeys.regions.list(),
+    queryFn: () => regionsApi.list(),
+  });
 
   const schema = mode === "create" ? createSchema : editSchema;
 
@@ -129,6 +136,7 @@ export function UserForm({
       role: defaultRole,
       managerTitle: "",
       managerPermissions: [],
+      managedRegionIds: [],
       avatar: null,
       password: "",
     },
@@ -150,6 +158,7 @@ export function UserForm({
       role: role === "ADMIN" ? "MANAGER" : role,
       managerTitle: initial.managerTitle ?? "",
       managerPermissions: initial.managerPermissions ?? [],
+      managedRegionIds: initial.managedRegionIds ?? [],
       avatar: initial.avatar?.startsWith("http") ? initial.avatar : null,
       password: "",
     });
@@ -157,6 +166,7 @@ export function UserForm({
 
   const role = watch("role");
   const selectedPerms = watch("managerPermissions") ?? [];
+  const selectedRegionIds = watch("managedRegionIds") ?? [];
 
   const togglePerm = (key: ManagerPermission) => {
     const next = selectedPerms.includes(key)
@@ -164,6 +174,15 @@ export function UserForm({
       : [...selectedPerms, key];
     setValue("managerPermissions", next, { shouldDirty: true });
   };
+
+  const toggleRegion = (id: string) => {
+    const next = selectedRegionIds.includes(id)
+      ? selectedRegionIds.filter((r) => r !== id)
+      : [...selectedRegionIds, id];
+    setValue("managedRegionIds", next, { shouldDirty: true });
+  };
+
+  const regionsList = useMemo(() => regionsQuery.data ?? [], [regionsQuery.data]);
 
   const submit = handleSubmit(async (values) => {
     await onSubmit(values);
@@ -295,6 +314,44 @@ export function UserForm({
                   <p className="mt-2 text-xs text-bloom-700">
                     {t("admin.userForm.pickPermissionHint")}
                   </p>
+                ) : null}
+              </div>
+
+              {/* Region access-scope. No regions selected = access to ALL regions
+                  (a super-manager); picking one or more restricts the manager to
+                  exactly those regions everywhere in the admin. */}
+              <div className="border-t border-ink-100 pt-4">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-ink-700">
+                  {t("admin.userForm.regionsLabel")}
+                </p>
+                <p className="mb-2 text-xs text-ink-500">
+                  {selectedRegionIds.length === 0
+                    ? t("admin.userForm.regionsAllHint")
+                    : t("admin.userForm.regionsScopedHint")}
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {regionsList.map((r) => {
+                    const checked = selectedRegionIds.includes(r.id);
+                    return (
+                      <button
+                        type="button"
+                        key={r.id}
+                        onClick={() => toggleRegion(r.id)}
+                        className={
+                          "flex items-center justify-between rounded-xl border p-3 text-start transition-colors " +
+                          (checked
+                            ? "border-bloom-500 bg-bloom-50"
+                            : "border-ink-200 bg-white hover:border-ink-300")
+                        }
+                      >
+                        <span className="text-sm font-medium text-ink-900">{r.name}</span>
+                        <span className="text-xs text-ink-500">{r.code}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {regionsList.length === 0 ? (
+                  <p className="mt-2 text-xs text-ink-500">{t("admin.userForm.regionsEmpty")}</p>
                 ) : null}
               </div>
             </div>

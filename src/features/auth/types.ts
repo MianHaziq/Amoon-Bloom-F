@@ -30,6 +30,9 @@ export interface User {
   isGoogleUser?: boolean;
   managerTitle?: string | null;
   managerPermissions?: ManagerPermission[];
+  /** Regions a MANAGER may access. Empty/absent = all regions (super-manager or
+   *  ADMIN). Drives client-side region auto-scoping in the admin panel. */
+  managedRegionIds?: string[];
   preferredLanguage?: string;
   phone?: string | null;
   addressCountry?: string | null;

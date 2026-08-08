@@ -131,6 +131,26 @@ export function ManagersAdminPage() {
       },
     },
     {
+      key: "regions",
+      header: t("admin.managersPage.columnRegions"),
+      cell: (u) => {
+        const regions = u.managedRegions ?? [];
+        if (regions.length === 0) {
+          // Empty scope = access to every region (a super-manager).
+          return <Badge tone="neutral">{t("admin.managersPage.allRegions")}</Badge>;
+        }
+        return (
+          <div className="flex max-w-56 flex-wrap gap-1">
+            {regions.map((r) => (
+              <Badge key={r.id} tone="bloom">
+                {r.code}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
       key: "status",
       header: t("admin.status"),
       cell: (u) => (

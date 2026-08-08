@@ -34,7 +34,14 @@ function joinFullName(firstName: string | undefined, lastName: string | undefine
 
 function toApiAdminUser(raw: RawApiUser): ApiAdminUser {
   const { firstName, lastName } = splitFullName(raw.fullName ?? raw.name);
-  return { ...raw, firstName, lastName };
+  return {
+    ...raw,
+    firstName,
+    lastName,
+    // Backend always returns these for managers; default for older/customer rows.
+    managedRegionIds: raw.managedRegionIds ?? [],
+    managedRegions: raw.managedRegions ?? [],
+  };
 }
 
 export const usersApi = {

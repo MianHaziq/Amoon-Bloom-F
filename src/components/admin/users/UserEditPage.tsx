@@ -80,6 +80,8 @@ export function UserEditPage({ id }: { id: string }) {
                 role === "MANAGER"
                   ? (v.managerPermissions as ManagerPermission[])
                   : undefined,
+              managedRegionIds:
+                role === "MANAGER" ? v.managedRegionIds ?? [] : undefined,
               avatar: v.avatar,
             };
             // Blank = keep current password; a filled field resets it (admin's

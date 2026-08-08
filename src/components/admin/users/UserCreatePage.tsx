@@ -53,6 +53,8 @@ export function UserCreatePage() {
               v.role === "MANAGER"
                 ? (v.managerPermissions as ManagerPermission[])
                 : undefined,
+            managedRegionIds:
+              v.role === "MANAGER" ? v.managedRegionIds ?? [] : undefined,
             avatar: v.avatar ?? undefined,
           };
           await mutation.mutateAsync(payload);

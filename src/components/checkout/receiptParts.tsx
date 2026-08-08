@@ -492,6 +492,12 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
               accent
             />
           )}
+          <TotalRow
+            label={t("common.delivery")}
+            value={shipping > 0 ? price(shipping) : t("common.free")}
+          />
+          {/* VAT sits directly under Delivery (the delivery fee is taxed too), matching
+              the checkout order summary. */}
           {showVat && (
             <TotalRow
               label={
@@ -507,10 +513,6 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
               value={order.vatInclusive ? null : <>+ {price(vatAmount)}</>}
             />
           )}
-          <TotalRow
-            label={t("common.delivery")}
-            value={shipping > 0 ? price(shipping) : t("common.free")}
-          />
           {/* Cash arrangement (roll-up of every line's cash + service fee) — added to the
               total but never VAT'd on the raw cash; the fee's VAT is inside the VAT row above. */}
           {order.cashArrangementRequested && Number(order.cashArrangementAmount) > 0 ? (
