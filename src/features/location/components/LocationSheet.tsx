@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, m } from "motion/react";
@@ -21,6 +21,10 @@ import { RegionFlag } from "./RegionFlag";
 interface LocationSheetProps {
   open: boolean;
   onClose: () => void;
+  /** Region code to PRE-SELECT when the sheet opens (e.g. from IP geo-detection).
+   *  Never navigates on its own — the visitor still confirms by picking a zone or
+   *  tapping Save. Ignored once they manually change the country in this session. */
+  initialRegion?: string | null;
 }
 
 /** Shared row for both the country and city pickers — same visual language
@@ -101,7 +105,7 @@ function OptionRow({
  * checkout's "Emirate" dropdown reads — so an admin adding/removing a region
  * or its sub-areas shows up here immediately, no code change needed.
  */
-export function LocationSheet({ open, onClose }: LocationSheetProps) {
+export function LocationSheet({ open, onClose, initialRegion }: LocationSheetProps) {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const pathname = usePathname();
@@ -115,6 +119,25 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
   // effective `city` used for rendering/saving is derived below from this
   // plus the live zone list, so it's always valid without needing an effect.
   const [citySelection, setCitySelection] = useState<string | null>(current.city || null);
+
+  // Pre-select the geo-detected region when the sheet opens (or when detection
+  // resolves while it's already open), unless the visitor has manually changed
+  // the country this session. Country-only: the zone is always their explicit
+  // pick, so we never touch `citySelection` beyond resetting it with the region.
+  const touchedCountry = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      touchedCountry.current = false; // reset for the next open
+      return;
+    }
+    if (initialRegion && !touchedCountry.current && initialRegion !== country) {
+      setSelectedCountry(initialRegion);
+      setCitySelection(null);
+    }
+    // `country` intentionally omitted: this reacts to open/detection, not to the
+    // visitor's own country taps (which set touchedCountry and are read via ref).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialRegion]);
 
   const regionsQuery = useQuery({
     queryKey: queryKeys.regions.list(),
@@ -205,6 +228,7 @@ export function LocationSheet({ open, onClose }: LocationSheetProps) {
                     key={r.code}
                     selected={selected}
                     onClick={() => {
+                      touchedCountry.current = true;
                       setSelectedCountry(r.code);
                       setCitySelection(null);
                     }}
