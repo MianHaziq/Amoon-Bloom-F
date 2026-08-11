@@ -8,11 +8,13 @@ import { HeroCarousel, type HeroSlide } from "./HeroCarousel";
 /**
  * Hero — inset 16:9 slideshow, padded to align with the product grid container.
  *
- * Source precedence:
- *   1. Admin-managed WEB banners (videos and/or images) — set in the admin panel.
- *      These are web-only; the mobile app keeps its own MOBILE image banners.
- *   2. siteConfig.heroVideos (hard-coded brand videos) if no web banners exist yet.
- *   3. A curated editorial image set, so the hero is never empty.
+ * Composition:
+ *   1. The hard-coded brand videos (siteConfig.heroVideos) are the base of the hero.
+ *   2. Admin-managed WEB banners (images and/or videos, in their admin order) are
+ *      APPENDED AFTER the brand videos — so adding a banner ADDS to the hero instead
+ *      of replacing the videos. These are web-only; the mobile app keeps its own
+ *      MOBILE image banners.
+ *   3. If there are neither, a curated editorial image set keeps the hero non-empty.
  */
 const FALLBACK_SLIDES: HeroSlide[] = [
   {
@@ -40,17 +42,15 @@ export async function Hero() {
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(({ id, url }) => ({ id, kind: bannerMediaKind(url), url }));
 
-  // 2. Fall back to the hard-coded brand videos, then 3. the editorial images.
+  // The brand videos are the base; admin banners are appended after them (not a
+  // replacement), so adding one image gives "3 videos + that image", image last.
   const videoSlides: HeroSlide[] = (siteConfig.heroVideos ?? []).map(
     (url, i) => ({ id: `hero-video-${i}`, kind: "video", url })
   );
 
-  const slides: HeroSlide[] =
-    bannerSlides.length > 0
-      ? bannerSlides
-      : videoSlides.length > 0
-        ? videoSlides
-        : FALLBACK_SLIDES;
+  const combined: HeroSlide[] = [...videoSlides, ...bannerSlides];
+  // Only fall back to the editorial image set when there are truly no slides at all.
+  const slides: HeroSlide[] = combined.length > 0 ? combined : FALLBACK_SLIDES;
 
   return (
     <section className="bg-cream-50 pt-3 pb-6 sm:pt-4 sm:pb-8 lg:pt-6 lg:pb-10">
