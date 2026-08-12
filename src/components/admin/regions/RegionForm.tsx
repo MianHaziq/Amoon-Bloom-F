@@ -551,6 +551,7 @@ export function RegionForm({
       // controlled time input; normalized to null on submit.
       sameDayCutoff: z.string(),
       codEnabled: z.boolean(),
+      onlinePaymentEnabled: z.boolean(),
       blackoutDates: z.array(
         z.object({
           id: z.string().optional(),
@@ -649,6 +650,7 @@ export function RegionForm({
       sameDayEnabled: false,
       sameDayCutoff: "",
       codEnabled: true,
+      onlinePaymentEnabled: false,
       blackoutDates: [],
       iso2: "",
       urlSlug: "",
@@ -768,6 +770,7 @@ export function RegionForm({
       sameDayEnabled: initial.sameDayEnabled ?? false,
       sameDayCutoff: initial.sameDayCutoff ?? "",
       codEnabled: initial.codEnabled ?? true,
+      onlinePaymentEnabled: initial.onlinePaymentEnabled ?? false,
       blackoutDates: (initial.blackoutDates ?? []).map((b) => ({
         id: b.id,
         date: b.date,
@@ -820,6 +823,7 @@ export function RegionForm({
       sameDayEnabled: v.sameDayEnabled,
       sameDayCutoff: v.sameDayCutoff?.trim() ? v.sameDayCutoff.trim() : null,
       codEnabled: v.codEnabled,
+      onlinePaymentEnabled: v.onlinePaymentEnabled,
       blackoutDates: (v.blackoutDates ?? [])
         .filter((b) => b.date?.trim())
         .map((b) => ({
@@ -1038,6 +1042,15 @@ export function RegionForm({
                 <span className="text-sm text-ink-900">{t("admin.regionForm.codEnabledLabel")}</span>
               </label>
               <p className="mt-1 text-xs text-ink-500">{t("admin.regionForm.codEnabledHint")}</p>
+              <label className="mt-4 flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  {...register("onlinePaymentEnabled")}
+                  className="h-5 w-5 accent-bloom-600"
+                />
+                <span className="text-sm text-ink-900">{t("admin.regionForm.onlinePaymentEnabledLabel")}</span>
+              </label>
+              <p className="mt-1 text-xs text-ink-500">{t("admin.regionForm.onlinePaymentEnabledHint")}</p>
             </div>
             <Input
               label={t("admin.regionForm.sameDayCutoffLabel")}
