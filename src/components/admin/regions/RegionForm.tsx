@@ -578,6 +578,13 @@ export function RegionForm({
       address_ar: z.string().optional(),
       hours: z.string().optional(),
       hours_ar: z.string().optional(),
+      instagramUrl: z.string().optional(),
+      facebookUrl: z.string().optional(),
+      tiktokUrl: z.string().optional(),
+      threadsUrl: z.string().optional(),
+      snapchatUrl: z.string().optional(),
+      xUrl: z.string().optional(),
+      youtubeUrl: z.string().optional(),
       sortOrder: z
         .number()
         .int(t("admin.regionForm.sortOrderWhole"))
@@ -586,22 +593,16 @@ export function RegionForm({
       isActive: z.boolean(),
     });
 
-    // 18 required string fields for create — a region cannot be created
-    // without every legal citation filled in (see region.service.js's
-    // matching server-side check, the real enforcement; this is the UX gate).
+    // The 18 legal-citation fields are OPTIONAL for BOTH create and edit now —
+    // legal pages are authored per region in the rich-text Pages editor
+    // (RegionLegalPage), so a region no longer needs its law citations filled in
+    // up front just to be created. They remain editable here as seed values for
+    // the Pages editor's "Load default template" action.
     // Cast to a Record keyed by the literal field-name UNION (not `string`) —
     // a plain `Record<string, ...>` makes Zod's `.extend()` infer an index
     // signature, which then poisons every OTHER field on the schema (code,
     // sortOrder, isDefault, ...) into being typed as this field's type too.
     type LegalKey = (typeof LEGAL_FIELD_BASE_NAMES)[number] | `${(typeof LEGAL_FIELD_BASE_NAMES)[number]}_ar`;
-    const requiredLegalShape = Object.fromEntries(
-      LEGAL_FIELD_BASE_NAMES.flatMap((f) => [
-        [f, z.string().min(1, t("admin.regionForm.legalFieldRequired"))],
-        [`${f}_ar`, z.string().min(1, t("admin.regionForm.legalFieldRequired"))],
-      ])
-    ) as Record<LegalKey, z.ZodString>;
-    // Same 18 fields, optional — for editing a region that predates this
-    // requirement (e.g. Saudi Arabia, Morocco) without blocking unrelated edits.
     const optionalLegalShape = Object.fromEntries(
       LEGAL_FIELD_BASE_NAMES.flatMap((f) => [
         [f, z.string().optional()],
@@ -610,7 +611,7 @@ export function RegionForm({
     ) as Record<LegalKey, z.ZodOptional<z.ZodString>>;
 
     return {
-      createSchema: base.extend(requiredLegalShape),
+      createSchema: base.extend(optionalLegalShape),
       editSchema: base.extend(optionalLegalShape),
     };
   }, [t]);
@@ -661,6 +662,13 @@ export function RegionForm({
       address_ar: "",
       hours: "",
       hours_ar: "",
+      instagramUrl: "",
+      facebookUrl: "",
+      tiktokUrl: "",
+      threadsUrl: "",
+      snapchatUrl: "",
+      xUrl: "",
+      youtubeUrl: "",
       ...legalDefaults,
       sortOrder: 0,
       isDefault: false,
@@ -786,6 +794,13 @@ export function RegionForm({
       address_ar: initial.address_ar ?? "",
       hours: initial.hours ?? "",
       hours_ar: initial.hours_ar ?? "",
+      instagramUrl: initial.instagramUrl ?? "",
+      facebookUrl: initial.facebookUrl ?? "",
+      tiktokUrl: initial.tiktokUrl ?? "",
+      threadsUrl: initial.threadsUrl ?? "",
+      snapchatUrl: initial.snapchatUrl ?? "",
+      xUrl: initial.xUrl ?? "",
+      youtubeUrl: initial.youtubeUrl ?? "",
       ...legalFromInitial,
       sortOrder: initial.sortOrder,
       isDefault: initial.isDefault,
@@ -841,6 +856,13 @@ export function RegionForm({
       address_ar: v.address_ar?.trim() || null,
       hours: v.hours?.trim() || null,
       hours_ar: v.hours_ar?.trim() || null,
+      instagramUrl: v.instagramUrl?.trim() || null,
+      facebookUrl: v.facebookUrl?.trim() || null,
+      tiktokUrl: v.tiktokUrl?.trim() || null,
+      threadsUrl: v.threadsUrl?.trim() || null,
+      snapchatUrl: v.snapchatUrl?.trim() || null,
+      xUrl: v.xUrl?.trim() || null,
+      youtubeUrl: v.youtubeUrl?.trim() || null,
       ...legalPayload,
       sortOrder: v.sortOrder,
       isDefault: v.isDefault,
@@ -1157,6 +1179,20 @@ export function RegionForm({
               placeholder="يوميا · 10:00 — 00:00 بتوقيت دبي"
               {...register("hours_ar")}
             />
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-ink-100 bg-white p-5 sm:p-6">
+          <h3 className="mb-1 font-display text-lg text-ink-900">{t("admin.regionForm.socialHeading")}</h3>
+          <p className="mb-4 text-xs text-ink-500">{t("admin.regionForm.socialHint")}</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input label="Instagram" placeholder="https://instagram.com/…" {...register("instagramUrl")} />
+            <Input label="Facebook" placeholder="https://facebook.com/…" {...register("facebookUrl")} />
+            <Input label="TikTok" placeholder="https://tiktok.com/@…" {...register("tiktokUrl")} />
+            <Input label="Threads" placeholder="https://threads.com/@…" {...register("threadsUrl")} />
+            <Input label="Snapchat" placeholder="https://snapchat.com/add/…" {...register("snapchatUrl")} />
+            <Input label="X (Twitter)" placeholder="https://x.com/…" {...register("xUrl")} />
+            <Input label="YouTube" placeholder="https://youtube.com/@…" {...register("youtubeUrl")} />
           </div>
         </section>
 

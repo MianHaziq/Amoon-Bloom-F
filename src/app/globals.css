@@ -620,3 +620,65 @@ button:disabled,
     print-color-adjust: exact;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Legal pages: styling for admin-authored rich-text HTML (LegalRichContent).
+   Mirrors the typographic rhythm of the old structured template layout.
+   --------------------------------------------------------------------------- */
+.legal-prose {
+  color: var(--color-ink-600);
+  font-size: 1rem;
+  line-height: 1.75;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.legal-prose h2 {
+  font-family: var(--font-display, inherit);
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  color: var(--color-ink-900);
+  margin-top: 1.75rem;
+}
+.legal-prose h2:first-child { margin-top: 0; }
+.legal-prose h3 {
+  font-family: var(--font-display, inherit);
+  font-weight: 400;
+  font-size: 1.25rem;
+  color: var(--color-ink-900);
+  margin-top: 1.25rem;
+}
+.legal-prose h4 {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--color-ink-800);
+  margin-top: 1rem;
+}
+.legal-prose p { margin: 0; }
+.legal-prose ul,
+.legal-prose ol {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.legal-prose ul { list-style: disc; }
+.legal-prose ol { list-style: decimal; }
+.legal-prose li { padding-inline-start: 0.25rem; }
+.legal-prose strong, .legal-prose b { font-weight: 600; color: var(--color-ink-900); }
+.legal-prose a { color: var(--color-bloom-600, #d6376e); text-decoration: underline; }
+.legal-prose a:hover { color: var(--color-bloom-700, #b02a58); }
+.legal-prose mark {
+  background: var(--color-bloom-100, #fbe4ee);
+  color: inherit;
+  padding: 0.05em 0.2em;
+  border-radius: 0.2rem;
+}
+.legal-prose blockquote {
+  border-inline-start: 3px solid var(--color-bloom-300, #f3a9c8);
+  padding-inline-start: 1rem;
+  color: var(--color-ink-500);
+  font-style: italic;
+}

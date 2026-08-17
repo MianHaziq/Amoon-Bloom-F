@@ -68,6 +68,19 @@ export interface ApiRegion {
   address_ar: string | null;
   hours: string | null;
   hours_ar: string | null;
+  /** Per-region social links shown as footer icons. Null/blank = icon hidden
+   * (falls back to the site default). Full absolute URLs. */
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  tiktokUrl: string | null;
+  threadsUrl: string | null;
+  snapchatUrl: string | null;
+  xUrl: string | null;
+  youtubeUrl: string | null;
+  /** URL segments of this region's published legal pages (e.g. ["terms","privacy"]).
+   * The footer only links pages that exist here ("hidden until set"). Attached by
+   * GET /regions; absent on payloads that don't include it. */
+  publishedPageSlugs?: string[];
   /** Legal citations shown across the 5 storefront legal pages (Privacy, Terms,
    * Refund Policy, Shipping Policy, Product Disclaimer) — e.g. the IP law
    * citation, the consumer-protection regulator name. REQUIRED when creating a
@@ -127,28 +140,133 @@ export interface ApiRegionCreateInput {
   address_ar?: string | null;
   hours?: string | null;
   hours_ar?: string | null;
-  /** Required — see ApiRegion's doc-comment above. */
-  registrationCity: string;
-  registrationCity_ar: string;
-  currencyDisplayName: string;
-  currencyDisplayName_ar: string;
-  vatLawName: string;
-  vatLawName_ar: string;
-  dataProtectionLawName: string;
-  dataProtectionLawName_ar: string;
-  dataProtectionAuthority: string;
-  dataProtectionAuthority_ar: string;
-  ipLawName: string;
-  ipLawName_ar: string;
-  consumerProtectionLawName: string;
-  consumerProtectionLawName_ar: string;
-  consumerProtectionAuthority: string;
-  consumerProtectionAuthority_ar: string;
-  standardsAuthority: string;
-  standardsAuthority_ar: string;
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
+  tiktokUrl?: string | null;
+  threadsUrl?: string | null;
+  snapchatUrl?: string | null;
+  xUrl?: string | null;
+  youtubeUrl?: string | null;
+  /** Legal citations — now OPTIONAL at creation. Legal pages are authored per
+   * region in the rich-text Pages editor (RegionLegalPage), so these are only
+   * seed values for the editor's "Load default template" action. */
+  registrationCity?: string | null;
+  registrationCity_ar?: string | null;
+  currencyDisplayName?: string | null;
+  currencyDisplayName_ar?: string | null;
+  vatLawName?: string | null;
+  vatLawName_ar?: string | null;
+  dataProtectionLawName?: string | null;
+  dataProtectionLawName_ar?: string | null;
+  dataProtectionAuthority?: string | null;
+  dataProtectionAuthority_ar?: string | null;
+  ipLawName?: string | null;
+  ipLawName_ar?: string | null;
+  consumerProtectionLawName?: string | null;
+  consumerProtectionLawName_ar?: string | null;
+  consumerProtectionAuthority?: string | null;
+  consumerProtectionAuthority_ar?: string | null;
+  standardsAuthority?: string | null;
+  standardsAuthority_ar?: string | null;
   isDefault?: boolean;
   isActive?: boolean;
   sortOrder?: number;
 }
 
 export type ApiRegionUpdateInput = Partial<ApiRegionCreateInput>;
+
+// --- Legal pages (per-region, admin-authored) -------------------------------
+
+/** Storefront URL segments of the 5 footer legal pages (fixed set). */
+export const LEGAL_PAGE_SLUGS = [
+  "terms",
+  "privacy",
+  "refund-policy",
+  "shipping-policy",
+  "product-disclaimer",
+] as const;
+export type LegalPageSlug = (typeof LEGAL_PAGE_SLUGS)[number];
+
+/** Admin view of an authored legal page. `slug` comes back in enum form
+ *  (TERMS, REFUND_POLICY, …); use `legalSlugToUrl` to map to a URL segment. */
+export interface ApiLegalPage {
+  id: string;
+  regionId: string;
+  slug: string;
+  title: string | null;
+  title_ar: string | null;
+  content: string | null;
+  content_ar: string | null;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Public storefront payload for a single legal page (both languages). */
+export interface ApiPublicLegalPage {
+  slug: string;
+  title: string | null;
+  title_ar: string | null;
+  content: string | null;
+  content_ar: string | null;
+  updatedAt: string;
+}
+
+export interface LegalPageUpsertInput {
+  title?: string | null;
+  title_ar?: string | null;
+  content?: string | null;
+  content_ar?: string | null;
+  isPublished?: boolean;
+}
+
+/** enum form (TERMS) <-> url form (terms). */
+const LEGAL_ENUM_TO_URL: Record<string, LegalPageSlug> = {
+  TERMS: "terms",
+  PRIVACY: "privacy",
+  REFUND_POLICY: "refund-policy",
+  SHIPPING_POLICY: "shipping-policy",
+  PRODUCT_DISCLAIMER: "product-disclaimer",
+};
+export function legalSlugToUrl(slug: string): LegalPageSlug {
+  return LEGAL_ENUM_TO_URL[slug] ?? (slug as LegalPageSlug);
+}
+
+// --- Branches (per-region physical stores) ----------------------------------
+
+export interface ApiBranch {
+  id: string;
+  regionId: string;
+  name: string;
+  name_ar: string | null;
+  address: string | null;
+  address_ar: string | null;
+  phone: string | null;
+  hours: string | null;
+  hours_ar: string | null;
+  note: string | null;
+  note_ar: string | null;
+  mapUrl: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BranchCreateInput {
+  regionId: string;
+  name: string;
+  name_ar?: string | null;
+  address?: string | null;
+  address_ar?: string | null;
+  phone?: string | null;
+  hours?: string | null;
+  hours_ar?: string | null;
+  note?: string | null;
+  note_ar?: string | null;
+  mapUrl?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+export type BranchUpdateInput = Partial<BranchCreateInput>;

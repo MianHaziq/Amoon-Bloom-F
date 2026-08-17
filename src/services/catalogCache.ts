@@ -26,6 +26,8 @@ import { regionsApi } from "@/features/regions/api/regions.api";
 import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { deliveryConfigApi } from "@/features/delivery-config/api/delivery-config.api";
 import { vatApi } from "@/features/vat/api/vat.api";
+import { legalPagesApi } from "@/features/regions/api/legalPages.api";
+import { branchesApi } from "@/features/regions/api/branches.api";
 
 // Reference/catalog data changes rarely (admin edits) → cache longer.
 const CATALOG_TTL = 300; // 5 min: categories, sections, banners
@@ -198,3 +200,34 @@ const _vatPublic = unstable_cache(
   { revalidate: CATALOG_TTL, tags: ["vat"] }
 );
 export const getCachedVatPublic = cache((regionCode?: string) => _vatPublic(r(regionCode)));
+
+// --- Legal pages (per-region, admin-authored) -------------------------------
+// A single published legal page for a region+slug. Returns null on a 404 (page
+// not published / not set) so the storefront route can render notFound() —
+// "hidden until set". 404 detection must happen inside the cached fn (see
+// _categoryById), as ApiError doesn't survive the cache boundary.
+
+const _legalPage = unstable_cache(
+  async (regionCode: string, slug: string) => {
+    try {
+      return await legalPagesApi.getPublic(regionCode, slug);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) return null;
+      throw e;
+    }
+  },
+  ["catalog:legal-page"],
+  { revalidate: CATALOG_TTL, tags: ["regions", "legal-pages"] }
+);
+export const getCachedLegalPage = cache((regionCode: string | undefined, slug: string) =>
+  _legalPage(r(regionCode), slug)
+);
+
+// --- Branches (per-region physical stores) ----------------------------------
+
+const _branches = unstable_cache(
+  (regionCode: string) => branchesApi.list(regionCode === "default" ? undefined : regionCode),
+  ["catalog:branches"],
+  { revalidate: CATALOG_TTL, tags: ["regions", "branches"] }
+);
+export const getCachedBranches = cache((regionCode?: string) => _branches(r(regionCode)));

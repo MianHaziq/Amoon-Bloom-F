@@ -4,6 +4,9 @@ import {
   FacebookIcon,
   TikTokIcon,
   ThreadsIcon,
+  SnapchatIcon,
+  XIcon,
+  YouTubeIcon,
 } from "@/components/icons";
 import { EmailLink, PhoneLink } from "@/components/ui/ContactLink";
 import { siteConfig } from "@/config/site";
@@ -95,17 +98,25 @@ export async function Footer() {
         },
       ],
     },
-    {
-      title: t("footer.care"),
-      links: [
-        { href: ROUTES.terms, label: t("footer.termsConditions") },
-        { href: ROUTES.refundPolicy, label: t("footer.refundReturnPolicy") },
-        { href: ROUTES.productDisclaimer, label: t("footer.productDisclaimer") },
-        { href: ROUTES.privacy, label: t("footer.privacyPolicy") },
-        { href: ROUTES.shippingPolicy, label: t("footer.shippingPolicy") },
-      ],
-    },
   ];
+
+  // Legal/policy links — only shown for pages the admin has actually published
+  // in this region ("hidden until set"). If none are published, the whole "Care"
+  // column is omitted rather than rendered empty.
+  const legalLinks: { slug: string; href: string; label: string }[] = [
+    { slug: "terms", href: ROUTES.terms, label: t("footer.termsConditions") },
+    { slug: "refund-policy", href: ROUTES.refundPolicy, label: t("footer.refundReturnPolicy") },
+    { slug: "product-disclaimer", href: ROUTES.productDisclaimer, label: t("footer.productDisclaimer") },
+    { slug: "privacy", href: ROUTES.privacy, label: t("footer.privacyPolicy") },
+    { slug: "shipping-policy", href: ROUTES.shippingPolicy, label: t("footer.shippingPolicy") },
+  ];
+  const publishedSlugs = new Set(currentRegion?.publishedPageSlugs ?? []);
+  const careLinks = legalLinks
+    .filter((l) => publishedSlugs.has(l.slug))
+    .map(({ href, label }) => ({ href, label }));
+  if (careLinks.length > 0) {
+    columns.push({ title: t("footer.care"), links: careLinks });
+  }
 
   // Region-specific contact info (admin-editable per region), same fallback
   // convention as legalEntity above. Address/hours specifically fall back to
@@ -133,12 +144,18 @@ export async function Footer() {
     { type: "text", value: contactHours },
   ];
 
+  // Per-region social links (admin-editable). The 4 legacy networks fall back to
+  // the site default when a region hasn't set them; Snapchat/X/YouTube are shown
+  // only when the region provides a link. Any icon with no resolved URL is hidden.
   const socials = [
-    { href: siteConfig.links.instagram, label: "Instagram", Icon: InstagramIcon },
-    { href: siteConfig.links.facebook, label: "Facebook", Icon: FacebookIcon },
-    { href: siteConfig.links.tiktok, label: "TikTok", Icon: TikTokIcon },
-    { href: siteConfig.links.threads, label: "Threads", Icon: ThreadsIcon },
-  ];
+    { href: currentRegion?.instagramUrl?.trim() || siteConfig.links.instagram, label: "Instagram", Icon: InstagramIcon },
+    { href: currentRegion?.facebookUrl?.trim() || siteConfig.links.facebook, label: "Facebook", Icon: FacebookIcon },
+    { href: currentRegion?.tiktokUrl?.trim() || siteConfig.links.tiktok, label: "TikTok", Icon: TikTokIcon },
+    { href: currentRegion?.threadsUrl?.trim() || siteConfig.links.threads, label: "Threads", Icon: ThreadsIcon },
+    { href: currentRegion?.snapchatUrl?.trim() || "", label: "Snapchat", Icon: SnapchatIcon },
+    { href: currentRegion?.xUrl?.trim() || "", label: "X", Icon: XIcon },
+    { href: currentRegion?.youtubeUrl?.trim() || "", label: "YouTube", Icon: YouTubeIcon },
+  ].filter((s) => s.href);
 
   return (
     <footer className="bg-[#170b10] text-cream-100">

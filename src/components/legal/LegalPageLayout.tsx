@@ -1,5 +1,6 @@
 import { Container, Section } from "@/components/ui";
 import { linkifyContacts } from "@/components/ui/ContactLink";
+import { LegalRichContent } from "./LegalRichContent";
 
 export interface LegalListItem {
   label?: string;
@@ -24,11 +25,15 @@ export interface LegalSection {
 interface LegalPageLayoutProps {
   eyebrow: string;
   title: string;
-  intro: string;
-  badge: string;
+  intro?: string;
+  badge?: string;
   updatedLabel: string;
   updatedValue: string;
-  sections: LegalSection[];
+  /** Structured sections (legacy template mode). */
+  sections?: LegalSection[];
+  /** Admin-authored sanitized HTML (dynamic mode). When set, rendered instead
+   *  of `sections`. */
+  html?: string;
 }
 
 function Bullet() {
@@ -84,6 +89,7 @@ export function LegalPageLayout({
   updatedLabel,
   updatedValue,
   sections,
+  html,
 }: LegalPageLayoutProps) {
   return (
     <>
@@ -98,12 +104,14 @@ export function LegalPageLayout({
           <h1 className="mt-3 font-display text-4xl font-normal leading-[1.1] text-ink-900 sm:text-5xl md:text-6xl">
             {title}
           </h1>
-          <p className="mt-4 max-w-2xl text-lg text-ink-500">{intro}</p>
+          {intro ? <p className="mt-4 max-w-2xl text-lg text-ink-500">{intro}</p> : null}
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-bloom-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-bloom-700">
-              {badge}
-            </span>
+            {badge ? (
+              <span className="rounded-full border border-bloom-300 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-bloom-700">
+                {badge}
+              </span>
+            ) : null}
             <span className="rounded-full border border-ink-200 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-ink-700">
               {updatedLabel} <span className="font-bold">{updatedValue}</span>
             </span>
@@ -114,8 +122,11 @@ export function LegalPageLayout({
       </section>
 
       <Section spacing="md" containerSize="md">
+        {html != null ? (
+          <LegalRichContent html={html} />
+        ) : (
         <div className="flex flex-col gap-10">
-          {sections.map((s) => (
+          {(sections ?? []).map((s) => (
             <article key={s.title}>
               <h2 className="font-display text-2xl font-normal text-ink-900 md:text-3xl">
                 {s.title}
@@ -136,6 +147,7 @@ export function LegalPageLayout({
             </article>
           ))}
         </div>
+        )}
       </Section>
     </>
   );

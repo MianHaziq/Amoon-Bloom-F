@@ -12,8 +12,12 @@ import { Button } from "@/components/ui";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { LayersIcon } from "@/components/icons";
 import { RegionForm } from "./RegionForm";
+import { LegalPagesTab } from "./LegalPagesTab";
+import { BranchesTab } from "./BranchesTab";
 import { useToast } from "@/hooks/useToast";
 import { useT } from "@/i18n/useT";
+
+type RegionTab = "details" | "pages" | "branches";
 
 export function RegionEditPage({ id }: { id: string }) {
   const router = useRouter();
@@ -21,6 +25,7 @@ export function RegionEditPage({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const { t } = useT();
   const [confirmBulkAssign, setConfirmBulkAssign] = useState(false);
+  const [tab, setTab] = useState<RegionTab>("details");
 
   // The backend exposes no GET /regions/:id — source the record from the list.
   const listQuery = useQuery({
@@ -95,6 +100,32 @@ export function RegionEditPage({ id }: { id: string }) {
         </div>
       ) : (
         <>
+          <div className="mb-6 flex flex-wrap gap-1 border-b border-ink-100">
+            {([
+              ["details", t("admin.regionForm.tabDetails")],
+              ["pages", t("admin.regionForm.tabPages")],
+              ["branches", t("admin.regionForm.tabBranches")],
+            ] as [RegionTab, string][]).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                  tab === key
+                    ? "border-bloom-500 text-ink-900"
+                    : "border-transparent text-ink-500 hover:text-ink-800"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {tab === "pages" && region ? <LegalPagesTab region={region} /> : null}
+          {tab === "branches" && region ? <BranchesTab region={region} /> : null}
+
+          {tab === "details" ? (
+          <>
           <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-ink-100 bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div className="flex items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bloom-100 text-bloom-700">
@@ -139,6 +170,8 @@ export function RegionEditPage({ id }: { id: string }) {
             onConfirm={() => bulkAssignMutation.mutate()}
             onClose={() => setConfirmBulkAssign(false)}
           />
+          </>
+          ) : null}
         </>
       )}
     </div>
