@@ -32,7 +32,13 @@ export function AuthHydrator() {
     queryKey: queryKeys.auth.profile(),
     queryFn: () => authApi.getProfile(),
     enabled: Boolean(token) && !reduxUser,
-    retry: false,
+    // Retry transient failures (network blip, aborted request during a dev
+    // StrictMode remount), but fail fast on a definitive token rejection.
+    retry: (count, err) => {
+      const status = (err as { status?: number } | null)?.status;
+      if (status === 401 || status === 403) return false;
+      return count < 2;
+    },
     staleTime: 60_000,
   });
 
@@ -43,11 +49,18 @@ export function AuthHydrator() {
   }, [profileQuery.data, token, dispatch]);
 
   useEffect(() => {
-    if (profileQuery.isError) {
+    // Only tear down the session when the SERVER definitively rejects the token
+    // (401/403) AND nobody is currently signed in. A transient/aborted error — common
+    // in dev under React StrictMode, or on a brief network hiccup — must NEVER wipe a
+    // valid or freshly-logged-in session. Previously this fired on *any* error and
+    // removed the just-stored token, logging admins out right after login.
+    if (!profileQuery.isError || reduxUser) return;
+    const status = (profileQuery.error as { status?: number } | null)?.status;
+    if (status === 401 || status === 403) {
       storage.remove(STORAGE_KEYS.authToken);
       dispatch(logout());
     }
-  }, [profileQuery.isError, dispatch]);
+  }, [profileQuery.isError, profileQuery.error, reduxUser, dispatch]);
 
   return null;
 }

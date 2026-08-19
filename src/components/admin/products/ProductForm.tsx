@@ -153,6 +153,22 @@ function useProductFormSchema() {
       // its own Pink/Blue/Red while Medium only gets Blue/Black. Entirely independent
       // per size (unlike variantDescriptions, there's no "shared" fallback to inherit).
       variantColors: z.array(z.array(colorEntrySchema)).optional(),
+      // Optional per-value PER-REGION price overrides, aligned with `options`. Each
+      // entry is a map keyed by regionId → { price, discountedPrice } for that size in
+      // that region (blank = same as the size's base price). One column rendered per
+      // non-default region (see overrideRegions). The variant equivalent of the
+      // product-level `regionPrices` above.
+      variantRegionPrices: z
+        .array(
+          z.record(
+            z.string(),
+            z.object({
+              price: z.number().nonnegative().nullable(),
+              discountedPrice: z.number().nonnegative().nullable(),
+            })
+          )
+        )
+        .optional(),
     });
 
     return z.object({
@@ -230,7 +246,9 @@ function useProductFormSchema() {
       cashArrangementFeeMarginPercent: z.number().nonnegative().nullable(),
       categoryId: z.string().optional().nullable(),
       status: z.enum(["DRAFT", "PUBLISHED"]),
-      comingSoon: z.boolean(),
+      // Per-region "coming soon": which of the product's regions it's a teaser in
+      // (visible but not orderable there). Empty = available in every region it's in.
+      comingSoonRegionIds: z.array(z.string()),
       regionIds: z.array(z.string()),
       images: z.array(z.string().url()).max(10, t("admin.productForm.imagesMax")),
       descriptions: z.array(descriptionSchema),
@@ -270,7 +288,7 @@ const emptyDefaults: ProductFormValues = {
   cashArrangementFeeMarginPercent: null,
   categoryId: null,
   status: "PUBLISHED",
-  comingSoon: false,
+  comingSoonRegionIds: [],
   regionIds: [],
   images: [],
   descriptions: [],
@@ -303,7 +321,7 @@ function findFirstFieldError(node: unknown): { message: string; ref?: ErrorRef }
 }
 
 export function ProductForm({ initial, onSubmit, submitting, submitLabel }: ProductFormProps) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const toast = useToast();
   const productFormSchema = useProductFormSchema();
   const categoriesQuery = useQuery({
@@ -382,7 +400,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
       cashArrangementFeeMarginPercent: initial.cashArrangementFeeMarginPercent ?? null,
       categoryId: initial.categoryId,
       status: initial.status ?? "PUBLISHED",
-      comingSoon: initial.comingSoon ?? false,
+      comingSoonRegionIds: initial.comingSoonRegionIds ?? [],
       regionIds: initial.regionIds ?? [],
       images: initial.images,
       descriptions: initial.descriptions.map((d) => ({
@@ -452,6 +470,16 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               images: c.images ?? [],
             }))
           ),
+          // Per-value per-region price map, keyed by regionId — pre-fills each
+          // size's per-region price inputs from its ProductVariantRegion rows.
+          variantRegionPrices: matchedVariants.map((v) =>
+            Object.fromEntries(
+              (v?.regionPrices ?? []).map((rp) => [
+                rp.regionId,
+                { price: rp.price ?? null, discountedPrice: rp.discountedPrice ?? null },
+              ])
+            )
+          ),
         };
       }),
     });
@@ -465,7 +493,7 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
   const giftCardMode = watch("giftCardMode");
   const customNameEnabled = watch("customNameEnabled");
   const status = watch("status");
-  const comingSoon = watch("comingSoon");
+  const comingSoonRegionIds = watch("comingSoonRegionIds") ?? [];
   // Regions the product is in (from the picker) decide which regions' zones get
   // per-zone delivery-time inputs — only zones of selected regions are shown.
   const selectedRegionIds = watch("regionIds");
@@ -520,6 +548,15 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
               // Entirely independent per size — e.g. Large's own Pink/Blue/Red,
               // Medium's own Blue/Black. Empty = this size has no colour picker.
               colors: cleanVariantColors(o.variantColors?.[i]),
+              // Per-region price overrides for this size — only rows where a price was
+              // actually entered (a blank region = same as this size's base price).
+              regionPrices: Object.entries(o.variantRegionPrices?.[i] ?? {})
+                .map(([regionId, val]) => ({
+                  regionId,
+                  price: val?.price ?? null,
+                  discountedPrice: val?.discountedPrice ?? null,
+                }))
+                .filter((rp) => rp.price != null),
             });
           }
         });
@@ -611,7 +648,11 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           : Number(values.cashArrangementFeeMarginPercent),
       categoryId: values.categoryId || null,
       status: values.status,
-      comingSoon: values.comingSoon,
+      // Only a published product can be a teaser; drafting clears it (backend enforces too).
+      comingSoonRegionIds:
+        values.status === "PUBLISHED"
+          ? (values.comingSoonRegionIds ?? []).filter((id) => (values.regionIds ?? []).includes(id))
+          : [],
       regionIds: values.regionIds,
       images: values.images,
       descriptions: cleanedDescriptions,
@@ -1214,27 +1255,16 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
           title={t("admin.productForm.visibilityHeading")}
           description={t("admin.productForm.visibilityDescription")}
         >
-          {/* Three-way status: Published / Coming soon / Draft. "Coming soon" is stored
-              as a separate boolean (comingSoon) but presented as one status choice — a
-              coming-soon product is PUBLISHED + comingSoon so it stays visible but is
-              not orderable. The Select value is derived from both fields, and picking an
-              option writes both. */}
+          {/* Published / Draft. "Coming soon" is now PER-REGION (see the card below) —
+              a coming-soon region keeps the product PUBLISHED + visible but not orderable
+              there, while it stays fully orderable in its other regions. */}
           <Select
-            value={comingSoon ? "COMING_SOON" : status}
-            onChange={(v) => {
-              if (v === "COMING_SOON") {
-                setValue("status", "PUBLISHED", { shouldDirty: true });
-                setValue("comingSoon", true, { shouldDirty: true });
-              } else {
-                setValue("status", v as "DRAFT" | "PUBLISHED", { shouldDirty: true });
-                setValue("comingSoon", false, { shouldDirty: true });
-              }
-            }}
+            value={status}
+            onChange={(v) => setValue("status", v as "DRAFT" | "PUBLISHED", { shouldDirty: true })}
             triggerClassName="w-full rounded-lg py-2 justify-between"
             aria-label={t("admin.productForm.visibilityHeading")}
             options={[
               { value: "PUBLISHED", label: t("admin.productForm.statusPublished") },
-              { value: "COMING_SOON", label: t("admin.productForm.statusComingSoon") },
               { value: "DRAFT", label: t("admin.productForm.statusDraft") },
             ]}
           />
@@ -1249,6 +1279,45 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
             )}
           />
         </Card>
+
+        {status === "PUBLISHED" && (
+          <Card
+            title={t("admin.productForm.comingSoonHeading")}
+            description={t("admin.productForm.comingSoonDescription")}
+          >
+            {(() => {
+              const csRegions = selectedRegions.length
+                ? selectedRegions
+                : (regionsQuery.data ?? []).filter((r) => r.isDefault);
+              if (csRegions.length === 0) {
+                return <p className="text-sm text-ink-400">{t("admin.productForm.comingSoonNoRegions")}</p>;
+              }
+              return (
+                <div className="flex flex-col gap-2">
+                  {csRegions.map((r) => {
+                    const checked = comingSoonRegionIds.includes(r.id);
+                    return (
+                      <label key={r.id} className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-800">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            const next = e.target.checked
+                              ? [...comingSoonRegionIds, r.id]
+                              : comingSoonRegionIds.filter((id) => id !== r.id);
+                            setValue("comingSoonRegionIds", next, { shouldDirty: true });
+                          }}
+                          className="h-4 w-4 rounded border-ink-300 text-bloom-600 focus:ring-bloom-500/30"
+                        />
+                        <span>{locale === "ar" ? r.name_ar || r.name : r.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </Card>
+        )}
 
         <Card title={t("admin.productForm.categoryHeading")}>
           <Controller
@@ -1557,7 +1626,11 @@ function OptionValueRows({
   isVariantAxis,
   optionsError,
 }: OptionValueRowsProps) {
-  const { t } = useT();
+  const { t, locale } = useT();
+  // Non-default regions each get a per-size price column (same set as the
+  // product-level per-region price rows). Shared query cache — no extra fetch.
+  const regionsQuery = useQuery({ queryKey: queryKeys.regions.list(), queryFn: () => regionsApi.list() });
+  const overrideRegions = (regionsQuery.data ?? []).filter((r) => !r.isDefault);
   // Which value row currently has its image picker expanded.
   const [pickerOpen, setPickerOpen] = useState<number | null>(null);
   // Close the open picker when clicking anywhere outside its row.
@@ -1607,6 +1680,10 @@ function OptionValueRows({
     control,
     name: `productOptions.${index}.variantColors`,
   }) ?? []) as VariantColorFormValue[][];
+  const variantRegionPrices = (useWatch({
+    control,
+    name: `productOptions.${index}.variantRegionPrices`,
+  }) ?? []) as Record<string, { price: number | null; discountedPrice: number | null }>[];
   // Which value row's colour-photo picker is open, keyed "valueIndex:colorIndex" —
   // independent from the value row's own `pickerOpen` above since a colour's photos
   // are nested one level deeper.
@@ -1718,6 +1795,29 @@ function OptionValueRows({
   };
   const setDefault = (i: number) => {
     setValue(`productOptions.${index}.variantDefaultIndex`, i, { shouldDirty: true });
+  };
+  // Per-value per-region price map — standalone field (nested one level deeper),
+  // same pattern as variantDescriptions/variantColors. Kept padded to `count`.
+  const padRegionPrices = () => {
+    const r = variantRegionPrices.map((x) => (x && typeof x === "object" ? { ...x } : {}));
+    while (r.length < count) r.push({});
+    return r;
+  };
+  const setVariantRegionPrice = (
+    i: number,
+    regionId: string,
+    field: "price" | "discountedPrice",
+    value: number | null
+  ) => {
+    const next = padRegionPrices();
+    const existing = next[i]?.[regionId];
+    const entry = {
+      price: existing?.price ?? null,
+      discountedPrice: existing?.discountedPrice ?? null,
+    };
+    entry[field] = value;
+    next[i] = { ...(next[i] ?? {}), [regionId]: entry };
+    setValue(`productOptions.${index}.variantRegionPrices`, next, { shouldDirty: true });
   };
   // variantDescriptions is kept as its own field (not threaded through commit()/
   // padded() above) since block-level edits are nested one level deeper than the
@@ -2041,6 +2141,70 @@ function OptionValueRows({
                     className="rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
                   />
                 </div>
+
+                {overrideRegions.length > 0 && (
+                  <div className="mt-2 border-t border-ink-100 pt-2">
+                    <span className="text-xs font-medium text-ink-600">
+                      {t("admin.productForm.variantRegionPricesLabel")}
+                    </span>
+                    <div className="mt-1.5 flex flex-col gap-1.5">
+                      {overrideRegions.map((region) => {
+                        const rp = variantRegionPrices[i]?.[region.id];
+                        const regionName =
+                          locale === "ar" ? region.name_ar || region.name : region.name;
+                        return (
+                          <div
+                            key={region.id}
+                            className="grid items-center gap-2 sm:grid-cols-[minmax(0,7rem)_1fr_1fr]"
+                          >
+                            <span className="truncate text-xs text-ink-500" title={regionName}>
+                              {regionName} · {region.currency}
+                            </span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={rp?.price ?? ""}
+                              onChange={(e) =>
+                                setVariantRegionPrice(
+                                  i,
+                                  region.id,
+                                  "price",
+                                  e.target.value === "" ? null : Number(e.target.value)
+                                )
+                              }
+                              placeholder={t("admin.productForm.regionPriceLabel", {
+                                currency: region.currency,
+                              })}
+                              className="h-9 rounded-lg border border-ink-200 bg-white px-2.5 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                            />
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={rp?.discountedPrice ?? ""}
+                              onChange={(e) =>
+                                setVariantRegionPrice(
+                                  i,
+                                  region.id,
+                                  "discountedPrice",
+                                  e.target.value === "" ? null : Number(e.target.value)
+                                )
+                              }
+                              placeholder={t("admin.productForm.regionDiscountedPriceLabel", {
+                                currency: region.currency,
+                              })}
+                              className="h-9 rounded-lg border border-ink-200 bg-white px-2.5 text-sm focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-1 text-[11px] text-ink-400">
+                      {t("admin.productForm.variantRegionPricesHint")}
+                    </p>
+                  </div>
+                )}
 
                 <div className="mt-2 border-t border-ink-100 pt-2">
                   <div className="flex items-center justify-between gap-2">

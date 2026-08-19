@@ -28,7 +28,7 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: CategoryFormProps) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const schema = useMemo(
     () =>
       z.object({
@@ -38,7 +38,9 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
         description_ar: z.string().optional().nullable(),
         image: z.string().url().nullable(),
         status: z.enum(["DRAFT", "PUBLISHED"]),
-        comingSoon: z.boolean(),
+        // Per-region "coming soon": which of the category's regions it's a teaser in
+        // (cascades to its products there). Empty = live in every region it's in.
+        comingSoonRegionIds: z.array(z.string()),
         // null = no category default (products fall through to the MESSAGE default).
         giftCardMode: z.enum(["MESSAGE", "NAME"]).nullable(),
         draftScope: z.enum(["HOME_ONLY", "ENTIRE_STORE"]),
@@ -106,7 +108,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       description_ar: "",
       image: null,
       status: "PUBLISHED",
-      comingSoon: false,
+      comingSoonRegionIds: [],
       giftCardMode: null,
       draftScope: "HOME_ONLY",
       deliveryLeadDays: null,
@@ -137,7 +139,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
   const allZones = zonesQuery.data ?? [];
   const selectedRegionIds = watch("regionIds");
   const watchedStatus = watch("status");
-  const watchedComingSoon = watch("comingSoon");
+  const comingSoonRegionIds = watch("comingSoonRegionIds") ?? [];
   const watchedGiftCardMode = watch("giftCardMode");
   const selectedRegions = (regionsQuery.data ?? []).filter((r) =>
     selectedRegionIds?.includes(r.id)
@@ -159,7 +161,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       description_ar: initial.description_ar ?? "",
       image: initial.image,
       status: initial.status ?? "PUBLISHED",
-      comingSoon: initial.comingSoon ?? false,
+      comingSoonRegionIds: initial.comingSoonRegionIds ?? [],
       giftCardMode: initial.giftCardMode ?? null,
       draftScope: initial.draftScope ?? "HOME_ONLY",
       deliveryLeadDays: initial.deliveryLeadDays ?? null,
@@ -195,7 +197,10 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       description_ar: values.description_ar?.trim() || null,
       image: values.image,
       status: values.status,
-      comingSoon: values.comingSoon,
+      comingSoonRegionIds:
+        values.status === "PUBLISHED"
+          ? (values.comingSoonRegionIds ?? []).filter((id) => (values.regionIds ?? []).includes(id))
+          : [],
       giftCardMode: values.giftCardMode,
       draftScope: values.draftScope,
       deliveryLeadDays: values.deliveryLeadDays,
@@ -298,28 +303,56 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
           <p className="mb-3 text-xs text-ink-500">
             {t("admin.categoryForm.visibilityHint")}
           </p>
-          {/* Three-way status: a "Coming soon" category is PUBLISHED + comingSoon —
-              visible everywhere but neither it nor any of its products can be ordered.
-              Stored as two fields (status + comingSoon), shown as one choice. */}
+          {/* Published / Draft. "Coming soon" is now PER-REGION (card below) — a
+              coming-soon region keeps the category visible there but neither it nor its
+              products can be ordered, while other regions stay fully live. */}
           <Select
-            value={watchedComingSoon ? "COMING_SOON" : watchedStatus}
-            onChange={(v) => {
-              if (v === "COMING_SOON") {
-                setValue("status", "PUBLISHED", { shouldDirty: true });
-                setValue("comingSoon", true, { shouldDirty: true });
-              } else {
-                setValue("status", v as "DRAFT" | "PUBLISHED", { shouldDirty: true });
-                setValue("comingSoon", false, { shouldDirty: true });
-              }
-            }}
+            value={watchedStatus}
+            onChange={(v) => setValue("status", v as "DRAFT" | "PUBLISHED", { shouldDirty: true })}
             triggerClassName="w-full rounded-lg py-2 justify-between"
             aria-label={t("admin.categoryForm.visibilityHeading")}
             options={[
               { value: "PUBLISHED", label: t("admin.categoryForm.statusPublished") },
-              { value: "COMING_SOON", label: t("admin.categoryForm.statusComingSoon") },
               { value: "DRAFT", label: t("admin.categoryForm.statusDraft") },
             ]}
           />
+          {watchedStatus === "PUBLISHED" && (
+            <div className="mt-4 border-t border-ink-100 pt-4">
+              <p className="text-sm font-medium text-ink-800">{t("admin.categoryForm.comingSoonHeading")}</p>
+              <p className="mt-0.5 mb-2 text-xs text-ink-500">{t("admin.categoryForm.comingSoonDescription")}</p>
+              {(() => {
+                const csRegions = selectedRegions.length
+                  ? selectedRegions
+                  : (regionsQuery.data ?? []).filter((r) => r.isDefault);
+                if (csRegions.length === 0) {
+                  return <p className="text-sm text-ink-400">{t("admin.categoryForm.comingSoonNoRegions")}</p>;
+                }
+                return (
+                  <div className="flex flex-col gap-2">
+                    {csRegions.map((r) => {
+                      const checked = comingSoonRegionIds.includes(r.id);
+                      return (
+                        <label key={r.id} className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-800">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...comingSoonRegionIds, r.id]
+                                : comingSoonRegionIds.filter((id) => id !== r.id);
+                              setValue("comingSoonRegionIds", next, { shouldDirty: true });
+                            }}
+                            className="h-4 w-4 rounded border-ink-300 text-bloom-600 focus:ring-bloom-500/30"
+                          />
+                          <span>{locale === "ar" ? r.name_ar || r.name : r.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
           {watchedStatus === "DRAFT" && (
             <div className="mt-4">
               <label className="mb-1 block text-sm font-medium text-ink-800">

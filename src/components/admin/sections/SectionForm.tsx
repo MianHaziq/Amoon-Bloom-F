@@ -46,6 +46,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
         image: z.string().url().nullable(),
         sortOrder: z.number().int().nonnegative(),
         status: z.enum(["DRAFT", "PUBLISHED"]),
+        releaseComingSoon: z.boolean(),
         kind: z.enum(["CUSTOM", "BEST_SELLERS", "NEW_ARRIVALS"]),
         desktopLayout: z.enum(["SCROLL", "GRID"]),
         mobileLayout: z.enum(["SCROLL", "GRID"]),
@@ -88,6 +89,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       image: null,
       sortOrder: 0,
       status: "PUBLISHED",
+      releaseComingSoon: false,
       kind: "CUSTOM",
       desktopLayout: SECTION_DISPLAY_DEFAULTS.desktopLayout,
       desktopColumns: SECTION_DISPLAY_DEFAULTS.desktopColumns,
@@ -111,6 +113,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       image: initial.image,
       sortOrder: initial.sortOrder,
       status: initial.status ?? "PUBLISHED",
+      releaseComingSoon: initial.releaseComingSoon ?? false,
       kind: initial.kind ?? "CUSTOM",
       desktopLayout: display.desktopLayout,
       desktopColumns: display.desktopColumns,
@@ -211,6 +214,7 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       image: v.image,
       sortOrder: v.sortOrder,
       status: v.status,
+      releaseComingSoon: v.releaseComingSoon,
       kind: v.kind,
       desktopLayout: v.desktopLayout,
       desktopColumns: v.desktopColumns,
@@ -319,6 +323,29 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
           <p className="mb-1 mt-1.5 text-xs text-ink-500">
             {t("admin.sectionForm.kindHint")}
           </p>
+
+          <div className="mt-4 rounded-lg border border-ink-100 bg-cream-50/60 p-3">
+            <Controller
+              control={control}
+              name="releaseComingSoon"
+              render={({ field }) => (
+                <label className="flex cursor-pointer items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-ink-300 text-bloom-600 focus:ring-bloom-500/30"
+                  />
+                  <span className="text-sm text-ink-800">
+                    <span className="font-medium">{t("admin.sectionForm.releaseComingSoonLabel")}</span>
+                    <span className="mt-0.5 block text-xs text-ink-500">
+                      {t("admin.sectionForm.releaseComingSoonHint")}
+                    </span>
+                  </span>
+                </label>
+              )}
+            />
+          </div>
 
           <label className="mb-1.5 mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
             {t("admin.sectionForm.sortOrderLabel")}

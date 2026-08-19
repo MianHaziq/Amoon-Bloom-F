@@ -153,12 +153,8 @@ function MegaMenuPanel({ group }: { group: CategoryGroup }) {
             const realImage = cat.image.url.startsWith("http")
               ? cat.image.url
               : null;
-            return (
-              <LocalizedLink
-                key={cat.id}
-                href={ROUTES.category(cat.slug)}
-                className="group flex items-center gap-3 rounded-2xl p-2.5 transition-colors hover:bg-cream-50"
-              >
+            const inner = (
+              <>
                 <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-cream-100">
                   {realImage ? (
                     <Image
@@ -178,16 +174,39 @@ function MegaMenuPanel({ group }: { group: CategoryGroup }) {
                   <p className="truncate font-display text-sm font-medium text-ink-900">
                     {cat.title}
                   </p>
-                  {cat.productCount ? (
+                  {cat.comingSoon ? (
+                    <p className="mt-0.5 text-xs text-bloom-600">{t("common.comingSoon")}</p>
+                  ) : cat.productCount ? (
                     <p className="mt-0.5 text-xs text-ink-400">
                       {tc(cat.productCount, "units.pieceOne", "units.pieceOther")}
                     </p>
                   ) : null}
                 </div>
-                <ArrowRight
-                  size={15}
-                  className="shrink-0 text-ink-300 transition-all ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 group-hover:text-bloom-600 rtl:-scale-x-100"
-                />
+                {!cat.comingSoon && (
+                  <ArrowRight
+                    size={15}
+                    className="shrink-0 text-ink-300 transition-all ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 group-hover:text-bloom-600 rtl:-scale-x-100"
+                  />
+                )}
+              </>
+            );
+            // A coming-soon category is a non-clickable teaser (its landing page isn't
+            // openable) — render a plain, dimmed row instead of a nav link.
+            return cat.comingSoon ? (
+              <div
+                key={cat.id}
+                aria-disabled="true"
+                className="flex cursor-default items-center gap-3 rounded-2xl p-2.5 opacity-70"
+              >
+                {inner}
+              </div>
+            ) : (
+              <LocalizedLink
+                key={cat.id}
+                href={ROUTES.category(cat.slug)}
+                className="group flex items-center gap-3 rounded-2xl p-2.5 transition-colors hover:bg-cream-50"
+              >
+                {inner}
               </LocalizedLink>
             );
           })}

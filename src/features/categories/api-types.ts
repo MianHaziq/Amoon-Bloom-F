@@ -15,8 +15,12 @@ export interface ApiCategory {
   totalProducts: number;
   /** Publish state. Storefront only ever sees PUBLISHED; staff reads include DRAFT. */
   status?: "DRAFT" | "PUBLISHED";
-  /** "Coming soon": category (and all its products) visible but not orderable. */
+  /** "Coming soon": category (and all its products) visible but not orderable. On
+   *  storefront reads this is the requesting region's value; on staff reads it's the
+   *  global mirror (coming-soon in any region). */
   comingSoon?: boolean;
+  /** Which regions this category is a coming-soon teaser in (staff/edit reads only). */
+  comingSoonRegionIds?: string[];
   /** Default gift-card input mode for this category's products (null = no default). */
   giftCardMode?: "MESSAGE" | "NAME" | null;
   /** How far a DRAFT status reaches (ignored while PUBLISHED). HOME_ONLY hides the
@@ -69,8 +73,11 @@ export interface ApiCategoryCreateInput {
   description_ar?: string | null;
   image?: string | null;
   status?: "DRAFT" | "PUBLISHED";
-  /** "Coming soon": visible but not orderable. Server forces it off unless PUBLISHED. */
+  /** "Coming soon": visible but not orderable. Server forces it off unless PUBLISHED.
+   *  Legacy global boolean; prefer comingSoonRegionIds for per-region control. */
   comingSoon?: boolean;
+  /** Per-region coming-soon: which of the category's regions it's a teaser in. */
+  comingSoonRegionIds?: string[];
   /** Default gift-card mode for the category's products. null/"MESSAGE"/"NAME". */
   giftCardMode?: "MESSAGE" | "NAME" | null;
   /** How far a DRAFT status reaches: HOME_ONLY (default) or ENTIRE_STORE. */

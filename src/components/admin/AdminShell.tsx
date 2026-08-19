@@ -52,7 +52,13 @@ export function AdminShell({ children, title }: AdminShellProps) {
     queryKey: queryKeys.auth.profile(),
     queryFn: () => authApi.getProfile(),
     enabled: hydrated && Boolean(token) && !reduxUser,
-    retry: false,
+    // Retry transient failures (network blip / aborted request on a dev StrictMode
+    // remount); fail fast only on a definitive token rejection.
+    retry: (count, err) => {
+      const status = (err as { status?: number } | null)?.status;
+      if (status === 401 || status === 403) return false;
+      return count < 2;
+    },
   });
 
   // Hydrate redux from a fresh profile fetch.
@@ -69,25 +75,32 @@ export function AdminShell({ children, title }: AdminShellProps) {
       router.replace(SIGN_IN_REDIRECT);
       return;
     }
-    if (profileQuery.isError) {
-      storage.remove(STORAGE_KEYS.authToken);
-      dispatch(logout());
-      router.replace(SIGN_IN_REDIRECT);
-      return;
-    }
-    // Profile resolved but returned nothing — stale or corrupt token.
-    if (profileQuery.isSuccess && !profileQuery.data) {
-      storage.remove(STORAGE_KEYS.authToken);
-      dispatch(logout());
-      router.replace(SIGN_IN_REDIRECT);
-      return;
+    // Never tear down an already-signed-in session (e.g. just logged in on the storefront
+    // then routed here) from a transient/stale profile error — that bounced admins straight
+    // back to login right after signing in. Only clear when NOT signed in AND the server
+    // definitively rejected the token (401/403), not on a network blip or aborted request.
+    if (!reduxUser) {
+      const status = (profileQuery.error as { status?: number } | null)?.status;
+      if (profileQuery.isError && (status === 401 || status === 403)) {
+        storage.remove(STORAGE_KEYS.authToken);
+        dispatch(logout());
+        router.replace(SIGN_IN_REDIRECT);
+        return;
+      }
+      // Profile resolved but returned nothing — stale or corrupt token.
+      if (profileQuery.isSuccess && !profileQuery.data) {
+        storage.remove(STORAGE_KEYS.authToken);
+        dispatch(logout());
+        router.replace(SIGN_IN_REDIRECT);
+        return;
+      }
     }
     // Non-admin/manager user — bounce to storefront immediately.
     const role = reduxUser?.role;
     if (reduxUser && role !== "ADMIN" && role !== "MANAGER") {
       router.replace("/");
     }
-  }, [hydrated, token, profileQuery.isError, profileQuery.isSuccess, profileQuery.data, reduxUser, dispatch, router]);
+  }, [hydrated, token, profileQuery.isError, profileQuery.error, profileQuery.isSuccess, profileQuery.data, reduxUser, dispatch, router]);
 
   // Derived: we know for certain the user is not staff (role resolved, not admin/manager).
   const isDefinitelyUnauthorized =

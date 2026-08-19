@@ -86,14 +86,27 @@ export function MobileNav() {
             <ul className="mt-3 flex flex-col gap-1">
               {group.categories.map((cat) => (
                 <li key={cat.id}>
-                  <LocalizedLink
-                    onClick={close}
-                    href={ROUTES.category(cat.slug)}
-                    className="flex items-center justify-between rounded-xl px-3 py-2.5 text-base text-ink-900 hover:bg-cream-50"
-                  >
-                    <span className="font-display text-lg">{cat.title}</span>
-                    <ChevronRight size={16} className="text-ink-400 rtl:-scale-x-100" />
-                  </LocalizedLink>
+                  {cat.comingSoon ? (
+                    // Coming-soon category: non-clickable teaser (its page isn't openable).
+                    <div
+                      aria-disabled="true"
+                      className="flex cursor-default items-center justify-between rounded-xl px-3 py-2.5 text-base text-ink-900 opacity-70"
+                    >
+                      <span className="font-display text-lg">{cat.title}</span>
+                      <span className="text-xs font-medium text-bloom-600">
+                        {t("common.comingSoon")}
+                      </span>
+                    </div>
+                  ) : (
+                    <LocalizedLink
+                      onClick={close}
+                      href={ROUTES.category(cat.slug)}
+                      className="flex items-center justify-between rounded-xl px-3 py-2.5 text-base text-ink-900 hover:bg-cream-50"
+                    >
+                      <span className="font-display text-lg">{cat.title}</span>
+                      <ChevronRight size={16} className="text-ink-400 rtl:-scale-x-100" />
+                    </LocalizedLink>
+                  )}
                 </li>
               ))}
             </ul>

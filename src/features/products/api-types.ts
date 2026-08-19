@@ -46,6 +46,16 @@ export interface ApiProductVariantColor {
  *  Small/Medium/Large Graduation Giveaway Box. `optionValue` matches a value in the
  *  product's `isVariantAxis` option group. Stock stays product-level (`ApiProduct.quantity`),
  *  not per-variant. */
+/** Per-region price override for a single variant (size) — the variant equivalent
+ *  of ApiProductRegionPrice. Absolute amounts per region, no auto FX conversion; a
+ *  region left out falls back to the variant's base price. Only present on staff
+ *  (admin edit) reads. */
+export interface ApiProductVariantRegionPrice {
+  regionId: string;
+  price: number | null;
+  discountedPrice: number | null;
+}
+
 export interface ApiProductVariant {
   id: string;
   optionValue: string;
@@ -57,6 +67,10 @@ export interface ApiProductVariant {
   subtitle_ar: string | null;
   isDefault: boolean;
   sortOrder: number;
+  /** Per-region price overrides for this size (admin/edit reads only). Empty/absent =
+   *  this size costs the same in every region. On storefront reads `price`/`discountedPrice`
+   *  above are ALREADY the requesting region's amounts and this is omitted. */
+  regionPrices?: ApiProductVariantRegionPrice[];
   /** This variant's own description blocks (same shape as `ApiProduct.descriptions`).
    *  Empty = this size has no override and shares the product's shared blocks instead. */
   descriptions: ApiProductDescriptionBlock[];
@@ -154,9 +168,12 @@ export interface ApiProduct {
   category?: ApiProductCategoryRef | null;
   /** Publish state. Storefront only ever sees PUBLISHED; staff reads include DRAFT. */
   status?: "DRAFT" | "PUBLISHED";
-  /** "Coming soon": product stays visible but can't be ordered. Effective state also
-   *  inherits from its category (see ApiProductCategoryRef.comingSoon). */
+  /** "Coming soon": product stays visible but can't be ordered. On storefront reads this
+   *  is the REQUESTING region's value; on staff reads it's the global mirror (any region).
+   *  Effective state also inherits from its category (see ApiProductCategoryRef.comingSoon). */
   comingSoon?: boolean;
+  /** Which regions this product is a coming-soon teaser in (staff/edit reads only). */
+  comingSoonRegionIds?: string[];
   /** Regions this product is visible in. Present on staff reads only. */
   regions?: ApiProductRegionRef[];
   regionIds?: string[];
@@ -220,6 +237,10 @@ export interface ApiProductVariantInput {
   /** Optional colour choices for this size only (e.g. Large's own Pink/Blue/Red) —
    *  independent from any other size's list. Omit/empty = no colour picker for this size. */
   colors?: ApiProductVariantColorInput[];
+  /** Per-region price overrides for this size. One entry per region that needs a
+   *  different price; regions left out (or outside the product's own regions) fall back
+   *  to the variant's base price. */
+  regionPrices?: ApiProductVariantRegionPrice[];
 }
 
 export interface ApiProductCreateInput {
@@ -254,8 +275,12 @@ export interface ApiProductCreateInput {
   variants?: ApiProductVariantInput[];
   /** Publish state. Defaults to PUBLISHED from the admin form. */
   status?: "DRAFT" | "PUBLISHED";
-  /** "Coming soon": visible but not orderable. Server forces it off unless PUBLISHED. */
+  /** "Coming soon": visible but not orderable. Server forces it off unless PUBLISHED.
+   *  Legacy global boolean; prefer comingSoonRegionIds for per-region control. */
   comingSoon?: boolean;
+  /** Per-region coming-soon: which of the product's regions it's a teaser in. Server
+   *  clears it unless PUBLISHED, and ignores regions the product isn't in. */
+  comingSoonRegionIds?: string[];
   /** Regions this product should be visible in. Defaults to the default region (UAE) if omitted. */
   regionIds?: string[];
 }

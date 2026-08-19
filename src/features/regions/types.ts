@@ -47,6 +47,10 @@ export interface ApiRegion {
   /** Whether online (card / Apple Pay via MyFatoorah) payment is offered in this
    *  region (default false — opt-in, since the gateway is currency-scoped). */
   onlinePaymentEnabled: boolean;
+  /** Which online methods are offered when onlinePaymentEnabled is on (default true).
+   *  Drive which options the storefront shows; Apple Pay is also enforced server-side. */
+  applePayEnabled: boolean;
+  cardPaymentEnabled: boolean;
   /** Region-wide delivery blackout dates (holidays/closures). */
   blackoutDates: ApiBlackoutDate[];
   /** ISO 3166-1 alpha-2 code (e.g. "AE") — renders this region's flag in the
@@ -130,6 +134,8 @@ export interface ApiRegionCreateInput {
   sameDayCutoff?: string | null;
   codEnabled?: boolean;
   onlinePaymentEnabled?: boolean;
+  applePayEnabled?: boolean;
+  cardPaymentEnabled?: boolean;
   blackoutDates?: ApiBlackoutDate[];
   iso2?: string | null;
   urlSlug?: string | null;

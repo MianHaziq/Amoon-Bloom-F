@@ -32,6 +32,9 @@ export interface ApiSection {
   sortOrder: number;
   /** Present on staff reads; storefront only ever receives PUBLISHED. */
   status?: "DRAFT" | "PUBLISHED";
+  /** When true, this section sells its curated products even if their category is
+   *  "coming soon" (releases them from the category cascade). Default false. */
+  releaseComingSoon?: boolean;
   /** CUSTOM (default) for a plain curated rail. BEST_SELLERS/NEW_ARRIVALS
    *  additionally auto-fill remaining slots with real top-selling/newly
    *  published products — see section.service.js's augmentDynamicSection. Not
@@ -66,6 +69,8 @@ export interface ApiSectionCreateInput {
   sortOrder?: number;
   /** Publish state. Defaults to PUBLISHED from the admin form. */
   status?: "DRAFT" | "PUBLISHED";
+  /** Sell curated products even if their category is "coming soon". Default false. */
+  releaseComingSoon?: boolean;
   /** Defaults to CUSTOM server-side when omitted. */
   kind?: "CUSTOM" | "BEST_SELLERS" | "NEW_ARRIVALS";
   /** Per-breakpoint layout. Server defaults to SCROLL + 4/2 columns, limit 12 when omitted. */

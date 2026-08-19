@@ -36,14 +36,12 @@ export function CategoryCard({
     : null;
   const src = realImage ?? fallbackImage ?? null;
 
-  return (
-    <LocalizedLink
-      href={ROUTES.category(category.slug)}
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-(--shadow-soft) transition-all duration-300 hover:-translate-y-1 hover:shadow-(--shadow-lift)",
-        className
-      )}
-    >
+  // A coming-soon category is a teaser only — it still shows on the home/shop grid
+  // (with its overlay) but is NOT clickable: no link, no hover-lift, default cursor.
+  const isComingSoon = Boolean(category.comingSoon);
+
+  const inner = (
+    <>
       <div className="relative aspect-square w-full bg-cream-50">
         {src ? (
           <Image
@@ -74,6 +72,30 @@ export function CategoryCard({
           {category.title}
         </h3>
       </div>
+    </>
+  );
+
+  const baseClass =
+    "group flex flex-col overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-(--shadow-soft)";
+
+  if (isComingSoon) {
+    return (
+      <div className={cn(baseClass, "cursor-default", className)} aria-disabled="true">
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <LocalizedLink
+      href={ROUTES.category(category.slug)}
+      className={cn(
+        baseClass,
+        "transition-all duration-300 hover:-translate-y-1 hover:shadow-(--shadow-lift)",
+        className
+      )}
+    >
+      {inner}
     </LocalizedLink>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { queryKeys } from "@/services/queryKeys";
@@ -25,7 +25,13 @@ export function RegionEditPage({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const { t } = useT();
   const [confirmBulkAssign, setConfirmBulkAssign] = useState(false);
-  const [tab, setTab] = useState<RegionTab>("details");
+  // Honour ?tab=pages|branches (e.g. the redirect right after creating a region
+  // lands on Pages); default to Details otherwise.
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [tab, setTab] = useState<RegionTab>(
+    requestedTab === "pages" || requestedTab === "branches" ? requestedTab : "details"
+  );
 
   // The backend exposes no GET /regions/:id — source the record from the list.
   const listQuery = useQuery({

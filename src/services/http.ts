@@ -152,9 +152,17 @@ function createHttpClient(): AxiosInstance {
       // 401 from a real response means the token is no longer valid — clear
       // it so the next render-cycle redirects unauthenticated. We don't
       // touch storage on transport errors (status 0); a temporary network
-      // hiccup shouldn't sign the user out.
+      // hiccup shouldn't sign the user out. Crucially, only clear when the 401
+      // was for the CURRENT token: a stale in-flight request racing a fresh
+      // login must never wipe the just-issued token (that logged admins out
+      // immediately after signing in).
       if (status === 401 && typeof window !== "undefined") {
-        storage.remove(STORAGE_KEYS.authToken);
+        const sentAuth = String(cfg?.headers?.Authorization ?? "");
+        const sentToken = sentAuth.startsWith("Bearer ") ? sentAuth.slice(7) : "";
+        const currentToken = storage.get<string>(STORAGE_KEYS.authToken);
+        if (sentToken && currentToken && sentToken === currentToken) {
+          storage.remove(STORAGE_KEYS.authToken);
+        }
       }
 
       return Promise.reject(new ApiError(status, payload));
