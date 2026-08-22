@@ -56,5 +56,11 @@ export function useCurrency() {
     countryName: region?.name ?? country,
     iso2: region?.iso2 ?? null,
     dialCode: getCallingCode(region?.iso2) ?? "",
+    // Per-region online-payment availability (drives the checkout payment selector).
+    // Defaults are conservative: no online payment until the region is confirmed, but
+    // both methods on once it is (matches the backend column defaults).
+    onlinePaymentEnabled: region?.onlinePaymentEnabled ?? false,
+    applePayEnabled: region?.applePayEnabled ?? true,
+    cardPaymentEnabled: region?.cardPaymentEnabled ?? true,
   };
 }

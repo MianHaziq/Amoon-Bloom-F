@@ -406,7 +406,31 @@ export function CheckoutClient() {
   const maxOrderAmount = deliveryConfig?.maxOrderAmount ?? null;
   const belowMinOrder = minOrderAmount != null && subtotal < minOrderAmount;
   const aboveMaxOrder = maxOrderAmount != null && subtotal > maxOrderAmount;
-  const placeOrderBlocked = codUnavailable || belowMinOrder || aboveMaxOrder;
+
+  // Online payment (MyFatoorah). Offered only to signed-in customers in a region that has
+  // it enabled with at least one method — guests stay COD-only (backend guest checkout is
+  // COD). The redirect flow shows Apple Pay (on iPhone/Safari) + cards on MyFatoorah's page.
+  const onlinePayAvailable =
+    isAuthed &&
+    Boolean(currentRegion?.onlinePaymentEnabled) &&
+    (Boolean(currentRegion?.applePayEnabled) || Boolean(currentRegion?.cardPaymentEnabled));
+  const [paymentMethod, setPaymentMethod] = useState<"COD" | "MYFATOORAH">("COD");
+  // Effective method: fall back to COD whenever online isn't available, so a stale
+  // "MYFATOORAH" selection (e.g. after switching to a region without it) can't leak through.
+  const payingOnline = onlinePayAvailable && paymentMethod === "MYFATOORAH";
+
+  // COD unavailability only blocks a COD order — an online payment is unaffected by it.
+  const placeOrderBlocked =
+    (!payingOnline && codUnavailable) || belowMinOrder || aboveMaxOrder;
+
+  // Keep the selected method valid as region / COD availability changes: force COD when
+  // online isn't available, and auto-pick online when COD is the only thing turned off
+  // (so the customer is never stuck with an unselectable, blocked order).
+  useEffect(() => {
+    if (!onlinePayAvailable && paymentMethod !== "COD") setPaymentMethod("COD");
+    else if (onlinePayAvailable && codUnavailable && paymentMethod === "COD")
+      setPaymentMethod("MYFATOORAH");
+  }, [onlinePayAvailable, codUnavailable, paymentMethod]);
 
   // VAT preview for the current region. The public endpoint intentionally omits the
   // SPECIFIC_PRODUCTS/SPECIFIC_CATEGORIES scope lists (that's catalog-scoping data, not
@@ -557,7 +581,8 @@ export function CheckoutClient() {
         throw new Error(t("checkout.chooseDeliveryDateError"));
       }
       // Delivery-config gates (backend re-validates all of these authoritatively).
-      if (codUnavailable) throw new Error(t("checkout.codUnavailable"));
+      // COD unavailability only blocks a COD order — an online payment is unaffected.
+      if (!payingOnline && codUnavailable) throw new Error(t("checkout.codUnavailable"));
       if (belowMinOrder) {
         throw new Error(
           t("checkout.minOrderError", {
@@ -611,7 +636,7 @@ export function CheckoutClient() {
       if (!isAuthed) {
         // Guest: no server cart — send the local cart items inline (each with its own cash). COD only.
         if (cart.items.length === 0) throw new Error(t("checkout.cartEmptyError"));
-        return ordersApi.guestCheckout({
+        const guestOrder = await ordersApi.guestCheckout({
           items: cart.items.map((i) => ({
             productId: i.productId,
             quantity: i.quantity,
@@ -635,21 +660,42 @@ export function CheckoutClient() {
           deliveryType,
           scheduledDeliveryAt: scheduledDeliveryAtIso,
         });
+        return { order: guestOrder };
       }
 
       // Authenticated: mirror the local cart (incl. each line's cash) to the server cart, then
       // check out — the order reads the per-line cash from the server cart.
       await syncCart();
-      return ordersApi.checkout({
+      const order = await ordersApi.checkout({
         addressId: resolvedAddressId,
         shippingAddress,
-        paymentMethod: "COD",
+        paymentMethod: payingOnline ? "MYFATOORAH" : "COD",
         promoCode: promoResult ? promoCode.trim() : undefined,
         deliveryType,
         scheduledDeliveryAt: scheduledDeliveryAtIso,
       });
+
+      // Online: the order is PENDING_PAYMENT and the cart is kept until payment lands.
+      // Fetch the MyFatoorah hosted-page URL so onSuccess can hand the browser off to it.
+      if (payingOnline) {
+        // Tell the backend where to send the browser back after paying: this region+locale's
+        // order-success page (absolute URL). On failure MyFatoorah/our callback swaps it to
+        // the matching order-error page. Without this the return lands on a bare backend page.
+        const returnUrl = `${window.location.origin}${localize(ROUTES.orderSuccess)}`;
+        const { paymentUrl } = await ordersApi.pay(order.id, { returnUrl });
+        return { order, paymentUrl };
+      }
+      return { order };
     },
-    onSuccess: (order) => {
+    onSuccess: ({ order, paymentUrl }) => {
+      // Online payment: DON'T clear the cart or show the thank-you yet — the backend keeps
+      // both until MyFatoorah confirms. Hand the browser off to the hosted payment page;
+      // MyFatoorah returns to the success/error page, which the backend re-verifies.
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
+        return;
+      }
+
       setOrderPlaced(true);
       cart.clear();
       queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
@@ -804,6 +850,9 @@ export function CheckoutClient() {
             standardDeliveryDays={currentRegion?.standardDeliveryDays ?? null}
             deliveryConfig={deliveryConfig}
             codUnavailable={codUnavailable}
+            onlinePayAvailable={onlinePayAvailable}
+            paymentMethod={paymentMethod}
+            onPaymentMethodChange={setPaymentMethod}
             belowMinOrder={belowMinOrder}
             aboveMaxOrder={aboveMaxOrder}
             minOrderAmount={minOrderAmount}
@@ -1266,6 +1315,10 @@ interface OrderReviewCardProps {
   /** Resolved delivery config for the active area (undefined while loading). */
   deliveryConfig: ResolvedDeliveryConfig | undefined;
   codUnavailable: boolean;
+  /** Online payment (MyFatoorah) offered for this region + signed-in customer. */
+  onlinePayAvailable: boolean;
+  paymentMethod: "COD" | "MYFATOORAH";
+  onPaymentMethodChange: (v: "COD" | "MYFATOORAH") => void;
   belowMinOrder: boolean;
   aboveMaxOrder: boolean;
   minOrderAmount: number | null;
@@ -1305,6 +1358,9 @@ function OrderReviewCard({
   standardDeliveryDays,
   deliveryConfig,
   codUnavailable,
+  onlinePayAvailable,
+  paymentMethod,
+  onPaymentMethodChange,
   belowMinOrder,
   aboveMaxOrder,
   minOrderAmount,
@@ -1661,9 +1717,56 @@ function OrderReviewCard({
 
         <Divider />
 
-        {/* COD is the only method. When the resolved area doesn't offer it, the option
-            is replaced by a clear error and submission is blocked (see place-order). */}
-        {codUnavailable ? (
+        {/* Payment method. When online payment (MyFatoorah) is available for this region +
+            signed-in customer, offer a choice; otherwise fall back to the COD-only display
+            (or the "COD unavailable" notice when the resolved area disables COD). */}
+        {onlinePayAvailable ? (
+          <div className="flex flex-col gap-3">
+            <label
+              className={cn(
+                "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition",
+                paymentMethod === "MYFATOORAH"
+                  ? "border-ink-900 bg-cream-50"
+                  : "border-ink-200 bg-white"
+              )}
+            >
+              <input
+                type="radio"
+                name="payment"
+                className="mt-1 h-4 w-4 accent-ink-900"
+                checked={paymentMethod === "MYFATOORAH"}
+                onChange={() => onPaymentMethodChange("MYFATOORAH")}
+              />
+              <div>
+                <p className="font-medium text-ink-900">{t("checkout.payOnline")}</p>
+                <p className="text-sm text-ink-500">{t("checkout.payOnlineHint")}</p>
+              </div>
+            </label>
+
+            {!codUnavailable ? (
+              <label
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition",
+                  paymentMethod === "COD"
+                    ? "border-ink-900 bg-cream-50"
+                    : "border-ink-200 bg-white"
+                )}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  className="mt-1 h-4 w-4 accent-ink-900"
+                  checked={paymentMethod === "COD"}
+                  onChange={() => onPaymentMethodChange("COD")}
+                />
+                <div>
+                  <p className="font-medium text-ink-900">{t("checkout.cod")}</p>
+                  <p className="text-sm text-ink-500">{t("checkout.codAvailability")}</p>
+                </div>
+              </label>
+            ) : null}
+          </div>
+        ) : codUnavailable ? (
           <div
             role="alert"
             className="rounded-2xl border border-(--color-danger) bg-bloom-50 p-4 text-sm text-bloom-700"

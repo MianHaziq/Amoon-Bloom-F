@@ -49,6 +49,19 @@ export const ordersApi = {
     return data.data;
   },
 
+  // Start online payment for a PENDING_PAYMENT order whose paymentMethod is MYFATOORAH.
+  // Returns the MyFatoorah hosted-page URL — redirect the browser there; Apple Pay shows
+  // on iPhone/Safari, cards everywhere. The backend re-verifies server-side on return.
+  async pay(
+    id: string,
+    opts: { returnUrl?: string } = {}
+  ): Promise<{ paymentUrl: string; invoiceId: string | null }> {
+    const { data } = await http.post<
+      ApiResponse<{ paymentUrl: string; invoiceId: string | null }>
+    >(`/orders/${id}/pay`, opts.returnUrl ? { returnUrl: opts.returnUrl } : {});
+    return data.data;
+  },
+
   async getStatus(id: string): Promise<ApiOrderStatusLite> {
     const { data } = await http.get<ApiResponse<ApiOrderStatusLite>>(
       `/orders/${id}/status`
