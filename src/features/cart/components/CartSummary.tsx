@@ -81,6 +81,9 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
   const vatConfig = usePublicVat();
   const hint = variant === "page" ? vatHint(vatConfig) : null;
   const showVatInclusiveHint = hint?.kind === "inclusive";
+  // Shipping is a flat, VAT-inclusive charge — annotate the delivery line whenever the region
+  // has active VAT and a fee is charged (mirrors checkout + receipt).
+  const vatEnabled = Boolean(vatConfig?.enabled && vatConfig.ratePercent > 0);
 
   return (
     <aside
@@ -113,7 +116,12 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
           </div>
         )}
         <div className="flex justify-between">
-          <dt className="text-ink-600">{t("common.delivery")}</dt>
+          <dt className="text-ink-600">
+            {t("common.delivery")}
+            {shipping > 0 && vatEnabled ? (
+              <span className="text-ink-400"> ({t("checkout.flatRateVatInclusive")})</span>
+            ) : null}
+          </dt>
           <dd className="font-medium tabular-nums text-ink-900">
             {shipping > 0 ? (
               <CurrencyAmount amount={shipping} currency={currency} locale={locale} />

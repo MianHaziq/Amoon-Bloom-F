@@ -493,11 +493,20 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
             />
           )}
           <TotalRow
-            label={t("common.delivery")}
+            label={
+              shipping > 0 && order.vatRatePercent != null ? (
+                <>
+                  {t("common.delivery")}{" "}
+                  <span className="text-ink-400">({t("checkout.flatRateVatInclusive")})</span>
+                </>
+              ) : (
+                t("common.delivery")
+              )
+            }
             value={shipping > 0 ? price(shipping) : t("common.free")}
           />
-          {/* VAT sits directly under Delivery (the delivery fee is taxed too), matching
-              the checkout order summary. */}
+          {/* VAT (product + cash-fee only; delivery is flat + VAT-inclusive) sits under Delivery,
+              matching the checkout order summary. */}
           {showVat && (
             <TotalRow
               label={
@@ -731,7 +740,7 @@ function TotalRow({
   value,
   accent,
 }: {
-  label: string;
+  label: ReactNode;
   value: ReactNode;
   accent?: boolean;
 }) {

@@ -454,16 +454,9 @@ export function CheckoutClient() {
       : 0;
   const vatAdds = vatActive && vatKnownScope && !vatConfig!.inclusive && vatAmount > 0;
   const vatUncertain = vatActive && !vatKnownScope;
-  // Shipping VAT (client requirement): the delivery fee is taxed at the VAT rate whenever VAT
-  // is enabled — regardless of the product VAT scope, since shipping isn't a product. Same
-  // inclusive/exclusive rule; backend re-computes this authoritatively at order time.
-  const shippingVatAmount =
-    vatActive && shipping > 0
-      ? vatConfig!.inclusive
-        ? round2(shipping - shipping / (1 + vatConfig!.ratePercent / 100))
-        : round2(shipping * (vatConfig!.ratePercent / 100))
-      : 0;
-  const shippingVatAdds = vatActive && !vatConfig!.inclusive && shippingVatAmount > 0;
+  // Shipping is a FLAT, VAT-INCLUSIVE charge (mirrors the live client site + backend
+  // order.service.js): the delivery fee is the final amount — VAT is never added on top and
+  // never broken out. The Shipment line is labelled "(flat rate and VAT inclusive)" instead.
 
   // "Add cash arrangement" — resolve eligibility + fee schedule for the current cart/zone,
   // same tier as deliveryConfigQuery/vatQuery above. POST because cartLines is an array
@@ -538,8 +531,8 @@ export function CheckoutClient() {
   const total =
     taxableNet +
     (vatAdds ? vatAmount : 0) +
+    // Shipping is flat + VAT-inclusive: added as-is, never taxed on top.
     shipping +
-    (shippingVatAdds ? shippingVatAmount : 0) +
     cashFeeTotal +
     (cashFeeVatAdds ? cashFeeVatTotal : 0) +
     // Raw cash amount is added to the total but NEVER passed through VAT.
@@ -821,7 +814,7 @@ export function CheckoutClient() {
             discount={discount}
             total={total}
             vatAmount={vatAmount}
-            shippingVatAmount={shippingVatAmount}
+            vatEnabled={vatActive}
             vatRatePercent={vatConfig?.ratePercent ?? null}
             vatInclusive={Boolean(vatConfig?.inclusive)}
             vatUncertain={vatUncertain}
@@ -1287,8 +1280,8 @@ interface OrderReviewCardProps {
   discount: number;
   total: number;
   vatAmount: number;
-  /** VAT on the shipping fee (0 when free/disabled) — folded into the single VAT line. */
-  shippingVatAmount: number;
+  /** True when the region has active VAT — drives the "flat rate and VAT inclusive" shipment note. */
+  vatEnabled: boolean;
   vatRatePercent: number | null;
   vatInclusive: boolean;
   vatUncertain: boolean;
@@ -1335,7 +1328,7 @@ function OrderReviewCard({
   discount,
   total,
   vatAmount,
-  shippingVatAmount,
+  vatEnabled,
   vatRatePercent,
   vatInclusive,
   vatUncertain,
@@ -1375,8 +1368,10 @@ function OrderReviewCard({
   const cashFeeVatTotal = cashArrangement
     ? cashArrangement.lines.reduce((s, l) => s + l.feeVatPerUnit * l.quantity, 0)
     : 0;
+  // Product VAT + cash-arrangement fee VAT only — shipping is flat + VAT-inclusive and
+  // contributes NO VAT to this line.
   const combinedVatAmount =
-    Math.round((vatAmount + cashFeeVatTotal + shippingVatAmount) * 100) / 100;
+    Math.round((vatAmount + cashFeeVatTotal) * 100) / 100;
 
   // Mirrors order.service.js's estimatedDeliveryDays formula exactly (the LATER of the
   // resolved ZONE-or-region courier transit time and the slowest cart line's own
@@ -1554,7 +1549,12 @@ function OrderReviewCard({
             </div>
           ) : null}
           <div className="flex items-baseline justify-between gap-4 text-ink-500">
-            <span>{t("checkout.shipment")}</span>
+            <span>
+              {t("checkout.shipment")}
+              {shipping > 0 && vatEnabled ? (
+                <span className="text-ink-400"> ({t("checkout.flatRateVatInclusive")})</span>
+              ) : null}
+            </span>
             <span className="tabular-nums text-right">
               {shipping === 0 ? (
                 t("common.free")
@@ -1570,7 +1570,7 @@ function OrderReviewCard({
               })}
             </p>
           ) : null}
-          {/* VAT sits directly under Shipment (delivery fee is taxed too), just above the Total. */}
+          {/* VAT (product + cash-fee only; shipping is flat + VAT-inclusive) sits under Shipment. */}
           {vatRatePercent != null && combinedVatAmount > 0 ? (
             <div className="flex items-baseline justify-between gap-4 text-ink-500">
               <span>

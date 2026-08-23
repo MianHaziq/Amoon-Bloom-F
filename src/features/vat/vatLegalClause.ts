@@ -66,13 +66,13 @@ export function shippingVatClause(
       ];
     case "inclusive":
       return [
-        `All product prices displayed on our website are listed in ${currencyDisplayName} and are inclusive of VAT where applicable, in accordance with ${vatLawName}. Your order total at checkout will show the product subtotal and delivery charges, with VAT already included in the displayed prices.`,
-        `تعرض جميع أسعار المنتجات على موقعنا ب${currencyDisplayName} وتشمل ضريبة القيمة المضافة حيثما ينطبق ذلك، بموجب ${vatLawName}. سيوضح إجمالي طلبك عند إتمام الشراء إجمالي المنتجات ورسوم التوصيل، مع احتساب ضريبة القيمة المضافة ضمن الأسعار المعروضة.`,
+        `All product prices displayed on our website are listed in ${currencyDisplayName} and are inclusive of VAT where applicable, in accordance with ${vatLawName}. Delivery is charged at a flat rate that is also inclusive of VAT. Your order total at checkout will show the product subtotal and delivery charges, with VAT already included in the displayed prices.`,
+        `تعرض جميع أسعار المنتجات على موقعنا ب${currencyDisplayName} وتشمل ضريبة القيمة المضافة حيثما ينطبق ذلك، بموجب ${vatLawName}. وتُحتسب رسوم التوصيل بسعر ثابت شامل أيضاً لضريبة القيمة المضافة. سيوضح إجمالي طلبك عند إتمام الشراء إجمالي المنتجات ورسوم التوصيل، مع احتساب ضريبة القيمة المضافة ضمن الأسعار المعروضة.`,
       ];
     case "exclusive":
       return [
-        `All product prices displayed on our website are listed in ${currencyDisplayName} and are exclusive of VAT where applicable. Applicable VAT is calculated and added at checkout before you complete your order, in accordance with ${vatLawName}. Your order total at checkout will show the product subtotal, delivery charges, and VAT separately where applicable.`,
-        `تعرض جميع أسعار المنتجات على موقعنا ب${currencyDisplayName} ولا تشمل ضريبة القيمة المضافة حيثما ينطبق ذلك. يتم احتساب ضريبة القيمة المضافة المستحقة وإضافتها عند إتمام الطلب قبل إكمال طلبك، بموجب ${vatLawName}. سيوضح إجمالي طلبك عند إتمام الشراء إجمالي المنتجات ورسوم التوصيل وضريبة القيمة المضافة بشكل منفصل حيثما ينطبق ذلك.`,
+        `All product prices displayed on our website are listed in ${currencyDisplayName} and are exclusive of VAT where applicable. Applicable VAT is calculated and added on products at checkout before you complete your order, in accordance with ${vatLawName}. Delivery is charged at a flat rate that is inclusive of VAT (no VAT is added on top of the delivery fee). Your order total at checkout will show the product subtotal, VAT on products, and the delivery charge separately where applicable.`,
+        `تعرض جميع أسعار المنتجات على موقعنا ب${currencyDisplayName} ولا تشمل ضريبة القيمة المضافة حيثما ينطبق ذلك. يتم احتساب ضريبة القيمة المضافة المستحقة وإضافتها على المنتجات عند إتمام الطلب قبل إكمال طلبك، بموجب ${vatLawName}. وتُحتسب رسوم التوصيل بسعر ثابت شامل لضريبة القيمة المضافة (لا تُضاف ضريبة إضافية على رسوم التوصيل). سيوضح إجمالي طلبك عند إتمام الشراء إجمالي المنتجات وضريبة القيمة المضافة على المنتجات ورسوم التوصيل بشكل منفصل حيثما ينطبق ذلك.`,
       ];
   }
 }
