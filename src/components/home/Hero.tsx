@@ -8,13 +8,13 @@ import { HeroCarousel, type HeroSlide } from "./HeroCarousel";
 /**
  * Hero — inset 16:9 slideshow, padded to align with the product grid container.
  *
- * Composition:
- *   1. The hard-coded brand videos (siteConfig.heroVideos) are the base of the hero.
- *   2. Admin-managed WEB banners (images and/or videos, in their admin order) are
- *      APPENDED AFTER the brand videos — so adding a banner ADDS to the hero instead
- *      of replacing the videos. These are web-only; the mobile app keeps its own
- *      MOBILE image banners.
- *   3. If there are neither, a curated editorial image set keeps the hero non-empty.
+ * Composition — admin-managed WEB banners are the SOURCE OF TRUTH, so the storefront
+ * hero matches the admin panel exactly:
+ *   1. When any WEB banners exist (images and/or videos, in their admin order) they ARE
+ *      the hero. Web-only; the mobile app keeps its own MOBILE image banners.
+ *   2. FALLBACK (no web banner configured): the hard-coded brand videos
+ *      (siteConfig.heroVideos) so a fresh store still has a hero.
+ *   3. FALLBACK (neither): a curated editorial image set keeps the hero non-empty.
  */
 const FALLBACK_SLIDES: HeroSlide[] = [
   {
@@ -42,15 +42,19 @@ export async function Hero() {
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(({ id, url }) => ({ id, kind: bannerMediaKind(url), url }));
 
-  // The brand videos are the base; admin banners are appended after them (not a
-  // replacement), so adding one image gives "3 videos + that image", image last.
+  // Brand videos are a FALLBACK only — used when the admin has configured no web banner,
+  // so the storefront hero reflects exactly what's in the admin panel when banners exist.
   const videoSlides: HeroSlide[] = (siteConfig.heroVideos ?? []).map(
     (url, i) => ({ id: `hero-video-${i}`, kind: "video", url })
   );
 
-  const combined: HeroSlide[] = [...videoSlides, ...bannerSlides];
-  // Only fall back to the editorial image set when there are truly no slides at all.
-  const slides: HeroSlide[] = combined.length > 0 ? combined : FALLBACK_SLIDES;
+  // Admin banners win; else brand videos; else the editorial image set (never empty).
+  const slides: HeroSlide[] =
+    bannerSlides.length > 0
+      ? bannerSlides
+      : videoSlides.length > 0
+        ? videoSlides
+        : FALLBACK_SLIDES;
 
   return (
     <section className="bg-cream-50 pt-3 pb-6 sm:pt-4 sm:pb-8 lg:pt-6 lg:pb-10">
