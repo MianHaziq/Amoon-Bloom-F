@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppFloatButton } from "@/components/layout/WhatsAppFloatButton";
@@ -15,15 +15,15 @@ import { ScrollManager } from "@/components/layout/ScrollManager";
 import { getServerLocale } from "@/i18n/server";
 import { t } from "@/i18n";
 import { getCachedRegions } from "@/services/catalogCache";
-import { LOCALES, activeRegionSlugs } from "@/features/location/routing";
+import { LOCALES, activeRegionSlugs, buildPrefix, regionSlug } from "@/features/location/routing";
 
 /**
  * Storefront shell for the `/:region/:locale` segment. This is the AUTHORITATIVE
  * validation boundary for the URL: the edge proxy only shape-checks the prefix,
- * so an unknown region slug or bad locale is turned into a 404 here (against the
- * live active-regions list). The proxy has already injected the matching
- * `x-region-slug`/`x-locale` headers, so the server resolvers used throughout
- * the tree resolve to this same region/locale.
+ * so a bad locale is turned into a 404 here, and a region slug that isn't active
+ * (validated against the live active-regions list) is bounced to an open region.
+ * The proxy has already injected the matching `x-region-slug`/`x-locale` headers,
+ * so the server resolvers used throughout the tree resolve to this region/locale.
  */
 export default async function StorefrontLayout({
   children,
@@ -32,7 +32,21 @@ export default async function StorefrontLayout({
   const { region, locale: localeParam } = await params;
   if (!(LOCALES as string[]).includes(localeParam)) notFound();
   const regions = await getCachedRegions().catch(() => []);
-  if (!activeRegionSlugs(regions).includes(region.toLowerCase())) notFound();
+  // `GET /regions` (public) already returns ONLY active regions, so any slug that
+  // isn't in this list is either hidden-by-admin or unknown.
+  if (!activeRegionSlugs(regions).includes(region.toLowerCase())) {
+    // Don't 404 when other regions are OPEN — that strands every visitor whose
+    // default/last-used region has been hidden (the edge proxy sends a bare "/"
+    // to the hardcoded default slug "ae"; if that's hidden, the old code 404'd
+    // even though another region was live). Bounce to the best available active
+    // region instead: the one flagged default, else the first by sortOrder. The
+    // target is guaranteed active (drawn from this same list), so it can't loop,
+    // and the proxy re-syncs the region_slug cookie on the redirect, so a later
+    // bare-path visit lands here directly. Only a store with ZERO open regions 404s.
+    const fallback = regions.find((r) => r.isDefault) ?? regions[0];
+    if (fallback) redirect(buildPrefix(regionSlug(fallback), localeParam));
+    notFound();
+  }
 
   const locale = await getServerLocale();
   return (
