@@ -62,7 +62,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   );
 
   const category = toUiCategory(categoryApi, locale);
-  const items = toUiProducts(productPage.data, { locale });
+  // Coming-soon products are never listed on the storefront (only released ones, which
+  // the backend returns with comingSoon=false). A coming-soon CATEGORY shows a message
+  // instead of a grid (below); a normal category just drops any coming-soon items.
+  const items = toUiProducts(productPage.data, { locale }).filter((p) => !p.comingSoon);
 
   return (
     <>
@@ -93,14 +96,37 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           {category.description && (
             <p className="mt-3 max-w-2xl text-ink-500">{category.description}</p>
           )}
-          <p className="mt-4 text-xs text-ink-400">
-            {tCount(locale, items.length, "units.pieceOne", "units.pieceOther")}
-          </p>
+          {!category.comingSoon && (
+            <p className="mt-4 text-xs text-ink-400">
+              {tCount(locale, items.length, "units.pieceOne", "units.pieceOther")}
+            </p>
+          )}
         </Container>
       </section>
 
       <Section spacing="md" tone="default">
-        {items.length === 0 ? (
+        {category.comingSoon ? (
+          // Coming-soon category: no product grid — a clear "coming soon" message, so a
+          // visitor who reaches the page (direct link, product's category label) sees why
+          // it's empty instead of a blank/emptied grid.
+          <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 px-6 py-16 text-center sm:py-20">
+            <span className="inline-flex items-center rounded-full bg-ink-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white">
+              {t(locale, "common.comingSoon")}
+            </span>
+            <p className="mt-1 font-display text-2xl text-ink-900">
+              {t(locale, "shop.categoryComingSoonTitle")}
+            </p>
+            <p className="max-w-md text-sm text-ink-500">
+              {t(locale, "shop.categoryComingSoonBody")}
+            </p>
+            <LocalizedLink
+              href={ROUTES.shop}
+              className="mt-1 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-white"
+            >
+              {t(locale, "common.browseBoutique")}
+            </LocalizedLink>
+          </div>
+        ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 px-6 py-16 text-center sm:py-20">
             <p className="font-display text-2xl text-ink-900">
               {t(locale, "shop.emptyCategoryTitle")}

@@ -52,7 +52,12 @@ export async function HomeSections() {
       data: [],
       meta: {},
     }));
-    const products = toUiProducts(page.data, { locale }).slice(0, PRODUCTS_PER_SECTION);
+    // Coming-soon products never appear in rails — only released (orderable) ones. A
+    // released product comes back with comingSoon=false from the backend, so this drops
+    // exactly the un-released coming-soon items.
+    const products = toUiProducts(page.data, { locale })
+      .filter((p) => !p.comingSoon)
+      .slice(0, PRODUCTS_PER_SECTION);
     return (
       <ProductRail
         locale={locale}
@@ -71,10 +76,12 @@ export async function HomeSections() {
         const display = resolveSectionDisplay(section);
         // Render enough cards to satisfy the larger breakpoint limit; SectionProducts
         // trims each breakpoint down to its own limit via CSS.
-        const products = toUiProducts(section.products, { locale }).slice(
-          0,
-          sectionRenderCount(display)
-        );
+        // A coming-soon product shows in a section ONLY when that section released it
+        // ("Sell these products even if their category is coming soon") — the backend
+        // then returns it with comingSoon=false. Un-released coming-soon items are hidden.
+        const products = toUiProducts(section.products, { locale })
+          .filter((p) => !p.comingSoon)
+          .slice(0, sectionRenderCount(display));
         if (products.length === 0) return null;
         return (
           <Section

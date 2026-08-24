@@ -164,6 +164,16 @@ export function ShopPLP({
   const activeSection = activeSectionId
     ? sections.find((s) => s.id === activeSectionId) ?? null
     : null;
+  // When the selected category is coming-soon, the storefront shows a "coming soon" message
+  // instead of products (its items are hidden storefront-wide, so the grid would otherwise
+  // read "No matches found"). Mirrors the dedicated /shop/category/[slug] page. A section
+  // filter is never a category, so it's excluded. `activeCategory` may be a slug (locked
+  // route) or an id (?category=<id>).
+  const activeCategoryComingSoon = useMemo(() => {
+    if (!activeCategory || activeSectionId) return false;
+    const c = categories.find((x) => x.id === activeCategory || x.slug === activeCategory);
+    return Boolean(c?.comingSoon);
+  }, [activeCategory, activeSectionId, categories]);
   // The SSR seed corresponds to "no user-selected category" (+ current ?q=).
   const seedable = (activeCategory ?? null) === (lockedCategorySlug ?? null);
 
@@ -208,7 +218,11 @@ export function ShopPLP({
       toUiProducts(
         (data?.pages ?? []).flatMap((pg) => pg.data),
         { locale: uiLocale, currency }
-      ),
+      // Coming-soon products are hidden from every storefront listing (shop grid,
+      // search, section feeds). Only released products — which the backend returns
+      // with comingSoon=false — reach the grid. Applied here so facets + counts derive
+      // from the visible set too.
+      ).filter((p) => !p.comingSoon),
     [data, uiLocale, currency]
   );
   const sourceTotal =
@@ -221,7 +235,9 @@ export function ShopPLP({
   const curated = useMemo(
     () =>
       activeSection
-        ? toUiProducts(activeSection.products, { locale: uiLocale, currency })
+        ? toUiProducts(activeSection.products, { locale: uiLocale, currency }).filter(
+            (p) => !p.comingSoon
+          )
         : [],
     [activeSection, uiLocale, currency]
   );
@@ -521,6 +537,28 @@ export function ShopPLP({
             >
               {isPending ? (
                 <SkeletonGrid count={pageSize >= 6 ? 6 : pageSize} />
+              ) : activeCategoryComingSoon ? (
+                // Coming-soon category: a clear "coming soon" message, not the generic
+                // "No matches found" (its products are intentionally hidden).
+                <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 py-16 text-center sm:py-20">
+                  <span className="inline-flex items-center rounded-full bg-ink-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white">
+                    {t("common.comingSoon")}
+                  </span>
+                  <p className="mt-1 font-display text-2xl text-ink-900">
+                    {t("shop.categoryComingSoonTitle")}
+                  </p>
+                  <p className="max-w-sm text-sm text-ink-500">
+                    {t("shop.categoryComingSoonBody")}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="md"
+                    onClick={clearAll}
+                    className="mt-2"
+                  >
+                    {t("shop.clearFilters")}
+                  </Button>
+                </div>
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink-200 bg-cream-50 py-16 text-center sm:py-20">
                   <p className="font-display text-2xl text-ink-900">
