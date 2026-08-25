@@ -299,6 +299,8 @@ export interface ApiGuestCheckoutInput {
   deliveryType?: DeliveryType;
   /** Required (and validated as 1-60 days out) when deliveryType is SCHEDULED. ISO datetime. */
   scheduledDeliveryAt?: string;
+  /** COD (default) or MYFATOORAH. For MYFATOORAH, follow up with ordersApi.guestPay(order.id). */
+  paymentMethod?: PaymentMethod;
   // Cash arrangement is per-item — see ApiGuestCheckoutItem.cashArrangement.
 }
 

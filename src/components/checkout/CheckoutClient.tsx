@@ -407,11 +407,10 @@ export function CheckoutClient() {
   const belowMinOrder = minOrderAmount != null && subtotal < minOrderAmount;
   const aboveMaxOrder = maxOrderAmount != null && subtotal > maxOrderAmount;
 
-  // Online payment (MyFatoorah). Offered only to signed-in customers in a region that has
-  // it enabled with at least one method — guests stay COD-only (backend guest checkout is
-  // COD). The redirect flow shows Apple Pay (on iPhone/Safari) + cards on MyFatoorah's page.
+  // Online payment (MyFatoorah). Offered — to signed-in customers AND guests — in a region
+  // that has it enabled with at least one method. The redirect flow shows Apple Pay (on
+  // iPhone/Safari) + cards on MyFatoorah's page. Guests pay via the public guest-pay endpoint.
   const onlinePayAvailable =
-    isAuthed &&
     Boolean(currentRegion?.onlinePaymentEnabled) &&
     (Boolean(currentRegion?.applePayEnabled) || Boolean(currentRegion?.cardPaymentEnabled));
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "MYFATOORAH">("COD");
@@ -652,7 +651,16 @@ export function CheckoutClient() {
           promoCode: promoResult ? promoCode.trim() : undefined,
           deliveryType,
           scheduledDeliveryAt: scheduledDeliveryAtIso,
+          paymentMethod: payingOnline ? "MYFATOORAH" : "COD",
         });
+        // Online guest order: get the MyFatoorah hosted-page URL via the public guest-pay
+        // endpoint; onSuccess hands the browser off to it. The return URL carries ?guest=1 so
+        // the browser comes back to the guest success page after paying.
+        if (payingOnline) {
+          const returnUrl = `${window.location.origin}${localize(ROUTES.orderSuccess)}?guest=1`;
+          const { paymentUrl } = await ordersApi.guestPay(guestOrder.id, { returnUrl });
+          return { order: guestOrder, paymentUrl };
+        }
         return { order: guestOrder };
       }
 
@@ -685,6 +693,16 @@ export function CheckoutClient() {
       // both until MyFatoorah confirms. Hand the browser off to the hosted payment page;
       // MyFatoorah returns to the success/error page, which the backend re-verifies.
       if (paymentUrl) {
+        // Guest online payment: stash the order so the success page can render it after the
+        // MyFatoorah round-trip (guests can't refetch an order). sessionStorage survives the
+        // same-tab redirect out to MyFatoorah and back.
+        if (!isAuthed) {
+          try {
+            sessionStorage.setItem(STORAGE_KEYS.guestOrder, JSON.stringify(order));
+          } catch {
+            /* sessionStorage unavailable — success page falls back gracefully */
+          }
+        }
         window.location.href = paymentUrl;
         return;
       }

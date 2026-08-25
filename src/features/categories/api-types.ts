@@ -13,6 +13,9 @@ export interface ApiCategory {
   description_ar: string | null;
   image: string | null;
   totalProducts: number;
+  /** Admin-defined display order (drag-reorder). Lower = earlier on the storefront
+   *  home grid + menus. The list endpoint already returns categories in this order. */
+  sortOrder?: number;
   /** Publish state. Storefront only ever sees PUBLISHED; staff reads include DRAFT. */
   status?: "DRAFT" | "PUBLISHED";
   /** "Coming soon": category (and all its products) visible but not orderable. On

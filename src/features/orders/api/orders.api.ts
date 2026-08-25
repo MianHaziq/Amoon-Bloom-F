@@ -62,6 +62,18 @@ export const ordersApi = {
     return data.data;
   },
 
+  // Start online payment for a GUEST order (no login). Public endpoint — resolves the order
+  // by id where it has no owner. Same shape as pay(); used by the guest checkout flow.
+  async guestPay(
+    id: string,
+    opts: { returnUrl?: string } = {}
+  ): Promise<{ paymentUrl: string; invoiceId: string | null }> {
+    const { data } = await http.post<
+      ApiResponse<{ paymentUrl: string; invoiceId: string | null }>
+    >(`/orders/${id}/guest-pay`, opts.returnUrl ? { returnUrl: opts.returnUrl } : {});
+    return data.data;
+  },
+
   async getStatus(id: string): Promise<ApiOrderStatusLite> {
     const { data } = await http.get<ApiResponse<ApiOrderStatusLite>>(
       `/orders/${id}/status`

@@ -36,4 +36,13 @@ export const categoriesApi = {
   async remove(id: string): Promise<void> {
     await http.delete(`/categories/${id}`);
   },
+
+  /**
+   * Persist a drag-reorder of the store-wide category display order. Send every
+   * category with its new 0-based `sortOrder`; the storefront home grid + menus
+   * follow this order. Global (not per-region), unlike delivery zones.
+   */
+  async reorder(items: { id: string; sortOrder: number }[]): Promise<void> {
+    await http.patch("/categories/order", { items });
+  },
 };

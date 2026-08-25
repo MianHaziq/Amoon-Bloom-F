@@ -38,6 +38,29 @@ export function CategoriesAdminPage() {
     onError: (err) => toast.fromError(t("admin.categoriesPage.toastDeleteError"), err),
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: (items: { id: string; sortOrder: number }[]) =>
+      categoriesApi.reorder(items),
+    onSuccess: () => {
+      toast.success({ title: t("admin.categoriesPage.toastOrderSaved") });
+      // Bust the storefront caches so the home grid + menus pick up the new order.
+      revalidateCatalog();
+    },
+    onError: (err) => {
+      toast.fromError(t("admin.categoriesPage.toastOrderError"), err);
+      // Roll back the optimistic order to the server truth.
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+    },
+  });
+
+  // Persist the dragged order: renumber 0..n, optimistically update the cached list,
+  // then send the whole set. Category order is store-wide (drives the home grid).
+  const handleReorder = (next: ApiCategory[]) => {
+    const withOrder = next.map((c, i) => ({ ...c, sortOrder: i }));
+    queryClient.setQueryData<ApiCategory[]>(queryKeys.categories.list(), withOrder);
+    reorderMutation.mutate(withOrder.map((c) => ({ id: c.id, sortOrder: c.sortOrder })));
+  };
+
   const columns: Column<ApiCategory>[] = [
     {
       key: "image",
@@ -127,6 +150,13 @@ export function CategoriesAdminPage() {
         error={query.error}
         emptyTitle={t("admin.categoriesPage.emptyTitle")}
         emptyDescription={t("admin.categoriesPage.emptyDescription")}
+        sortable
+        onReorder={handleReorder}
+        footer={
+          query.data && query.data.length > 1 ? (
+            <p className="text-xs text-ink-500">{t("admin.categoriesPage.reorderHint")}</p>
+          ) : undefined
+        }
       />
 
       <ConfirmDialog
