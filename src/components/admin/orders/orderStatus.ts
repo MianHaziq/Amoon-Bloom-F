@@ -8,4 +8,6 @@ export {
   ORDER_STATUS_TONE,
   ORDER_STATUS_LABEL,
   ORDER_STATUS_LABEL_KEY,
+  PAYMENT_STATUS_TONE,
+  PAYMENT_STATUS_LABEL_KEY,
 } from "@/features/orders/constants";
