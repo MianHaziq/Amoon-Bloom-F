@@ -18,6 +18,8 @@ import {
   ORDER_STATUSES,
   ORDER_STATUS_LABEL_KEY,
   ORDER_STATUS_TONE,
+  PAYMENT_STATUS_LABEL_KEY,
+  PAYMENT_STATUS_TONE,
 } from "./orderStatus";
 import { OrderExportDialog } from "./OrderExportDialog";
 import { customerName, customerEmail, customerLabel, isGuestOrder } from "./orderCustomer";
@@ -92,9 +94,16 @@ export function OrdersAdminPage() {
       key: "status",
       header: t("admin.status"),
       cell: (o) => (
-        <Badge tone={ORDER_STATUS_TONE[o.status]}>
-          {t(ORDER_STATUS_LABEL_KEY[o.status])}
-        </Badge>
+        <div className="flex flex-col items-start gap-1">
+          <Badge tone={ORDER_STATUS_TONE[o.status]}>
+            {t(ORDER_STATUS_LABEL_KEY[o.status])}
+          </Badge>
+          {o.paymentStatus ? (
+            <Badge tone={PAYMENT_STATUS_TONE[o.paymentStatus]}>
+              {t(PAYMENT_STATUS_LABEL_KEY[o.paymentStatus])}
+            </Badge>
+          ) : null}
+        </div>
       ),
     },
     {

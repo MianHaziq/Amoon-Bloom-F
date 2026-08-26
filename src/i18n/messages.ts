@@ -603,6 +603,11 @@ export const messages = {
       FAILED: "Failed",
       DRAFT: "Draft",
     },
+    paymentStatus: {
+      PAID: "Paid",
+      UNPAID: "Unpaid",
+      FAILED: "Payment failed",
+    },
     account: {
       title: "My account",
       orders: "Orders",
@@ -2599,6 +2604,11 @@ export const messages = {
       REFUNDED: "مسترد",
       FAILED: "فشل",
       DRAFT: "مسودة",
+    },
+    paymentStatus: {
+      PAID: "مدفوع",
+      UNPAID: "غير مدفوع",
+      FAILED: "فشل الدفع",
     },
     account: {
       title: "حسابي",

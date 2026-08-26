@@ -1,4 +1,4 @@
-import type { OrderStatus } from "./types";
+import type { OrderStatus, PaymentStatus } from "./types";
 import type { MessageKey } from "@/i18n";
 
 /**
@@ -57,6 +57,24 @@ export const ORDER_STATUS_LABEL_KEY: Record<OrderStatus, MessageKey> = {
   REFUNDED: "orderStatus.REFUNDED",
   FAILED: "orderStatus.FAILED",
   DRAFT: "orderStatus.DRAFT",
+};
+
+/**
+ * Payment status — the money side, distinct from the fulfilment `status` above. Shown as a
+ * small badge alongside the order status so staff can see at a glance whether payment was
+ * actually collected (Paid), is still due (Unpaid — COD, or an online order not yet paid),
+ * or a charge attempt failed.
+ */
+export const PAYMENT_STATUS_TONE: Record<PaymentStatus, "neutral" | "success" | "danger"> = {
+  PAID: "success",
+  UNPAID: "neutral",
+  FAILED: "danger",
+};
+
+export const PAYMENT_STATUS_LABEL_KEY: Record<PaymentStatus, MessageKey> = {
+  PAID: "paymentStatus.PAID",
+  UNPAID: "paymentStatus.UNPAID",
+  FAILED: "paymentStatus.FAILED",
 };
 
 /**
