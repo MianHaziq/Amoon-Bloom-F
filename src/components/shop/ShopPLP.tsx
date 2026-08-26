@@ -581,7 +581,9 @@ export function ShopPLP({
                   )}
                 </div>
               ) : (
-                <ProductGrid products={filtered} columns={3} priorityCount={3} />
+                // trigger="mount": this grid grows via "Load more"; a whileInView-once
+                // stagger would leave appended items invisible until refresh.
+                <ProductGrid products={filtered} columns={3} priorityCount={3} trigger="mount" />
               )}
             </m.div>
           </AnimatePresence>

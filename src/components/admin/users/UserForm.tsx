@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { Button, Input } from "@/components/ui";
+import { EyeIcon, EyeOffIcon } from "@/components/icons";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { usersApi } from "@/features/users/api/users.api";
 import { regionsApi } from "@/features/regions/api/regions.api";
@@ -105,6 +106,7 @@ export function UserForm({
   lockRole = false,
 }: UserFormProps) {
   const { t } = useT();
+  const [showPassword, setShowPassword] = useState(false);
   const { createSchema, editSchema } = useUserFormSchemas();
   const permsQuery = useQuery({
     queryKey: queryKeys.users.permissionsCatalog(),
@@ -228,7 +230,7 @@ export function UserForm({
                     ? t("admin.userForm.tempPasswordLabel")
                     : t("admin.userForm.editPasswordLabel")
                 }
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 hint={
                   mode === "create"
@@ -237,6 +239,20 @@ export function UserForm({
                 }
                 error={errors.password?.message}
                 containerClassName="sm:col-span-2"
+                trailingIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="flex items-center text-ink-400 transition-colors hover:text-ink-700"
+                    aria-label={
+                      showPassword
+                        ? t("admin.userForm.hidePassword")
+                        : t("admin.userForm.showPassword")
+                    }
+                  >
+                    {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                  </button>
+                }
                 {...register("password")}
               />
             ) : null}

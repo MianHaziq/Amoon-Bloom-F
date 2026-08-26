@@ -24,6 +24,14 @@ export interface ApiCategory {
   comingSoon?: boolean;
   /** Which regions this category is a coming-soon teaser in (staff/edit reads only). */
   comingSoonRegionIds?: string[];
+  /** "On sale": storefront reads = requesting region's value; staff = global mirror.
+   *  Cascades a Sale badge to the category's products. `saleLabel`/`saleLabel_ar` is the
+   *  custom badge text (blank = default "Sale"). */
+  onSale?: boolean;
+  saleLabel?: string | null;
+  saleLabel_ar?: string | null;
+  /** Which regions this category is on sale in (staff/edit reads only). */
+  onSaleRegionIds?: string[];
   /** Default gift-card input mode for this category's products (null = no default). */
   giftCardMode?: "MESSAGE" | "NAME" | null;
   /** How far a DRAFT status reaches (ignored while PUBLISHED). HOME_ONLY hides the
@@ -81,6 +89,11 @@ export interface ApiCategoryCreateInput {
   comingSoon?: boolean;
   /** Per-region coming-soon: which of the category's regions it's a teaser in. */
   comingSoonRegionIds?: string[];
+  /** Per-region "on sale": which of the category's regions cascade a Sale badge to its
+   *  products (visual only). Optional bilingual label; blank = default "Sale". */
+  onSaleRegionIds?: string[];
+  saleLabel?: string | null;
+  saleLabel_ar?: string | null;
   /** Default gift-card mode for the category's products. null/"MESSAGE"/"NAME". */
   giftCardMode?: "MESSAGE" | "NAME" | null;
   /** How far a DRAFT status reaches: HOME_ONLY (default) or ENTIRE_STORE. */

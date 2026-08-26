@@ -32,9 +32,9 @@ export async function Editorial() {
           </h2>
           <p className="max-w-md text-lg text-cream-100/80">
             From a single rose to our most generous graduation deluxe — every
-            Amoonis Boutique box is hand-packed in {regionCopy.city}, finished
-            with a hand-tied ribbon and a printed card. Same-day delivery
-            across {regionCopy.country}.
+            Amoon Boutique box is hand-packed by our team, finished with a
+            hand-tied ribbon and a printed card. Delivered with care across{" "}
+            {regionCopy.country}.
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
             <LocalizedLink href="/about" className="contents">

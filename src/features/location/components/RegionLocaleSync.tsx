@@ -52,6 +52,18 @@ export function RegionLocaleSync() {
     }
   }, [locale, dispatch, store]);
 
+  // Authoritatively sync <html dir>/<lang> to the URL locale (the source of truth) after
+  // every navigation. The root layout sets these at SSR but is NOT re-rendered on a
+  // client-side locale switch (or, if it is, can re-assert a stale dir and clobber the
+  // toggle's optimistic update) — so switching e.g. AR→EN could leave the page in RTL
+  // alignment until a hard refresh. This effect runs post-commit, keyed on the URL locale,
+  // so it always wins and both directions flip correctly without a refresh.
+  useEffect(() => {
+    if (!locale || typeof document === "undefined") return;
+    document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   useEffect(() => {
     if (!regionSlug || !regions?.length) return;
     document.cookie = `${REGION_SLUG_COOKIE}=${regionSlug}; path=/; max-age=31536000; samesite=lax`;

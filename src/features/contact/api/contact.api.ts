@@ -4,6 +4,7 @@ import type {
   ApiContactListParams,
   ApiContactMessage,
   ApiContactSubmitInput,
+  ApiContactPublicInput,
 } from "../types";
 
 export const contactApi = {
@@ -14,6 +15,14 @@ export const contactApi = {
    */
   async submit(payload: ApiContactSubmitInput): Promise<void> {
     await http.post("/contact/issue", payload);
+  },
+
+  /**
+   * Public contact form (no login) — sends name/phone/email/message. Rate-limited
+   * server-side. Mirrors the client site's public "Send a Request" form.
+   */
+  async submitPublic(payload: ApiContactPublicInput): Promise<void> {
+    await http.post("/contact/public", payload);
   },
 
   // --- Admin / Manager (CONTACT) ---

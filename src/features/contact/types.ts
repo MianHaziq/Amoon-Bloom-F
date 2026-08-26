@@ -24,13 +24,25 @@ export interface ApiContactUser {
 
 export interface ApiContactMessage {
   id: string;
-  userId: string;
+  userId: string | null;
+  /** Guest (public contact form) submitter details — set when userId is null. */
+  guestName: string | null;
+  guestPhone: string | null;
+  guestEmail: string | null;
   subject: string;
   message: string;
   status: ContactStatus;
   createdAt: string;
   updatedAt: string;
   user: ApiContactUser | null;
+}
+
+/** Body for the PUBLIC contact form `POST /contact/public` (no auth). */
+export interface ApiContactPublicInput {
+  name: string;
+  phone: string;
+  email: string;
+  message: string;
 }
 
 /**

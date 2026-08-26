@@ -149,7 +149,9 @@ export function ProductFilters({
                 )}
               >
                 <span>{cat.title}</span>
-                {typeof cat.productCount === "number" && (
+                {/* Coming-soon categories hide their count — nothing is orderable yet, so a
+                    number reads as "N in stock". Restored once the category is published. */}
+                {typeof cat.productCount === "number" && !cat.comingSoon && (
                   <span
                     className={cn(
                       "text-xs tabular-nums",

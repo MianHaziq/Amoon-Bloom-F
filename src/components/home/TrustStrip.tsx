@@ -35,7 +35,7 @@ export async function TrustStrip() {
       descriptionKey === "trust.sameDayDesc" && !cutoff ? "trust.sameDayDescNoCutoff" : descriptionKey;
     return {
       title: t(locale, titleKey),
-      description: t(locale, key, { city: regionCopy.city, cutoff: cutoff ?? "" }),
+      description: t(locale, key, { country: regionCopy.country, cutoff: cutoff ?? "" }),
     };
   });
 

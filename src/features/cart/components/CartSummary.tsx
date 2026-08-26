@@ -174,7 +174,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
           <li className="inline-flex items-center gap-2">
             <TruckIcon size={14} className="text-bloom-600" />
             {t("cart.cutoff", {
-              city: regionCopy.city,
+              country: regionCopy.country,
               cutoff: formatCutoffTime(deliveryConfig.sameDayCutoff, locale),
             })}
           </li>
@@ -183,7 +183,7 @@ export function CartSummary({ variant = "page" }: CartSummaryProps) {
         {deliveryConfig?.codEnabled !== false ? (
           <li className="inline-flex items-center gap-2">
             <ShieldIcon size={14} className="text-bloom-600" />
-            {t("cart.secureCod", { city: regionCopy.city })}
+            {t("cart.secureCod", { country: regionCopy.country })}
           </li>
         ) : null}
       </ul>

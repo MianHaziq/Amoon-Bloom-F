@@ -96,6 +96,10 @@ export interface ApiProductCategoryRef {
   /** Category-level "coming soon": cascades to every product in it (the product's
    *  effective coming-soon = its own flag OR this). */
   comingSoon?: boolean;
+  /** Category-level "on sale": cascades a Sale badge to every product in it. */
+  onSale?: boolean;
+  saleLabel?: string | null;
+  saleLabel_ar?: string | null;
   /** Category default gift-card mode; a product inherits this when its own is null. */
   giftCardMode?: "MESSAGE" | "NAME" | null;
 }
@@ -174,6 +178,15 @@ export interface ApiProduct {
   comingSoon?: boolean;
   /** Which regions this product is a coming-soon teaser in (staff/edit reads only). */
   comingSoonRegionIds?: string[];
+  /** "On sale": on storefront reads this is the EFFECTIVE flag (own OR category OR any
+   *  on-sale section it's in) for the requesting region; on staff reads it's the global
+   *  mirror. `saleLabel`/`saleLabel_ar` is the RESOLVED badge text on storefront reads
+   *  (blank = default "Sale"), or the product's own label on staff reads. */
+  onSale?: boolean;
+  saleLabel?: string | null;
+  saleLabel_ar?: string | null;
+  /** Which regions this product is on sale in (staff/edit reads only). */
+  onSaleRegionIds?: string[];
   /** Regions this product is visible in. Present on staff reads only. */
   regions?: ApiProductRegionRef[];
   regionIds?: string[];
@@ -281,6 +294,11 @@ export interface ApiProductCreateInput {
   /** Per-region coming-soon: which of the product's regions it's a teaser in. Server
    *  clears it unless PUBLISHED, and ignores regions the product isn't in. */
   comingSoonRegionIds?: string[];
+  /** Per-region "on sale": which of the product's regions show a Sale badge (visual only,
+   *  no price change). Optional bilingual label; blank = default "Sale" on the storefront. */
+  onSaleRegionIds?: string[];
+  saleLabel?: string | null;
+  saleLabel_ar?: string | null;
   /** Regions this product should be visible in. Defaults to the default region (UAE) if omitted. */
   regionIds?: string[];
 }

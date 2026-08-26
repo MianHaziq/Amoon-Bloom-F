@@ -47,6 +47,9 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
         sortOrder: z.number().int().nonnegative(),
         status: z.enum(["DRAFT", "PUBLISHED"]),
         releaseComingSoon: z.boolean(),
+        onSale: z.boolean(),
+        saleLabel: z.string().optional(),
+        saleLabel_ar: z.string().optional(),
         kind: z.enum(["CUSTOM", "BEST_SELLERS", "NEW_ARRIVALS"]),
         desktopLayout: z.enum(["SCROLL", "GRID"]),
         mobileLayout: z.enum(["SCROLL", "GRID"]),
@@ -90,6 +93,9 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       sortOrder: 0,
       status: "PUBLISHED",
       releaseComingSoon: false,
+      onSale: false,
+      saleLabel: "",
+      saleLabel_ar: "",
       kind: "CUSTOM",
       desktopLayout: SECTION_DISPLAY_DEFAULTS.desktopLayout,
       desktopColumns: SECTION_DISPLAY_DEFAULTS.desktopColumns,
@@ -114,6 +120,9 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       sortOrder: initial.sortOrder,
       status: initial.status ?? "PUBLISHED",
       releaseComingSoon: initial.releaseComingSoon ?? false,
+      onSale: initial.onSale ?? false,
+      saleLabel: initial.saleLabel ?? "",
+      saleLabel_ar: initial.saleLabel_ar ?? "",
       kind: initial.kind ?? "CUSTOM",
       desktopLayout: display.desktopLayout,
       desktopColumns: display.desktopColumns,
@@ -215,6 +224,9 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
       sortOrder: v.sortOrder,
       status: v.status,
       releaseComingSoon: v.releaseComingSoon,
+      onSale: v.onSale,
+      saleLabel: v.saleLabel?.trim() || null,
+      saleLabel_ar: v.saleLabel_ar?.trim() || null,
       kind: v.kind,
       desktopLayout: v.desktopLayout,
       desktopColumns: v.desktopColumns,
@@ -345,6 +357,42 @@ export function SectionForm({ initial, onSubmit, submitLabel, submitting }: Prop
                 </label>
               )}
             />
+          </div>
+
+          <div className="mt-4 rounded-lg border border-ink-100 bg-cream-50/60 p-3">
+            <Controller
+              control={control}
+              name="onSale"
+              render={({ field }) => (
+                <label className="flex cursor-pointer items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-ink-300 text-bloom-600 focus:ring-bloom-500/30"
+                  />
+                  <span className="text-sm text-ink-800">
+                    <span className="font-medium">{t("admin.sectionForm.onSaleLabel")}</span>
+                    <span className="mt-0.5 block text-xs text-ink-500">
+                      {t("admin.sectionForm.onSaleHint")}
+                    </span>
+                  </span>
+                </label>
+              )}
+            />
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Input
+                label={t("admin.sectionForm.saleLabelEn")}
+                placeholder={t("admin.sectionForm.saleLabelPlaceholder")}
+                {...register("saleLabel")}
+              />
+              <Input
+                label={t("admin.sectionForm.saleLabelAr")}
+                placeholder={t("admin.sectionForm.saleLabelPlaceholderAr")}
+                dir="rtl"
+                {...register("saleLabel_ar")}
+              />
+            </div>
           </div>
 
           <label className="mb-1.5 mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">

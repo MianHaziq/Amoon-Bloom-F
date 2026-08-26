@@ -41,6 +41,10 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
         // Per-region "coming soon": which of the category's regions it's a teaser in
         // (cascades to its products there). Empty = live in every region it's in.
         comingSoonRegionIds: z.array(z.string()),
+        // Per-region "on sale": cascades a Sale badge to the category's products + a label.
+        onSaleRegionIds: z.array(z.string()),
+        saleLabel: z.string().optional(),
+        saleLabel_ar: z.string().optional(),
         // null = no category default (products fall through to the MESSAGE default).
         giftCardMode: z.enum(["MESSAGE", "NAME"]).nullable(),
         draftScope: z.enum(["HOME_ONLY", "ENTIRE_STORE"]),
@@ -109,6 +113,9 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       image: null,
       status: "PUBLISHED",
       comingSoonRegionIds: [],
+      onSaleRegionIds: [],
+      saleLabel: "",
+      saleLabel_ar: "",
       giftCardMode: null,
       draftScope: "HOME_ONLY",
       deliveryLeadDays: null,
@@ -140,6 +147,7 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
   const selectedRegionIds = watch("regionIds");
   const watchedStatus = watch("status");
   const comingSoonRegionIds = watch("comingSoonRegionIds") ?? [];
+  const onSaleRegionIds = watch("onSaleRegionIds") ?? [];
   const watchedGiftCardMode = watch("giftCardMode");
   const selectedRegions = (regionsQuery.data ?? []).filter((r) =>
     selectedRegionIds?.includes(r.id)
@@ -162,6 +170,9 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
       image: initial.image,
       status: initial.status ?? "PUBLISHED",
       comingSoonRegionIds: initial.comingSoonRegionIds ?? [],
+      onSaleRegionIds: initial.onSaleRegionIds ?? [],
+      saleLabel: initial.saleLabel ?? "",
+      saleLabel_ar: initial.saleLabel_ar ?? "",
       giftCardMode: initial.giftCardMode ?? null,
       draftScope: initial.draftScope ?? "HOME_ONLY",
       deliveryLeadDays: initial.deliveryLeadDays ?? null,
@@ -201,6 +212,10 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
         values.status === "PUBLISHED"
           ? (values.comingSoonRegionIds ?? []).filter((id) => (values.regionIds ?? []).includes(id))
           : [],
+      // On sale is orthogonal to status (visual badge) — keep it regardless of draft/published.
+      onSaleRegionIds: (values.onSaleRegionIds ?? []).filter((id) => (values.regionIds ?? []).includes(id)),
+      saleLabel: values.saleLabel?.trim() || null,
+      saleLabel_ar: values.saleLabel_ar?.trim() || null,
       giftCardMode: values.giftCardMode,
       draftScope: values.draftScope,
       deliveryLeadDays: values.deliveryLeadDays,
@@ -353,6 +368,56 @@ export function CategoryForm({ initial, onSubmit, submitLabel, submitting }: Cat
               })()}
             </div>
           )}
+          <div className="mt-4 border-t border-ink-100 pt-4">
+            <p className="text-sm font-medium text-ink-800">{t("admin.categoryForm.saleHeading")}</p>
+            <p className="mt-0.5 mb-2 text-xs text-ink-500">{t("admin.categoryForm.saleDescription")}</p>
+            {(() => {
+              const saleRegions = selectedRegions.length
+                ? selectedRegions
+                : (regionsQuery.data ?? []).filter((r) => r.isDefault);
+              if (saleRegions.length === 0) {
+                return <p className="text-sm text-ink-400">{t("admin.categoryForm.comingSoonNoRegions")}</p>;
+              }
+              return (
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2">
+                    {saleRegions.map((r) => {
+                      const checked = onSaleRegionIds.includes(r.id);
+                      return (
+                        <label key={r.id} className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-800">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...onSaleRegionIds, r.id]
+                                : onSaleRegionIds.filter((id) => id !== r.id);
+                              setValue("onSaleRegionIds", next, { shouldDirty: true });
+                            }}
+                            className="h-4 w-4 rounded border-ink-300 text-bloom-600 focus:ring-bloom-500/30"
+                          />
+                          <span>{locale === "ar" ? r.name_ar || r.name : r.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Input
+                      label={t("admin.categoryForm.saleLabelEn")}
+                      placeholder={t("admin.categoryForm.saleLabelPlaceholder")}
+                      {...register("saleLabel")}
+                    />
+                    <Input
+                      label={t("admin.categoryForm.saleLabelAr")}
+                      placeholder={t("admin.categoryForm.saleLabelPlaceholderAr")}
+                      dir="rtl"
+                      {...register("saleLabel_ar")}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
           {watchedStatus === "DRAFT" && (
             <div className="mt-4">
               <label className="mb-1 block text-sm font-medium text-ink-800">

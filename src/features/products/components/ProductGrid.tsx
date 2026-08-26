@@ -8,6 +8,13 @@ interface ProductGridProps {
   className?: string;
   columns?: 2 | 3 | 4;
   priorityCount?: number;
+  /**
+   * Stagger trigger. Default "inView" reveals on scroll (once). Use "mount" for a
+   * PAGINATED grid (e.g. shop "Load more"): a whileInView-once container never reveals
+   * items appended after the first reveal, leaving them at opacity 0 until a refresh —
+   * a controlled `animate` ("mount") propagates "show" to late-mounted children.
+   */
+  trigger?: "inView" | "mount";
 }
 
 // Mobile-first: always 2 columns on phones (the standard ecommerce pattern),
@@ -23,6 +30,7 @@ export function ProductGrid({
   className,
   columns = 4,
   priorityCount = 0,
+  trigger = "inView",
 }: ProductGridProps) {
   return (
     <StaggerGroup
@@ -32,6 +40,7 @@ export function ProductGrid({
         className
       )}
       stagger={0.06}
+      trigger={trigger}
     >
       {products.map((product, i) => (
         <StaggerItem key={product.id}>

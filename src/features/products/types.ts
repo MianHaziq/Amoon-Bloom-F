@@ -82,6 +82,10 @@ export interface Product {
   inStock: boolean;
   /** Effective coming-soon (own OR inherited from category): visible but not orderable. */
   comingSoon?: boolean;
+  /** Effective on-sale (own OR category OR an on-sale section it's in): shows a Sale badge. */
+  onSale?: boolean;
+  /** Resolved Sale-badge text (already localized). Undefined = show the default "Sale". */
+  saleLabel?: string;
   badge?: "new" | "bestseller" | "limited" | "sale";
   rating?: number;
   reviewCount?: number;

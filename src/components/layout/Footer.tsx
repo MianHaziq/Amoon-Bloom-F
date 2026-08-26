@@ -144,14 +144,14 @@ export async function Footer() {
     { type: "text", value: contactHours },
   ];
 
-  // Per-region social links (admin-editable). The 4 legacy networks fall back to
-  // the site default when a region hasn't set them; Snapchat/X/YouTube are shown
-  // only when the region provides a link. Any icon with no resolved URL is hidden.
+  // Per-region social links (admin-editable). An icon is shown ONLY when the
+  // current region has set that link — no site-wide fallback — so a network the
+  // region left blank is hidden entirely (via the .filter below).
   const socials = [
-    { href: currentRegion?.instagramUrl?.trim() || siteConfig.links.instagram, label: "Instagram", Icon: InstagramIcon },
-    { href: currentRegion?.facebookUrl?.trim() || siteConfig.links.facebook, label: "Facebook", Icon: FacebookIcon },
-    { href: currentRegion?.tiktokUrl?.trim() || siteConfig.links.tiktok, label: "TikTok", Icon: TikTokIcon },
-    { href: currentRegion?.threadsUrl?.trim() || siteConfig.links.threads, label: "Threads", Icon: ThreadsIcon },
+    { href: currentRegion?.instagramUrl?.trim() || "", label: "Instagram", Icon: InstagramIcon },
+    { href: currentRegion?.facebookUrl?.trim() || "", label: "Facebook", Icon: FacebookIcon },
+    { href: currentRegion?.tiktokUrl?.trim() || "", label: "TikTok", Icon: TikTokIcon },
+    { href: currentRegion?.threadsUrl?.trim() || "", label: "Threads", Icon: ThreadsIcon },
     { href: currentRegion?.snapchatUrl?.trim() || "", label: "Snapchat", Icon: SnapchatIcon },
     { href: currentRegion?.xUrl?.trim() || "", label: "X", Icon: XIcon },
     { href: currentRegion?.youtubeUrl?.trim() || "", label: "YouTube", Icon: YouTubeIcon },

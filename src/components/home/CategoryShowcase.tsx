@@ -56,7 +56,7 @@ export async function CategoryShowcase() {
           <SectionHeader
             eyebrow={t(locale, "home.categoriesEyebrow")}
             title={t(locale, "home.categoriesTitle")}
-            description={t(locale, "home.categoriesDesc", { city: regionCopy.city })}
+            description={t(locale, "home.categoriesDesc", { country: regionCopy.country })}
             action={
               <LocalizedLink href={ROUTES.shop} className="contents">
                 <Button

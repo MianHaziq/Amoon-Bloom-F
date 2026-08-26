@@ -6,8 +6,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { ROUTES } from "@/constants/routes";
 import { ArrowRight } from "@/components/icons";
+import { useQuery } from "@tanstack/react-query";
 import { useT } from "@/i18n/useT";
 import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
+import { useCurrency } from "@/features/location/hooks/useCurrency";
+import { deliveryConfigApi } from "@/features/delivery-config/api/delivery-config.api";
+import { queryKeys } from "@/services/queryKeys";
 
 export interface HeroSlide {
   id: string;
@@ -30,6 +34,16 @@ interface HeroCarouselProps {
 export function HeroCarousel({ slides }: HeroCarouselProps) {
   const { t } = useT();
   const regionCopy = useRegionCopy();
+  const { countryCode } = useCurrency();
+  // Only claim "same-day delivery" in the hero when the region actually offers it;
+  // otherwise show a plain delivery eyebrow. Region-level config (no zone/subtotal).
+  const deliveryConfigQuery = useQuery({
+    queryKey: queryKeys.deliveryConfig.resolve(countryCode, undefined, 0),
+    queryFn: () => deliveryConfigApi.get({ region: countryCode }),
+    enabled: Boolean(countryCode),
+    staleTime: 60_000,
+  });
+  const sameDayEnabled = Boolean(deliveryConfigQuery.data?.sameDayEnabled);
   const total = slides.length;
   const hasMultiple = total > 1;
 
@@ -179,7 +193,9 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
       <div className="relative z-10 flex h-full w-full flex-col justify-end p-5 sm:p-8 lg:p-12">
         <div className="hidden max-w-xl sm:mb-10 sm:block">
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85 sm:text-xs">
-            {t("hero.eyebrow", { country: regionCopy.country })}
+            {sameDayEnabled
+              ? t("hero.eyebrow", { country: regionCopy.country })
+              : t("hero.eyebrowDelivery", { country: regionCopy.country })}
           </p>
           <h1 className="mt-2 font-display text-2xl font-medium leading-[1.08] text-white sm:mt-3 sm:text-5xl sm:leading-[1.05] lg:text-6xl">
             {t("hero.title1")}{" "}

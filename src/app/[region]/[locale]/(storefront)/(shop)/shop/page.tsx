@@ -86,7 +86,7 @@ export default async function ShopPage(props: PageProps<"/[region]/[locale]/shop
             {t(
               locale,
               heroCutoff ? "shop.heroSubtitle" : "shop.heroSubtitleNoCutoff",
-              { city: regionCopy.city, cutoff: heroCutoff ?? "" }
+              { country: regionCopy.country, cutoff: heroCutoff ?? "" }
             )}
           </p>
         </Container>

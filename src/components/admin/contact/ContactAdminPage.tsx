@@ -48,9 +48,11 @@ export function ContactAdminPage() {
       header: t("admin.contactPage.columnFrom"),
       cell: (m) => (
         <div>
-          <p className="font-medium text-ink-900">{m.user?.fullName ?? "—"}</p>
+          <p className="font-medium text-ink-900">
+            {m.user?.fullName ?? m.guestName ?? "—"}
+          </p>
           <p className="text-xs text-ink-500">
-            {m.user?.email ?? t("admin.contactPage.unknownUser")}
+            {m.user?.email ?? m.guestEmail ?? t("admin.contactPage.unknownUser")}
           </p>
         </div>
       ),
@@ -157,18 +159,25 @@ export function ContactAdminPage() {
                 {t("admin.contactPage.columnFrom")}
               </p>
               <p className="mt-1 font-medium text-ink-900">
-                {selected.user?.fullName ?? t("admin.contactPage.unknownUser")}
+                {selected.user?.fullName ?? selected.guestName ?? t("admin.contactPage.unknownUser")}
+                {!selected.user && selected.guestName ? (
+                  <span className="ms-2 rounded-full bg-blush-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-bloom-700">
+                    {t("admin.contactPage.guestBadge")}
+                  </span>
+                ) : null}
               </p>
-              {selected.user?.email ? (
+              {(selected.user?.email ?? selected.guestEmail) ? (
                 <a
-                  href={`mailto:${selected.user.email}`}
+                  href={`mailto:${selected.user?.email ?? selected.guestEmail}`}
                   className="text-sm text-bloom-700 hover:underline"
                 >
-                  {selected.user.email}
+                  {selected.user?.email ?? selected.guestEmail}
                 </a>
               ) : null}
-              {selected.user?.phone ? (
-                <p className="mt-1 text-sm text-ink-600">{selected.user.phone}</p>
+              {(selected.user?.phone ?? selected.guestPhone) ? (
+                <p className="mt-1 text-sm text-ink-600" dir="ltr">
+                  {selected.user?.phone ?? selected.guestPhone}
+                </p>
               ) : null}
             </div>
 

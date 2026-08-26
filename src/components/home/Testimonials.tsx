@@ -27,7 +27,7 @@ const getReviews = (city: string) => [
 export async function Testimonials() {
   const region = await getServerRegion();
   const regionCopy = await regionCopyFromRegionCode(region, "en");
-  const reviews = getReviews(regionCopy.city);
+  const reviews = getReviews(regionCopy.country);
   return (
     <Section spacing="lg" tone="cream">
       <SectionHeader

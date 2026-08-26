@@ -139,6 +139,13 @@ export function toUiProduct(api: ApiProduct, opts: ToUiProductOptions = {}): Pro
     // Effective coming-soon = the product's own flag OR its category's (cascade). Use
     // `||` not `??`: comingSoon serializes as `false`, so `??` would never fall through.
     comingSoon: Boolean(api.comingSoon || api.category?.comingSoon),
+    // Effective on-sale = the product's resolved flag (backend already ORs own/category/
+    // section on storefront reads) OR the category cascade as a fallback. Visual only.
+    onSale: Boolean(api.onSale || api.category?.onSale),
+    saleLabel:
+      localized(api.saleLabel ?? "", api.saleLabel_ar, locale) ||
+      localized(api.category?.saleLabel ?? "", api.category?.saleLabel_ar, locale) ||
+      undefined,
     options: api.productOptions?.map((o) => adaptOption(o, locale)),
     variants: api.variants?.length ? api.variants.map((v) => adaptVariant(v, locale)) : undefined,
     priceRange: api.priceRange ?? undefined,

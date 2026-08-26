@@ -41,15 +41,15 @@ export function AnnouncementBar() {
       icon: TruckIcon,
       label: config.sameDayCutoff
         ? t("announcement.sameDayCutoff", {
-            city: regionCopy.city,
+            country: regionCopy.country,
             cutoff: formatCutoffTime(config.sameDayCutoff, locale),
           })
-        : t("announcement.sameDay", { city: regionCopy.city }),
+        : t("announcement.sameDay", { country: regionCopy.country }),
     });
   }
 
   // Static brand/marketing items (always shown, so the bar is never empty while config loads).
-  items.push({ icon: SparkleIcon, label: t("announcement.handPacked", { city: regionCopy.city }) });
+  items.push({ icon: SparkleIcon, label: t("announcement.handPacked", { country: regionCopy.country }) });
   items.push({
     icon: PinIcon,
     label:
