@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { m, AnimatePresence } from "motion/react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { ProductGrid } from "@/features/products/components/ProductGrid";
 import { ProductFilters } from "@/features/products/components/ProductFilters";
 import {
@@ -213,6 +213,31 @@ export function ShopPLP({
     staleTime: 60_000,
   });
 
+  // The colour + price facets must reflect the WHOLE active source (this category /
+  // section / the full catalogue), not just the page(s) the grid has loaded — otherwise
+  // a colour on an unloaded product never appears and the counts are a partial tally.
+  // So we fetch the full visible set once (region-scoped + PUBLISHED-only, same as the
+  // grid's source) and derive facets from it, independent of the grid's pagination.
+  // `limit: 100` is the server's max page; a catalogue larger than that would facet on
+  // the first 100 — still the whole set for this store, and far better than one page.
+  const facetQuery = useQuery({
+    queryKey: ["shop-facets", activeCategory ?? null, rawQ || null],
+    queryFn: (): Promise<PaginatedResponse<ApiProduct>> => {
+      const params = { page: 1, limit: 100 };
+      if (rawQ) return productsApi.search(rawQ, params);
+      // A section's facets span the whole catalogue (its curated picks are part of it),
+      // matching the section feed which shows curated-first then the rest of the store.
+      if (activeSectionId) return productsApi.list(params);
+      if (activeCategory === BEST_SELLING_FILTER_VALUE)
+        return productsApi.bestSellers(params);
+      if (activeCategory === NEW_ARRIVALS_FILTER_VALUE)
+        return productsApi.newArrivals(params);
+      if (activeCategory) return productsApi.listByCategory(activeCategory, params);
+      return productsApi.list(params);
+    },
+    staleTime: 60_000,
+  });
+
   const loaded = useMemo(
     () =>
       toUiProducts(
@@ -258,16 +283,35 @@ export function ShopPLP({
     return out;
   }, [activeSection, curated, loaded, rawQ]);
 
-  // Facets derive from the visible source, so price bounds / swatches reflect the
-  // current category (or section) and widen as more pages load.
-  const priceBounds = useMemo(() => derivePriceBounds(baseList), [baseList]);
-  const colorFacets = useMemo(() => deriveColorFacets(baseList), [baseList]);
+  // Full visible source for facet derivation (all colours + accurate counts + true
+  // price range across the whole active set). Falls back to the loaded grid set only
+  // until the facet query resolves, so the sidebar is never empty on first paint.
+  const facetProducts = useMemo(() => {
+    const raw = facetQuery.data?.data;
+    if (!raw) return baseList;
+    return toUiProducts(raw, { locale: uiLocale, currency }).filter(
+      (p) => !p.comingSoon
+    );
+  }, [facetQuery.data, uiLocale, currency, baseList]);
+
+  // Facets derive from the full source, so price bounds / colour swatches + counts
+  // reflect the entire current category (or section), not just the loaded page.
+  const priceBounds = useMemo(() => derivePriceBounds(facetProducts), [facetProducts]);
+  const colorFacets = useMemo(() => deriveColorFacets(facetProducts), [facetProducts]);
 
   const selectedColors = filter.colors ?? [];
   const priceTouched =
     priceBounds != null &&
     ((filter.minPrice != null && filter.minPrice > priceBounds.min) ||
       (filter.maxPrice != null && filter.maxPrice < priceBounds.max));
+  // A colour / price / stock refinement must be applied across the FULL source (the same
+  // set the facets use), not just the loaded grid pages — otherwise a matching product on
+  // an unloaded page is wrongly hidden, and the grid wouldn't match the facet counts.
+  const hasClientRefinement =
+    selectedColors.length > 0 ||
+    filter.minPrice != null ||
+    filter.maxPrice != null ||
+    Boolean(filter.inStock);
 
   const hasActiveFilters =
     (!lockedCategorySlug && Boolean(filter.category)) ||
@@ -323,8 +367,10 @@ export function ShopPLP({
   const filtered = useMemo(() => {
     // Category & text search are applied server-side (they define the query
     // source), so we do NOT re-filter them here. Everything below is a client
-    // refinement over the (section-aware) loaded source.
-    let list = [...baseList];
+    // refinement. When a refinement is active we run it over the FULL source
+    // (facetProducts) so results are complete; otherwise we browse the paginated
+    // loaded set (with "Load more").
+    let list = [...(hasClientRefinement ? facetProducts : baseList)];
     if (filter.inStock) {
       list = list.filter((p) => p.inStock);
     }
@@ -366,7 +412,7 @@ export function ShopPLP({
         break;
     }
     return list;
-  }, [baseList, filter]);
+  }, [baseList, facetProducts, hasClientRefinement, filter]);
 
   // Category slug → title, for the active-filter chip label. A section shows its
   // (localized) admin title; otherwise a real category or a legacy sentinel.
@@ -588,8 +634,10 @@ export function ShopPLP({
             </m.div>
           </AnimatePresence>
 
-          {/* See more — progress bar + arrow link */}
-          {!isPending && hasNextPage && (
+          {/* See more — progress bar + arrow link. Hidden while a client refinement is
+              active: we've already filtered the full source, so there's nothing more to
+              page in (and the progress/total would be misleading). */}
+          {!isPending && hasNextPage && !hasClientRefinement && (
             <div className="mt-14 flex flex-col items-center gap-4">
               {/* Progress bar */}
               <div className="relative h-0.5 w-32 overflow-hidden rounded-full bg-ink-100">

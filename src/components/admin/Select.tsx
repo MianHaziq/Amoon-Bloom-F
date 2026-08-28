@@ -15,6 +15,9 @@ interface SelectProps {
   options: SelectOption[];
   className?: string;
   triggerClassName?: string;
+  /** Open the menu upward (e.g. when the trigger sits in a page-bottom footer,
+   *  where a downward panel would be clipped). Defaults to downward. */
+  openUp?: boolean;
   "aria-label"?: string;
 }
 
@@ -30,6 +33,7 @@ export function Select({
   options,
   className,
   triggerClassName,
+  openUp = false,
   "aria-label": ariaLabel,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
@@ -80,7 +84,10 @@ export function Select({
       {open ? (
         <div
           role="listbox"
-          className="absolute inset-s-0 top-full z-30 mt-2 min-w-full overflow-hidden rounded-xl border border-ink-100 bg-white py-1 shadow-(--shadow-lift) animate-fade-in-up"
+          className={cn(
+            "absolute inset-s-0 z-30 min-w-full overflow-hidden rounded-xl border border-ink-100 bg-white py-1 shadow-(--shadow-lift) animate-fade-in-up",
+            openUp ? "bottom-full mb-2" : "top-full mt-2"
+          )}
         >
           {options.map((opt) => {
             const isSelected = opt.value === value;

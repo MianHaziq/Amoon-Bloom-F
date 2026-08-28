@@ -22,13 +22,16 @@ import { revalidateCatalog } from "@/services/revalidateCatalog";
 import type { ApiProduct } from "@/features/products/api-types";
 import type { PaginatedResponse } from "@/types";
 
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;
+// Selectable table page sizes (rows per page).
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
 // Sentinel for the category filter's "All categories" option — kept out of the
 // query params entirely rather than sent as an empty categoryId.
 const ALL_CATEGORIES = "all";
 
 export function ProductsAdminPage() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
@@ -46,9 +49,14 @@ export function ProductsAdminPage() {
     categoriesQuery.data?.find((c) => c.id === id)?.title ?? "—";
 
   const isFiltered = Boolean(debouncedSearch) || categoryFilter !== ALL_CATEGORIES;
+  // Category-wise reorder: drag is allowed on the plain catalogue AND when narrowed to a
+  // single category (so an admin can set a category's product order), but NOT while a
+  // search term is active — search results aren't a stable, orderable list.
+  const isCategoryOnlyFilter =
+    !debouncedSearch && categoryFilter !== ALL_CATEGORIES;
   const params = {
     page,
-    limit: PAGE_SIZE,
+    limit: pageSize,
     ...(categoryFilter !== ALL_CATEGORIES ? { categoryId: categoryFilter } : {}),
   };
 
@@ -83,7 +91,7 @@ export function ProductsAdminPage() {
     const key = queryKeys.products.list(params);
     const prev = queryClient.getQueryData<PaginatedResponse<ApiProduct>>(key);
     if (prev) queryClient.setQueryData(key, { ...prev, data: rows });
-    const base = (page - 1) * PAGE_SIZE;
+    const base = (page - 1) * pageSize;
     reorderMutation.mutate(
       rows.map((p, i) => ({ id: p.id, sortOrder: base + i }))
     );
@@ -220,6 +228,12 @@ export function ProductsAdminPage() {
         }
       />
 
+      {isCategoryOnlyFilter ? (
+        <p className="mb-3 text-xs text-ink-500">
+          {t("admin.productsPage.reorderCategoryHint")}
+        </p>
+      ) : null}
+
       <DataTable
         columns={columns}
         rows={productsQuery.data?.data}
@@ -263,18 +277,41 @@ export function ProductsAdminPage() {
             />
           </div>
         }
-        // Drag-to-reorder writes an absolute catalogue sortOrder derived from each row's
-        // on-screen position — only meaningful against the full, unfiltered list. With a
-        // search term or category filter active, on-screen position no longer matches the
-        // row's true position in the catalogue, so reordering here would scramble it.
-        sortable={!isFiltered}
+        // Drag-to-reorder writes an absolute sortOrder derived from each row's on-screen
+        // position. It's meaningful for the full catalogue AND for a single-category view
+        // (the product `sortOrder` is the same field the storefront orders a category by),
+        // so both allow dragging. A search term does NOT: its results aren't a stable,
+        // orderable list, so reordering there would scramble the catalogue.
+        sortable={!debouncedSearch}
         onReorder={handleReorder}
         footer={
-          <Pagination
-            meta={productsQuery.data?.meta?.pagination}
-            page={page}
-            onChange={setPage}
-          />
+          <>
+            <div className="flex shrink-0 items-center gap-2 text-xs font-medium text-ink-500">
+              <span className="hidden whitespace-nowrap sm:inline">
+                {t("admin.productsPage.rowsPerPage")}
+              </span>
+              <Select
+                value={String(pageSize)}
+                onChange={(v) => {
+                  setPageSize(Number(v));
+                  setPage(1);
+                }}
+                openUp
+                triggerClassName="min-w-0 gap-1.5 px-3 py-1.5 text-xs font-semibold"
+                aria-label={t("admin.productsPage.rowsPerPage")}
+                options={PAGE_SIZE_OPTIONS.map((n) => ({
+                  value: String(n),
+                  label: String(n),
+                }))}
+              />
+            </div>
+            <Pagination
+              meta={productsQuery.data?.meta?.pagination}
+              page={page}
+              onChange={setPage}
+              className="flex flex-1 flex-wrap items-center justify-between gap-3 min-w-0"
+            />
+          </>
         }
       />
 
