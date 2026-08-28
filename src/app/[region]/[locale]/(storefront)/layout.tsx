@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -14,8 +15,16 @@ import { AuthHydrator } from "@/features/auth/components/AuthHydrator";
 import { ScrollManager } from "@/components/layout/ScrollManager";
 import { getServerLocale } from "@/i18n/server";
 import { t } from "@/i18n";
-import { getCachedRegions } from "@/services/catalogCache";
-import { LOCALES, activeRegionSlugs, buildPrefix, regionSlug } from "@/features/location/routing";
+import { getCachedRegions, getCachedPublicSettings } from "@/services/catalogCache";
+import {
+  LOCALES,
+  activeRegionSlugs,
+  buildPrefix,
+  regionSlug,
+  withLocale,
+  PATHNAME_HEADER,
+  LOCALE_CHOSEN_COOKIE,
+} from "@/features/location/routing";
 
 /**
  * Storefront shell for the `/:region/:locale` segment. This is the AUTHORITATIVE
@@ -46,6 +55,27 @@ export default async function StorefrontLayout({
     const fallback = regions.find((r) => r.isDefault) ?? regions[0];
     if (fallback) redirect(buildPrefix(regionSlug(fallback), localeParam));
     notFound();
+  }
+
+  // Global default language (flash-free). A visitor who hasn't explicitly picked
+  // a language (no `locale_chosen` cookie) is redirected — server-side, before
+  // any paint — to the admin's configured default (Settings.defaultLocale). An
+  // explicit choice always wins. A backend blip just skips the redirect (the
+  // page renders in the URL's locale) rather than erroring. This can't loop:
+  // after the redirect the URL locale equals the default, so the guard is false.
+  const settings = await getCachedPublicSettings().catch(() => null);
+  const defaultLocale = settings?.defaultLocale;
+  if (
+    defaultLocale &&
+    (LOCALES as string[]).includes(defaultLocale) &&
+    defaultLocale !== localeParam
+  ) {
+    const chose = (await cookies()).get(LOCALE_CHOSEN_COOKIE)?.value === "1";
+    if (!chose) {
+      const pathname =
+        (await headers()).get(PATHNAME_HEADER) ?? buildPrefix(region, localeParam);
+      redirect(withLocale(pathname, defaultLocale));
+    }
   }
 
   const locale = await getServerLocale();

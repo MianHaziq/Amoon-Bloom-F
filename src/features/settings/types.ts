@@ -12,6 +12,8 @@ export interface ApiSettings {
   /** Fallback "ships within N day(s)" prep/booking lead time (whole days) used when
    *  a product has no Category.deliveryLeadDays/Product.deliveryLeadDays override. */
   defaultDeliveryLeadDays: number;
+  /** Global default storefront language ("en" | "ar") for a first-time visitor. */
+  defaultLocale: "en" | "ar";
   updatedAt: string;
 }
 
@@ -19,6 +21,8 @@ export interface ApiPublicSettings {
   hiddenPages: string[];
   maintenanceMode?: boolean;
   allowGuestReviews?: boolean;
+  /** Global default storefront language ("en" | "ar") for a first-time visitor. */
+  defaultLocale?: "en" | "ar";
 }
 
 export interface ApiSettingsUpdateInput {
@@ -31,4 +35,5 @@ export interface ApiSettingsUpdateInput {
   hiddenPages?: string[];
   allowGuestReviews?: boolean;
   defaultDeliveryLeadDays?: number;
+  defaultLocale?: "en" | "ar";
 }

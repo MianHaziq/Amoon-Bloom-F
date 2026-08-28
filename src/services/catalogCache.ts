@@ -28,6 +28,7 @@ import { deliveryConfigApi } from "@/features/delivery-config/api/delivery-confi
 import { vatApi } from "@/features/vat/api/vat.api";
 import { legalPagesApi } from "@/features/regions/api/legalPages.api";
 import { branchesApi } from "@/features/regions/api/branches.api";
+import { settingsApi } from "@/features/settings/api/settings.api";
 
 // Reference/catalog data changes rarely (admin edits) → cache longer.
 const CATALOG_TTL = 300; // 5 min: categories, sections, banners
@@ -144,6 +145,18 @@ const _regions = unstable_cache(
   { revalidate: CATALOG_TTL, tags: ["regions"] }
 );
 export const getCachedRegions = cache(() => _regions());
+
+// --- Public settings --------------------------------------------------------
+// Global, not region-keyed. Used by the storefront layout to resolve the
+// admin's default storefront language (Settings.defaultLocale) server-side, so
+// a first-time visitor is redirected to it BEFORE the page paints (no flicker).
+
+const _publicSettings = unstable_cache(
+  () => settingsApi.getPublic(),
+  ["catalog:public-settings"],
+  { revalidate: CATALOG_TTL, tags: ["settings"] }
+);
+export const getCachedPublicSettings = cache(() => _publicSettings());
 
 // --- Delivery zones -----------------------------------------------------
 // Region-scoped sub-areas (e.g. UAE's emirates) — same admin-managed list

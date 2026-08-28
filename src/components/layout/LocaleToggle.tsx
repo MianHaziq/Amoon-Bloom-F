@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setLocale, type Locale } from "@/store/slices/ui.slice";
 import { readLocaleCookie, writeLocaleCookie } from "@/i18n";
-import { withLocale } from "@/features/location/routing";
+import { withLocale, LOCALE_CHOSEN_COOKIE } from "@/features/location/routing";
 import { useT } from "@/i18n/useT";
 import {
   Menu,
@@ -37,6 +37,10 @@ export function LocaleToggle({
 
   const choose = (next: Locale) => {
     if (next === locale) return;
+    // Mark that the visitor has made an explicit language choice (server-readable
+    // cookie) so the layout's first-visit default-locale redirect never overrides
+    // it again. One year, same lax scope as the other routing cookies.
+    document.cookie = `${LOCALE_CHOSEN_COOKIE}=1; path=/; max-age=31536000; samesite=lax`;
     dispatch(setLocale(next));
     writeLocaleCookie(next);
     // Navigate to the same page under the new locale segment (the URL is the

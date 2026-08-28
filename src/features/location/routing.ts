@@ -41,8 +41,18 @@ export const DEFAULT_REGION_SLUG = "ae";
  */
 export const REGION_SLUG_HEADER = "x-region-slug";
 export const LOCALE_HEADER = "x-locale";
+/** Full request pathname the edge `proxy` injects so the `[region]/[locale]`
+ *  layout can build a same-path redirect (e.g. the flash-free default-language
+ *  redirect) without re-deriving the sub-path from route params. */
+export const PATHNAME_HEADER = "x-pathname";
 /** Cookie holding the region SLUG (distinct from the existing `region` cookie, which holds the CODE for X-Region). */
 export const REGION_SLUG_COOKIE = "region_slug";
+/** Set to "1" once the visitor explicitly picks a language (LocaleToggle). While
+ *  unset, the storefront layout redirects a first-time visitor to the admin's
+ *  global default language (Settings.defaultLocale); once set, their own choice
+ *  always wins. A COOKIE (not localStorage) so the server layout can read it and
+ *  do the redirect before the page paints. */
+export const LOCALE_CHOSEN_COOKIE = "locale_chosen";
 
 /**
  * Loose shape check for a region URL segment. The AUTHORITATIVE validation is

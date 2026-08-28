@@ -37,6 +37,7 @@ export function SettingsAdminPage() {
         currency: z.string().min(3, t("admin.settingsPage.currencyRequired")),
         maintenanceMode: z.boolean(),
         allowGuestReviews: z.boolean(),
+        defaultLocale: z.enum(["en", "ar"]),
         defaultDeliveryLeadDays: z
           .number({ message: t("admin.settingsPage.defaultDeliveryLeadDaysInvalid") })
           .int(t("admin.settingsPage.defaultDeliveryLeadDaysInvalid"))
@@ -70,6 +71,7 @@ export function SettingsAdminPage() {
       currency: "AED",
       maintenanceMode: false,
       allowGuestReviews: true,
+      defaultLocale: "en",
       defaultDeliveryLeadDays: 1,
       hiddenPagesText: "",
     },
@@ -86,6 +88,7 @@ export function SettingsAdminPage() {
       currency: s.currency,
       maintenanceMode: s.maintenanceMode,
       allowGuestReviews: s.allowGuestReviews,
+      defaultLocale: s.defaultLocale ?? "en",
       defaultDeliveryLeadDays: s.defaultDeliveryLeadDays,
       hiddenPagesText: (s.hiddenPages ?? []).join("\n"),
     });
@@ -113,6 +116,7 @@ export function SettingsAdminPage() {
       currency: v.currency,
       maintenanceMode: v.maintenanceMode,
       allowGuestReviews: v.allowGuestReviews,
+      defaultLocale: v.defaultLocale,
       defaultDeliveryLeadDays: v.defaultDeliveryLeadDays,
       hiddenPages,
     });
@@ -178,6 +182,25 @@ export function SettingsAdminPage() {
               <h3 className="mb-4 font-display text-lg text-ink-900">
                 {t("admin.settingsPage.storefrontHeading")}
               </h3>
+              <div className="mb-4">
+                <label
+                  htmlFor="defaultLocale"
+                  className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-700"
+                >
+                  {t("admin.settingsPage.defaultLocaleLabel")}
+                </label>
+                <select
+                  id="defaultLocale"
+                  {...register("defaultLocale")}
+                  className="block w-full rounded-2xl border border-ink-200 bg-white px-4 py-3 text-base text-ink-900 focus:border-bloom-400 focus:outline-none focus:ring-4 focus:ring-bloom-100"
+                >
+                  <option value="en">{t("admin.settingsPage.defaultLocaleEnglish")}</option>
+                  <option value="ar">{t("admin.settingsPage.defaultLocaleArabic")}</option>
+                </select>
+                <p className="mt-1 text-xs text-ink-500">
+                  {t("admin.settingsPage.defaultLocaleHint")}
+                </p>
+              </div>
               <Input
                 label={t("admin.settingsPage.currencyLabel")}
                 hint={t("admin.settingsPage.currencyHint")}

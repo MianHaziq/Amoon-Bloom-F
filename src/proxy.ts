@@ -8,6 +8,7 @@ import {
   buildPrefix,
   REGION_SLUG_HEADER,
   LOCALE_HEADER,
+  PATHNAME_HEADER,
   REGION_SLUG_COOKIE,
   type ParsedPrefix,
 } from "@/features/location/routing";
@@ -90,6 +91,9 @@ export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(REGION_SLUG_HEADER, parsed.regionSlug);
   requestHeaders.set(LOCALE_HEADER, parsed.locale);
+  // Full path so the layout can build a same-path redirect (flash-free default
+  // language) without re-deriving the sub-path from route params.
+  requestHeaders.set(PATHNAME_HEADER, pathname);
   const res = NextResponse.next({ request: { headers: requestHeaders } });
   const cookieOpts = { path: "/", maxAge: YEAR_SECONDS, sameSite: "lax" as const };
   res.cookies.set(REGION_SLUG_COOKIE, parsed.regionSlug, cookieOpts);
