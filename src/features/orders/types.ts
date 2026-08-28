@@ -232,6 +232,8 @@ export interface ApiOrderListRow {
   /** Region the order was placed in. */
   region?: ApiOrderListRegion | null;
   status: OrderStatus;
+  /** Payment state snapshot. Absent on legacy list rows — treat as UNPAID. */
+  paymentStatus?: PaymentStatus;
   itemCount: number;
   createdAt: string;
   updatedAt: string;
