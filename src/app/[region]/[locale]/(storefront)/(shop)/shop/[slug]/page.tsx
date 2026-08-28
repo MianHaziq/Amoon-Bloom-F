@@ -23,6 +23,7 @@ import { getServerRegion, getServerZoneName } from "@/services/serverRegion";
 import { getServerLocale } from "@/i18n/server";
 import { t } from "@/i18n";
 import { siteConfig } from "@/config/site";
+import { richTextToPlain } from "@/lib/richText";
 import { localeAlternates } from "@/features/location/routing";
 
 // Product visibility is region-scoped (a draft / out-of-region product 404s),
@@ -42,7 +43,10 @@ export async function generateMetadata({ params }: ProductPageProps) {
     if (!api) return { title: "Product", alternates };
     return {
       title: api.title,
-      description: api.subtitle ?? api.descriptions?.[0]?.description ?? api.title,
+      description:
+        api.subtitle ||
+        richTextToPlain(api.descriptions?.[0]?.description) ||
+        api.title,
       alternates,
     };
   } catch {

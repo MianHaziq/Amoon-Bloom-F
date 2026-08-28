@@ -16,6 +16,7 @@ import { settingsApi } from "@/features/settings/api/settings.api";
 import { StarRatingInput } from "@/features/reviews/components/StarRatingInput";
 import { StarRatingDisplay } from "@/features/reviews/components/StarRatingDisplay";
 import { ReviewMedia, ReviewMediaPicker } from "@/features/reviews/components/ReviewMedia";
+import { ProductRichText } from "@/features/products/components/ProductRichText";
 import { formatDate, intlLocale } from "@/lib/format";
 import { ROUTES } from "@/constants/routes";
 import type { PaginatedResponse } from "@/types";
@@ -165,16 +166,10 @@ export function ProductTabs({
                         {d.title}
                       </p>
                     )}
-                    <p className="whitespace-pre-line text-base leading-relaxed text-ink-700">
-                      {d.description}
-                    </p>
+                    <ProductRichText text={d.description ?? ""} />
                   </div>
                 ))
-              : description?.trim() && (
-                  <p className="whitespace-pre-line text-base leading-relaxed text-ink-700">
-                    {description}
-                  </p>
-                )}
+              : description?.trim() && <ProductRichText text={description} />}
           </div>
         )}
 

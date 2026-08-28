@@ -18,7 +18,8 @@ import { categoriesApi } from "@/features/categories/api/categories.api";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { queryKeys } from "@/services/queryKeys";
-import { Button, Input, Textarea } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
+import { RichTextEditor } from "@/components/admin/regions/RichTextEditor";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { RegionPicker } from "@/components/admin/RegionPicker";
 import { Select } from "@/components/admin/Select";
@@ -48,6 +49,36 @@ interface DescriptionBlockFormValue {
   title_ar?: string | null;
   description?: string | null;
   description_ar?: string | null;
+}
+
+/** Labeled rich-text body field — matches the Textarea label/error styling so it
+ *  drops into the description cards in place of the old plain textareas. */
+function RichTextField({
+  label,
+  dir,
+  value,
+  onChange,
+  error,
+  placeholder,
+  className,
+}: {
+  label: string;
+  dir?: "ltr" | "rtl";
+  value: string;
+  onChange: (html: string) => void;
+  error?: string;
+  placeholder?: string;
+  className?: string;
+}) {
+  return (
+    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
+      <label className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-700">
+        {label}
+      </label>
+      <RichTextEditor value={value ?? ""} onChange={onChange} dir={dir} placeholder={placeholder} />
+      {error ? <p className="text-xs text-(--color-danger)">{error}</p> : null}
+    </div>
+  );
 }
 
 /** Trim a form-state description-block list into API input shape, dropping blocks
@@ -1134,19 +1165,31 @@ export function ProductForm({ initial, onSubmit, submitting, submitLabel }: Prod
                     {...register(`descriptions.${index}.title_ar`)}
                   />
                 </div>
-                <Textarea
-                  label={t("admin.productForm.bodyEn")}
-                  rows={5}
-                  containerClassName="mt-3"
-                  error={errors.descriptions?.[index]?.description?.message}
-                  {...register(`descriptions.${index}.description`)}
+                <Controller
+                  control={control}
+                  name={`descriptions.${index}.description`}
+                  render={({ field }) => (
+                    <RichTextField
+                      label={t("admin.productForm.bodyEn")}
+                      className="mt-3"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      error={errors.descriptions?.[index]?.description?.message}
+                    />
+                  )}
                 />
-                <Textarea
-                  label={t("admin.productForm.bodyAr")}
-                  rows={5}
-                  containerClassName="mt-3"
-                  dir="rtl"
-                  {...register(`descriptions.${index}.description_ar`)}
+                <Controller
+                  control={control}
+                  name={`descriptions.${index}.description_ar`}
+                  render={({ field }) => (
+                    <RichTextField
+                      label={t("admin.productForm.bodyAr")}
+                      className="mt-3"
+                      dir="rtl"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
             ))}
@@ -2337,24 +2380,22 @@ function OptionValueRows({
                               className="h-8 rounded-lg border border-ink-200 bg-white px-2.5 text-xs focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
                             />
                           </div>
-                          <textarea
+                          <RichTextField
+                            label={t("admin.productForm.bodyEn")}
+                            className="mt-2"
                             value={block.description ?? ""}
-                            onChange={(e) =>
-                              setVariantBlockField(i, blockIndex, "description", e.target.value)
+                            onChange={(html) =>
+                              setVariantBlockField(i, blockIndex, "description", html)
                             }
-                            placeholder={t("admin.productForm.bodyEn")}
-                            rows={5}
-                            className="mt-2 min-h-28 w-full resize-y rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm leading-relaxed focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
                           />
-                          <textarea
-                            value={block.description_ar ?? ""}
-                            onChange={(e) =>
-                              setVariantBlockField(i, blockIndex, "description_ar", e.target.value)
-                            }
+                          <RichTextField
+                            label={t("admin.productForm.bodyAr")}
+                            className="mt-2"
                             dir="rtl"
-                            placeholder={t("admin.productForm.bodyAr")}
-                            rows={5}
-                            className="mt-2 min-h-28 w-full resize-y rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-sm leading-relaxed focus:border-bloom-500 focus:outline-none focus:ring-2 focus:ring-bloom-500/20"
+                            value={block.description_ar ?? ""}
+                            onChange={(html) =>
+                              setVariantBlockField(i, blockIndex, "description_ar", html)
+                            }
                           />
                         </div>
                       ))}

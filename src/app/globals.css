@@ -656,17 +656,24 @@ button:disabled,
   margin-top: 1rem;
 }
 .legal-prose p { margin: 0; }
+/* Lists must stay in normal block flow: a `display:flex` container suppresses the
+   `::marker`, so bullets/numbers vanish. Use margins (not flex gap) for item spacing. */
 .legal-prose ul,
 .legal-prose ol {
   margin: 0;
-  padding-inline-start: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  padding-inline-start: 1.5rem;
 }
-.legal-prose ul { list-style: disc; }
-.legal-prose ol { list-style: decimal; }
+.legal-prose ul { list-style: disc outside; }
+.legal-prose ol { list-style: decimal outside; }
 .legal-prose li { padding-inline-start: 0.25rem; }
+.legal-prose li::marker { color: var(--color-ink-400); }
+.legal-prose li + li { margin-top: 0.4rem; }
+/* Tiptap wraps each item's content in a <p>; keep it flush so the marker aligns
+   with the text and items don't gain a stray top margin. */
+.legal-prose li > p { margin: 0; }
+/* Nested lists sit tight under their parent item. */
+.legal-prose li > ul,
+.legal-prose li > ol { margin-top: 0.4rem; }
 .legal-prose strong, .legal-prose b { font-weight: 600; color: var(--color-ink-900); }
 .legal-prose a { color: var(--color-bloom-600, #d6376e); text-decoration: underline; }
 .legal-prose a:hover { color: var(--color-bloom-700, #b02a58); }
