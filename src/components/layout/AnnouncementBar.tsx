@@ -1,11 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useAppSelector } from "@/store";
 import { TruckIcon, SparkleIcon, PinIcon, TagIcon } from "@/components/icons";
 import { useT } from "@/i18n/useT";
 import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { deliveryConfigApi } from "@/features/delivery-config/api/delivery-config.api";
+import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { queryKeys } from "@/services/queryKeys";
 import { formatCurrency, formatCutoffTime } from "@/lib/format";
 
@@ -13,12 +15,23 @@ export function AnnouncementBar() {
   const { t, dir } = useT();
   const regionCopy = useRegionCopy();
   const { currency, locale, countryCode } = useCurrency();
+  // Selected city → delivery zone, so the same-day / free-delivery messaging tracks the
+  // SELECTED zone (zone override wins over region), not just the region.
+  const city = useAppSelector((s) => s.location.city);
 
-  // Region-level delivery config (no zone/subtotal — this is the global top bar). Drives
-  // the same-day + free-delivery messages from real admin config instead of hardcoded copy.
+  const { data: zones } = useQuery({
+    queryKey: queryKeys.deliveryZones.list(countryCode),
+    queryFn: () => deliveryZonesApi.list(countryCode),
+    enabled: Boolean(countryCode),
+    staleTime: 5 * 60_000,
+  });
+  const zoneId = city ? zones?.find((z) => z.name === city)?.id : undefined;
+
+  // Zone-resolved delivery config: same-day only appears when the SELECTED zone (or its
+  // region fallback) actually offers it — so a zone without same-day shows no such text.
   const { data: config } = useQuery({
-    queryKey: queryKeys.deliveryConfig.resolve(countryCode),
-    queryFn: () => deliveryConfigApi.get({ region: countryCode }),
+    queryKey: queryKeys.deliveryConfig.resolve(countryCode, zoneId),
+    queryFn: () => deliveryConfigApi.get({ region: countryCode, zoneId }),
     enabled: Boolean(countryCode),
     staleTime: 5 * 60_000,
   });

@@ -5,10 +5,11 @@ import {
   getCachedProductList,
   getCachedCategories,
   getCachedSections,
-  getCachedDeliveryConfig,
+  getCachedDeliveryConfigForZone,
+  getCachedDeliveryZones,
 } from "@/services/catalogCache";
 import { toUiCategories } from "@/features/categories/adapters";
-import { getServerRegion } from "@/services/serverRegion";
+import { getServerRegion, getServerZoneName } from "@/services/serverRegion";
 import { getServerLocale } from "@/i18n/server";
 import { t } from "@/i18n";
 import { regionCopyFromRegionCode } from "@/features/location/regionCopy";
@@ -21,14 +22,27 @@ export const metadata = { title: "Shop" };
 export const dynamic = "force-dynamic";
 
 export default async function ShopPage(props: PageProps<"/[region]/[locale]/shop">) {
-  const [region, locale] = await Promise.all([
+  const [region, locale, zoneName] = await Promise.all([
     getServerRegion(),
     getServerLocale(),
+    getServerZoneName(),
   ]);
   const regionCopy = await regionCopyFromRegionCode(region, locale);
-  // Real same-day cutoff for the hero subtitle (falls back to a no-cutoff variant when
-  // same-day isn't offered or the config can't be fetched).
-  const deliveryConfig = await getCachedDeliveryConfig(region ?? undefined).catch(() => null);
+  // Resolve the selected city/zone NAME (cookie) → zone id within this region, so the
+  // hero's same-day promise reflects the SELECTED zone (zone override wins over region).
+  // A stale name (region switched) just yields no id → falls back to region-level config.
+  let zoneId: string | undefined;
+  if (zoneName && region) {
+    const zones = await getCachedDeliveryZones(region).catch(() => []);
+    zoneId = zones.find((z) => z.name === zoneName)?.id;
+  }
+  // Real same-day cutoff for the hero subtitle — resolved for the selected zone so the
+  // "same-day" line only appears when THIS zone (or its region fallback) actually offers
+  // same-day. Falls back to a no-cutoff variant when it's off or the config can't load.
+  const deliveryConfig = await getCachedDeliveryConfigForZone(
+    region ?? undefined,
+    zoneId
+  ).catch(() => null);
   const heroCutoff =
     deliveryConfig?.sameDayEnabled && deliveryConfig.sameDayCutoff
       ? formatCutoffTime(deliveryConfig.sameDayCutoff, intlLocale(locale))

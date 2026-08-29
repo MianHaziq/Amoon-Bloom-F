@@ -180,6 +180,7 @@ export function LocationSheet({ open, onClose, initialRegion }: LocationSheetPro
   // re-render to see it reflected in the derived `city` value.
   const commit = (finalCountry: string, finalCity: string) => {
     const countryChanged = finalCountry !== current.country;
+    const cityChanged = finalCity !== current.city;
     dispatch(setLocation({ country: finalCountry, city: finalCity }));
     if (user) {
       profileApi
@@ -197,6 +198,13 @@ export function LocationSheet({ open, onClose, initialRegion }: LocationSheetPro
       const slug = region ? regionSlug(region) : finalCountry.toLowerCase();
       router.push(withRegionSlug(pathname ?? "/", slug));
       queryClient.invalidateQueries();
+    } else if (cityChanged) {
+      // City (zone) changed within the same region: re-run Server Components so SSR
+      // zone-aware content — the same-day announcement ticker, home trust strip, shop
+      // hero, and PDP delivery note — reflects the newly selected zone. The zone cookie
+      // was already written synchronously by LocationPersistence's store subscription
+      // on the dispatch above, so the refreshed request reads the new zone.
+      router.refresh();
     }
   };
 

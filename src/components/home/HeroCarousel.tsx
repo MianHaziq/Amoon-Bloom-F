@@ -7,10 +7,12 @@ import { cn } from "@/lib/cn";
 import { ROUTES } from "@/constants/routes";
 import { ArrowRight } from "@/components/icons";
 import { useQuery } from "@tanstack/react-query";
+import { useAppSelector } from "@/store";
 import { useT } from "@/i18n/useT";
 import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { deliveryConfigApi } from "@/features/delivery-config/api/delivery-config.api";
+import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { queryKeys } from "@/services/queryKeys";
 
 export interface HeroSlide {
@@ -35,11 +37,21 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
   const { t } = useT();
   const regionCopy = useRegionCopy();
   const { countryCode } = useCurrency();
-  // Only claim "same-day delivery" in the hero when the region actually offers it;
-  // otherwise show a plain delivery eyebrow. Region-level config (no zone/subtotal).
+  // Selected city → delivery zone, so the hero's same-day eyebrow tracks the SELECTED
+  // zone (zone override wins over region), not just the region.
+  const city = useAppSelector((s) => s.location.city);
+  const { data: zones } = useQuery({
+    queryKey: queryKeys.deliveryZones.list(countryCode),
+    queryFn: () => deliveryZonesApi.list(countryCode),
+    enabled: Boolean(countryCode),
+    staleTime: 5 * 60_000,
+  });
+  const zoneId = city ? zones?.find((z) => z.name === city)?.id : undefined;
+  // Only claim "same-day delivery" in the hero when the selected zone (or its region
+  // fallback) actually offers it; otherwise show a plain delivery eyebrow.
   const deliveryConfigQuery = useQuery({
-    queryKey: queryKeys.deliveryConfig.resolve(countryCode, undefined, 0),
-    queryFn: () => deliveryConfigApi.get({ region: countryCode }),
+    queryKey: queryKeys.deliveryConfig.resolve(countryCode, zoneId, 0),
+    queryFn: () => deliveryConfigApi.get({ region: countryCode, zoneId }),
     enabled: Boolean(countryCode),
     staleTime: 60_000,
   });
