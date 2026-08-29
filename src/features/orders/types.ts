@@ -245,6 +245,8 @@ export interface ApiOrderStatusLite {
   status: OrderStatus;
   paymentStatus?: PaymentStatus;
   totalAmount: number;
+  /** Order's stamped currency (e.g. "SAR"). Defaults to AED for legacy orders. */
+  currency?: string;
   /** Mirrors order.service status snapshot exactly. */
   progress: {
     currentStep: OrderStatus;

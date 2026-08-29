@@ -23,7 +23,7 @@ import { OrderItemExtras } from "@/features/orders/components/OrderItemExtras";
 
 export function AccountOrderDetail({ id }: { id: string }) {
   const { t, locale } = useT();
-  const { currency, locale: curLocale } = useCurrency();
+  const { currency: browsingCurrency, locale: curLocale } = useCurrency();
   const query = useQuery({
     queryKey: queryKeys.orders.detail(id),
     queryFn: () => ordersApi.getById(id),
@@ -49,6 +49,10 @@ export function AccountOrderDetail({ id }: { id: string }) {
   }
 
   const order = query.data;
+  // Always render this order's OWN stamped currency (order.currency), not the
+  // viewer's live browsing region — otherwise a SAR order viewed from a UAE
+  // browsing context shows AED. Legacy orders (no currency) fall back.
+  const currency = order.currency ?? browsingCurrency;
   const currentIdx = ORDER_PROGRESS_STEPS.findIndex((s) => s.key === order.status);
   const inFlow = currentIdx >= 0;
   const offFlowNoteKey = ORDER_TERMINAL_NOTE_KEY[order.status] ?? ORDER_PAUSED_NOTE_KEY[order.status];

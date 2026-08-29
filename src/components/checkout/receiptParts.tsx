@@ -13,6 +13,7 @@ import {
   MailIcon,
   DocumentIcon,
   DownloadIcon,
+  ShareIcon,
 } from "@/components/icons";
 import { staggerContainer, staggerItem, EASE_OUT } from "@/lib/motion";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +27,10 @@ import { queryKeys } from "@/services/queryKeys";
 import { resolveRegionContact } from "@/features/location/regionContact";
 import { SelectedOptions } from "@/features/products/components/SelectedOptions";
 import { OrderItemExtras } from "@/features/orders/components/OrderItemExtras";
-import { downloadReceiptPdf } from "@/features/orders/receiptPdf";
+import { downloadReceiptPdf, generateReceiptPdfBlob } from "@/features/orders/receiptPdf";
+import { useLocalizedHref } from "@/features/location/useLocalizedHref";
+import { ROUTES } from "@/constants/routes";
+import { useToast } from "@/hooks/useToast";
 import type { MessageKey } from "@/i18n";
 import type { ApiOrder, OrderStatus, PaymentStatus } from "@/features/orders/types";
 import {
@@ -197,7 +201,15 @@ export function ConfirmationHero({
  */
 export function ReceiptCard({ order }: { order: ApiOrder }) {
   const { t, locale } = useT();
-  const { currency } = useCurrency();
+  const { currency: browsingCurrency } = useCurrency();
+  // Currency is the order's OWN stamped currency (order.currency, set once at
+  // checkout from the order's region) — NEVER the viewer's live browsing region.
+  // A receipt is an immutable record: a Saudi (SAR) order must always render in
+  // SAR, even when the page is (re)loaded in a browsing context that resolves to
+  // the default UAE/AED region — which is exactly what happens on the post-payment
+  // return, producing the "paid in SAR but receipt shows AED" bug. Fall back to the
+  // browsing currency only for legacy orders placed before order.currency existed.
+  const currency = order.currency ?? browsingCurrency;
   // The receipt reflects the order's OWN region (not the viewer's current
   // browsing region) — a Saudi order should always show Saudi contact info,
   // even if whoever's looking at it later has since switched to UAE. Reuses
@@ -597,10 +609,82 @@ export function ReceiptActions({
   children?: ReactNode;
 }) {
   const { t } = useT();
+  const localize = useLocalizedHref();
+  const toast = useToast();
   const [generating, setGenerating] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const handlePrint = () => {
     if (typeof window !== "undefined") window.print();
+  };
+
+  // A REAL, shareable link to this order (the public status page, looked up by
+  // id) — unlike the local "Download PDF" blob URL, which only works on the
+  // device that generated it and 404s for anyone the customer forwards it to.
+  // Region/locale-aware via useLocalizedHref so a Saudi order opens in /sa/.
+  const trackingUrl = (): string | null => {
+    if (typeof window === "undefined" || !order?.id) return null;
+    return `${window.location.origin}${localize(ROUTES.orderStatus)}?id=${encodeURIComponent(order.id)}`;
+  };
+
+  const copyTrackingLink = async (url: string) => {
+    try {
+      await navigator.clipboard?.writeText(url);
+      toast.success({ title: t("order.linkCopied") });
+    } catch {
+      // Clipboard blocked (insecure context / permission) — still no error: the
+      // native share below is the primary path; only reached when both are gone.
+      toast.error({ title: t("order.shareError") });
+    }
+  };
+
+  // Share the receipt. Best path: the actual PDF *file* via the native share
+  // sheet (recipient gets a real file). Falls back to sharing/copying the real
+  // tracking link — never a blob: URL, which can't be opened by anyone else.
+  const handleShare = async () => {
+    const url = trackingUrl();
+    if (!url) return;
+    setSharing(true);
+    try {
+      const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+      // 1) Try to share the PDF file itself where the browser supports files.
+      if (canShare && order) {
+        const node = typeof document !== "undefined"
+          ? document.querySelector<HTMLElement>(".receipt-print-area")
+          : null;
+        if (node) {
+          try {
+            const blob = await generateReceiptPdfBlob(node);
+            const ref = order.orderNumber || order.id.slice(0, 8);
+            const file = new File([blob], `receipt-${ref}.pdf`, { type: "application/pdf" });
+            if (navigator.canShare?.({ files: [file] })) {
+              await navigator.share({ files: [file], title: `Receipt ${ref}`, text: url });
+              return;
+            }
+          } catch (err) {
+            // PDF capture unsupported/failed on this device — fall through to
+            // sharing the plain tracking link (still a good outcome).
+            if ((err as Error)?.name === "AbortError") return; // user cancelled
+            console.error("[receipt] file share failed; sharing link instead", err);
+          }
+        }
+      }
+
+      // 2) Share the tracking LINK via the native sheet where available.
+      if (canShare) {
+        await navigator.share({ title: t("order.shareReceipt"), url });
+        return;
+      }
+
+      // 3) Desktop / no Web Share API — copy the link to the clipboard.
+      await copyTrackingLink(url);
+    } catch (err) {
+      if ((err as Error)?.name === "AbortError") return; // user dismissed the sheet
+      await copyTrackingLink(url);
+    } finally {
+      setSharing(false);
+    }
   };
 
   const handleDownloadPdf = async () => {
@@ -663,6 +747,23 @@ export function ReceiptActions({
           {t("order.downloadPdf")}
         </Button>
       </m.div>
+      {/* Share a REAL link (or the PDF file) — the shareable alternative to the
+          device-only "Download PDF" blob. Only when we have an order to link to. */}
+      {order?.id ? (
+        <m.div variants={staggerItem}>
+          <Button
+            size="lg"
+            variant="outline"
+            fullWidth
+            className="sm:w-auto"
+            isLoading={sharing}
+            leadingIcon={<ShareIcon size={16} />}
+            onClick={handleShare}
+          >
+            {t("order.shareReceipt")}
+          </Button>
+        </m.div>
+      ) : null}
     </m.div>
   );
 }

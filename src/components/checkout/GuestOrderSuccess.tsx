@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { LocalizedLink } from "@/components/ui/LocalizedLink";
 import { Container, Button } from "@/components/ui";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
@@ -9,6 +10,8 @@ import { ROUTES } from "@/constants/routes";
 import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { useT } from "@/i18n/useT";
 import { trackPurchase } from "@/lib/gtm";
+import { ordersApi } from "@/features/orders/api/orders.api";
+import { queryKeys } from "@/services/queryKeys";
 import type { MessageKey } from "@/i18n";
 import type { ApiOrder } from "@/features/orders/types";
 import { ReceiptStage, ConfirmationHero, ReceiptCard, ReceiptActions } from "./receiptParts";
@@ -26,12 +29,20 @@ const BENEFITS: MessageKey[] = [
  * the order stashed in sessionStorage at checkout (guests can't refetch
  * GET /orders/:id), then a create-account nudge — Shopify-style. Degrades to a
  * plain confirmation if the stash is missing (e.g. a refresh).
+ *
+ * The stash is captured at checkout, BEFORE payment — so its paymentStatus is
+ * "UNPAID" and status "PENDING_PAYMENT". For an online-paid guest order we must
+ * NOT show that stale snapshot (the "receipt still says Unpaid after paying" bug):
+ * we reconcile the live paymentStatus/status/currency from the PUBLIC status
+ * endpoint (no auth needed) using the order id the backend appended to the return
+ * URL, and merge it over the stash (which still supplies the item + totals detail
+ * the lite status endpoint doesn't carry).
  */
-export function GuestOrderSuccess() {
+export function GuestOrderSuccess({ orderId }: { orderId?: string }) {
   const { t } = useT();
   const hydrated = useIsHydrated();
 
-  const order = useMemo<ApiOrder | null>(() => {
+  const stashed = useMemo<ApiOrder | null>(() => {
     if (!hydrated) return null;
     try {
       const raw = sessionStorage.getItem(STORAGE_KEYS.guestOrder);
@@ -41,8 +52,46 @@ export function GuestOrderSuccess() {
     }
   }, [hydrated]);
 
+  const statusQuery = useQuery({
+    queryKey: queryKeys.orders.status(orderId ?? "none"),
+    queryFn: () => ordersApi.getStatus(orderId as string),
+    enabled: hydrated && Boolean(orderId),
+    // The browser callback confirms the payment synchronously before this page
+    // loads, so the first fetch is normally already PAID. Poll briefly to cover
+    // the rare still-in-flight confirm (e.g. reconcile/webhook path), then stop
+    // once the payment settles so we never poll a genuinely-unpaid order forever.
+    refetchInterval: (query) => {
+      const s = query.state.data;
+      if (!s) return 2500;
+      const settled =
+        s.paymentStatus === "PAID" ||
+        s.paymentStatus === "FAILED" ||
+        s.status !== "PENDING_PAYMENT";
+      return settled ? false : 2500;
+    },
+  });
+
+  // Merge the authoritative live status over the (pre-payment) stash.
+  const order = useMemo<ApiOrder | null>(() => {
+    if (!stashed) return null;
+    const live = statusQuery.data;
+    if (!live) return stashed;
+    return {
+      ...stashed,
+      status: live.status,
+      paymentStatus: live.paymentStatus ?? stashed.paymentStatus,
+      currency: live.currency ?? stashed.currency,
+    };
+  }, [stashed, statusQuery.data]);
+
+  // Fire the purchase analytics event exactly once, even though `order` updates
+  // again when the live status merges in.
+  const tracked = useRef(false);
   useEffect(() => {
-    if (order) trackPurchase(order);
+    if (order && !tracked.current) {
+      tracked.current = true;
+      trackPurchase(order);
+    }
   }, [order]);
 
   return (

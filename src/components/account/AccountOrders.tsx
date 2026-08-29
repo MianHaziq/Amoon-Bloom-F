@@ -95,7 +95,7 @@ export function AccountOrders() {
                 {t(ORDER_STATUS_LABEL_KEY[order.status])}
               </Badge>
               <p className="min-w-[6rem] text-end font-medium text-ink-900">
-                <CurrencyAmount amount={order.totalAmount} currency={currency} locale={curLocale} />
+                <CurrencyAmount amount={order.totalAmount} currency={order.currency ?? currency} locale={curLocale} />
               </p>
             </div>
             <ChevronRight size={16} className="shrink-0 text-ink-400 rtl:-scale-x-100" />

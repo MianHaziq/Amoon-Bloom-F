@@ -138,7 +138,7 @@ function OrderStatusContent() {
                       {t("order.orderLabel")} {result.id.slice(0, 8)}
                     </p>
                     <p className="font-display text-lg font-medium text-ink-900">
-                      <CurrencyAmount amount={result.totalAmount} currency={currency} locale={locale} />
+                      <CurrencyAmount amount={result.totalAmount} currency={result.currency ?? currency} locale={locale} />
                     </p>
                   </div>
                 </div>

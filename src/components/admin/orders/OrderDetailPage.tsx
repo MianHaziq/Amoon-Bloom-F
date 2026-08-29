@@ -67,6 +67,10 @@ export function OrderDetailPage({ id }: { id: string }) {
     order.subtotalAmount ?? order.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const vatAmount = order.vatAmount ?? order.taxAmount ?? 0;
   const showVat = order.vatRatePercent != null && vatAmount > 0;
+  // Always format admin amounts in the order's OWN stamped currency (SAR for a
+  // Saudi order, AED for a UAE order) — never a hardcoded/default currency — so
+  // staff see the currency the customer was actually charged in.
+  const money = (n: number) => formatCurrency(n, order.currency ?? "AED");
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -118,7 +122,7 @@ export function OrderDetailPage({ id }: { id: string }) {
                         {item.product?.title ?? t("admin.orderDetailPage.deletedProductFallback")}
                       </p>
                       <p className="text-xs text-ink-500">
-                        {formatCurrency(item.price)} × {item.quantity}
+                        {money(item.price)} × {item.quantity}
                       </p>
                       <SelectedOptions options={item.selectedOptions} className="mt-1.5" />
                       <OrderItemExtras
@@ -149,7 +153,7 @@ export function OrderDetailPage({ id }: { id: string }) {
                       )}
                     </div>
                     <p className="font-medium text-ink-900">
-                      {formatCurrency(item.price * item.quantity)}
+                      {money(item.price * item.quantity)}
                     </p>
                   </div>
                 </li>
@@ -159,7 +163,7 @@ export function OrderDetailPage({ id }: { id: string }) {
             <dl className="mt-4 space-y-1 border-t border-ink-100 pt-4 text-sm">
               <div className="flex justify-between text-ink-500">
                 <dt>{t("common.subtotal")}</dt>
-                <dd>{formatCurrency(itemsTotal)}</dd>
+                <dd>{money(itemsTotal)}</dd>
               </div>
               {order.discountAmount && order.discountAmount > 0 ? (
                 <div className="flex justify-between text-ink-500">
@@ -171,7 +175,7 @@ export function OrderDetailPage({ id }: { id: string }) {
                       </span>
                     ) : null}
                   </dt>
-                  <dd>−{formatCurrency(order.discountAmount)}</dd>
+                  <dd>−{money(order.discountAmount)}</dd>
                 </div>
               ) : null}
               {showVat ? (
@@ -185,7 +189,7 @@ export function OrderDetailPage({ id }: { id: string }) {
                     {/* Inclusive VAT is already inside the item prices; showing its
                         extracted amount alongside a "VAT Inclusive" label only
                         confuses, so the figure is shown for exclusive VAT only. */}
-                    {order.vatInclusive ? null : <>+ {formatCurrency(vatAmount)}</>}
+                    {order.vatInclusive ? null : <>+ {money(vatAmount)}</>}
                   </dd>
                 </div>
               ) : null}
@@ -193,19 +197,19 @@ export function OrderDetailPage({ id }: { id: string }) {
                 <>
                   <div className="flex justify-between text-ink-500">
                     <dt>{t("checkout.cashAmountLineLabel")}</dt>
-                    <dd>{formatCurrency(Number(order.cashArrangementAmount))}</dd>
+                    <dd>{money(Number(order.cashArrangementAmount))}</dd>
                   </div>
                   {Number(order.cashArrangementFeeAmount) > 0 ? (
                     <div className="flex justify-between text-ink-500">
                       <dt>{t("checkout.cashArrangementFeeLabel")}</dt>
-                      <dd>{formatCurrency(Number(order.cashArrangementFeeAmount))}</dd>
+                      <dd>{money(Number(order.cashArrangementFeeAmount))}</dd>
                     </div>
                   ) : null}
                 </>
               ) : null}
               <div className="flex justify-between border-t border-ink-100 pt-2 font-medium text-ink-900">
                 <dt>{t("common.total")}</dt>
-                <dd>{formatCurrency(order.totalAmount)}</dd>
+                <dd>{money(order.totalAmount)}</dd>
               </div>
             </dl>
           </section>

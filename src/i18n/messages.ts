@@ -591,6 +591,9 @@ export const messages = {
       colAmount: "Amount",
       print: "Print",
       downloadPdf: "Download PDF",
+      shareReceipt: "Share receipt",
+      linkCopied: "Tracking link copied to clipboard",
+      shareError: "Couldn’t share the receipt. Please try again.",
       receiptFooter: "Thank you for shopping with {brand}.",
     },
     orderStatus: {
@@ -2600,6 +2603,9 @@ export const messages = {
       colAmount: "المبلغ",
       print: "طباعة",
       downloadPdf: "تنزيل PDF",
+      shareReceipt: "مشاركة الإيصال",
+      linkCopied: "تم نسخ رابط التتبع",
+      shareError: "تعذّرت مشاركة الإيصال. يرجى المحاولة مرة أخرى.",
       receiptFooter: "شكرا لتسوقك مع {brand}.",
     },
     orderStatus: {

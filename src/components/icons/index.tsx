@@ -496,6 +496,15 @@ export const ChevronDownIcon = ({ size, ...rest }: IconProps) => (
   </svg>
 );
 
+export const ShareIcon = ({ size, ...rest }: IconProps) => (
+  <svg {...base(size)} {...rest}>
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
+  </svg>
+);
+
 export const CalendarIcon = ({ size, ...rest }: IconProps) => (
   <svg {...base(size)} {...rest}>
     <rect x="3" y="5" width="18" height="16" rx="2" />

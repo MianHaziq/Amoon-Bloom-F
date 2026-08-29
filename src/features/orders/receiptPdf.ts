@@ -15,10 +15,12 @@ import { downloadBlob } from "@/lib/download";
  * Both heavy libraries are imported lazily here so they never touch the initial
  * bundle — only a click on "Download PDF" pulls them in.
  */
-export async function downloadReceiptPdf(
-  node: HTMLElement,
-  filename: string
-): Promise<void> {
+/**
+ * Render an on-screen receipt node to a PDF Blob (same output as
+ * downloadReceiptPdf, but returns the Blob instead of downloading it) — so the
+ * caller can hand it to the Web Share API as a real file, or download it.
+ */
+export async function generateReceiptPdfBlob(node: HTMLElement): Promise<Blob> {
   const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
     import("html2canvas-pro"),
     import("jspdf"),
@@ -57,5 +59,18 @@ export async function downloadReceiptPdf(
     heightLeft -= pageH;
   }
 
-  downloadBlob(pdf.output("blob"), filename);
+  return pdf.output("blob");
+}
+
+/**
+ * Renders an on-screen receipt node to a real, downloadable PDF entirely on the
+ * client — no backend endpoint involved. See generateReceiptPdfBlob for the
+ * capture details.
+ */
+export async function downloadReceiptPdf(
+  node: HTMLElement,
+  filename: string
+): Promise<void> {
+  const blob = await generateReceiptPdfBlob(node);
+  downloadBlob(blob, filename);
 }

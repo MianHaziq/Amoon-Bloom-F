@@ -27,6 +27,19 @@ export function OrderReceipt({ orderId }: { orderId?: string }) {
     queryFn: () => ordersApi.getById(orderId as string),
     enabled: Boolean(orderId),
     staleTime: 60_000,
+    // The backend confirms an online payment before it redirects here, so the
+    // first fetch is normally already PAID/PROCESSING. Poll briefly to cover the
+    // rare still-in-flight confirm, then stop once the payment settles — so the
+    // receipt never sticks on a stale "Unpaid / Pending payment".
+    refetchInterval: (q) => {
+      const o = q.state.data;
+      if (!o) return 2500;
+      const settled =
+        o.paymentStatus === "PAID" ||
+        o.paymentStatus === "FAILED" ||
+        o.status !== "PENDING_PAYMENT";
+      return settled ? false : 2500;
+    },
   });
 
   useEffect(() => {
