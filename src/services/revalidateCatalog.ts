@@ -11,7 +11,7 @@ import { STORAGE_KEYS } from "@/constants/storage-keys";
 import { storage } from "@/lib/storage";
 
 export function revalidateCatalog(
-  tags?: Array<"products" | "categories" | "sections" | "banners" | "regions" | "vat">
+  tags?: Array<"products" | "categories" | "sections" | "banners" | "regions" | "vat" | "settings">
 ): void {
   try {
     // Forward the admin/manager token so the route can authorize the request — the

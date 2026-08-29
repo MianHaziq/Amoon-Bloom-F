@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { settingsApi } from "@/features/settings/api/settings.api";
+import { revalidateCatalog } from "@/services/revalidateCatalog";
 import { queryKeys } from "@/services/queryKeys";
 import { Button, Input } from "@/components/ui";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -99,6 +100,10 @@ export function SettingsAdminPage() {
     onSuccess: () => {
       toast.success({ title: t("admin.settingsPage.toastSaved") });
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
+      // Expire the storefront's cached /settings/public so the new default
+      // language (and other public settings) take effect on the very next
+      // storefront request instead of after the cache TTL.
+      revalidateCatalog(["settings"]);
     },
     onError: (err) => toast.fromError(t("admin.settingsPage.toastSaveError"), err),
   });

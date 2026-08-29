@@ -150,11 +150,18 @@ export const getCachedRegions = cache(() => _regions());
 // Global, not region-keyed. Used by the storefront layout to resolve the
 // admin's default storefront language (Settings.defaultLocale) server-side, so
 // a first-time visitor is redirected to it BEFORE the page paints (no flicker).
+//
+// Admin saves expire this immediately via `revalidateCatalog(["settings"])`
+// (see the Settings page + /api/revalidate). The short TTL is only a backstop
+// for the rare case a revalidation call is missed (e.g. a multi-instance
+// deploy where the on-demand bust lands on another instance) — this gates a
+// visible redirect, so it must self-heal in seconds, not minutes.
+const SETTINGS_TTL = 60; // 1 min
 
 const _publicSettings = unstable_cache(
   () => settingsApi.getPublic(),
   ["catalog:public-settings"],
-  { revalidate: CATALOG_TTL, tags: ["settings"] }
+  { revalidate: SETTINGS_TTL, tags: ["settings"] }
 );
 export const getCachedPublicSettings = cache(() => _publicSettings());
 

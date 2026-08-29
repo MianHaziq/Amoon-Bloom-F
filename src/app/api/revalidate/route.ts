@@ -12,7 +12,7 @@ import { revalidateTag } from "next/cache";
  * `{ expire: 0 }` = immediate expiration — the recommended form when an external
  * trigger (our admin action) needs the change visible right away (Next 16).
  */
-const ALLOWED = ["products", "categories", "sections", "banners", "regions", "vat"] as const;
+const ALLOWED = ["products", "categories", "sections", "banners", "regions", "vat", "settings"] as const;
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
 const STAFF_ROLES = new Set(["ADMIN", "MANAGER"]);
