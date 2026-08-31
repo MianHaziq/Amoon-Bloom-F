@@ -17,6 +17,7 @@ import { profileApi } from "@/features/auth/api/profile.api";
 import { withRegionSlug, regionSlug } from "@/features/location/routing";
 import { useT } from "@/i18n/useT";
 import { RegionFlag } from "./RegionFlag";
+import { localizedName } from "@/features/location/localizedName";
 
 interface LocationSheetProps {
   open: boolean;
@@ -110,7 +111,7 @@ export function LocationSheet({ open, onClose, initialRegion }: LocationSheetPro
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const { t } = useT();
+  const { t, locale } = useT();
   const current = useAppSelector((s) => s.location);
   const activeRegions = useAppSelector((s) => s.location.activeRegions);
   const user = useAppSelector((s) => s.auth.user);
@@ -240,7 +241,7 @@ export function LocationSheet({ open, onClose, initialRegion }: LocationSheetPro
                       setSelectedCountry(r.code);
                       setCitySelection(null);
                     }}
-                    label={r.name}
+                    label={localizedName(r, locale)}
                     sublabel={r.currency}
                     leading={<RegionFlag region={r} shape="circle" className="h-10 w-10" />}
                   />
@@ -270,7 +271,7 @@ export function LocationSheet({ open, onClose, initialRegion }: LocationSheetPro
                     setCitySelection(z.name);
                     commit(country, z.name);
                   }}
-                  label={z.name}
+                  label={localizedName(z, locale)}
                 />
               ))}
             </div>

@@ -9,6 +9,7 @@ import { useT } from "@/i18n/useT";
 import { regionsApi } from "@/features/regions/api/regions.api";
 import { deliveryZonesApi } from "@/features/delivery-zones/api/delivery-zones.api";
 import { queryKeys } from "@/services/queryKeys";
+import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 import { LocationSheet } from "./LocationSheet";
 import { RegionFlag } from "./RegionFlag";
 
@@ -27,7 +28,8 @@ interface DeliverToPillProps {
 export function DeliverToPill({ className, compact = false }: DeliverToPillProps) {
   const [open, setOpen] = useState(false);
   const country = useAppSelector((s) => s.location.country);
-  const city = useAppSelector((s) => s.location.city);
+  // Localized for display; the stored value stays the English zone name.
+  const { city } = useRegionCopy();
   const activeRegions = useAppSelector((s) => s.location.activeRegions);
   const { t } = useT();
   const queryClient = useQueryClient();

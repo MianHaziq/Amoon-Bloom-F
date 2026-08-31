@@ -3,19 +3,12 @@ import type { ApiRegion } from "@/features/regions/types";
 import type { ApiDeliveryZone } from "@/features/delivery-zones/types";
 import { getCachedRegions, getCachedDeliveryZones } from "@/services/catalogCache";
 import { DEFAULT_REGION_CODE } from "./region";
+import { localizedName } from "./localizedName";
 
 export interface RegionCopy {
   city: string;
   country: string;
   countryCode: string;
-}
-
-function localizedName(
-  entity: { name: string; name_ar: string | null } | undefined,
-  locale: Locale
-): string {
-  if (!entity) return "";
-  return locale === "ar" ? entity.name_ar ?? entity.name : entity.name;
 }
 
 /** Pure helper shared by the server and client resolvers below — given the

@@ -115,12 +115,14 @@ export const messages = {
     hero: {
       eyebrow: "Same-day delivery across {country}",
       eyebrowDelivery: "Delivering across {country}",
-      title1: "Flowers & gifts,",
-      titleAccent: "composed by hand.",
-      subtitle:
-        "Hand-tied bouquets and curated gift boxes for birthdays, newborns, weddings — and every quiet moment in between.",
-      ctaPrimary: "Shop the collection",
-      ctaSecondary: "Explore gifts",
+      slide1Title: "Gifts That Speak Your Feelings",
+      slide1Subtitle:
+        "Because the most beautiful feelings deserve a gift to match.",
+      slide1Cta: "Discover Our Gifts",
+      slide2Title: "More Than a Gift… A Memory",
+      slide2Subtitle:
+        "Thoughtfully selected details to create an unforgettable moment.",
+      slide2Cta: "Shop Now",
       carouselLabel: "Featured collections",
       prevSlide: "Previous slide",
       nextSlide: "Next slide",
@@ -2133,12 +2135,14 @@ export const messages = {
     hero: {
       eyebrow: "توصيل في نفس اليوم في جميع أنحاء {country}",
       eyebrowDelivery: "التوصيل في جميع أنحاء {country}",
-      title1: "ورود وهدايا،",
-      titleAccent: "منسقة يدويا.",
-      subtitle:
-        "باقات منسقة يدويا وعلب هدايا مختارة لأعياد الميلاد والمواليد الجدد والأعراس — ولكل لحظة جميلة بينها.",
-      ctaPrimary: "تسوق المجموعة",
-      ctaSecondary: "استكشف الهدايا",
+      slide1Title: "هدايا تحكي مشاعرك",
+      slide1Subtitle:
+        "لأن أجمل المشاعر تستحق هدية تليق بها.",
+      slide1Cta: "اكتشف هدايانا",
+      slide2Title: "أكثر من هدية… ذكرى",
+      slide2Subtitle:
+        "تفاصيل مختارة بعناية لتصنع لحظة لا تُنسى.",
+      slide2Cta: "تسوّق الآن",
       carouselLabel: "المجموعات المميزة",
       prevSlide: "الشريحة السابقة",
       nextSlide: "الشريحة التالية",

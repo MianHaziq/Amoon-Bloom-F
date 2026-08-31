@@ -17,6 +17,7 @@ import { useCurrency } from "@/features/location/hooks/useCurrency";
 import { stripKnownCallingCode } from "@/features/regions/countries";
 import { PencilIcon, PinIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import type { MessageKey } from "@/i18n";
+import { localizedName } from "@/features/location/localizedName";
 import type {
   ApiAddress,
   ApiAddressCreateInput,
@@ -133,7 +134,7 @@ export function AddressBook() {
             // Legacy addresses saved before this feature has no `area` — fall
             // back to the old street/city line so nothing renders blank.
             const locationLine = a.area
-              ? `${a.area}${a.deliveryZone ? `, ${a.deliveryZone.name}` : ""}`
+              ? `${a.area}${a.deliveryZone ? `, ${localizedName(a.deliveryZone, locale)}` : ""}`
               : `${a.streetAddress}${a.apartment ? `, ${a.apartment}` : ""}, ${a.city}`;
             return (
               <div

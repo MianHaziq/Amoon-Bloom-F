@@ -30,6 +30,7 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { toggleCartDrawer, toggleMobileNav } from "@/store/slices/ui.slice";
 import { cn } from "@/lib/cn";
 import { useT } from "@/i18n/useT";
+import { useRegionCopy } from "@/features/location/hooks/useRegionCopy";
 
 export function Header() {
   const dispatch = useAppDispatch();
@@ -44,7 +45,8 @@ export function Header() {
   const user = useAppSelector((s) => s.auth.user);
   const isStaff = user?.role === "ADMIN" || user?.role === "MANAGER";
   const country = useAppSelector((s) => s.location.country);
-  const city = useAppSelector((s) => s.location.city);
+  // Localized for display; the stored value stays the English zone name.
+  const { city } = useRegionCopy();
   const regionsQuery = useQuery({
     queryKey: queryKeys.regions.list(),
     queryFn: () => regionsApi.list(),
