@@ -296,6 +296,11 @@ export function ProductCard({ product, className, priority }: ProductCardProps) 
             </span>
           ) : null}
         </div>
+        {/* Inclusive-VAT regions announce "VAT Inclusive" under the price (mirrors the
+            PDP + cart). Exclusive regions keep the inline "+ X% VAT" note above. */}
+        {vatHintValue?.kind === "inclusive" ? (
+          <p className="mt-1 text-xs text-bloom-700">{t("product.vatInclusive")}</p>
+        ) : null}
       </div>
     </article>
   );

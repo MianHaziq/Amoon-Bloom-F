@@ -56,7 +56,7 @@ export default async function ShopPage(props: PageProps<"/[region]/[locale]/shop
   // First page only — the client "Load more" control in ShopPLP fetches the
   // rest incrementally so the initial catalogue paint stays fast.
   const PAGE_SIZE = 12;
-  const [productPage, apiCategories, apiSections] = await Promise.all([
+  const [productPage, apiCategories, apiSections, fullCatalog] = await Promise.all([
     // Search results vary per query and are inherently uncacheable; the plain
     // catalog listing goes through the region-cached data layer.
     (q
@@ -65,6 +65,11 @@ export default async function ShopPage(props: PageProps<"/[region]/[locale]/shop
     ).catch(() => ({ data: [], meta: {} })),
     getCachedCategories(region).catch(() => []),
     getCachedSections(region).catch(() => []),
+    // Full catalogue (region max page) used ONLY to seed the "Everything" count with the
+    // BROWSABLE total (published, in-region, NOT coming-soon), so first paint already shows
+    // the number the grid + visible category counts add up to — not the raw total that also
+    // counts coming-soon products hidden from the grid. Skipped during search.
+    q ? Promise.resolve(null) : getCachedProductList(region, 1, 100).catch(() => null),
   ]);
 
   const categories = toUiCategories(apiCategories, locale);
@@ -82,9 +87,13 @@ export default async function ShopPage(props: PageProps<"/[region]/[locale]/shop
       title_ar: s.title_ar,
       products: s.products,
     }));
-  const total =
-    (productPage.meta as { pagination?: { total?: number } } | undefined)
-      ?.pagination?.total ?? productPage.data.length;
+  // "Everything" count = distinct BROWSABLE products (published, in-region, NOT
+  // coming-soon) — matches the shop grid and the sum of the visible category counts.
+  // Falls back to the raw listing total (search, or if the full fetch failed).
+  const total = fullCatalog
+    ? fullCatalog.data.filter((p) => !(p.comingSoon || p.category?.comingSoon)).length
+    : (productPage.meta as { pagination?: { total?: number } } | undefined)
+        ?.pagination?.total ?? productPage.data.length;
 
   return (
     <>

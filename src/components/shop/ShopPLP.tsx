@@ -252,7 +252,6 @@ export function ShopPLP({
   );
   const sourceTotal =
     data?.pages[0]?.meta?.pagination?.total ?? loaded.length;
-  const everythingCount = catalogTotal ?? sourceTotal;
 
   // Curated products for the active section, converted once. They lead the feed
   // in the admin's curated order — identical to the home rail — before the rest
@@ -298,6 +297,40 @@ export function ShopPLP({
   // reflect the entire current category (or section), not just the loaded page.
   const priceBounds = useMemo(() => derivePriceBounds(facetProducts), [facetProducts]);
   const colorFacets = useMemo(() => deriveColorFacets(facetProducts), [facetProducts]);
+
+  // The "Everything" sidebar count must reflect the BROWSABLE catalogue — published,
+  // in-region, and NOT coming-soon — so it matches the grid. The backend listing total
+  // (catalogTotal) also counts coming-soon products (they're published, just hidden from
+  // every shop listing), which makes "Everything" overstate (e.g. shows 27 while the grid
+  // has 17). On the plain Everything view we reuse `facetProducts` (already the full
+  // browsable catalogue, no extra fetch); when a category/section/search narrows the facet
+  // source, a dedicated full-catalogue query supplies the count instead.
+  const isEverythingView = !activeCategory && !rawQ;
+  const everythingCountQuery = useQuery({
+    queryKey: ["shop-everything-count"],
+    queryFn: () => productsApi.list({ page: 1, limit: 100 }),
+    enabled: !isEverythingView,
+    staleTime: 60_000,
+  });
+  const everythingCount = useMemo(() => {
+    if (isEverythingView) {
+      return facetQuery.data ? facetProducts.length : catalogTotal ?? sourceTotal;
+    }
+    const raw = everythingCountQuery.data?.data;
+    if (!raw) return catalogTotal ?? sourceTotal;
+    return toUiProducts(raw, { locale: uiLocale, currency }).filter(
+      (p) => !p.comingSoon
+    ).length;
+  }, [
+    isEverythingView,
+    facetQuery.data,
+    facetProducts,
+    everythingCountQuery.data,
+    catalogTotal,
+    sourceTotal,
+    uiLocale,
+    currency,
+  ]);
 
   const selectedColors = filter.colors ?? [];
   const priceTouched =

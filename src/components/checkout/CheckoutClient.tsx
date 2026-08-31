@@ -71,6 +71,7 @@ import type { MessageKey } from "@/i18n";
 import type { ApiAddress } from "@/features/addresses/types";
 import type { ApiPromoValidationResult } from "@/features/promo-codes/types";
 import type { ResolvedDeliveryConfig } from "@/features/delivery-config/types";
+import { localizedName } from "@/features/location/localizedName";
 
 type TranslateFn = (
   key: MessageKey,
@@ -1217,7 +1218,7 @@ function AddressOption({
 }) {
   const { t, locale } = useT();
   const locationLine = address.area
-    ? `${address.area}${address.deliveryZone ? `, ${address.deliveryZone.name}` : ""}`
+    ? `${address.area}${address.deliveryZone ? `, ${localizedName(address.deliveryZone, locale)}` : ""}`
     : `${address.streetAddress}${address.apartment ? `, ${address.apartment}` : ""}, ${address.city}`;
 
   // Out-of-region: greyed, not clickable, with a clear reason so the shopper
@@ -1589,29 +1590,27 @@ function OrderReviewCard({
             </p>
           ) : null}
           {/* VAT (product + cash-fee only; shipping is flat + VAT-inclusive) sits under Shipment. */}
-          {vatRatePercent != null && combinedVatAmount > 0 ? (
+          {/* VAT row: EXCLUSIVE only — the extracted VAT figure added on top (the SINGLE
+              combined figure: product VAT + cash-arrangement fee VAT). For inclusive VAT the
+              amount is baked into the item prices, so we show no row here — just the
+              "VAT Inclusive" note under the Total below. */}
+          {!vatInclusive && vatRatePercent != null && combinedVatAmount > 0 ? (
             <div className="flex items-baseline justify-between gap-4 text-ink-500">
-              <span>
-                {vatInclusive
-                  ? t("order.vatIncludedLabel", { rate: vatRatePercent })
-                  : t("checkout.vatLabel")}
+              <span>{t("checkout.vatLabel")}</span>
+              <span className="tabular-nums text-right">
+                <CurrencyAmount amount={combinedVatAmount} currency={currency} locale={locale} />
               </span>
-              {/* Inclusive VAT is already baked into the item prices above — showing
-                  its extracted amount here (a different number than the same rate
-                  would add on an exclusive order) reads as a calculation error, so
-                  only the label is shown, no figure. For exclusive VAT, this is the
-                  SINGLE combined figure (product VAT + cash-arrangement fee VAT). */}
-              {!vatInclusive ? (
-                <span className="tabular-nums text-right">
-                  <CurrencyAmount amount={combinedVatAmount} currency={currency} locale={locale} />
-                </span>
-              ) : null}
             </div>
           ) : null}
           <div className="flex items-baseline justify-between gap-4 border-t border-ink-100 pt-2 font-medium text-ink-900">
             <span>{t("common.total")}</span>
             <span className="tabular-nums text-right"><CurrencyAmount amount={total} currency={currency} locale={locale} /></span>
           </div>
+          {/* "VAT Inclusive" note under the total when prices already include VAT
+              (mirrors the shop card + PDP wording). */}
+          {vatInclusive ? (
+            <p className="text-right text-xs text-ink-400">{t("product.vatInclusive")}</p>
+          ) : null}
           {vatUncertain ? (
             <p className="text-xs text-ink-400">{t("checkout.vatEstimateNote")}</p>
           ) : null}
