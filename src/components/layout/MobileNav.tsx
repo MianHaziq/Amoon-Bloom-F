@@ -15,7 +15,7 @@ import { writeLocaleCookie } from "@/i18n";
 import { GlobeIcon } from "@/components/icons";
 import { DeliverToPill } from "@/features/location/components/DeliverToPill";
 import { useRouter } from "next/navigation";
-import { parsePrefix, withLocale } from "@/features/location/routing";
+import { parsePrefix, withLocale, LOCALE_CHOSEN_COOKIE } from "@/features/location/routing";
 import { cn } from "@/lib/cn";
 
 const LOCALES: { value: Locale; nativeLabel: string; label: string }[] = [
@@ -37,12 +37,18 @@ export function MobileNav() {
 
   const chooseLocale = (next: Locale) => {
     if (next === locale) return;
+    // Mark that the visitor made an EXPLICIT language choice (server-readable cookie),
+    // exactly like the header LocaleToggle. Without this, the storefront layout's
+    // default-locale redirect treats the switch as "no choice" and bounces the visitor
+    // back to the admin's default locale — so the mobile switch appeared to do nothing.
+    document.cookie = `${LOCALE_CHOSEN_COOKIE}=1; path=/; max-age=31536000; samesite=lax`;
     dispatch(setLocale(next));
     writeLocaleCookie(next);
-    document.documentElement.lang = next;
-    document.documentElement.dir = next === "ar" ? "rtl" : "ltr";
-    // Navigate to the same page under the new locale segment so the URL (the
-    // source of truth) and the SSR content follow the language switch.
+    // Close the drawer as we navigate to the same page under the new locale segment so
+    // the URL (source of truth) and the SSR content follow the language switch. The
+    // <html> dir/lang follow via the header LocaleToggle's [locale] effect + the new
+    // page's SSR, so we don't set them manually here.
+    dispatch(toggleMobileNav(false));
     router.push(withLocale(pathname ?? "/", next));
   };
 
