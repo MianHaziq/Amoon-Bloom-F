@@ -236,6 +236,14 @@ export function OrderInvoiceDocument({
                 ))}
               </p>
             ))}
+            {/* Saudi National Address short code, labelled so the courier knows what
+                the 8 characters are. Null on orders placed before the field existed. */}
+            {addr?.shortAddress ? (
+              <p className="mt-1 text-ink-700">
+                {t(locale, "checkout.shortAddress")}:{" "}
+                <Ltr>{addr.shortAddress}</Ltr>
+              </p>
+            ) : null}
             {box.withContact && customerPhone ? (
               <p className="mt-2 text-ink-700">
                 <Ltr>{customerPhone}</Ltr>

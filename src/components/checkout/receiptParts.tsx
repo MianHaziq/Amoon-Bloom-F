@@ -331,6 +331,13 @@ export function ReceiptCard({ order }: { order: ApiOrder }) {
               <p className="font-medium text-ink-900">{addr.fullName}</p>
             )}
             {addressLine && <p>{addressLine}</p>}
+            {/* Saudi National Address short code — always LTR, and absent on orders
+                placed before the field existed. */}
+            {addr?.shortAddress && (
+              <p dir="ltr" className="font-mono text-xs tracking-wider text-ink-900 [unicode-bidi:isolate]">
+                {addr.shortAddress}
+              </p>
+            )}
             {addr?.phone && (
               <p className="flex items-center gap-1.5 sm:justify-start">
                 <PhoneIcon size={12} className="shrink-0 text-ink-400" />
