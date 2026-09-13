@@ -38,6 +38,10 @@ export interface OrderShippingAddress {
   country: string | null;
   /** Neighborhood/community free text — the checkout form's primary location field. */
   area: string | null;
+  /** Saudi National Address SHORT ADDRESS code — 4 letters + 4 digits ("JHRC3674"),
+   *  the code on the building's address plate. Required at checkout from the release
+   *  that introduced it; null on every order placed before that, so always guard. */
+  shortAddress: string | null;
   /** Zone (e.g. emirate) name, snapshot at checkout time — not a live reference. */
   deliveryZoneName: string | null;
 }
@@ -273,6 +277,9 @@ export interface ApiCashArrangementRequestInput {
 export interface ApiCheckoutInput {
   addressId?: string;
   shippingAddress?: OrderShippingAddressInput;
+  /** Saudi National Address short code (4 letters + 4 digits). Sent at the TOP level, not
+   *  inside shippingAddress, so it is captured whether a saved or new address is used. */
+  shortAddress: string;
   paymentMethod?: PaymentMethod;
   promoCode?: string;
   /** Defaults to STANDARD on the backend when omitted. */
@@ -297,6 +304,8 @@ export interface ApiGuestCheckoutItem {
 export interface ApiGuestCheckoutInput {
   items: ApiGuestCheckoutItem[];
   shippingAddress: OrderShippingAddressInput;
+  /** Saudi National Address short code (4 letters + 4 digits) — required. */
+  shortAddress: string;
   /** Optional — enables the confirmation email and links the order on sign-up. */
   email?: string;
   orderMessage?: string;

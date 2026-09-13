@@ -309,6 +309,13 @@ export function OrderDetailPage({ id }: { id: string }) {
                 {/* Area/zone is the current checkout's primary location field —
                     fall back to the legacy street/city/country lines for orders
                     placed before this feature existed. */}
+                {/* Saudi National Address short code — the plate code couriers use to
+                    find the building. Null on orders placed before the field existed. */}
+                {order.shippingAddress.shortAddress ? (
+                  <p className="mt-2 font-mono text-xs tracking-wider text-ink-900">
+                    {order.shippingAddress.shortAddress}
+                  </p>
+                ) : null}
                 {order.shippingAddress.area ? (
                   <p className="mt-2">
                     {order.shippingAddress.area}

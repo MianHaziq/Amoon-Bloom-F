@@ -34,6 +34,12 @@ import {
 import { cartApi } from "@/features/cart/api/cart.api";
 import { addressesApi } from "@/features/addresses/api/addresses.api";
 import { ordersApi } from "@/features/orders/api/orders.api";
+import {
+  maskShortAddress,
+  isValidShortAddress,
+  SHORT_ADDRESS_PLACEHOLDER,
+  SHORT_ADDRESS_LENGTH,
+} from "@/features/orders/shortAddress";
 import { promoCodesApi } from "@/features/promo-codes/api/promo-codes.api";
 import { vatApi } from "@/features/vat/api/vat.api";
 import { cashArrangementApi } from "@/features/cash-arrangement/api/cash-arrangement.api";
@@ -214,6 +220,10 @@ export function CheckoutClient() {
   const [explicitSelection, setExplicitSelection] = useState<
     string | "new" | null
   >(null);
+  // Saudi National Address short code — required for EVERY order (saved or new address),
+  // so it is component state rather than a field of the new-address form.
+  const [shortAddress, setShortAddress] = useState("");
+  const [shortAddressError, setShortAddressError] = useState<string | null>(null);
   const [orderMessage, setOrderMessage] = useState("");
   const [couponOpen, setCouponOpen] = useState(false);
   const [promoCode, setPromoCode] = useState("");
@@ -610,6 +620,16 @@ export function CheckoutClient() {
           ? new Date(`${scheduledDeliveryAt}T12:00:00Z`).toISOString()
           : undefined;
 
+      // Short address is required regardless of which address was chosen. Validate it
+      // BEFORE the address branch so the customer sees this error even when the rest of
+      // the form is incomplete, and surface it inline on the field (not only as a toast).
+      const normalizedShortAddress = maskShortAddress(shortAddress);
+      if (!isValidShortAddress(normalizedShortAddress)) {
+        setShortAddressError(t("checkout.shortAddressInvalid"));
+        throw new Error(t("checkout.shortAddressInvalid"));
+      }
+      setShortAddressError(null);
+
       let resolvedAddressId: string | undefined;
       let inlineAddress: NewAddressValues | undefined;
 
@@ -658,6 +678,7 @@ export function CheckoutClient() {
           })),
           // Guests always fill the inline form, so shippingAddress is defined.
           shippingAddress: shippingAddress!,
+          shortAddress: normalizedShortAddress,
           email: inlineAddress?.email?.trim() || undefined,
           orderMessage: orderMessage.trim() || undefined,
           promoCode: promoResult ? promoCode.trim() : undefined,
@@ -682,6 +703,7 @@ export function CheckoutClient() {
       const order = await ordersApi.checkout({
         addressId: resolvedAddressId,
         shippingAddress,
+        shortAddress: normalizedShortAddress,
         paymentMethod: payingOnline ? "MYFATOORAH" : "COD",
         promoCode: promoResult ? promoCode.trim() : undefined,
         deliveryType,
@@ -833,6 +855,14 @@ export function CheckoutClient() {
             zonesLoading={zonesQuery.isPending}
             zoneValue={zoneValue}
             onZoneChange={onZoneChange}
+            shortAddress={shortAddress}
+            onShortAddressChange={(v) => {
+              setShortAddress(v);
+              // Clear the error as soon as the value becomes valid, so the message
+              // disappears on the 8th character instead of waiting for a resubmit.
+              if (shortAddressError && isValidShortAddress(v)) setShortAddressError(null);
+            }}
+            shortAddressError={shortAddressError}
             orderMessage={orderMessage}
             onOrderMessageChange={setOrderMessage}
             submitError={submitError}
@@ -981,6 +1011,11 @@ interface BillingShippingCardProps {
   zonesLoading: boolean;
   zoneValue: string;
   onZoneChange: (id: string) => void;
+  /** Saudi National Address short code. Lives OUTSIDE the new-address form because it is
+   *  required for every order — including one shipped to a previously saved address. */
+  shortAddress: string;
+  onShortAddressChange: (v: string) => void;
+  shortAddressError: string | null;
   orderMessage: string;
   onOrderMessageChange: (v: string) => void;
   submitError: string | null;
@@ -1001,6 +1036,9 @@ function BillingShippingCard({
   zonesLoading,
   zoneValue,
   onZoneChange,
+  shortAddress,
+  onShortAddressChange,
+  shortAddressError,
   orderMessage,
   onOrderMessageChange,
   submitError,
@@ -1170,6 +1208,26 @@ function BillingShippingCard({
           ) : null}
         </div>
       ) : null}
+
+      {/* Saudi National Address short code — REQUIRED for every order, so it sits
+          outside the new-address form: a customer shipping to a saved address (which
+          may predate this field) must still provide it. The input masks as you type,
+          so a digit can never land in the first four positions. */}
+      <Input
+        label={t("checkout.shortAddress")}
+        hint={t("checkout.shortAddressHint")}
+        placeholder={SHORT_ADDRESS_PLACEHOLDER}
+        dir="ltr"
+        inputMode="text"
+        autoCapitalize="characters"
+        autoComplete="off"
+        spellCheck={false}
+        maxLength={SHORT_ADDRESS_LENGTH}
+        value={shortAddress}
+        onChange={(e) => onShortAddressChange(maskShortAddress(e.target.value))}
+        error={shortAddressError ?? undefined}
+        className="uppercase tracking-[0.18em]"
+      />
 
       {/* Offer sign-in to guests — optional, never blocks checkout. */}
       {!isAuthed ? (
